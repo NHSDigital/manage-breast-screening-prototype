@@ -158,20 +158,6 @@ const appendReferrer = (existingReferrerChain, newUrl) => {
 }
 
 /**
- * Whether a URL is the last entry in a referrer chain, ignoring any fragment
- *
- * @param {string|Array} referrerChain - Referrer chain
- * @param {string} url - Path to compare
- * @returns {boolean}
- * @example
- * isLastReferrer(req.query.referrerChain, reviewUrl)
- */
-const isLastReferrer = (referrerChain, url) => {
-  const chain = parseReferrerChain(referrerChain)
-  return chain.length > 0 && chain[chain.length - 1].split('#')[0] === url
-}
-
-/**
  * Append `?_modal_breakout=1` (or `&_modal_breakout=1`) to a URL so that the
  * modal middleware intercepts the redirect and sends a `data-modal-navigate`
  * response instead, causing the modal to close and the browser to navigate
@@ -192,6 +178,5 @@ module.exports = {
   getReturnUrl,
   urlWithReferrer,
   appendReferrer,
-  isLastReferrer,
   modalBreakout
 }

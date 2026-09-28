@@ -43,10 +43,10 @@
           name: "agreedReaderId",
           value: read.readerId,
           classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary",
-          attributes: { formaction: "./arbitration-adopt-read" }
+          attributes: { formaction: "./arbitration-adopt-read" | urlWithReferrer(referrerChain) }
         }) }}
       {% else %}
-        <form action="./arbitration-adopt-read" method="post" class="app-reading-compare-card__action-form">
+        <form action="{{ './arbitration-adopt-read' | urlWithReferrer(referrerChain) }}" method="post" class="app-reading-compare-card__action-form">
           {{ button({
             text: adoptButtonText or defaultAdoptButtonText or "Use this read as outcome",
             name: "agreedReaderId",

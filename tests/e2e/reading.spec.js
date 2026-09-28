@@ -321,6 +321,13 @@ test.describe('Image reading', () => {
       )
       .check()
 
+    // Continuing without an annotation fails validation, which must keep the
+    // chain back to the existing read
+    await page.getByRole('button', { name: 'Continue' }).first().click()
+    await expect(page).toHaveURL(
+      /\/recall-for-assessment-details\?referrerChain=/
+    )
+
     await addTextAnnotation(page, 'Ill-defined mass')
     await expect(page).toHaveURL(/\/recall-for-assessment-details/)
     await expect(page.getByText('Level 4 (suspicious)')).toBeVisible()

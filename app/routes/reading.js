@@ -69,7 +69,6 @@ const {
 const {
   modalBreakout,
   getReturnUrl,
-  isLastReferrer,
   urlWithReferrer
 } = require('../lib/utils/referrers')
 const dayjs = require('dayjs')
@@ -2270,7 +2269,10 @@ module.exports = (router) => {
         }
         errors.forEach((err) => req.flash('error', err))
         return res.redirect(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/technical-recall`
+          urlWithReferrer(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/technical-recall`,
+            req.query.referrerChain
+          )
         )
       }
 
@@ -2438,7 +2440,10 @@ module.exports = (router) => {
           }
           errors.forEach((err) => req.flash('error', err))
           return res.redirect(
-            `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
+            urlWithReferrer(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`,
+              req.query.referrerChain
+            )
           )
         }
       }
@@ -2497,15 +2502,7 @@ module.exports = (router) => {
       // Keep the referrer chain on the way to the next step, so an edit that
       // began on the existing-read page returns there once saved
       const withChain = (url) => urlWithReferrer(url, req.query.referrerChain)
-
-      // The review page's change links arrive with the review page at the end
-      // of the chain. Going back there pops it, rather than carrying review in
-      // its own chain on to the save - which would treat the save as an edit.
       const reviewUrl = `/reading/session/${sessionId}/appointments/${appointmentId}/review`
-      const toReview = () =>
-        isLastReferrer(req.query.referrerChain, reviewUrl)
-          ? getReturnUrl(reviewUrl, req.query.referrerChain)
-          : withChain(reviewUrl)
 
       // Route based on opinion type
       switch (opinion) {
@@ -2516,7 +2513,7 @@ module.exports = (router) => {
           // confirmDecision setting turns that off.
           if (isArbitrationSession && !isEditingExistingRead) {
             if (arbitrationNeedsReview) {
-              return res.redirect(modalBreakout(toReview()))
+              return res.redirect(modalBreakout(withChain(reviewUrl)))
             }
             return res.redirect(
               307,
@@ -2548,7 +2545,7 @@ module.exports = (router) => {
               ? arbitrationNeedsReview
               : data.settings?.reading?.confirmTechnicalRecall !== 'false')
           ) {
-            return res.redirect(modalBreakout(toReview()))
+            return res.redirect(modalBreakout(withChain(reviewUrl)))
           }
           return res.redirect(
             307,
@@ -2564,7 +2561,7 @@ module.exports = (router) => {
               ? arbitrationNeedsReview
               : data.settings?.reading?.confirmRecallForAssessment !== 'false')
           ) {
-            return res.redirect(modalBreakout(toReview()))
+            return res.redirect(modalBreakout(withChain(reviewUrl)))
           }
           return res.redirect(
             307,
@@ -2719,7 +2716,7 @@ module.exports = (router) => {
         })
       }
 
-      // If submitted from an existing-read or review page (e.g. editing technical recall), return there
+      // An edit begun from the existing-read page carries it in the chain, and returns there
       const saveReferrerChain = req.query.referrerChain
       if (saveReferrerChain) {
         const returnUrl = getReturnUrl(
@@ -2951,9 +2948,12 @@ module.exports = (router) => {
       const agreedReaderId = req.body.agreedReaderId
       const reads = getReadsAsArray(getReadingCase(data, appointment))
       const agreedRead = reads.find((read) => read.readerId === agreedReaderId)
+      const withChain = (url) => urlWithReferrer(url, req.query.referrerChain)
 
       if (!agreedRead) {
-        return res.redirect(caseDecisionUrl(data, sessionId, appointmentId))
+        return res.redirect(
+          withChain(caseDecisionUrl(data, sessionId, appointmentId))
+        )
       }
 
       // Adopt a copy of the read wholesale - outcome and details - never a
@@ -2983,7 +2983,9 @@ module.exports = (router) => {
       // page renders full-page
       return res.redirect(
         modalBreakout(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+          withChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+          )
         )
       )
     }
@@ -3000,6 +3002,8 @@ module.exports = (router) => {
 
       const appointment = data.appointments.find((e) => e.id === appointmentId)
       if (!appointment) return res.redirect(`/reading/session/${sessionId}`)
+
+      const withChain = (url) => urlWithReferrer(url, req.query.referrerChain)
 
       // Editing a read the user has already saved — skip the confirmation step,
       // the existing-read page they return to already summarises the read
@@ -3066,13 +3070,17 @@ module.exports = (router) => {
 
         if (isEditingExistingRead) {
           return res.redirect(
-            `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+            withChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+            )
           )
         }
 
         // Go straight to review since we have complete data
         return res.redirect(
-          `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+          withChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/review`
+          )
         )
       }
 
@@ -3093,7 +3101,9 @@ module.exports = (router) => {
         // This also fixes the bug where normal+normalDetails was sent to /review.
         return res.redirect(
           307,
-          `/reading/session/${sessionId}/appointments/${appointmentId}/opinion-details-complete`
+          withChain(
+            `/reading/session/${sessionId}/appointments/${appointmentId}/opinion-details-complete`
+          )
         )
       }
 
@@ -3102,28 +3112,38 @@ module.exports = (router) => {
           // Check if user originally wanted to add details
           if (wantsNormalDetails || forceNormalDetailsForDiscordantNormal) {
             return res.redirect(
-              `/reading/session/${sessionId}/appointments/${appointmentId}/normal-details`
+              withChain(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/normal-details`
+              )
             )
           } else if (
             !isEditingExistingRead &&
             data.settings.reading.confirmNormal === 'true'
           ) {
             return res.redirect(
-              `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
+              withChain(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/confirm-normal`
+              )
             )
           } else {
             return res.redirect(
               307,
-              `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+              withChain(
+                `/reading/session/${sessionId}/appointments/${appointmentId}/save-opinion`
+              )
             )
           }
         case 'technical_recall':
           return res.redirect(
-            `/reading/session/${sessionId}/appointments/${appointmentId}/technical-recall`
+            withChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/technical-recall`
+            )
           )
         case 'recall_for_assessment':
           return res.redirect(
-            `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
+            withChain(
+              `/reading/session/${sessionId}/appointments/${appointmentId}/recall-for-assessment-details`
+            )
           )
         default:
           return res.redirect(

@@ -384,6 +384,8 @@ Requesting priors replaces any decision already given on the case, as deferring 
     [Change link] → /opinion (pre-populated from saved read) → normal flow
 ```
 
+The existing-read page's change links are the only thing that starts a referrer chain in the decision flow. Every step after them - forms, redirects, validation errors, compare, adopt and the review page's own change links - carries that chain along unchanged, and `save-opinion` returns to the existing read only when it is present. Without it, saving moves on to the next case.
+
 ---
 
 ## Layout System

@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-09-28 10:58 UTC
+- **Generated:** 2026-09-28 11:37 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -34,16 +34,16 @@
 | `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 465 |
 | `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 479 |
 | `referrers.js` | Referrer chain navigation for multi-level back links | 489 |
-| `roles-and-permissions.js` | User role checks | 503 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 528 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 544 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 556 |
+| `roles-and-permissions.js` | User role checks | 502 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 527 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 543 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 555 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 572 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 584 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 596 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 610 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 620 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 571 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 583 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 595 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 609 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 619 |
 
 ---
 
@@ -497,8 +497,7 @@ Referrer chain navigation for multi-level back links. Use these instead of hardc
 | `getReturnUrl(url, referrerChain, [scrollToId])` | Get destination from referrer chain, falling back to provided URL if no referrer — e.g. `<a href="{{ '/default-path' \| getReturnUrl(referrerChain) }}">Back</a>` | 27 |
 | `urlWithReferrer(url, referrerChain, [scrollToId])` | Add referrer to URL as query parameter with optional scroll anchor — e.g. `<a href="{{ '/next-page' \| urlWithReferrer(referrer) }}">Continue</a>` | 110 |
 | `appendReferrer(existingReferrerChain, newUrl)` | Append a URL to an existing referrer chain — e.g. `{% set updatedReferrer = referrerChain \| appendReferrer(currentUrl) %}` | 136 |
-| `isLastReferrer(referrerChain, url)` | Whether a URL is the last entry in a referrer chain, ignoring any fragment — e.g. `isLastReferrer(req.query.referrerChain, reviewUrl)` | 160 |
-| `modalBreakout(url)` | Append `?_modal_breakout=1` (or `&_modal_breakout=1`) to a URL so that the | 174 |
+| `modalBreakout(url)` | Append `?_modal_breakout=1` (or `&_modal_breakout=1`) to a URL so that the | 160 |
 
 ### roles-and-permissions.js
 
