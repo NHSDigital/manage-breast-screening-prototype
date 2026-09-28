@@ -5,7 +5,8 @@
    Expects in context: readingCase, appointment, appointmentId, data
    Optional: readsLayout ('side-by-side' default | 'stacked' - natural-height
    cards one above the other | 'condensed' - plain summary lists, no card
-   chrome), adoptButtonText, hideAdoptButtons #}
+   chrome | 'condensed-side-by-side' - condensed, in two columns),
+   adoptButtonText, hideAdoptButtons #}
 
 {% set originalReads = readingCase | getOriginalReads %}
 
@@ -21,6 +22,20 @@
       {% include "_includes/reading/arbitration-read-condensed.njk" %}
     {% endif %}
   {% endfor %}
+
+{% elseif readsLayout == 'condensed-side-by-side' %}
+
+  <div class="nhsuk-grid-row">
+    {% for read in originalReads %}
+      {% if read %}
+        <div class="nhsuk-grid-column-one-half app-summary-list-container">
+          {% set readLabel = "First read" if loop.first else "Second read" %}
+          {% set defaultAdoptButtonText = "Use first read as outcome" if loop.first else "Use second read as outcome" %}
+          {% include "_includes/reading/arbitration-read-condensed.njk" %}
+        </div>
+      {% endif %}
+    {% endfor %}
+  </div>
 
 {% elseif readsLayout == 'stacked' %}
 
