@@ -61,12 +61,14 @@ function getClinicData(data, clinicId) {
 // being applied. `from` is the status the appointment must currently be in for
 // the action to apply - guards against a stale link overwriting a status
 // changed elsewhere. Some entries map to a different underlying status via
-// `to`; undoing attended not screened also clears the stored reason.
+// `to`; undoing attended not screened or rescheduled also clears the stored
+// reason and reschedule answers.
 const CLOSE_STATUS_ACTIONS = {
   did_not_attend: { from: 'scheduled' },
   checked_in: { from: 'attended_not_screened', clearsStoppedDetails: true },
   scheduled: { from: 'did_not_attend' },
   checked_in_from_scheduled: { from: 'scheduled', to: 'checked_in' },
+  checked_in_from_rescheduled: { from: 'rescheduled', to: 'checked_in', clearsStoppedDetails: true },
   scheduled_from_checked_in: { from: 'checked_in', to: 'scheduled' }
 }
 
@@ -252,7 +254,7 @@ module.exports = (router) => {
     if (req.xhr) {
       return res.render('clinics/close-appointment-row', {
         appointment: getAppointment(data, appointmentId),
-        showActions: true
+        showActions: req.query.showActions !== 'false'
       })
     }
     res.redirect(`/clinics/${clinicId}/close`)
