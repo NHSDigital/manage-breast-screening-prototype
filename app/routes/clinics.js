@@ -57,20 +57,17 @@ function getClinicData(data, clinicId) {
   }
 }
 
-// Status changes available from the close clinic page, keyed by the status
-// being applied. `from` is the status the appointment must currently be in for
-// the action to apply - guards against a stale link overwriting a status
-// changed elsewhere. Some entries map to a different underlying status via
-// `to`; undoing attended not screened or rescheduled also clears the stored
-// reason and reschedule answers.
+// Status changes available from the close clinic page: each status that can
+// be applied, and the statuses it can be applied from. Checking the current
+// status stops a stale link overwriting a status changed elsewhere.
 const CLOSE_STATUS_ACTIONS = {
-  did_not_attend: { from: 'scheduled' },
-  checked_in: { from: 'attended_not_screened', clearsStoppedDetails: true },
-  scheduled: { from: 'did_not_attend' },
-  checked_in_from_scheduled: { from: 'scheduled', to: 'checked_in' },
-  checked_in_from_rescheduled: { from: 'rescheduled', to: 'checked_in', clearsStoppedDetails: true },
-  scheduled_from_checked_in: { from: 'checked_in', to: 'scheduled' }
+  did_not_attend: ['scheduled'],
+  scheduled: ['did_not_attend', 'checked_in'],
+  checked_in: ['scheduled', 'attended_not_screened', 'rescheduled']
 }
+
+// Statuses whose stop reasons can be recorded or changed from the close page
+const STOPPABLE_STATUSES = ['checked_in', 'attended_not_screened', 'rescheduled']
 
 /**
  * Discard the attended-not-screened reason and reschedule answers, so undoing
@@ -214,13 +211,24 @@ module.exports = (router) => {
     next()
   }
 
+  // Stop a stale link or form overwriting an outcome recorded elsewhere
+  const requireStoppableStatus = (req, res, next) => {
+    if (!STOPPABLE_STATUSES.includes(res.locals.appointment.status)) {
+      return res.redirect(`/clinics/${req.params.clinicId}/close`)
+    }
+    next()
+  }
+
   // Close clinic page
   router.get('/clinics/:clinicId/close', (req, res) => {
-    const { appointments, unit } = getClinicData(req.session.data, req.params.clinicId)
+    const data = req.session.data
+    const { appointments, unit } = getClinicData(data, req.params.clinicId)
+
+    // Discard stop reasons from a flow abandoned before the reschedule step
+    delete data.closeReasonForm
 
     res.render('clinics/close', {
       unit,
-      appointmentCount: appointments.length,
       needsOutcomeCount: appointments.filter((a) => !isFinal(a)).length,
       inProgressAppointments: appointments.filter((a) => isInProgress(a)),
       checkedInAppointments: appointments.filter((a) => a.status === 'checked_in'),
@@ -234,27 +242,22 @@ module.exports = (router) => {
   // Fetch requests get the re-rendered row so the page can update in place.
   router.get('/clinics/:clinicId/close/set-status/:appointmentId/:status', loadCloseAppointment, (req, res) => {
     const { clinicId, appointmentId, status } = req.params
-    const action = CLOSE_STATUS_ACTIONS[status]
-    if (!action) {
-      return res.redirect(`/clinics/${clinicId}/close`)
-    }
-
-    // Reject a stale link: only act when the appointment is still in the status
-    // the action started from, so a change made elsewhere is never overwritten
-    if (res.locals.appointment.status !== action.from) {
+    const allowedFrom = CLOSE_STATUS_ACTIONS[status]
+    if (!allowedFrom?.includes(res.locals.appointment.status)) {
       return res.redirect(`/clinics/${clinicId}/close`)
     }
 
     const data = req.session.data
-    updateAppointmentStatus(data, appointmentId, action.to || status)
-    if (action.clearsStoppedDetails) {
+    updateAppointmentStatus(data, appointmentId, status)
+
+    // Back to checked in undoes attended not screened or rescheduled
+    if (status === 'checked_in') {
       clearStoppedDetails(data, appointmentId)
     }
 
     if (req.xhr) {
       return res.render('clinics/close-appointment-row', {
-        appointment: getAppointment(data, appointmentId),
-        showActions: req.query.showActions !== 'false'
+        appointment: getAppointment(data, appointmentId)
       })
     }
     res.redirect(`/clinics/${clinicId}/close`)
@@ -263,32 +266,33 @@ module.exports = (router) => {
   // Re-render a single appointment row - fetched by close-clinic.js after a
   // modal form saves, so the row can update without a page reload
   router.get('/clinics/:clinicId/close/appointment-row/:appointmentId', loadCloseAppointment, (req, res) => {
-    res.render('clinics/close-appointment-row', {
-      showActions: req.query.showActions === 'true'
-    })
+    res.render('clinics/close-appointment-row')
   })
 
   // Attended-not-screened reason page (opens in modal from close page)
-  router.get('/clinics/:clinicId/close/reason/:appointmentId', loadCloseAppointment, (req, res) => {
+  router.get('/clinics/:clinicId/close/reason/:appointmentId', loadCloseAppointment, requireStoppableStatus, (req, res) => {
+    const { appointmentId } = req.params
     const data = req.session.data
 
-    // Seed the form from the saved appointment - but not when re-rendering
-    // after a validation error, which must keep the user's answers. By this
-    // point the locals middleware has moved any flash into res.locals.flash.
-    const hasValidationErrors = Boolean(res.locals.flash?.error?.length)
-    if (!hasValidationErrors) {
-      data.closeReasonForm = structuredClone(res.locals.appointment.appointmentStopped || {})
+    // Start from the saved answers, unless answers for this appointment are
+    // already in progress - after a validation error, or back from the
+    // reschedule step. Replacing the whole store drops other appointments' answers.
+    if (!data.closeReasonForm?.[appointmentId]) {
+      data.closeReasonForm = {
+        [appointmentId]: structuredClone(res.locals.appointment.appointmentStopped || {})
+      }
       res.locals.data.closeReasonForm = data.closeReasonForm
     }
 
     res.render('clinics/close-attended-not-screened-reason')
   })
 
-  router.post('/clinics/:clinicId/close/reason/:appointmentId', loadCloseAppointment, (req, res) => {
+  router.post('/clinics/:clinicId/close/reason/:appointmentId', loadCloseAppointment, requireStoppableStatus, (req, res) => {
     const { clinicId, appointmentId } = req.params
     const data = req.session.data
 
-    const formData = data.closeReasonForm || {}
+    const formData = data.closeReasonForm?.[appointmentId] || {}
+    const fieldPrefix = `closeReasonForm[${appointmentId}]`
     const { stoppedReason, needsReschedule, otherDetails } = formData
     // Checkboxes post an empty array when none are ticked
     const hasNoReason = !stoppedReason?.length
@@ -300,44 +304,43 @@ module.exports = (router) => {
       if (hasNoReason) {
         req.flash('error', {
           text: 'Select why this appointment has been stopped',
-          name: 'closeReasonForm[stoppedReason]',
+          name: `${fieldPrefix}[stoppedReason]`,
           href: '#stoppedReason'
         })
       }
       if (hasOtherReasonButNoDetails) {
         req.flash('error', {
           text: 'Provide details about the other reason',
-          name: 'closeReasonForm[otherDetails]',
+          name: `${fieldPrefix}[otherDetails]`,
           href: '#otherDetails'
         })
       }
       if (!needsReschedule) {
         req.flash('error', {
           text: 'Select whether the appointment should be rescheduled',
-          name: 'closeReasonForm[needsReschedule]',
+          name: `${fieldPrefix}[needsReschedule]`,
           href: '#needsReschedule'
         })
       }
       return res.redirect(`/clinics/${clinicId}/close/reason/${appointmentId}`)
     }
 
-    // Save the whole form rather than maintaining a field list here
-    updateAppointmentData(data, appointmentId, {
-      appointmentStopped: { ...formData }
-    })
-
-    delete data.closeReasonForm
-
-    // If reschedule requested, go to reschedule step
+    // The reschedule step saves these answers along with its own, so leaving
+    // the flow part way through changes nothing
     if (needsReschedule === 'yes') {
       return res.redirect(`/clinics/${clinicId}/close/reschedule/${appointmentId}`)
     }
 
-    // Details are recorded, so the appointment can now become attended not
-    // screened. Setting the status here - rather than before the modal opens -
-    // means a cancelled modal never leaves the appointment in a state with no
-    // reasons recorded. Skip when already in that status, so editing the
-    // details doesn't add a redundant status history entry.
+    // Save the whole form rather than maintaining a field list here. Clear any
+    // reschedule answers from an earlier 'yes'.
+    updateAppointmentData(data, appointmentId, {
+      appointmentStopped: { ...formData },
+      reschedule: null
+    })
+    delete data.closeReasonForm
+
+    // Skip when already in that status, so editing the details doesn't add a
+    // redundant status history entry
     if (res.locals.appointment.status !== 'attended_not_screened') {
       updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
     }
@@ -351,8 +354,14 @@ module.exports = (router) => {
   })
 
   // Reschedule step (follows reason page when reschedule selected)
-  router.get('/clinics/:clinicId/close/reschedule/:appointmentId', loadCloseAppointment, (req, res) => {
+  router.get('/clinics/:clinicId/close/reschedule/:appointmentId', loadCloseAppointment, requireStoppableStatus, (req, res) => {
+    const { clinicId, appointmentId } = req.params
     const data = req.session.data
+
+    // The stop reasons are saved with this step, so they must be answered first
+    if (!data.closeReasonForm?.[appointmentId]) {
+      return res.redirect(`/clinics/${clinicId}/close/reason/${appointmentId}`)
+    }
 
     // Seed from the saved appointment unless re-rendering a validation error
     // (the locals middleware has already moved any flash into res.locals.flash)
@@ -365,9 +374,14 @@ module.exports = (router) => {
     res.render('clinics/close-reschedule')
   })
 
-  router.post('/clinics/:clinicId/close/reschedule/:appointmentId', loadCloseAppointment, (req, res) => {
+  router.post('/clinics/:clinicId/close/reschedule/:appointmentId', loadCloseAppointment, requireStoppableStatus, (req, res) => {
     const { clinicId, appointmentId } = req.params
     const data = req.session.data
+
+    const stoppedAnswers = data.closeReasonForm?.[appointmentId]
+    if (!stoppedAnswers) {
+      return res.redirect(`/clinics/${clinicId}/close/reason/${appointmentId}`)
+    }
 
     const formData = data.closeRescheduleForm || {}
 
@@ -381,10 +395,14 @@ module.exports = (router) => {
     }
 
     updateAppointmentData(data, appointmentId, {
+      appointmentStopped: { ...stoppedAnswers },
       reschedule: { ...formData }
     })
-    updateAppointmentStatus(data, appointmentId, 'rescheduled')
+    if (res.locals.appointment.status !== 'rescheduled') {
+      updateAppointmentStatus(data, appointmentId, 'rescheduled')
+    }
 
+    delete data.closeReasonForm
     delete data.closeRescheduleForm
 
     // In modal context reply with an empty success, so the modal closes and

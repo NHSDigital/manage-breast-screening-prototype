@@ -12,86 +12,49 @@
 //
 // A bubbling fragment:swapped event fires on each replacement element, for
 // pages that need to react (eg revealing a 'refresh to update counts' hint).
+//
+// Scripts that swap fragments themselves import from lib/fragments.js, never
+// from this file - esbuild bundles each entry point separately, so importing
+// this file would register these listeners a second time.
 
-const fetchOptions = { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+import { fetchOptions, swapFragment } from './lib/fragments.js'
 
-// Swap target for the fragment contained in html, verifying the ids match
-// so an unexpected response (eg a redirect to a full page) never gets
-// injected into the table
-export const swapFragment = (target, html) => {
-  const template = document.createElement('template')
-  template.innerHTML = html.trim()
-  const replacement = template.content.querySelector('[data-fragment-id]')
-  if (
-    !replacement ||
-    replacement.dataset.fragmentId !== target.dataset.fragmentId
-  ) {
-    throw new Error('Response was not the expected fragment')
-  }
-  target.replaceWith(replacement)
-  replacement.dispatchEvent(
-    new CustomEvent('fragment:swapped', {
-      bubbles: true,
-      detail: { fragment: replacement }
-    })
-  )
-  return replacement
-}
+// GET actions: <a data-fragment-action href="...">
+document.addEventListener('click', (event) => {
+  const link = event.target.closest('a[data-fragment-action]')
+  if (!link) return
+  const target = link.closest('[data-fragment-id]')
+  if (!target) return
 
-// Fetch a fragment URL and swap the response into target
-export const refreshFragment = (target, url) =>
-  fetch(url, fetchOptions)
+  event.preventDefault()
+  fetch(link.href, fetchOptions)
     .then((response) => {
-      if (!response.ok) throw new Error('Failed to fetch fragment')
+      if (!response.ok) throw new Error('Request failed')
       return response.text()
     })
     .then((html) => swapFragment(target, html))
-
-// This module also exports swapFragment and refreshFragment, so it gets
-// bundled into every entry point that imports them (main.js, close-clinic.js).
-// Each bundle would otherwise re-run the listener registration below, so one
-// click would fire several fetches. Guard against that: register the global
-// handlers once per page, whichever bundle loads first.
-if (!window.appFragmentActionsRegistered) {
-  window.appFragmentActionsRegistered = true
-
-  // GET actions: <a data-fragment-action href="...">
-  document.addEventListener('click', (event) => {
-    const link = event.target.closest('a[data-fragment-action]')
-    if (!link) return
-    const target = link.closest('[data-fragment-id]')
-    if (!target) return
-
-    event.preventDefault()
-    fetch(link.href, fetchOptions)
-      .then((response) => {
-        if (!response.ok) throw new Error('Request failed')
-        return response.text()
-      })
-      .then((html) => swapFragment(target, html))
-      .catch(() => {
-        window.location.href = link.href
-      })
-  })
-
-  // POST actions: <form data-fragment-action>
-  document.addEventListener('submit', (event) => {
-    const form = event.target.closest('form[data-fragment-action]')
-    if (!form) return
-    const target = form.closest('[data-fragment-id]')
-    if (!target) return
-
-    event.preventDefault()
-    fetch(form.action, {
-      method: (form.method || 'POST').toUpperCase(),
-      body: new URLSearchParams(new FormData(form)),
-      headers: fetchOptions.headers
+    .catch(() => {
+      window.location.href = link.href
     })
-      .then((response) => {
-        if (!response.ok) throw new Error('Request failed')
-        return response.text()
-      })
-      .then((html) => swapFragment(target, html))
-      .catch(() => form.submit())
+})
+
+// POST actions: <form data-fragment-action>
+document.addEventListener('submit', (event) => {
+  const form = event.target.closest('form[data-fragment-action]')
+  if (!form) return
+  const target = form.closest('[data-fragment-id]')
+  if (!target) return
+
+  event.preventDefault()
+  fetch(form.action, {
+    method: (form.method || 'POST').toUpperCase(),
+    body: new URLSearchParams(new FormData(form)),
+    headers: fetchOptions.headers
   })
-}
+    .then((response) => {
+      if (!response.ok) throw new Error('Request failed')
+      return response.text()
+    })
+    .then((html) => swapFragment(target, html))
+    .catch(() => form.submit())
+})

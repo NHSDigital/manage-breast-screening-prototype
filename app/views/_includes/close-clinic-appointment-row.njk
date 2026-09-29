@@ -7,32 +7,15 @@
   appointment - appointment record
   participant - participant the appointment belongs to
   clinicId - id of the clinic being closed
-  showActions - whether to render the outcome action links
 
-  The stop-reason links carry the modal data attributes directly rather than
-  through openInModal, so the close flow always opens the reason form in the
-  shared modal - even when the modal forms spike is off - letting the status
-  change on save without a full page reload. close-clinic.js intercepts them;
-  without JS the href still navigates to the reason page.
+  Import with context so openInModal can read the modal forms setting.
 #}
 
 {%- from '_components/link/macro.njk' import appLink %}
 
-{% macro closeClinicAppointmentRow(appointment, participant, clinicId, showActions) %}
+{% macro closeClinicAppointmentRow(appointment, participant, clinicId) %}
   {% set reasonUrl = "/clinics/" + clinicId + "/close/reason/" + appointment.id %}
-  {% set modalAttributes = {
-    "data-load-modal-url": reasonUrl,
-    "data-modal-id": "app-form-modal"
-  } %}
-  {% set detailsLink = {
-    text: "Change details",
-    href: reasonUrl,
-    attributes: modalAttributes
-  } %}
-  {# Carry the current table's showActions so a swapped-in row renders for the
-     card it lives in - an undo in the completed card must not gain the forward
-     actions of the to-be-completed card. #}
-  {% set statusQuery = "?showActions=true" if showActions else "?showActions=false" %}
+  {% set setStatusUrl = "/clinics/" + clinicId + "/close/set-status/" + appointment.id + "/" %}
   <tr data-fragment-id="{{ appointment.id }}">
     <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
     <td class="nhsuk-table__cell">
@@ -42,9 +25,9 @@
     </td>
     <td class="nhsuk-table__cell">
       {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
-      {% if appointment.status == "in_progress" and appointment.sessionDetails.startedBy %}
+      {% if appointment | isInProgress and appointment.sessionDetails.startedBy %}
         <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0">with {{ appointment.sessionDetails.startedBy | getUsername({
-          format: 'short',
+          format: "short",
           identifyCurrentUser: true
         }) }}</span>
       {% endif %}
@@ -54,39 +37,35 @@
       {% if appointment | hasStoppedDetails %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">{{ appointment.appointmentStopped.stoppedReason | join(", ") }}</p>
       {% endif %}
-      {% if showActions and appointment.status == "checked_in" %}
+      {% if appointment.status == "checked_in" %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/scheduled_from_checked_in{{ statusQuery }}" data-fragment-action>Change to scheduled</a>
+          <a href="{{ setStatusUrl }}scheduled" data-fragment-action>Change to scheduled</a>
         </p>
-      {% elseif showActions and appointment.status == "scheduled" %}
+      {% elseif appointment.status == "scheduled" %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-          <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/checked_in_from_scheduled{{ statusQuery }}" data-fragment-action>Change to checked in</a>
+          <a href="{{ setStatusUrl }}checked_in" data-fragment-action>Change to checked in</a>
         </p>
       {% endif %}
     </td>
     <td class="nhsuk-table__cell">
-      {# Forward actions only apply while the appointment still needs an outcome
-         (showActions). Undo and change-details stay available once completed so
-         an outcome can always be reversed - undoing attended not screened or
-         rescheduled also clears the recorded details. #}
-      {% if showActions and (appointment.status == "in_progress" or appointment.status == "paused") %}
+      {# Undoing attended not screened or rescheduled also clears the recorded details #}
+      {% if appointment | isInProgress %}
         <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">Go to appointment</a>
-      {% elseif showActions and appointment.status == "checked_in" %}
+      {% elseif appointment.status == "checked_in" %}
         {{ appLink({
           text: "Mark as attended not screened",
-          href: reasonUrl,
-          attributes: modalAttributes
-        }) }}
-      {% elseif showActions and appointment.status == "scheduled" %}
-        <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/did_not_attend{{ statusQuery }}" data-fragment-action>Mark as did not attend</a>
-      {% elseif appointment.status == "attended_not_screened" %}
-        <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/checked_in{{ statusQuery }}" data-fragment-action>Undo status</a>
-        <br>{{ appLink(detailsLink) }}
+          href: reasonUrl
+        } | openInModal) }}
+      {% elseif appointment.status == "scheduled" %}
+        <a href="{{ setStatusUrl }}did_not_attend" data-fragment-action>Mark as did not attend</a>
       {% elseif appointment.status == "did_not_attend" %}
-        <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/scheduled{{ statusQuery }}" data-fragment-action>Undo status</a>
-      {% elseif appointment.status == "rescheduled" and appointment | hasStoppedDetails %}
-        <a href="/clinics/{{ clinicId }}/close/set-status/{{ appointment.id }}/checked_in_from_rescheduled{{ statusQuery }}" data-fragment-action>Undo status</a>
-        <br>{{ appLink(detailsLink) }}
+        <a href="{{ setStatusUrl }}scheduled" data-fragment-action>Undo status</a>
+      {% elseif appointment.status == "attended_not_screened" or (appointment.status == "rescheduled" and appointment | hasStoppedDetails) %}
+        <a href="{{ setStatusUrl }}checked_in" data-fragment-action>Undo status</a>
+        <br>{{ appLink({
+          text: "Change details",
+          href: reasonUrl
+        } | openInModal) }}
       {% endif %}
     </td>
   </tr>

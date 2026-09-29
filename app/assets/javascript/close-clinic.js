@@ -1,10 +1,11 @@
-// Close clinic page - page-specific enhancements on top of
-// fragment-actions.js, which already handles the single outcome links
-// (marked data-fragment-action in the row macro). This file adds the parts
-// with wider effects: revealing the refresh hint when counts go stale, and
-// refreshing a row after its details modal saves.
+// app/assets/javascript/close-clinic.js
+//
+// Close clinic page - enhancements on top of fragment-actions.js, which
+// handles the status links in each row (marked data-fragment-action). This
+// file reveals the refresh notice when counts go stale, and refreshes a row
+// after its details modal saves.
 
-import { refreshFragment } from './fragment-actions.js'
+import { refreshFragment } from './lib/fragments.js'
 
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('js-close-clinic-content')
@@ -12,58 +13,37 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const clinicId = container.dataset.clinicId
 
-  // Open a details form in the modal, or navigate to it when modal forms are
-  // disabled and the shell (#app-form-modal) isn't rendered - otherwise the
-  // form would never open
-  const openDetailsFormOrNavigate = (modalId, loadUrl, onSuccess) => {
-    const modal = document.getElementById(modalId)
-    if (modal && modal.appModal) {
-      window.openModal(modalId, { loadUrl, onSuccess })
-    } else {
-      window.location.href = loadUrl
-    }
-  }
-
   // Counts in the card headings and inset text aren't updated in place -
-  // this link invites a refresh instead
-  const showRefreshLink = () => {
-    const link = container.querySelector('.js-refresh-link')
-    if (link) link.hidden = false
+  // this notice invites a refresh instead
+  const showRefreshNotice = () => {
+    const notice = container.querySelector('.js-refresh-notice')
+    if (notice) notice.hidden = false
   }
 
   // Any swapped row means the page counts may be stale
-  container.addEventListener('fragment:swapped', () => {
-    showRefreshLink()
-  })
-
-  const rowFor = (appointmentId) =>
-    container.querySelector(`tr[data-fragment-id="${appointmentId}"]`)
+  container.addEventListener('fragment:swapped', showRefreshNotice)
 
   // Re-fetch one row and swap it in place
-  const refreshRow = (row) => {
-    const showActions = row.closest('table')?.dataset.showActions || 'false'
-    const url = `/clinics/${clinicId}/close/appointment-row/${row.dataset.fragmentId}?showActions=${showActions}`
-    return refreshFragment(row, url)
+  const refreshRow = (appointmentId) => {
+    const row = container.querySelector(`tr[data-fragment-id="${appointmentId}"]`)
+    if (!row) return window.location.reload()
+    const url = `/clinics/${clinicId}/close/appointment-row/${appointmentId}`
+    refreshFragment(row, url).catch(() => window.location.reload())
   }
 
   container.addEventListener('click', (event) => {
-    // Details links open in a modal (attributes added by the openInModal
-    // filter). Take over from the global handler in modal.js so the row can
-    // be refreshed in place when the modal form saves.
+    // Details links open in a modal when modal forms are on (attributes added
+    // by the openInModal filter). Take over from the global handler in
+    // modal.js so the row can be refreshed in place when the modal form saves.
     const modalLink = event.target.closest('[data-load-modal-url]')
-    if (modalLink) {
-      event.preventDefault()
-      event.stopPropagation()
-      const appointmentId = modalLink.closest('tr')?.dataset.fragmentId
-      openDetailsFormOrNavigate(
-        modalLink.dataset.modalId || 'app-form-modal',
-        modalLink.dataset.loadModalUrl,
-        () => {
-          const row = rowFor(appointmentId)
-          if (!row) return window.location.reload()
-          refreshRow(row).catch(() => window.location.reload())
-        }
-      )
-    }
+    if (!modalLink) return
+
+    event.preventDefault()
+    event.stopPropagation()
+    const appointmentId = modalLink.closest('tr')?.dataset.fragmentId
+    window.openModal(modalLink.dataset.modalId || 'app-form-modal', {
+      loadUrl: modalLink.dataset.loadModalUrl,
+      onSuccess: () => refreshRow(appointmentId)
+    })
   })
 })

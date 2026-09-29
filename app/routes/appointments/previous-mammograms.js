@@ -152,7 +152,7 @@ module.exports = (router) => {
         if (!data.appointment.appointmentStopped) {
           data.appointment.appointmentStopped = {}
         }
-        data.appointment.appointmentStopped.stoppedReason = 'recent_mammogram'
+        data.appointment.appointmentStopped.stoppedReason = ['Recent mammogram']
         data.appointment.appointmentStopped.needsReschedule = 'no' // Default to no reschedule needed
 
         // Build and save the mammogram
