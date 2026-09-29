@@ -25,7 +25,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Re-fetch one row and swap it in place
   const refreshRow = (appointmentId) => {
-    const row = container.querySelector(`tr[data-fragment-id="${appointmentId}"]`)
+    const row = container.querySelector(
+      `tr[data-fragment-id="${appointmentId}"]`
+    )
     if (!row) return window.location.reload()
     const url = `/clinics/${clinicId}/close/appointment-row/${appointmentId}`
     refreshFragment(row, url).catch(() => window.location.reload())

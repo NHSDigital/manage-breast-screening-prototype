@@ -99,7 +99,8 @@ const reload = () => {
   const participants =
     readGeneratedFile('participants.json', {}).participants || []
   const clinics = readGeneratedFile('clinics.json', {}).clinics || []
-  const appointments = readGeneratedFile('appointments.json', {}).appointments || []
+  const appointments =
+    readGeneratedFile('appointments.json', {}).appointments || []
   const episodes = readGeneratedFile('episodes.json', {}).episodes || []
   const generationInfo = readGeneratedFile('generation-info.json', {
     generatedAt: 'Never',
@@ -137,7 +138,9 @@ const reload = () => {
     if (!state.appointmentIdsByParticipant.has(appointment.participantId)) {
       state.appointmentIdsByParticipant.set(appointment.participantId, [])
     }
-    state.appointmentIdsByParticipant.get(appointment.participantId).push(appointment.id)
+    state.appointmentIdsByParticipant
+      .get(appointment.participantId)
+      .push(appointment.id)
   }
 
   // Episodes are generated oldest-first per participant, so these id lists

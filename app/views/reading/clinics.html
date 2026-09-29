@@ -67,7 +67,7 @@
                 <a href="/reading/clinics/{{ clinic.id }}/start" class="nhsuk-link">
                   {{ "Resume reading" if currentUserHasRead else "Start reading" }}
                 </a>
-              {% elif stats.userReadCount > 0 %}
+              {% elseif stats.userReadCount > 0 %}
                 {{ 'You have read this' | toTag({colour: 'grey'}) }}
               {% else %}
                 <span class="nhsuk-u-secondary-text-colour">No cases for you to read</span>

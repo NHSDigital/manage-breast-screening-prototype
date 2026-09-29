@@ -1,6 +1,5 @@
+// app/assets/sass/components/_status-bar.scss
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
-
-// app/assets/sass/components/_reading.scss
 
 .app-status-bar {
   background-color: nhsuk-shade($nhsuk-brand-colour, 40%);

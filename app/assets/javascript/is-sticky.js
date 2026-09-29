@@ -1,4 +1,4 @@
-// app/assets/javascript/custom-elements/is-sticky.js
+// app/assets/javascript/is-sticky.js
 
 // Copied from https://github.com/nhsuk/manage-vaccinations-in-schools-prototype/blob/main/app/assets/javascripts/custom-elements/is-sticky.js
 

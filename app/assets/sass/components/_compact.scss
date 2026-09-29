@@ -1,9 +1,9 @@
+// app/assets/sass/components/_compact.scss
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 // Loaded so the compact overrides below can @extend their --small variants
 @use "nhsuk-frontend/dist/nhsuk/components/checkboxes";
 @use "nhsuk-frontend/dist/nhsuk/components/radios";
 
-// app/assets/sass/components/_compact.scss
 // Compact mode styles are only active when compact mode is enabled.
 
 .app-compact-mode {
@@ -114,7 +114,6 @@
   }
 
   .app-clinic-appointments-table {
-
     .app-clinic-appointments-table__time-column .nhsuk-tag {
       display: inline-block;
       max-width: 100%;
@@ -263,4 +262,3 @@
     @include nhsuk-font($size: 22, $weight: bold);
   }
 }
-

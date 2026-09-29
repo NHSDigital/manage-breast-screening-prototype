@@ -1,4 +1,4 @@
-{# app/views/appointments/medical-information/implanted-devices/consent.html #}
+{# app/views/appointments/medical-information/medical-history/consent.html #}
 
 {% extends parentLayout or 'layout-appointment.html' %}
 
@@ -50,9 +50,9 @@
   {# Generate implant description text #}
   {% if hasBothImplants %}
     {% set implantDescription = "implants in both breasts" %}
-  {% elif hasRightImplant %}
+  {% elseif hasRightImplant %}
     {% set implantDescription = "an implant in the right breast" %}
-  {% elif hasLeftImplant %}
+  {% elseif hasLeftImplant %}
     {% set implantDescription = "an implant in the left breast" %}
   {% endif %}
 

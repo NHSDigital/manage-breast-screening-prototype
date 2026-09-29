@@ -1,6 +1,7 @@
 {# app/views/_includes/reading/opinion-banner.njk #}
 {# Temporary banner shown after recording the previous opinion #}
 
+{% set readingOpinionBanner = flash.readingOpinionBanner[0] if flash.readingOpinionBanner %}
 {% if readingOpinionBanner %}
   <div class="app-reading-opinion-banner" data-reading-opinion-banner="true" data-auto-close-delay="{{ data.config.reading.opinionBannerDurationMs }}">
     <p class="app-reading-opinion-banner__text">{{ readingOpinionBanner.text }}</p>

@@ -63,7 +63,9 @@ const getFullNameReversed = (participant) => {
   if (!participant?.demographicInformation) return ''
   const { firstName, middleName, lastName } = participant.demographicInformation
   return nunjucksSafe(
-    [`${lastName.toUpperCase()},`, firstName, middleName].filter(Boolean).join(' ')
+    [`${lastName.toUpperCase()},`, firstName, middleName]
+      .filter(Boolean)
+      .join(' ')
   )
 }
 

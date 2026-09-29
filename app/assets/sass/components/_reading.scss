@@ -1,6 +1,5 @@
-@use "nhsuk-frontend/dist/nhsuk/core" as *;
-
 // app/assets/sass/components/_reading.scss
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 .app-reading-status {
   background-color: nhsuk-shade(nhsuk-colour("blue"), 40%);

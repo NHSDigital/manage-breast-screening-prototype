@@ -1,0 +1,104 @@
+// app/assets/sass/components/_summary-list-overrides.scss
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// Temporary backport of https://github.com/nhsuk/nhsuk-frontend/pull/2116 -
+// summary list columns based on container width rather than viewport width.
+// Upstream makes every grid column and card a container; here only elements
+// with app-summary-list-container are. Remove both once a release includes it.
+
+.app-summary-list-container {
+  container-type: inline-size;
+}
+
+// The width of a full-width column's content at the tablet breakpoint
+$_columns-min-width: nhsuk-breakpoint-value(tablet) - ($nhsuk-gutter-half * 2);
+
+// Undo the frontend's tablet column styles in containers too narrow for them
+@media #{nhsuk-from-breakpoint(tablet)} {
+  @container (width < #{$_columns-min-width}) {
+    .nhsuk-summary-list {
+      display: block;
+      width: auto;
+    }
+
+    .nhsuk-summary-list__row {
+      display: block;
+      margin-bottom: nhsuk-spacing(3);
+    }
+
+    .nhsuk-summary-list__row--no-actions::after,
+    .nhsuk-summary-list:has(.nhsuk-summary-list__actions)
+      .nhsuk-summary-list__row:not(:has(.nhsuk-summary-list__actions))::after {
+      content: none;
+    }
+
+    .nhsuk-summary-list:has(.nhsuk-summary-list__actions)
+      .nhsuk-summary-list__row:not(:has(.nhsuk-summary-list__actions))
+      > :last-child {
+      padding-right: $nhsuk-border-width-form-element;
+    }
+
+    .nhsuk-summary-list__key,
+    .nhsuk-summary-list__value,
+    .nhsuk-summary-list__actions {
+      display: block;
+      padding-top: 0;
+      padding-right: $nhsuk-border-table-header-width;
+      padding-bottom: 0;
+    }
+
+    .nhsuk-summary-list__key {
+      width: auto;
+    }
+
+    .nhsuk-summary-list__value {
+      margin-bottom: nhsuk-spacing(3);
+    }
+
+    .nhsuk-summary-list__actions {
+      width: auto;
+      text-align: inherit;
+    }
+
+    .nhsuk-summary-list__actions-list {
+      justify-content: normal;
+      text-align: inherit;
+    }
+
+    .nhsuk-summary-list__actions-list-item,
+    .nhsuk-summary-list__actions-list-item:first-child,
+    .nhsuk-summary-list__actions-list-item:not(:first-child) {
+      margin: 0 nhsuk-spacing(2) 0 0;
+      padding: 0 nhsuk-spacing(2) 0 0;
+      border: 0;
+      border-right: 1px solid $nhsuk-border-colour;
+    }
+
+    .nhsuk-summary-list__actions-list-item:last-child {
+      margin-right: 0;
+      padding-right: 0;
+      border: 0;
+    }
+
+    .nhsuk-summary-list--no-border .nhsuk-summary-list__key,
+    .nhsuk-summary-list--no-border .nhsuk-summary-list__value,
+    .nhsuk-summary-list--no-border .nhsuk-summary-list__actions,
+    .nhsuk-summary-list__row--no-border .nhsuk-summary-list__key,
+    .nhsuk-summary-list__row--no-border .nhsuk-summary-list__value,
+    .nhsuk-summary-list__row--no-border .nhsuk-summary-list__actions,
+    .nhsuk-summary-list--no-last-row-border .nhsuk-summary-list__row:last-child .nhsuk-summary-list__key,
+    .nhsuk-summary-list--no-last-row-border .nhsuk-summary-list__row:last-child .nhsuk-summary-list__value,
+    .nhsuk-summary-list--no-last-row-border .nhsuk-summary-list__row:last-child .nhsuk-summary-list__actions {
+      padding-bottom: 0;
+    }
+
+    .nhsuk-card__content .nhsuk-summary-list:last-child .nhsuk-summary-list__row--no-border:last-child > :last-child,
+    .nhsuk-card__content .nhsuk-summary-list--no-border:last-child .nhsuk-summary-list__row:last-child > :last-child,
+    .nhsuk-card__content
+      .nhsuk-summary-list--no-last-row-border:last-child
+      .nhsuk-summary-list__row:last-child
+      > :last-child {
+      margin-bottom: 0;
+    }
+  }
+}

@@ -168,7 +168,8 @@ const summariseMedicalHistoryItem = (item) => {
       let procedureType = ''
       if (allProcParts.length > 0) {
         // Capitalise the first part
-        allProcParts[0] = allProcParts[0].charAt(0).toUpperCase() + allProcParts[0].slice(1)
+        allProcParts[0] =
+          allProcParts[0].charAt(0).toUpperCase() + allProcParts[0].slice(1)
         procedureType = allProcParts.join(' and ')
       } else {
         procedureType = typeName
@@ -388,7 +389,9 @@ const summariseSymptom = (symptom) => {
     }
   } else if (symptom.location) {
     // location is an array; derive a human-readable string
-    const locArray = Array.isArray(symptom.location) ? symptom.location : [symptom.location]
+    const locArray = Array.isArray(symptom.location)
+      ? symptom.location
+      : [symptom.location]
     const hasRight = locArray.includes('right breast')
     const hasLeft = locArray.includes('left breast')
     const hasOther = locArray.includes('other')
@@ -633,7 +636,9 @@ const summariseOtherMedicalInformation = (medicalInformation) => {
     return null
   }
 
-  return otherInfo.length > 100 ? otherInfo.substring(0, 100) + '...' : otherInfo
+  return otherInfo.length > 100
+    ? otherInfo.substring(0, 100) + '...'
+    : otherInfo
 }
 
 module.exports = {

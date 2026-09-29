@@ -12,9 +12,9 @@
             {% if item.key and item.value %}
               <span class="app-status-bar__key">{{ item.key | safe }}</span>
               <span>{{ item.value | safe }}</span>
-            {% elif item.text %}
+            {% elseif item.text %}
               <span>{{ item.text | safe }}</span>
-            {% elif item.html %}
+            {% elseif item.html %}
               {{ item.html | safe }}
             {% endif %}
           </div>

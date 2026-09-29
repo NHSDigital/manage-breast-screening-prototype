@@ -81,7 +81,12 @@ router.use(async (req, res, next) => {
 
 // Collections served from the shared data store rather than from per-session
 // copies
-const STORE_COLLECTIONS = ['clinics', 'participants', 'appointments', 'episodes']
+const STORE_COLLECTIONS = [
+  'clinics',
+  'participants',
+  'appointments',
+  'episodes'
+]
 
 // Attach shared collections to this request's session data.
 //

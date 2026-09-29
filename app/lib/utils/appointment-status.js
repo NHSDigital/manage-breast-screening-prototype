@@ -11,10 +11,7 @@
 // appointment-data.js it needed a lazy require of episodes.js to dodge the
 // resulting cycle.
 
-const {
-  getAppointment,
-  updateAppointmentData
-} = require('./appointment-data')
+const { getAppointment, updateAppointmentData } = require('./appointment-data')
 const {
   syncEpisodeMammogramsForAppointment,
   syncReadingCasesForAppointment,

@@ -11,7 +11,9 @@ const {
   getAppointment,
   saveTempAppointmentToAppointment
 } = require('../../lib/utils/appointment-data')
-const { updateAppointmentStatus } = require('../../lib/utils/appointment-status')
+const {
+  updateAppointmentStatus
+} = require('../../lib/utils/appointment-status')
 const {
   isValidMedicalHistoryType,
   getMedicalHistoryType,
@@ -188,12 +190,14 @@ module.exports = (router) => {
         // REMOVED: The consent line that was adding consentGiven to all items
 
         // Update existing or add new
-        const existingIndex = data.appointment.medicalInformation.medicalHistory[
-          dataKey
-        ].findIndex((item) => item.id === medicalHistoryItem.id)
+        const existingIndex =
+          data.appointment.medicalInformation.medicalHistory[dataKey].findIndex(
+            (item) => item.id === medicalHistoryItem.id
+          )
         if (existingIndex !== -1) {
-          data.appointment.medicalInformation.medicalHistory[dataKey][existingIndex] =
-            medicalHistoryItem
+          data.appointment.medicalInformation.medicalHistory[dataKey][
+            existingIndex
+          ] = medicalHistoryItem
         } else {
           data.appointment.medicalInformation.medicalHistory[dataKey].push(
             medicalHistoryItem
@@ -260,9 +264,10 @@ module.exports = (router) => {
       }
 
       // Find the medical history item using the correct data key
-      const medicalHistoryItem = data.appointment.medicalInformation.medicalHistory?.[
-        dataKey
-      ]?.find((item) => item.id === itemId)
+      const medicalHistoryItem =
+        data.appointment.medicalInformation.medicalHistory?.[dataKey]?.find(
+          (item) => item.id === itemId
+        )
 
       if (medicalHistoryItem) {
         // Copy to temp for editing
@@ -328,7 +333,8 @@ module.exports = (router) => {
       const data = req.session.data
       const participantName = getFullName(data.participant)
 
-      const futureScreeningPlan = data.appointment?.cannotProceed?.futureScreeningPlan
+      const futureScreeningPlan =
+        data.appointment?.cannotProceed?.futureScreeningPlan
 
       // Validate that an option was selected
       if (!futureScreeningPlan) {

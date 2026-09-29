@@ -5,10 +5,7 @@
 const {
   saveTempAppointmentToAppointment
 } = require('../../lib/utils/appointment-data')
-const {
-  getReturnUrl,
-  modalBreakout
-} = require('../../lib/utils/referrers')
+const { getReturnUrl, modalBreakout } = require('../../lib/utils/referrers')
 
 module.exports = (router) => {
   // Handle appointment note form submission

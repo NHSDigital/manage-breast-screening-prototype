@@ -288,7 +288,9 @@ const noWrap = (input) => {
  */
 const asHint = (input) => {
   if (!input) return ''
-  return nunjucksSafe(`<span class="nhsuk-u-secondary-text-colour">${input}</span>`)
+  return nunjucksSafe(
+    `<span class="nhsuk-u-secondary-text-colour">${input}</span>`
+  )
 }
 
 /**

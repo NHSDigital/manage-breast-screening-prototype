@@ -1,0 +1,48 @@
+{# app/views/style-guide/button-sizes.html #}
+
+{% extends "layout.html" %}
+
+{% set pageName = "Button sizes" %}
+
+{% block content %}
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-full">
+      <h1 class="nhsuk-heading-l">Button sizes</h1>
+
+      <div class="nhsuk-grid-row">
+        <div class="nhsuk-grid-column-one-third">
+          <h2 class="nhsuk-heading-m">Default</h2>
+          {{ button({ text: "Continue" }) }}
+          {{ button({
+            text: "Save",
+            variant: "secondary"
+          }) }}
+        </div>
+
+        <div class="nhsuk-grid-column-one-third">
+          <h2 class="nhsuk-heading-m">Medium</h2>
+          <div class="app-compact-mode">
+            {{ button({ text: "Continue" }) }}
+            {{ button({
+              text: "Save",
+              variant: "secondary"
+            }) }}
+          </div>
+        </div>
+
+        <div class="nhsuk-grid-column-one-third">
+          <h2 class="nhsuk-heading-m">Small</h2>
+          {{ button({
+            text: "Continue",
+            classes: "nhsuk-button--small"
+          }) }}
+          {{ button({
+            text: "Save",
+            variant: "secondary",
+            classes: "nhsuk-button--small"
+          }) }}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endblock %}

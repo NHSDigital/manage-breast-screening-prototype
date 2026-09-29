@@ -22,7 +22,7 @@
   <div class="app-collapsible-input__content">
     {%- if caller -%}
       {{ caller() }}
-    {%- elif params.html -%}
+    {%- elseif params.html -%}
       {{ params.html | safe }}
     {%- endif -%}
   </div>

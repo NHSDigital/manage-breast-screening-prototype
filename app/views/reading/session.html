@@ -1,4 +1,4 @@
-{# /app/views/reading/session.html #}
+{# app/views/reading/session.html #}
 
 {% extends 'layout-app.html' %}
 {% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
@@ -279,16 +279,8 @@
                    or the deferral or priors request standing in its place #}
                 {% set userWorkedCase = (data | userHasReadAppointment(appointment)) or (appointment.readingCase | isCaseDeferred) or (appointment | userRequestedPriors(data.currentUser.id)) %}
 
-                {# An ended session takes no more work, so rows it holds nothing
-                   for link out to the case. Worked rows stay in the session,
-                   showing what was recorded #}
-                {% set readingHref -%}
-                  {%- if sessionEnded and not userWorkedCase -%}
-                    /reading/cases/{{ appointment.readingCase.id }}
-                  {%- else -%}
-                    /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
-                  {%- endif -%}
-                {%- endset %}
+                {# An ended session lists only the cases worked in it, so every row opens in the session #}
+                {% set readingHref = "/reading/session/" + session.id + "/appointments/" + appointment.id %}
                 <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
                   {{ appointment.participant | getFullNameReversed }}
                 </p>
@@ -359,8 +351,6 @@
                      hidden for screen readers so each row's link is distinct #}
                   {% if userWorkedCase %}
                     {% set caseActionText = "View opinion" %}
-                  {% elseif sessionEnded %}
-                    {% set caseActionText = "View case" %}
                   {% else %}
                     {% set caseActionText = "Read case" %}
                   {% endif %}
@@ -503,16 +493,8 @@
                    or the deferral or priors request standing in its place #}
                 {% set userWorkedCase = (data | userHasReadAppointment(appointment)) or (appointment.readingCase | isCaseDeferred) or (appointment | userRequestedPriors(data.currentUser.id)) %}
 
-                {# An ended session takes no more work, so rows it holds nothing
-                   for link out to the case. Worked rows stay in the session,
-                   showing what was recorded #}
-                {% set readingHref -%}
-                  {%- if sessionEnded and not userWorkedCase -%}
-                    /reading/cases/{{ appointment.readingCase.id }}
-                  {%- else -%}
-                    /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
-                  {%- endif -%}
-                {%- endset %}
+                {# An ended session lists only the cases worked in it, so every row opens in the session #}
+                {% set readingHref = "/reading/session/" + session.id + "/appointments/" + appointment.id %}
                 <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
                   {{ appointment.participant | getFullNameReversed }}
                 </p>
@@ -573,7 +555,7 @@
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
-                {% elif session.skippedAppointments | includes(appointment.id) %}
+                {% elseif session.skippedAppointments | includes(appointment.id) %}
                   {{ "Skipped" | toTag }}
                 {% else %}
                   {{ "Not read" | toTag }}
@@ -593,7 +575,7 @@
                     format: 'short',
                     identifyCurrentUser: true
                   }) }}</span>
-                {% elif metadata.readCount == 1 %}
+                {% elseif metadata.readCount == 1 %}
                   {% if session.skippedAppointments | includes(appointment.id) %}
                     {{ "Skipped" | toTag }}
                   {% else %}
@@ -612,7 +594,7 @@
                    hidden for screen readers so each row's link is distinct #}
                 {% if userWorkedCase %}
                   {% set caseActionText = "View opinion" %}
-                {% elseif (data | canUserReadAppointment(appointment)) and not sessionEnded %}
+                {% elseif data | canUserReadAppointment(appointment) %}
                   {% set caseActionText = "Read case" %}
                 {% else %}
                   {% set caseActionText = "View case" %}

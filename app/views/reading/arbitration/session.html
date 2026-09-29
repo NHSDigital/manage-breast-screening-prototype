@@ -1,4 +1,4 @@
-{# /app/views/reading/arbitration/session.html #}
+{# app/views/reading/arbitration/session.html #}
 {# Arbitration session overview. Unlike reading there are no tabs: an
    arbitration session shows both original reads by design, and a case is
    arbitrated once for everyone, so there is no yours-vs-everyone split. #}
@@ -247,21 +247,11 @@
 
                 {% if panelWorkedCase %}
                   {% set caseActionText = "View outcome" %}
-                {% elseif sessionEnded %}
-                  {% set caseActionText = "View case" %}
                 {% else %}
                   {% set caseActionText = "Arbitrate case" %}
                 {% endif %}
-                {# An ended session takes no more work, so rows it holds nothing
-                   for link out to the case. Worked rows stay in the session,
-                   showing what was recorded #}
-                {% set caseHref -%}
-                  {%- if sessionEnded and not panelWorkedCase -%}
-                    /reading/cases/{{ appointment.readingCase.id }}
-                  {%- else -%}
-                    /reading/session/{{ session.id }}/appointments/{{ appointment.id }}
-                  {%- endif -%}
-                {%- endset %}
+                {# An ended session lists only the cases worked in it, so every row opens in the session #}
+                {% set caseHref = "/reading/session/" + session.id + "/appointments/" + appointment.id %}
                 <a href="{{ caseHref }}" class="app-nowrap">{{ caseActionText }} {{- ((" for " + (appointment.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
               {% endif %}
             </td>

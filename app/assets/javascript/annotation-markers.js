@@ -474,14 +474,15 @@
           !ann.levelOfConcern
         // hasValidationError is true when we know the page has been submitted with errors
         // and this annotation is missing at least one required field
-        var missingOtherDetails = ann.abnormalityTypes &&
+        var missingOtherDetails =
+          ann.abnormalityTypes &&
           ann.abnormalityTypes.includes('Other') &&
           !ann.otherDetails
-        var hasValidationError = showIncompleteErrors && (
-          !(ann.abnormalityTypes && ann.abnormalityTypes.length) ||
-          !ann.levelOfConcern ||
-          missingOtherDetails
-        )
+        var hasValidationError =
+          showIncompleteErrors &&
+          (!(ann.abnormalityTypes && ann.abnormalityTypes.length) ||
+            !ann.levelOfConcern ||
+            missingOtherDetails)
         var typeLabel = 'Type not set'
         if (ann.abnormalityTypes && ann.abnormalityTypes.length) {
           typeLabel = Array.isArray(ann.abnormalityTypes)
@@ -911,15 +912,19 @@
       var formGroup = input.closest('.nhsuk-form-group')
       if (!formGroup) return
       formGroup.classList.add('nhsuk-form-group--error')
-      var existing = formGroup.querySelector('.nhsuk-error-message[data-js-modal-error]')
+      var existing = formGroup.querySelector(
+        '.nhsuk-error-message[data-js-modal-error]'
+      )
       if (existing) {
-        existing.innerHTML = '<span class="nhsuk-u-visually-hidden">Error:</span> ' + errorText
+        existing.innerHTML =
+          '<span class="nhsuk-u-visually-hidden">Error:</span> ' + errorText
         return
       }
       var errorMsg = document.createElement('span')
       errorMsg.className = 'nhsuk-error-message'
       errorMsg.setAttribute('data-js-modal-error', 'true')
-      errorMsg.innerHTML = '<span class="nhsuk-u-visually-hidden">Error:</span> ' + errorText
+      errorMsg.innerHTML =
+        '<span class="nhsuk-u-visually-hidden">Error:</span> ' + errorText
       // Insert after legend (fieldset groups) or label (single inputs)
       var fieldset = formGroup.querySelector('fieldset')
       var insertParent = fieldset || formGroup
@@ -934,12 +939,16 @@
     // Remove all JS-injected modal errors and error classes
     function clearModalErrors() {
       if (!annModal) return
-      annModal.querySelectorAll('.nhsuk-error-message[data-js-modal-error]').forEach(function (em) {
-        em.remove()
-      })
-      annModal.querySelectorAll('.nhsuk-form-group--error').forEach(function (fg) {
-        fg.classList.remove('nhsuk-form-group--error')
-      })
+      annModal
+        .querySelectorAll('.nhsuk-error-message[data-js-modal-error]')
+        .forEach(function (em) {
+          em.remove()
+        })
+      annModal
+        .querySelectorAll('.nhsuk-form-group--error')
+        .forEach(function (fg) {
+          fg.classList.remove('nhsuk-form-group--error')
+        })
     }
 
     function openModal(annId) {
@@ -1005,7 +1014,10 @@
       // missing required fields, show field-level errors in the modal immediately
       if (showIncompleteErrors && ann) {
         if (!ann.abnormalityTypes || !ann.abnormalityTypes.length) {
-          showModalFieldError('abnormalityTypes', 'Select at least one abnormality type')
+          showModalFieldError(
+            'abnormalityTypes',
+            'Select at least one abnormality type'
+          )
         }
         if (!ann.levelOfConcern) {
           showModalFieldError('levelOfConcern', 'Select a level of concern')
@@ -1070,11 +1082,17 @@
       clearModalErrors()
       var hasErrors = false
       if (!savedTypes.length) {
-        showModalFieldError('abnormalityTypes', 'Select at least one abnormality type')
+        showModalFieldError(
+          'abnormalityTypes',
+          'Select at least one abnormality type'
+        )
         hasErrors = true
       }
       if (savedTypes.includes('Other') && !savedOtherDetails) {
-        showModalFieldError('otherDetails', 'Provide details for other abnormality type')
+        showModalFieldError(
+          'otherDetails',
+          'Provide details for other abnormality type'
+        )
         hasErrors = true
       }
       if (!savedLevelOfConcern) {
@@ -1101,12 +1119,19 @@
     // After a successful save, clear server-rendered error state for a breast side
     // if all its annotations are now complete.
     function clearSideErrors(side) {
-      var sideAnnotations = annotations.filter(function (a) { return a.side === side })
+      var sideAnnotations = annotations.filter(function (a) {
+        return a.side === side
+      })
       var hasIncomplete = sideAnnotations.some(function (a) {
-        var missingOther = a.abnormalityTypes &&
+        var missingOther =
+          a.abnormalityTypes &&
           a.abnormalityTypes.includes('Other') &&
           !a.otherDetails
-        return !(a.abnormalityTypes && a.abnormalityTypes.length) || !a.levelOfConcern || missingOther
+        return (
+          !(a.abnormalityTypes && a.abnormalityTypes.length) ||
+          !a.levelOfConcern ||
+          missingOther
+        )
       })
       if (hasIncomplete) return
 
@@ -1114,7 +1139,9 @@
       var section = document.getElementById(side + '-annotations')
       if (section) {
         section.classList.remove('app-annotation-section--error')
-        var sectionError = section.querySelector('.app-annotation-section__error-message')
+        var sectionError = section.querySelector(
+          '.app-annotation-section__error-message'
+        )
         if (sectionError) sectionError.remove()
       }
 
@@ -1131,7 +1158,9 @@
       // Remove the corresponding item from the page error summary
       var errorSummary = document.querySelector('.nhsuk-error-summary__list')
       if (errorSummary) {
-        var summaryLink = errorSummary.querySelector('a[href="#' + side + '-annotations"]')
+        var summaryLink = errorSummary.querySelector(
+          'a[href="#' + side + '-annotations"]'
+        )
         if (summaryLink) {
           var listItem = summaryLink.closest('li')
           if (listItem) listItem.remove()
@@ -1607,7 +1636,10 @@
 
     // Sidebar delegation
     container.addEventListener('click', function (e) {
-      if (e.target.closest('.app-ann-v2__sidebar-scroll') || e.target.closest('[data-annotation-add-button]')) {
+      if (
+        e.target.closest('.app-ann-v2__sidebar-scroll') ||
+        e.target.closest('[data-annotation-add-button]')
+      ) {
         handleSidebarClick(e)
       }
     })

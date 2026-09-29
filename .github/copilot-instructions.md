@@ -1,6 +1,6 @@
 # Working on this prototype
 
-A prototype of Manage breast screening, an NHS service for running screening clinics and reading mammograms. Built on the NHS prototype kit: Node, Express, Nunjucks and NHS.UK Frontend. It is heavily data driven: realistic seed data is generated daily and populates almost every page.
+A prototype of Run breast screening in England (Rubie), an NHS service for running screening clinics and reading mammograms. Built on the NHS prototype kit: Node, Express, Nunjucks and NHS.UK Frontend. It is heavily data driven: realistic seed data is generated daily and populates almost every page.
 
 Read [docs/domain.md](../docs/domain.md) before working on views or content. The docs index at the end of this file says what else to read and when.
 
@@ -32,7 +32,7 @@ This is an advanced prototype, so some things differ from a plain prototype kit 
 These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/routing-and-forms.md) has the detail.
 
 - **Form data saves itself.** Every POST or GET field is merged into `req.session.data` by its `name` before any route runs. A form can post straight to the next page. Never write a route whose only job is to receive a form.
-- **Read submitted values from `req.session.data`, never `req.body`.**
+- **Read submitted values from `req.session.data`, not `req.body`.** The two exceptions are in routing-and-forms.md.
 - **Pages under `/participants/:id/`, `/clinics/:id/appointments/:id/` and the reading workflow are served by dynamic routing.** Add a template, not a route. The middleware has already loaded `participant`, `appointment`, `clinic`, `episode` and URL locals such as `appointmentUrl`.
 - **Write a route only for branching, saving, validation or real processing**, in the area's file under `app/routes/`, posting to a separate URL and finishing with `res.redirect()`.
 - **Use the referrer filters for "return to where I came from"**: `urlWithReferrer` to go deeper, `getReturnUrl` to come back, `appendReferrer` to extend the chain. Never build `?returnTo=` or `?referrerChain=` by hand. See [docs/referrers.md](../docs/referrers.md).
@@ -74,6 +74,7 @@ These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/rou
 
 - Implement only what is asked. Suggest improvements rather than making them
 - If a request is ambiguous or too broad, ask or propose a narrower reading before starting
+- Number questions and decisions you put to the user, so they can answer by number. Give your recommendation for each
 - Say what changed and what remains after each unit of work
 - Do not claim something works until it has been checked in the running app. When fixing a bug, verify the fix
 - One task per chat. Long chats lose track of earlier instructions and of these conventions. When a task is done, or the chat has become long, suggest starting a new chat
@@ -99,19 +100,19 @@ Copilot applies the guides in `.github/instructions/` automatically when editing
 
 Read the doc before working in its area. [docs/README.md](../docs/README.md) has the same list with more detail.
 
-| Doc | Read when |
-|---|---|
-| [domain.md](../docs/domain.md) | Any view or content work; anything touching screening concepts |
-| [routing-and-forms.md](../docs/routing-and-forms.md) | Adding a page, form or route |
-| [referrers.md](../docs/referrers.md) | Any link or form that returns the user somewhere |
-| [data-conventions.md](../docs/data-conventions.md) | Reading or changing participants, clinics, appointments, episodes |
-| [utils-filter-reference.md](../docs/utils-filter-reference.md) | Before writing any data or display logic |
-| [validation.md](../docs/validation.md) | Adding form validation or error messages |
-| [modal-system.md](../docs/modal-system.md) | Forms that open in a modal |
-| [filtering.md](../docs/filtering.md) | Index pages with filter panels |
-| [image-reading.md](../docs/image-reading.md) | Anything in the reading workflow or reading data |
-| [pacs-viewer.md](../docs/pacs-viewer.md) | The mammogram viewer window and image sets |
-| [data-generator-reference.md](../docs/data-generator-reference.md) | Changing how seed data is generated |
-| [medical-information-generator.md](../docs/medical-information-generator.md) | Medical history, symptoms and other medical information data |
-| [review-checklist.md](../docs/review-checklist.md) | Reviewing a change before it is committed or merged |
-| [testing.md](../docs/testing.md) | Running or adding to the smoke suite |
+| Doc                                                                          | Read when                                                         |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| [domain.md](../docs/domain.md)                                               | Any view or content work; anything touching screening concepts    |
+| [routing-and-forms.md](../docs/routing-and-forms.md)                         | Adding a page, form or route                                      |
+| [referrers.md](../docs/referrers.md)                                         | Any link or form that returns the user somewhere                  |
+| [data-conventions.md](../docs/data-conventions.md)                           | Reading or changing participants, clinics, appointments, episodes |
+| [utils-filter-reference.md](../docs/utils-filter-reference.md)               | Before writing any data or display logic                          |
+| [validation.md](../docs/validation.md)                                       | Adding form validation or error messages                          |
+| [modal-system.md](../docs/modal-system.md)                                   | Forms that open in a modal                                        |
+| [filtering.md](../docs/filtering.md)                                         | Index pages with filter panels                                    |
+| [image-reading.md](../docs/image-reading.md)                                 | Anything in the reading workflow or reading data                  |
+| [pacs-viewer.md](../docs/pacs-viewer.md)                                     | The mammogram viewer window and image sets                        |
+| [data-generator-reference.md](../docs/data-generator-reference.md)           | Changing how seed data is generated                               |
+| [medical-information-generator.md](../docs/medical-information-generator.md) | Medical history, symptoms and other medical information data      |
+| [review-checklist.md](../docs/review-checklist.md)                           | Reviewing a change before it is committed or merged               |
+| [testing.md](../docs/testing.md)                                             | Running or adding to the smoke suite                              |

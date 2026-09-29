@@ -1,4 +1,3 @@
-{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
 {# app/views/_includes/episodes/reading-cases-table.njk
 
    One row per reading case - one set of images read. Shared by past and live
@@ -7,6 +6,7 @@
 
    The individual reads deliberately aren't here. They belong on the case view,
    which is where a reader goes to see who said what. #}
+{% from "_includes/reading/case-outcome-tag.njk" import caseOutcomeTag with context %}
 
 {% set tableRows = [] %}
 {% for readingCase in episode.readingCases %}

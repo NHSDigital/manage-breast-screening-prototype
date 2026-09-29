@@ -5,7 +5,9 @@
 // into each one. Kept outside the entry point glob in app.js so it isn't built
 // on its own.
 
-export const fetchOptions = { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
+export const fetchOptions = {
+  headers: { 'X-Requested-With': 'XMLHttpRequest' }
+}
 
 // Swap target for the fragment contained in html, verifying the ids match
 // so an unexpected response (eg a redirect to a full page) never gets

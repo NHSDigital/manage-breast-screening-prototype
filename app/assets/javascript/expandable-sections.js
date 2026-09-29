@@ -132,8 +132,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Mark all sections as completed
       sections.forEach(function (section, index) {
         const sectionId = section.getAttribute('id')
-        const isBreastFeaturesSection =
-          sectionId === BREAST_FEATURES_SECTION_ID
+        const isBreastFeaturesSection = sectionId === BREAST_FEATURES_SECTION_ID
 
         // Add to completed set
         completedSections.add(index)

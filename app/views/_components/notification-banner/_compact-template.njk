@@ -52,7 +52,7 @@
         <div class="app-notification-banner--compact__content {{ "app-notification-banner--compact__content--no-title" if not titleContent }}">
           {%- if params.html %}
             {{ params.html | safe }}
-          {%- elif params.text %}
+          {%- elseif params.text %}
             {{ params.text }}
           {%- endif %}
         </div>

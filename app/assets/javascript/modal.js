@@ -1,3 +1,4 @@
+// app/assets/javascript/modal.js
 import { initAll } from '/nhsuk-frontend/nhsuk-frontend.min.js'
 
 class AppModal {

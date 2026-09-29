@@ -227,8 +227,9 @@ const rowMatchesQuery = (row, query) => {
   const needle = query.toLowerCase().replace(/\s+/g, '')
   if (!needle) return true
 
-  const postcode = (row.participant.demographicInformation?.address?.postcode ||
-    '')
+  const postcode = (
+    row.participant.demographicInformation?.address?.postcode || ''
+  )
     .toLowerCase()
     .replace(/\s+/g, '')
   const sxNumber = (row.participant.sxNumber || '')
@@ -283,9 +284,7 @@ const PARTICIPANT_FILTER_GROUPS = [
     ],
     matches: (row, values) =>
       values.some((value) =>
-        value === 'yes'
-          ? row.hasSpecialAppointment
-          : !row.hasSpecialAppointment
+        value === 'yes' ? row.hasSpecialAppointment : !row.hasSpecialAppointment
       )
   },
   {
@@ -373,7 +372,8 @@ const SORT_DEFINITIONS = [
     name: 'nextAppointment',
     labels: ['Next appointment (soonest)', 'Next appointment (latest)'],
     isMissing: (row) => !row.nextAppointmentDate,
-    compare: (a, b) => compareDates(a.nextAppointmentDate, b.nextAppointmentDate)
+    compare: (a, b) =>
+      compareDates(a.nextAppointmentDate, b.nextAppointmentDate)
   },
   {
     name: 'age',

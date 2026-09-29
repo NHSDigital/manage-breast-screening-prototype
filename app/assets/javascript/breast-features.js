@@ -8,7 +8,8 @@ function initializeBreastFeatures() {
   const config = window.breastFeaturesConfig || {}
   const readOnly = config.readOnly || false
   const hiddenFieldName =
-    config.hiddenFieldName || 'appointment[medicalInformation][breastFeaturesRaw]'
+    config.hiddenFieldName ||
+    'appointment[medicalInformation][breastFeaturesRaw]'
   const hiddenFieldId = config.hiddenFieldId || 'breastFeaturesRaw'
   const existingFeatures = config.existingFeatures || []
   const featureTypes = config.featureTypes || [
@@ -1017,11 +1018,11 @@ function initializeBreastFeatures() {
     }
 
     if (allFeatures.length === 0) {
-      featuresListContainer.style.display = 'none'
+      featuresListContainer.hidden = true
       return
     }
 
-    featuresListContainer.style.display = 'block'
+    featuresListContainer.hidden = false
     featuresList.innerHTML = ''
 
     allFeatures.sort((a, b) => a.number - b.number)

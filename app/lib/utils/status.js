@@ -233,28 +233,28 @@ const STATUS_TAGS = {
     // Reading case states (READING_CASE_STATES in reading-cases.js) - where one
     // set of images has got to. The entries below them are the older
     // appointment- and group-level vocabulary.
-    'awaiting_first_read': { label: 'Awaiting 1st read', colour: 'grey' },
-    'awaiting_second_read': { label: 'Awaiting 2nd read', colour: 'grey' },
-    'awaiting_finalisation': {
+    awaiting_first_read: { label: 'Awaiting 1st read', colour: 'grey' },
+    awaiting_second_read: { label: 'Awaiting 2nd read', colour: 'grey' },
+    awaiting_finalisation: {
       label: 'Awaiting finalisation',
       colour: 'grey'
     },
-    'awaiting_arbitration': { label: 'Awaiting arbitration', colour: 'purple' },
-    'in_arbitration': { label: 'In arbitration', colour: 'purple' },
-    'concluded': { label: 'Concluded', colour: 'green' },
-    'not_started': { colour: 'grey' },
-    'skipped': { colour: 'grey' },
-    'previously_skipped': { colour: 'grey' },
-    'not_read': { colour: 'white' },
-    'not_arbitrated': { colour: 'white' },
-    'complete': { colour: 'green' },
-    'partial_first_read': { colour: 'blue' },
-    'first_read_complete': { colour: 'blue' },
-    'partial_second_read': { colour: 'blue' },
-    'mixed_reads': { colour: 'blue' },
-    'no_appointments': { colour: 'grey' },
-    'first_read': { colour: 'blue' },
-    'second_read': { colour: 'blue' }
+    awaiting_arbitration: { label: 'Awaiting arbitration', colour: 'purple' },
+    in_arbitration: { label: 'In arbitration', colour: 'purple' },
+    concluded: { label: 'Concluded', colour: 'green' },
+    not_started: { colour: 'grey' },
+    skipped: { colour: 'grey' },
+    previously_skipped: { colour: 'grey' },
+    not_read: { colour: 'white' },
+    not_arbitrated: { colour: 'white' },
+    complete: { colour: 'green' },
+    partial_first_read: { colour: 'blue' },
+    first_read_complete: { colour: 'blue' },
+    partial_second_read: { colour: 'blue' },
+    mixed_reads: { colour: 'blue' },
+    no_appointments: { colour: 'grey' },
+    first_read: { colour: 'blue' },
+    second_read: { colour: 'blue' }
   },
   // External prior mammogram request tracking (episode.priors)
   priorsRequest: {

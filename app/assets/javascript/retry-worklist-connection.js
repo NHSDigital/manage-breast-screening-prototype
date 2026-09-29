@@ -64,7 +64,7 @@
           second: '2-digit'
         })
         retryTimeSpan.textContent = timeString
-        failureMessage.style.display = ''
+        failureMessage.hidden = false
       }
 
       resetButton()
