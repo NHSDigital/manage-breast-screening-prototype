@@ -21,7 +21,7 @@
     <td class="nhsuk-table__cell">
       <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullNameReversed }}</p>
       <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-1">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}</p>
-      <p class="nhsuk-u-margin-bottom-0"><a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a></p>
+      <p class="nhsuk-u-margin-bottom-0 app-nowrap"><a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a></p>
     </td>
     <td class="nhsuk-table__cell">
       {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
