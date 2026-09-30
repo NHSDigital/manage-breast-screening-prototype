@@ -144,6 +144,11 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     color: $app-dark-mode-text-colour-secondary;
   }
 
+  // The utility sets its colour with !important, so it needs the same here
+  .nhsuk-u-secondary-text-colour {
+    color: $app-dark-mode-text-colour-secondary !important;
+  }
+
   // Links and link type things
   a,
   .app-secondary-navigation__link,
@@ -426,6 +431,11 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     }
   }
 
+  // Translucent so stripes stay subtle on both the page background and cards
+  .nhsuk-table--striped .nhsuk-table__body .nhsuk-table__row:nth-child(odd) {
+    background-color: rgba($app-dark-mode-white, 0.08);
+  }
+
   // Reading session: highlighted “next case” row uses card surface colour so it
   // appears as a raised grey slab on top of the dark background
   .app-placeholder-row--next td {
@@ -433,7 +443,7 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
   }
 
   // Reading session: placeholder rectangle for pending lazy-session slots
-  .app-placeholder-tag {
+  .app-placeholder-row .app-placeholder-tag {
     background-color: nhsuk-shade($app-dark-mode-text-colour, 60%);
   }
 

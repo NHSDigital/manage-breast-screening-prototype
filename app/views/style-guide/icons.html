@@ -27,9 +27,18 @@
 <div class="sg-example">
   {% set customIconRows = [] %}
   {% for icon in [
-    { name: "alert", usage: "Warning — triangular alert shape" },
-    { name: "warning", usage: "Caution — circular exclamation mark" },
-    { name: "information", usage: "Info — circular ‘i’ symbol" }
+    {
+      name: "alert",
+      usage: "Warning — triangular alert shape"
+    },
+    {
+      name: "warning",
+      usage: "Caution — circular exclamation mark"
+    },
+    {
+      name: "information",
+      usage: "Info — circular ‘i’ symbol"
+    }
   ] %}
     {% set customIconRows = customIconRows | push([
       {

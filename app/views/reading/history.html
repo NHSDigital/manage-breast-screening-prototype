@@ -251,7 +251,7 @@
         },
         {
           html: readerHtml
-        } if view == 'all',
+        } if view == 'all' else undefined,
         {
           text: readTypeText,
           classes: "app-nowrap"
@@ -280,7 +280,7 @@
         },
         {
           text: "Reader"
-        } if view == 'all',
+        } if view == 'all' else undefined,
         {
           text: "Read type"
         },

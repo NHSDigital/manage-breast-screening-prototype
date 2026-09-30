@@ -96,6 +96,13 @@
 
       <h2 class="">Available reports</h2>
 
+      {% set clinicSummaryLinkHtml %}
+        <a href="#">Download<span class="nhsuk-u-visually-hidden"> clinic summary</span></a>
+      {% endset %}
+      {% set outcomesReportLinkHtml %}
+        <a href="#">Download<span class="nhsuk-u-visually-hidden"> outcomes report</span></a>
+      {% endset %}
+
       {{ table({
         compact: true,
         striped: true,
@@ -119,7 +126,7 @@
               text: "CSV"
             },
             {
-              html: '<a href="#">Download<span class="nhsuk-u-visually-hidden"> Clinic Summary PDF</span></a>'
+              html: clinicSummaryLinkHtml
             }
           ],
           [
@@ -130,7 +137,7 @@
               text: "CSV"
             },
             {
-              html: '<a href="#">Download<span class="nhsuk-u-visually-hidden"> Outcomes Report Excel</span></a>'
+              html: outcomesReportLinkHtml
             }
           ]
         ]
