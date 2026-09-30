@@ -2,7 +2,7 @@
 
 // ES6 or Vanilla JavaScript
 
-import { swapFragment } from './fragment-actions.js'
+import { swapFragment } from './lib/fragments.js'
 
 document.addEventListener('DOMContentLoaded', () => {
   // Inline check-in without a page reload. The server responds with the
