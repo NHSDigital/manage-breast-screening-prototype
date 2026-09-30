@@ -13,7 +13,7 @@
 {# The modal layout wraps content in a data-form-action container - this wires
    both adopt buttons to the adopt endpoint; the clicked button carries the
    reader id #}
-{% set formAction = "./arbitration-adopt-read" %}
+{% set formAction = "./arbitration-adopt-read" | urlWithReferrer(referrerChain) %}
 
 {% block pageContent %}
 

@@ -142,7 +142,7 @@
 
   {% set keepActionHtml %}
     <div class="app-reading-compare-card__action app-reading-compare-card__action--{{ sideBySideCardActionPosition }}">
-      <form action="./compare-answer" method="post" class="app-reading-compare-card__action-form">
+      <form action="{{ './compare-answer' | urlWithReferrer(referrerChain) }}" method="post" class="app-reading-compare-card__action-form">
         <input type="hidden" name="compareDecision" value="keep">
         {% if secondOpinion == "normal" %}
           <input type="hidden" name="imageReadingTemp[wantsNormalDetails]" value="{{ "true" if secondOpinionNeedsDetails else "false" }}">
@@ -170,7 +170,7 @@
 
   {% set adoptActionHtml %}
     <div class="app-reading-compare-card__action app-reading-compare-card__action--{{ sideBySideCardActionPosition }}">
-      <form action="./compare-answer" method="post" class="app-reading-compare-card__action-form">
+      <form action="{{ './compare-answer' | urlWithReferrer(referrerChain) }}" method="post" class="app-reading-compare-card__action-form">
         <input type="hidden" name="compareDecision" value="adopt">
         {{ button({
           text: "Use their details" if comparisonType == "agreeing" else "Change to this opinion",
@@ -256,7 +256,7 @@
 
       {% if cardLayout == 'stacked' %}
 
-      <form action="./compare-answer" method="POST">
+      <form action="{{ './compare-answer' | urlWithReferrer(referrerChain) }}" method="POST">
 
         {# Build radio options based on comparison type and detail state #}
         {% set radioItems = [] %}
