@@ -79,25 +79,26 @@
   {% macro sideRadios(name, idPrefix, region) %}
     {{ radios({
       name: name,
+      value: "Both",
       idPrefix: idPrefix,
       fieldset: {
         legend: {
-          text: "Which side?",
+          text: "Which axilla?" if region == "axilla" else "Which breast?",
           size: "s"
         }
       },
       items: [
         {
           value: "Both",
-          text: "Both axillae" if region == "axilla" else "Both"
+          text: "Both"
         },
         {
           value: "Right",
-          text: "Right axilla only" if region == "axilla" else "Right breast only"
+          text: "Right only"
         },
         {
           value: "Left",
-          text: "Left axilla only" if region == "axilla" else "Left breast only"
+          text: "Left only"
         }
       ]
     }) }}
@@ -136,7 +137,7 @@
     fieldset: {
       legend: {
         text: "Other surgery",
-        size: "s"
+        size: "m"
       }
     },
     items: [
@@ -170,7 +171,7 @@
     fieldset: {
       legend: {
         text: "Treatment",
-        size: "s"
+        size: "m"
       }
     },
     items: [
@@ -198,7 +199,18 @@
       },
       {
         value: "Other",
-        text: "Other"
+        text: "Other",
+        conditional: {
+          html: input({
+            label: {
+              text: "Provide details",
+              size: "s"
+            },
+            name: "appointment[medicalHistoryTemp][otherTreatmentDetails]",
+            value: appointment.medicalHistoryTemp.otherTreatmentDetails,
+            id: "other-treatment-details"
+          })
+        }
       }
     ]
   }) }}
