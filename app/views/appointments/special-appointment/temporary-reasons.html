@@ -31,6 +31,7 @@
 
   {% if checkboxItems | length > 0 %}
     {{ checkboxes({
+      small: true,
       name: "appointment[specialAppointment][temporaryReasonsList]",
       values: appointment.specialAppointment.temporaryReasonsList, 
       fieldset: {

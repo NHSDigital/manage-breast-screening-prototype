@@ -27,6 +27,7 @@
   {% set breastDetailsHtml %}
 
     {{ radios({
+      small: true,
       idPrefix: params.side + "-breastAssessment",
       name: "imageReadingTemp[" + params.side + "][breastAssessment]",
       value: data.imageReadingTemp[params.side].breastAssessment,

@@ -56,6 +56,8 @@
 
       {% set pastDayContent %}  
         {{ table({
+          compact: true,
+          striped: true,
           responsive: true,
           panel: false,
           caption: "Past day",
@@ -118,6 +120,8 @@
         }) }} 
       {% endset -%} {% set pastWeekContent %}
         {{ table({
+          compact: true,
+          striped: true,
           responsive: true,
           panel: false,
           caption: "Past week",
@@ -180,6 +184,8 @@
         }) }} 
       {% endset -%} {% set pastMonthContent %}
         {{ table({
+          compact: true,
+          striped: true,
           responsive: true,
           panel: false,
           caption: "Past month",
@@ -242,6 +248,8 @@
         }) }} 
       {% endset -%} {% set pastYearContent %}
         {{ table({
+          compact: true,
+          striped: true,
           responsive: true,
           panel: false,
           caption: "Past year",

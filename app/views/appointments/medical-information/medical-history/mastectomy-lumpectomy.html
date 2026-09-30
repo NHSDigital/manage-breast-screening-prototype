@@ -23,6 +23,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
       {{ radios({
+        small: true,
         name: "appointment[medicalHistoryTemp][proceduresRightBreast]",
         value: appointment.medicalHistoryTemp.proceduresRightBreast,
         idPrefix: "proceduresRightBreast",
@@ -62,6 +63,7 @@
     </div>
     <div class="nhsuk-grid-column-one-half">
       {{ radios({
+        small: true,
         name: "appointment[medicalHistoryTemp][proceduresLeftBreast]",
         value: appointment.medicalHistoryTemp.proceduresLeftBreast,
         idPrefix: "proceduresLeftBreast",
@@ -111,6 +113,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-one-half">
       {{ checkboxes({
+        small: true,
         name: "appointment[medicalHistoryTemp][otherSurgeryRightBreast]",
         values: appointment.medicalHistoryTemp.otherSurgeryRightBreast,
         idPrefix: "otherSurgeryRightBreast",
@@ -148,6 +151,7 @@
     </div>
     <div class="nhsuk-grid-column-one-half">
       {{ checkboxes({
+        small: true,
         name: "appointment[medicalHistoryTemp][otherSurgeryLeftBreast]",
         values: appointment.medicalHistoryTemp.otherSurgeryLeftBreast,
         idPrefix: "otherSurgeryLeftBreast",
@@ -198,6 +202,7 @@
     }) }}
   {% endset %}
   {{ radios({
+    small: true,
     name: "appointment[medicalHistoryTemp][mastectomyLumpectomySurgeryReason]",
     value: appointment.medicalHistoryTemp.mastectomyLumpectomySurgeryReason,
     idPrefix: "mastectomyLumpectomySurgeryReason",

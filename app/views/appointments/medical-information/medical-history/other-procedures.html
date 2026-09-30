@@ -8,6 +8,7 @@
 {% block formContent %}
 
   {{ radios({
+    small: true,
     name: "appointment[medicalHistoryTemp][type]",
     value: appointment.medicalHistoryTemp.type,
     fieldset: {

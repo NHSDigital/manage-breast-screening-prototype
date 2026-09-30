@@ -47,6 +47,7 @@
 }) %}
 
 {{ checkboxes({
+  small: true,
   name: stoppedFieldsNamePrefix + "[stoppedReason]",
   idPrefix: "stoppedReason",
   values: stoppedFieldsValues.stoppedReason,
@@ -64,6 +65,7 @@
 } | populateErrors) }}
 
 {{ radios({
+  small: true,
   name: stoppedFieldsNamePrefix + "[needsReschedule]",
   idPrefix: "needsReschedule",
   value: stoppedFieldsValues.needsReschedule,

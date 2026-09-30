@@ -1,8 +1,7 @@
 // app/assets/sass/main.scss
 @use "sass:math";
 
-// Import NHS.UK frontend library
-// See main-compact.scss for the compact mode variant with a tighter spacing scale
+// Import NHS.UK frontend library with a tighter spacing scale
 @forward "nhsuk-frontend/dist/nhsuk/nhsuk" with (
   $nhsuk-page-width: 1280px,
 
@@ -17,7 +16,66 @@
       one-fifth: math.percentage(math.div(1, 5)),
       four-fifths: math.percentage(math.div(4, 5)),
       full: 100%
+    ),
+
+  $nhsuk-gutter: 24px,
+
+  // Points 0 to 3 stay at the NHS defaults, 4 to 9 are reduced
+  $nhsuk-spacing-points: (
+      0: 0,
+      1: 4px,
+      2: 8px,
+      3: 16px,
+      4: 20px,
+      5: 24px,
+      6: 32px,
+      7: 40px,
+      8: 48px,
+      9: 56px
+    ),
+
+  $nhsuk-spacing-responsive-scale: (
+    0: (
+      null: 0,
+      tablet: 0
+    ),
+    1: (
+      null: 4px,
+      tablet: 4px
+    ),
+    2: (
+      null: 8px,
+      tablet: 8px
+    ),
+    3: (
+      null: 8px,
+      tablet: 16px
+    ),
+    4: (
+      null: 16px,
+      tablet: 20px
+    ),
+    5: (
+      null: 16px,
+      tablet: 24px
+    ),
+    6: (
+      null: 24px,
+      tablet: 32px
+    ),
+    7: (
+      null: 32px,
+      tablet: 40px
+    ),
+    8: (
+      null: 40px,
+      tablet: 48px
+    ),
+    9: (
+      null: 48px,
+      tablet: 56px
     )
+  )
 );
 
 // All app component and utility styles

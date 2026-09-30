@@ -17,6 +17,7 @@
   </h1>
 
   {{ checkboxes({
+    small: true,
     name: "appointment[cancellation][reason]",
     values: appointment.cancellation.reason,
     fieldset: {
@@ -191,6 +192,7 @@
   } | populateErrors) }}
 
   {{ radios({
+    small: true,
     name: "appointment[cancellation][reschedule]",
     value: appointment.cancellation.reschedule,
     fieldset: {

@@ -23,13 +23,13 @@
 
   {# Table of appointments in one status group #}
   {% macro statusGroupTable(appointments, clinicId) %}
-    <table class="nhsuk-table app-clinic-appointments-table app-clinic-appointments-table--flush nhsuk-u-margin-bottom-0">
+    <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped app-clinic-appointments-table app-clinic-appointments-table--flush nhsuk-u-margin-bottom-0">
       <thead class="nhsuk-table__head">
-        <tr>
-          <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
-          <th class="nhsuk-table__header">Details</th>
-          <th class="nhsuk-table__header app-clinic-appointments-table__status-column">Status</th>
-          <th class="nhsuk-table__header app-clinic-appointments-table__actions-column">Actions</th>
+        <tr class="nhsuk-table__row">
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
+          <th scope="col" class="nhsuk-table__header">Details</th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__status-column">Status</th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__actions-column">Actions</th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">

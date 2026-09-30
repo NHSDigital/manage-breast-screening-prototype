@@ -75,6 +75,7 @@
         }) }}
 
         {{ checkboxes({
+          small: true,
           name: "questionnaire[treatments]",
           fieldset: {
             legend: {
@@ -114,6 +115,7 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "previousCancer",
         name: "questionnaire[previousCancer]",
         fieldset: {
@@ -140,6 +142,7 @@
 
       {# Current hormone therapy #}
       {{ radios({
+        small: true,
         idPrefix: "hormoneTherapy",
         name: "questionnaire[hormoneTherapy]",
         fieldset: {
@@ -172,6 +175,7 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "familyHistory",
         name: "questionnaire[familyHistory]",
         fieldset: {
@@ -235,6 +239,7 @@
         }) }}
 
         {{ radios({
+          small: true,
           idPrefix: "benignLumpExcision",
           name: "questionnaire[benignLumpExcision]",
           fieldset: {
@@ -265,6 +270,7 @@
       {% endset -%}
 
       {{ checkboxes({
+        small: true,
         name: "questionnaire[previousProcedures]",
         fieldset: {
           legend: {

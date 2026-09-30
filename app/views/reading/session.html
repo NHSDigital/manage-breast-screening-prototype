@@ -257,24 +257,25 @@
           <p class="nhsuk-body app-text-grey">Progress: {{ doneCount }} read{%- if readingStatus.userAwaitingPriorsCount > 0 -%}, {{ readingStatus.userAwaitingPriorsCount }} awaiting priors{%- endif -%}{%- if deferredCount > 0 -%}, {{ deferredCount }} deferred{%- endif -%}, {{ userSessionRemainingCount }} remaining</p>
         {% endif %}
 
-        <table class="nhsuk-table app-reading-session-table">
-          <thead>
-            <tr>
-              <th scope="col">No.</th>
-              <th scope="col">Participant</th>
-              <th scope="col">Screening date</th>
-              <th scope="col">Your opinion</th>
-              <th scope="col">Action</th>
+        <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped app-reading-session-table">
+          <thead class="nhsuk-table__head">
+            <tr class="nhsuk-table__row">
+              <th scope="col" class="nhsuk-table__header">No.</th>
+              <th scope="col" class="nhsuk-table__header">Participant</th>
+              <th scope="col" class="nhsuk-table__header">Screening date</th>
+              <th scope="col" class="nhsuk-table__header">Your opinion</th>
+              <th scope="col" class="nhsuk-table__header">Action</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody class="nhsuk-table__body">
             {% for appointment in userReadableAppointments %}
             {% set metadata = appointment.readingCase | getReadingMetadata(data.settings) %}
-            <tr{% if resumeAppointment and appointment.id == resumeAppointment.id and not (data | userHasReadAppointment(appointment)) %} class="app-placeholder-row--next"{% endif %}>
-              <td>
+            {% set isNextCase = resumeAppointment and appointment.id == resumeAppointment.id and not (data | userHasReadAppointment(appointment)) %}
+            <tr class="nhsuk-table__row{{ ' app-placeholder-row--next' if isNextCase }}">
+              <td class="nhsuk-table__cell">
                 <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
               </td>
-              <td>
+              <td class="nhsuk-table__cell">
                 {# What the user did with this case in the session: their read,
                    or the deferral or priors request standing in its place #}
                 {% set userWorkedCase = (data | userHasReadAppointment(appointment)) or (appointment.readingCase | isCaseDeferred) or (appointment | userRequestedPriors(data.currentUser.id)) %}
@@ -290,7 +291,7 @@
                 {% if appointment.medicalInformation.symptoms | length %}
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
                 {% endif %}
-                <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
+                <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-1">
                   {% set readCount = metadata.readCount %}
                   {% if data | userHasReadAppointment(appointment) %}
                     {{ "1st read" if readCount == 1 else "2nd read" }}
@@ -300,20 +301,20 @@
                 </span>
                 {% if (data.settings.debugMode | falsify) %}
                   {% if appointment | hasRecordedMammograms %}
-                    <br>{{ "Has priors" | toTag }}
+                    <span class="app-reading-case-tag">{{ "Has priors" | toTag }}</span>
                   {% endif %}
                   {% if appointment.mammogramData.metadata.hasAdditionalImages %}
-                    <br>{{ "Has additional" | toTag }}
+                    <span class="app-reading-case-tag">{{ "Has additional" | toTag }}</span>
                   {% endif %}
                   {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
-                     <br>{{ "Imperfect" | toTag }}
+                    <span class="app-reading-case-tag">{{ "Imperfect" | toTag }}</span>
                   {% endif %}
                   {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
-                     <br>{{ "Incomplete" | toTag }}
+                    <span class="app-reading-case-tag">{{ "Incomplete" | toTag }}</span>
                   {% endif %}
                 {% endif %}
               </td>
-              <td>
+              <td class="nhsuk-table__cell">
                 {% set daysSinceScreening = appointment.timing.startTime | daysSince %}
                 {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
                   {{ "Urgent" | toTag }}<br>
@@ -326,7 +327,7 @@
                   {{ appointment.timing.startTime | formatRelativeDate }}
                 </span>
               </td>
-              <td>
+              <td class="nhsuk-table__cell">
                 {% set isDone = data | userHasReadAppointment(appointment) %}
 {% if isDone %}
                   {% set read = appointment.readingCase | getReadForUser(data.currentUser.id) %}
@@ -343,8 +344,8 @@
                   {{ "Not read" | toTag }}
                 {% endif %}
               </td>
-              <td class="app-placeholder-action-cell">
-                {% if resumeAppointment and appointment.id == resumeAppointment.id and not (data | userHasReadAppointment(appointment)) %}
+              <td class="nhsuk-table__cell app-placeholder-action-cell">
+                {% if isNextCase %}
                   <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
                 {% else %}
                   {# The link says what opening the case will do, with the name
@@ -363,19 +364,19 @@
             {# Placeholder rows for pending lazy session slots #}
             {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
             {% for i in range(0, placeholderRowsShown) %}
-            <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeAppointment and pendingCount > 3 and loop.last }}">
-              <td>
+            <tr class="nhsuk-table__row app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeAppointment and pendingCount > 3 and loop.last }}">
+              <td class="nhsuk-table__cell">
                 <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (userReadableAppointments | length) + loop.index }}.</span>
               </td>
-              <td>
+              <td class="nhsuk-table__cell">
                 <span class="app-placeholder-tag"></span>
                 {% if resumeAppointment and pendingCount > 3 and loop.last %}
                   <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
                 {% endif %}
               </td>
-              <td></td>
-              <td></td>
-              <td></td>
+              <td class="nhsuk-table__cell"></td>
+              <td class="nhsuk-table__cell"></td>
+              <td class="nhsuk-table__cell"></td>
             </tr>
             {% endfor %}
           </tbody>
@@ -469,26 +470,26 @@
 
       <h2>Reading session cases</h2>
 
-      <table class="nhsuk-table app-reading-session-table">
-        <thead>
-          <tr>
-            <th scope="col">No.</th>
-            <th scope="col">Participant</th>
-            <th scope="col">Screening date</th>
-            <th scope="col">1st read</th>
-            <th scope="col">2nd read</th>
-            <th scope="col">Outcome</th>
-            <th scope="col">Action</th>
+      <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped app-reading-session-table">
+        <thead class="nhsuk-table__head">
+          <tr class="nhsuk-table__row">
+            <th scope="col" class="nhsuk-table__header">No.</th>
+            <th scope="col" class="nhsuk-table__header">Participant</th>
+            <th scope="col" class="nhsuk-table__header">Screening date</th>
+            <th scope="col" class="nhsuk-table__header">1st read</th>
+            <th scope="col" class="nhsuk-table__header">2nd read</th>
+            <th scope="col" class="nhsuk-table__header">Outcome</th>
+            <th scope="col" class="nhsuk-table__header">Action</th>
           </tr>
         </thead>
-        <tbody>
+        <tbody class="nhsuk-table__body">
           {% for appointment in appointments %}
             {% set metadata = appointment.readingCase | getReadingMetadata(data.settings) %}
-            <tr>
-              <td>
+            <tr class="nhsuk-table__row">
+              <td class="nhsuk-table__cell">
                 <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
               </td>
-              <td>
+              <td class="nhsuk-table__cell">
                 {# What the user did with this case in the session: their read,
                    or the deferral or priors request standing in its place #}
                 {% set userWorkedCase = (data | userHasReadAppointment(appointment)) or (appointment.readingCase | isCaseDeferred) or (appointment | userRequestedPriors(data.currentUser.id)) %}
@@ -505,24 +506,24 @@
                   <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
                 {% endif %}
                 {% if appointment | awaitingPriors %}
-                  {{ "Awaiting priors" | toTag }}
+                  <span class="app-reading-case-tag">{{ "Awaiting priors" | toTag }}</span>
                 {% endif %}
                 {% if (data.settings.debugMode | falsify) %}
                   {% if appointment | hasRecordedMammograms %}
-                    <br>{{ "Has priors" | toTag }}
+                    <span class="app-reading-case-tag">{{ "Has priors" | toTag }}</span>
                   {% endif %}
                   {% if appointment.mammogramData.metadata.hasAdditionalImages %}
-                    <br>{{ "Has additional" | toTag }}
+                    <span class="app-reading-case-tag">{{ "Has additional" | toTag }}</span>
                   {% endif %}
                   {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
-                    <br>{{ "Imperfect" | toTag }}
+                    <span class="app-reading-case-tag">{{ "Imperfect" | toTag }}</span>
                   {% endif %}
                   {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
-                    <br>{{ "Incomplete" | toTag }}
+                    <span class="app-reading-case-tag">{{ "Incomplete" | toTag }}</span>
                   {% endif %}
                 {% endif %}
               </td>
-              <td>
+              <td class="nhsuk-table__cell">
                 {% set daysSinceScreening = appointment.timing.startTime | daysSince %}
                 {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
                   {{ "Urgent" | toTag }}
@@ -537,7 +538,7 @@
                 </span>
               </td>
               {# 1st read column #}
-              <td>
+              <td class="nhsuk-table__cell">
                 {% set isBlind = data.settings.reading.blindReading | falsify %}
                 {% set isCurrentUserRead = false %}
                 {% set allReads = appointment.readingCase | getReadsAsArray %}
@@ -562,7 +563,7 @@
                 {% endif %}
               </td>
               {# 2nd read column #}
-              <td>
+              <td class="nhsuk-table__cell">
                 {% set isBlind = data.settings.reading.blindReading | falsify %}
                 {% set isCurrentUserRead = false %}
 
@@ -586,10 +587,10 @@
                 {% endif %}
               </td>
               {# Outcome column — the case state respects the site's arbitration policy #}
-              <td>
+              <td class="nhsuk-table__cell">
                 {{ caseOutcomeTag(appointment.readingCase) }}
               </td>
-              <td class="app-placeholder-action-cell">
+              <td class="nhsuk-table__cell app-placeholder-action-cell">
                 {# The link says what opening the case will do, with the name
                    hidden for screen readers so each row's link is distinct #}
                 {% if userWorkedCase %}
@@ -607,21 +608,21 @@
           {# Placeholder rows for pending lazy session slots #}
           {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
           {% for i in range(0, placeholderRowsShown) %}
-          <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeAppointment and pendingCount > 3 and loop.last }}">
-            <td>
+          <tr class="nhsuk-table__row app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeAppointment and pendingCount > 3 and loop.last }}">
+            <td class="nhsuk-table__cell">
               <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (appointments | length) + loop.index }}.</span>
             </td>
-            <td>
+            <td class="nhsuk-table__cell">
               <span class="app-placeholder-tag"></span>
               {% if resumeAppointment and pendingCount > 3 and loop.last %}
                 <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
               {% endif %}
             </td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td class="nhsuk-table__cell"></td>
+            <td class="nhsuk-table__cell"></td>
+            <td class="nhsuk-table__cell"></td>
+            <td class="nhsuk-table__cell"></td>
+            <td class="nhsuk-table__cell"></td>
           </tr>
           {% endfor %}
         </tbody>
