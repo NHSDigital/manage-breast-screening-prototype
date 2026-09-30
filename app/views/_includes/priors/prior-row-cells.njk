@@ -9,7 +9,7 @@
 
 {# Mammogram location and date, then the request story - who requested or
    actioned it, when, and the reader's reason #}
-<td>
+<td class="nhsuk-table__cell">
   {% if mammogram.requestStatus == "pending" %}
     {# Requested by a reader, so the request date is theirs #}
     {% set changedLabel = "Requested" %}
@@ -41,11 +41,11 @@
 </td>
 
 {# Status #}
-<td>
+<td class="nhsuk-table__cell">
   {{ mammogram.requestStatus | toTag({ vocabulary: "priorsRequest" }) }}
 </td>
 
 {# Actions - which are available depends on the current status #}
-<td style="vertical-align: top; text-align: left">
+<td class="nhsuk-table__cell" style="vertical-align: top; text-align: left">
   {% include "_includes/priors/prior-actions.njk" %}
 </td>

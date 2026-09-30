@@ -7,56 +7,68 @@
 
 {% if episodeHistory.length %}
 
-  <table class="nhsuk-table">
-    <thead class="nhsuk-table__head">
-      <tr>
-        <th scope="col">Screened</th>
-        <th scope="col">Closed</th>
-        <th scope="col">Type</th>
-        <th scope="col">Outcome</th>
-        <th scope="col">Episode</th>
-      </tr>
-    </thead>
-    <tbody class="nhsuk-table__body">
-      {% for row in episodeHistory %}
-        {% set episode = row.episode %}
-        <tr class="nhsuk-table__row">
-          <td class="nhsuk-table__cell">
-            {% if row.screenedDate %}
-              {{ row.screenedDate | formatDate }}
-            {% else %}
-              {{ "Not screened" | asHint }}
-            {% endif %}
-          </td>
-          <td class="nhsuk-table__cell">
-            {% if row.closedDate %}
-              {{ row.closedDate | formatDate }}
-            {% else %}
-              {{ "—" | asHint }}
-            {% endif %}
-          </td>
-          <td class="nhsuk-table__cell">
-            {{ episode.type | sentenceCase }}
-          </td>
-          <td class="nhsuk-table__cell">
-            {% if episode.outcome %}
-              {{ tag({
-                text: episode.outcome | getEpisodeOutcomeText,
-                colour: episode.outcome | getEpisodeOutcomeTagColour
-              }) }}
-            {% else %}
-              <span class="nhsuk-u-secondary-text-colour">Not yet</span>
-            {% endif %}
-          </td>
-          <td class="nhsuk-table__cell">
-            <a href="/participants/{{ episode.participantId }}/episodes/{{ episode.id }}">
-              View episode
-            </a>
-          </td>
-        </tr>
-      {% endfor %}
-    </tbody>
-  </table>
+  {% set tableRows = [] %}
+  {% for row in episodeHistory %}
+    {% set episode = row.episode %}
+
+    {% set outcomeHtml %}
+      {% if episode.outcome %}
+        {{ tag({
+          text: episode.outcome | getEpisodeOutcomeText,
+          colour: episode.outcome | getEpisodeOutcomeTagColour
+        }) }}
+      {% else %}
+        <span class="nhsuk-u-secondary-text-colour">Not yet</span>
+      {% endif %}
+    {% endset %}
+
+    {% set episodeLinkHtml %}
+      <a href="/participants/{{ episode.participantId }}/episodes/{{ episode.id }}">
+        View episode
+      </a>
+    {% endset %}
+
+    {% set tableRows = tableRows | push([
+      {
+        html: (row.screenedDate | formatDate) if row.screenedDate else ("Not screened" | asHint)
+      },
+      {
+        html: (row.closedDate | formatDate) if row.closedDate else ("—" | asHint)
+      },
+      {
+        text: episode.type | sentenceCase
+      },
+      {
+        html: outcomeHtml
+      },
+      {
+        html: episodeLinkHtml
+      }
+    ]) %}
+  {% endfor %}
+
+  {{ table({
+    compact: true,
+    striped: true,
+    head: [
+      {
+        text: "Screened"
+      },
+      {
+        text: "Closed"
+      },
+      {
+        text: "Type"
+      },
+      {
+        text: "Outcome"
+      },
+      {
+        text: "Episode"
+      }
+    ],
+    rows: tableRows
+  }) }}
 
 {% else %}
   <p>No previous screening episodes</p>

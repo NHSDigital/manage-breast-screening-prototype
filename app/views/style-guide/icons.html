@@ -25,32 +25,41 @@
 <p>These are inline SVGs defined directly in the component.</p>
 
 <div class="sg-example">
-  <table class="nhsuk-table">
-    <thead class="nhsuk-table__head">
-      <tr>
-        <th class="nhsuk-table__header">Name</th>
-        <th class="nhsuk-table__header">Icon</th>
-        <th class="nhsuk-table__header">Usage</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr class="nhsuk-table__row">
-        <td class="nhsuk-table__cell"><code>alert</code></td>
-        <td class="nhsuk-table__cell">{{ appIcon("alert") }}</td>
-        <td class="nhsuk-table__cell">Warning — triangular alert shape</td>
-      </tr>
-      <tr class="nhsuk-table__row">
-        <td class="nhsuk-table__cell"><code>warning</code></td>
-        <td class="nhsuk-table__cell">{{ appIcon("warning") }}</td>
-        <td class="nhsuk-table__cell">Caution — circular exclamation mark</td>
-      </tr>
-      <tr class="nhsuk-table__row">
-        <td class="nhsuk-table__cell"><code>information</code></td>
-        <td class="nhsuk-table__cell">{{ appIcon("information") }}</td>
-        <td class="nhsuk-table__cell">Info — circular 'i' symbol</td>
-      </tr>
-    </tbody>
-  </table>
+  {% set customIconRows = [] %}
+  {% for icon in [
+    { name: "alert", usage: "Warning — triangular alert shape" },
+    { name: "warning", usage: "Caution — circular exclamation mark" },
+    { name: "information", usage: "Info — circular ‘i’ symbol" }
+  ] %}
+    {% set customIconRows = customIconRows | push([
+      {
+        html: "<code>" + icon.name + "</code>"
+      },
+      {
+        html: appIcon(icon.name)
+      },
+      {
+        text: icon.usage
+      }
+    ]) %}
+  {% endfor %}
+
+  {{ table({
+    compact: true,
+    striped: true,
+    head: [
+      {
+        text: "Name"
+      },
+      {
+        text: "Icon"
+      },
+      {
+        text: "Usage"
+      }
+    ],
+    rows: customIconRows
+  }) }}
 </div>
 <pre class="sg-snippet"><code>{% raw %}{{ appIcon("alert") }}
 {{ appIcon("warning") }}
@@ -61,28 +70,31 @@
 <p>Any name not listed above is passed straight to <code>nhsukIcon</code>.</p>
 
 <div class="sg-example">
-  <table class="nhsuk-table">
-    <thead class="nhsuk-table__head">
-      <tr>
-        <th class="nhsuk-table__header">Name</th>
-        <th class="nhsuk-table__header">Icon</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr class="nhsuk-table__row">
-        <td class="nhsuk-table__cell"><code>tick</code></td>
-        <td class="nhsuk-table__cell">{{ appIcon("tick") }}</td>
-      </tr>
-      <tr class="nhsuk-table__row">
-        <td class="nhsuk-table__cell"><code>cross</code></td>
-        <td class="nhsuk-table__cell">{{ appIcon("cross") }}</td>
-      </tr>
-      <tr class="nhsuk-table__row">
-        <td class="nhsuk-table__cell"><code>chevron-right</code></td>
-        <td class="nhsuk-table__cell">{{ appIcon("chevron-right") }}</td>
-      </tr>
-    </tbody>
-  </table>
+  {% set standardIconRows = [] %}
+  {% for iconName in ["tick", "cross", "chevron-right"] %}
+    {% set standardIconRows = standardIconRows | push([
+      {
+        html: "<code>" + iconName + "</code>"
+      },
+      {
+        html: appIcon(iconName)
+      }
+    ]) %}
+  {% endfor %}
+
+  {{ table({
+    compact: true,
+    striped: true,
+    head: [
+      {
+        text: "Name"
+      },
+      {
+        text: "Icon"
+      }
+    ],
+    rows: standardIconRows
+  }) }}
 </div>
 <pre class="sg-snippet"><code>{% raw %}{{ appIcon("tick") }}
 {{ appIcon("cross") }}

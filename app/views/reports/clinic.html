@@ -96,32 +96,45 @@
 
       <h2 class="">Available reports</h2>
 
-      <table class="nhsuk-table">
-        <thead class="nhsuk-table__head">
-          <tr>
-            <th scope="col">Report name</th>
-            <th scope="col">Format</th>
-            <th scope="col">Action</th>
-          </tr>
-        </thead>
-        <tbody class="nhsuk-table__body">
-          <tr>
-            <td>Clinic summary</td>
-            <td>CSV</td>
-            <td><a href="#">Download<span class="nhsuk-u-visually-hidden"> Clinic Summary PDF</span></a></td>
-          </tr>
-          {# <tr>
-            <td>Participant list</td>
-            <td>CSV</td>
-            <td><a href="#">Download<span class="nhsuk-u-visually-hidden"> Participant List CSV</span></a></td>
-          </tr> #}
-          <tr>
-            <td>Outcomes report</td>
-            <td>CSV</td>
-            <td><a href="#">Download<span class="nhsuk-u-visually-hidden"> Outcomes Report Excel</span></a></td>
-          </tr>
-        </tbody>
-      </table>
+      {{ table({
+        compact: true,
+        striped: true,
+        head: [
+          {
+            text: "Report name"
+          },
+          {
+            text: "Format"
+          },
+          {
+            text: "Action"
+          }
+        ],
+        rows: [
+          [
+            {
+              text: "Clinic summary"
+            },
+            {
+              text: "CSV"
+            },
+            {
+              html: '<a href="#">Download<span class="nhsuk-u-visually-hidden"> Clinic Summary PDF</span></a>'
+            }
+          ],
+          [
+            {
+              text: "Outcomes report"
+            },
+            {
+              text: "CSV"
+            },
+            {
+              html: '<a href="#">Download<span class="nhsuk-u-visually-hidden"> Outcomes Report Excel</span></a>'
+            }
+          ]
+        ]
+      }) }}
 
     </div>
   </div>

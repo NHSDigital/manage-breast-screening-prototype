@@ -19,7 +19,7 @@
     text: "Manage details" if appointment | hasStoppedDetails else "Add details",
     href: "/clinics/" + clinicId + "/close/reason/" + appointment.id
   } %}
-  <tr data-fragment-id="{{ appointment.id }}">
+  <tr class="nhsuk-table__row" data-fragment-id="{{ appointment.id }}">
     <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
     <td class="nhsuk-table__cell">
       <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getFullName }}</p>
