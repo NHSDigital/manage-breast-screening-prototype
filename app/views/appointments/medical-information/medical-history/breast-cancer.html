@@ -7,10 +7,12 @@
 
 {% block formContent %}
 
+  <h3 class="nhsuk-heading-m">Where was the cancer diagnosed?</h3>
+
   {% call fieldset({
     legend: {
       text: "Where was the cancer diagnosed?",
-      size: "m"
+      classes: "nhsuk-u-visually-hidden"
     },
     attributes: {
       "aria-describedby": "breast-location-hint"
@@ -81,10 +83,13 @@
       name: name,
       value: "Both",
       idPrefix: idPrefix,
+      small: true,
+      inline: true,
       fieldset: {
         legend: {
-          text: "Which axilla?" if region == "axilla" else "Which breast?",
-          size: "s"
+          text: "Which side?" if region == "axilla" else "Which breast?",
+          size: "s",
+          classes: "nhsuk-u-font-weight-normal"
         }
       },
       items: [
@@ -104,13 +109,15 @@
     }) }}
   {% endmacro %}
 
+  <h3 class="nhsuk-heading-m">What medical interventions have they had?</h3>
+
   {{ checkboxes({
     name: "appointment[medicalHistoryTemp][procedures]",
     idPrefix: "procedures",
     fieldset: {
       legend: {
-        text: "What procedures have they had?",
-        size: "m"
+        text: "Procedures",
+        size: "s"
       }
     },
     items: [
@@ -137,7 +144,7 @@
     fieldset: {
       legend: {
         text: "Other surgery",
-        size: "m"
+        size: "s"
       }
     },
     items: [
@@ -171,7 +178,7 @@
     fieldset: {
       legend: {
         text: "Treatment",
-        size: "m"
+        size: "s"
       }
     },
     items: [
