@@ -12,40 +12,12 @@
 //
 // A bubbling fragment:swapped event fires on each replacement element, for
 // pages that need to react (eg revealing a 'refresh to update counts' hint).
+//
+// Scripts that swap fragments themselves import from lib/fragments.js, never
+// from this file - esbuild bundles each entry point separately, so importing
+// this file would register these listeners a second time.
 
-const fetchOptions = { headers: { 'X-Requested-With': 'XMLHttpRequest' } }
-
-// Swap target for the fragment contained in html, verifying the ids match
-// so an unexpected response (eg a redirect to a full page) never gets
-// injected into the table
-export const swapFragment = (target, html) => {
-  const template = document.createElement('template')
-  template.innerHTML = html.trim()
-  const replacement = template.content.querySelector('[data-fragment-id]')
-  if (
-    !replacement ||
-    replacement.dataset.fragmentId !== target.dataset.fragmentId
-  ) {
-    throw new Error('Response was not the expected fragment')
-  }
-  target.replaceWith(replacement)
-  replacement.dispatchEvent(
-    new CustomEvent('fragment:swapped', {
-      bubbles: true,
-      detail: { fragment: replacement }
-    })
-  )
-  return replacement
-}
-
-// Fetch a fragment URL and swap the response into target
-export const refreshFragment = (target, url) =>
-  fetch(url, fetchOptions)
-    .then((response) => {
-      if (!response.ok) throw new Error('Failed to fetch fragment')
-      return response.text()
-    })
-    .then((html) => swapFragment(target, html))
+import { fetchOptions, swapFragment } from './lib/fragments.js'
 
 // GET actions: <a data-fragment-action href="...">
 document.addEventListener('click', (event) => {

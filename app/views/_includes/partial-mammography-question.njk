@@ -63,6 +63,7 @@
   {% endset %}
 
   {{ checkboxes({
+    small: true,
     idPrefix: "partialMammographyShouldReinvite",
     name: namePrefix + "[partialMammographyShouldReinvite]",
     values: mammogramSource.partialMammographyShouldReinvite,
@@ -80,6 +81,7 @@
 {% endset %}
 
 {{ checkboxes({
+  small: true,
   idPrefix: "isPartialMammography",
   name: namePrefix + "[isPartialMammography]",
   values: mammogramSource.isPartialMammography,

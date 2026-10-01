@@ -9,6 +9,7 @@
 {% block formContent %}
 
   {{ radios({
+    small: true,
     name: "appointment[medicalHistoryTemp][type]",
     value: appointment.medicalHistoryTemp.type,
     fieldset: {
@@ -58,6 +59,7 @@
   {% endset %}
 
   {{ checkboxes({
+    small: true,
     name: "appointment[medicalHistoryTemp][deviceRemoved]",
     values: appointment.medicalHistoryTemp.deviceRemoved,
     items: [

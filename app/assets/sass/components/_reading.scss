@@ -55,11 +55,14 @@
 }
 
 // Placeholder row tag — indicates a future case not yet loaded into the session
-.app-placeholder-tag {
-  display: inline-block;
+.app-placeholder-row .app-placeholder-tag {
+  display: block;
   height: 16px;
   width: 160px;
   max-width: 160px;
+  // Centred within one line of text, so it lines up with the row number
+  margin-top: calc((1lh - 16px) / 2);
+  margin-bottom: calc((1lh - 16px) / 2);
   border-radius: 9999px;
   background-color: nhsuk-colour("grey-4");
 }
@@ -84,23 +87,7 @@
   text-align: center;
 }
 
-.app-reading-session-table td:first-child {
-  vertical-align: top;
-}
-
-.app-reading-session-table tbody td {
-  padding-top: 12px;
-  padding-bottom: 6px;
-}
-
-.app-placeholder-row td {
-  vertical-align: middle;
-  padding-top: nhsuk-spacing(1);
-  padding-bottom: nhsuk-spacing(1);
-}
-
-.app-placeholder-row--with-more td {
-  padding-top: nhsuk-spacing(2);
+.app-placeholder-row--with-more .nhsuk-table__cell {
   border-bottom: 0;
 }
 

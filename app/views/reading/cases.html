@@ -129,65 +129,90 @@
           </form>
         </div>
 
-        <table class="nhsuk-table">
-          <thead class="nhsuk-table__head">
-            <tr>
-              <th scope="col">Participant</th>
-              <th scope="col">Screened</th>
-              <th scope="col">Reads</th>
-              <th scope="col">Outcome</th>
-              <th scope="col">Case</th>
-            </tr>
-          </thead>
-          <tbody class="nhsuk-table__body">
-            {% for row in rows %}
-              <tr class="nhsuk-table__row">
-                <td class="nhsuk-table__cell">
-                  {# The name isn't a link: names only link to a participant record.
-                     The row's link to the case sits in the action column instead #}
-                  <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
-                    {{ row.participant | getFullNameReversed }}
-                  </p>
-                  <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
-                    NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}
-                  </p>
-                  {% if row.hasIssue or row.awaitingPriorsStatus %}
-                    <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
-                      {% if row.hasIssue %}
-                        {{ issueTag() }}
-                      {% endif %}
-                      {% if row.awaitingPriorsStatus %}
-                        {% if row.hasIssue %}<br>{% endif %}
-                        {{ row.awaitingPriorsStatus | toTag({ vocabulary: "priorsRequest" }) }}
-                      {% endif %}
-                    </p>
-                  {% endif %}
-                </td>
-                <td class="nhsuk-table__cell">
-                  {# Urgency comes from the row - the list decides when a case
-                     is ageing, not the template #}
-                  {% if row.urgency == "urgent" %}
-                    {{ "Urgent" | toTag }}<br>
-                  {% elseif row.urgency == "due_soon" %}
-                    {{ "Due soon" | toTag }}<br>
-                  {% endif %}
-                  {{ row.imagesTakenDate | formatDate }}
-                  <br>
-                  <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
-                    {{ row.imagesTakenDate | formatRelativeDate }}
-                  </span>
-                </td>
-                <td class="nhsuk-table__cell">{{ row.readCount }}</td>
-                <td class="nhsuk-table__cell">
-                  {{ caseOutcomeTag(row.readingCase) }}
-                </td>
-                <td class="nhsuk-table__cell">
-                  <a href="{{ getReadingCaseUrl(row.readingCase) }}" class="app-nowrap">View case {{- ((" for " + (row.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        {% set tableRows = [] %}
+        {% for row in rows %}
+          {# The name isn't a link: names only link to a participant record.
+             The row's link to the case sits in the action column instead #}
+          {% set participantHtml %}
+            <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
+              {{ row.participant | getFullNameReversed }}
+            </p>
+            <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
+              NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}
+            </p>
+            {% if row.hasIssue or row.awaitingPriorsStatus %}
+              <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+                {% if row.hasIssue %}
+                  {{ issueTag() }}
+                {% endif %}
+                {% if row.awaitingPriorsStatus %}
+                  {% if row.hasIssue %}<br>{% endif %}
+                  {{ row.awaitingPriorsStatus | toTag({ vocabulary: "priorsRequest" }) }}
+                {% endif %}
+              </p>
+            {% endif %}
+          {% endset %}
+
+          {# Urgency comes from the row - the list decides when a case is
+             ageing, not the template #}
+          {% set screenedHtml %}
+            {% if row.urgency == "urgent" %}
+              {{ "Urgent" | toTag }}<br>
+            {% elseif row.urgency == "due_soon" %}
+              {{ "Due soon" | toTag }}<br>
+            {% endif %}
+            {{ row.imagesTakenDate | formatDate }}
+            <br>
+            <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">
+              {{ row.imagesTakenDate | formatRelativeDate }}
+            </span>
+          {% endset %}
+
+          {% set caseLinkHtml %}
+            <a href="{{ getReadingCaseUrl(row.readingCase) }}" class="app-nowrap">View case {{- ((" for " + (row.participant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
+          {% endset %}
+
+          {% set tableRows = tableRows | push([
+            {
+              html: participantHtml
+            },
+            {
+              html: screenedHtml
+            },
+            {
+              text: row.readCount | string
+            },
+            {
+              html: caseOutcomeTag(row.readingCase)
+            },
+            {
+              html: caseLinkHtml
+            }
+          ]) %}
+        {% endfor %}
+
+        {{ table({
+          compact: true,
+          striped: true,
+          head: [
+            {
+              text: "Participant"
+            },
+            {
+              text: "Screened"
+            },
+            {
+              text: "Reads"
+            },
+            {
+              text: "Outcome"
+            },
+            {
+              text: "Case"
+            }
+          ],
+          rows: tableRows
+        }) }}
 
         {# Pagination is a facade - the list is capped rather than paged, so
            the pages beyond the first are a stand-in built by the route #}

@@ -14,6 +14,7 @@
   <form method="post" action="/choose-user">
     
     {{ radios({
+      small: true,
       name: "cis2LoginMethod",
       fieldset: {
         legend: {
@@ -63,6 +64,7 @@
     }) }}
 
     {{ checkboxes({
+      small: true,
       idPrefix: "remember",
       name: "cis2LoginMethodRemember",
       items: [

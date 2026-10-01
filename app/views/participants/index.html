@@ -136,66 +136,92 @@
           </form>
         </div>
 
-        <table class="nhsuk-table">
-          <thead class="nhsuk-table__head">
-            <tr>
-              <th scope="col">Name</th>
-              <th scope="col">Postcode</th>
-              <th scope="col">NHS number</th>
-              <th scope="col">Last screened</th>
-              <th scope="col">Next screening</th>
-            </tr>
-          </thead>
-          <tbody class="nhsuk-table__body">
-            {% for row in rows %}
-              <tr class="nhsuk-table__row">
-                <td class="nhsuk-table__cell">
-                  {# The exact age, not a relative date - a rounded "70 years"
-                     for someone of 69 would contradict the age filter and sort #}
-                  {% set dob %}
-                    {{ row.age }} years old
-                  {% endset %}
-                  <a href="/participants/{{ row.participant.id }}" class="nhsuk-link">
-                    {{ row.participant | getFullNameReversed }}
-                  </a><br>
-                  {{ dob | asHint }}
-                  {% if row.hasSpecialAppointment %}
-                    <br>
-                    {{ tag({
-                      text: "Special appointment",
-                      colour: "yellow",
-                      classes: "nhsuk-u-margin-top-1 app-nowrap"
-                    }) }}
-                  {% endif %}
-                  {% if data | hasOpenIssue(row.participant) %}
-                    <br>
-                    {{ issueTag(null, { classes: "nhsuk-u-margin-top-1 app-nowrap" }) }}
-                  {% endif %}
-                </td>
-                <td class="nhsuk-table__cell">
-                  {{ row.participant.demographicInformation.address.postcode }}
-                </td>
-                <td class="nhsuk-table__cell">{{ row.participant.medicalInformation.nhsNumber | formatNhsNumber | noWrap }}</td>
-                <td class="nhsuk-table__cell">
-                  {% if row.lastScreenedDate %}
-                    {{ row.lastScreenedDate | formatDate }}<br>
-                    {{ row.lastScreenedDate | formatDate | formatRelativeDate | asHint }}
-                  {% else %}
-                    {{ "Not known" | asHint }}
-                  {% endif %}
-                </td>
-                <td class="nhsuk-table__cell">
-                  {% if row.nextAppointment %}
-                    {{ row.nextAppointment.timing.startTime | formatDate }}<br>
-                    {{ row.nextAppointment.timing.startTime | formatDate | formatRelativeDate | asHint }}
-                  {% else %}
-                    {{ "Not known" | asHint }}
-                  {% endif %}
-                </td>
-              </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+        {% set tableRows = [] %}
+        {% for row in rows %}
+          {# The exact age, not a relative date - a rounded "70 years"
+             for someone of 69 would contradict the age filter and sort #}
+          {% set dob %}
+            {{ row.age }} years old
+          {% endset %}
+
+          {% set nameHtml %}
+            <a href="/participants/{{ row.participant.id }}" class="nhsuk-link">
+              {{ row.participant | getFullNameReversed }}
+            </a><br>
+            {{ dob | asHint }}
+            {% if row.hasSpecialAppointment %}
+              <br>
+              {{ tag({
+                text: "Special appointment",
+                colour: "yellow",
+                classes: "nhsuk-u-margin-top-1 app-nowrap"
+              }) }}
+            {% endif %}
+            {% if data | hasOpenIssue(row.participant) %}
+              <br>
+              {{ issueTag(null, { classes: "nhsuk-u-margin-top-1 app-nowrap" }) }}
+            {% endif %}
+          {% endset %}
+
+          {% set lastScreenedHtml %}
+            {% if row.lastScreenedDate %}
+              {{ row.lastScreenedDate | formatDate }}<br>
+              {{ row.lastScreenedDate | formatDate | formatRelativeDate | asHint }}
+            {% else %}
+              {{ "Not known" | asHint }}
+            {% endif %}
+          {% endset %}
+
+          {% set nextScreeningHtml %}
+            {% if row.nextAppointment %}
+              {{ row.nextAppointment.timing.startTime | formatDate }}<br>
+              {{ row.nextAppointment.timing.startTime | formatDate | formatRelativeDate | asHint }}
+            {% else %}
+              {{ "Not known" | asHint }}
+            {% endif %}
+          {% endset %}
+
+          {% set tableRows = tableRows | push([
+            {
+              html: nameHtml
+            },
+            {
+              text: row.participant.demographicInformation.address.postcode
+            },
+            {
+              html: row.participant.medicalInformation.nhsNumber | formatNhsNumber | noWrap
+            },
+            {
+              html: lastScreenedHtml
+            },
+            {
+              html: nextScreeningHtml
+            }
+          ]) %}
+        {% endfor %}
+
+        {{ table({
+          compact: true,
+          striped: true,
+          head: [
+            {
+              text: "Name"
+            },
+            {
+              text: "Postcode"
+            },
+            {
+              text: "NHS number"
+            },
+            {
+              text: "Last screened"
+            },
+            {
+              text: "Next screening"
+            }
+          ],
+          rows: tableRows
+        }) }}
 
         {# Pagination is a facade - the list is capped rather than paged #}
         {% if truncated %}

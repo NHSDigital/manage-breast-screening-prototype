@@ -52,61 +52,81 @@
   {% if filteredClinics | length === 0 %}
     <p>No clinics found.</p>
   {% else %}
-    <table class="nhsuk-table app-clinics-table">
-      <thead class="nhsuk-table__head">
-        <tr>
-          <th scope="col" class="app-clinics-table__location-column">Clinic name and location</th>
-          <th scope="col" class="app-clinics-table__date-time-column">Date and time</th>
-          <th scope="col" class="app-clinics-table__clinic-type-column">Clinic type</th>
-          <th scope="col" class="app-clinics-table__participants-column nhsuk-table__cell--numeric">Participants</th>
-          <th scope="col" class="app-clinics-table__status-column">Status</th>
-        </tr>
-      </thead>
-      <tbody class="nhsuk-table__body">
-        {% for clinic in filteredClinics | sort(false, false, 'date') %}
-        {# {{ clinic | log }} #}
-          {% set unit = clinic.unit %}
-          {% set location = clinic.location %}
-          {% set appointments = clinic.appointments %}
-          <tr>
-            <td class="app-clinics-table__location-column">
-              <a href="/clinics/{{ clinic.id }}" class="nhsuk-link">
-                {{ clinic.clinicCode }} ({{ clinic.sessionType | lower }})
-              </a>
-              <br>
-              {% if location.type === 'mobile_unit' %}
-                {{ (location.name + " at " + clinic.siteName) | asHint }}
-              {% else %}
-                {{ location.name | asHint }}
-              {% endif %}
-            </td>
-            <td class="app-clinics-table__date-time-column">{{ clinic.date | formatDate |  noWrap }}<br>
-              {{clinic.sessionTimes | formatTimeRange | asHint }}
-            </td>
-            <td class="app-clinics-table__clinic-type-column">
-              {{ clinic.clinicType | sentenceCase }}
-              {# <br>
-              {% set clinicRiskType %}
-                {% if clinic.riskLevels | length == 1 %}
-                  {{ clinic.riskLevels[0] }}
-                {% else %}
-                  Mixed
-                {% endif %}
-              {% endset %}
-              <span class="nhsuk-u-secondary-text-colour">{{ clinicRiskType | sentenceCase }} risk</span> #}
+    {% set tableRows = [] %}
+    {% for clinic in filteredClinics | sort(false, false, 'date') %}
+      {% set location = clinic.location %}
 
-            </td>
+      {% set locationHtml %}
+        <a href="/clinics/{{ clinic.id }}" class="nhsuk-link">
+          {{ clinic.clinicCode }} ({{ clinic.sessionType | lower }})
+        </a>
+        <br>
+        {% if location.type === 'mobile_unit' %}
+          {{ (location.name + " at " + clinic.siteName) | asHint }}
+        {% else %}
+          {{ location.name | asHint }}
+        {% endif %}
+      {% endset %}
 
-            <td class="app-clinics-table__participants-column nhsuk-table__cell--numeric">
-              {{ appointments.length }}
-            </td>
-            <td class="app-clinics-table__status-column">
-              {{ clinic.status | toTag({ vocabulary: "clinic" }) }}
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+      {% set dateTimeHtml %}
+        {{ clinic.date | formatDate | noWrap }}<br>
+        {{ clinic.sessionTimes | formatTimeRange | asHint }}
+      {% endset %}
+
+      {% set tableRows = tableRows | push([
+        {
+          html: locationHtml,
+          classes: "app-clinics-table__location-column"
+        },
+        {
+          html: dateTimeHtml,
+          classes: "app-clinics-table__date-time-column"
+        },
+        {
+          text: clinic.clinicType | sentenceCase,
+          classes: "app-clinics-table__clinic-type-column"
+        },
+        {
+          text: clinic.appointments.length | string,
+          format: "numeric",
+          classes: "app-clinics-table__participants-column"
+        },
+        {
+          html: clinic.status | toTag({ vocabulary: "clinic" }),
+          classes: "app-clinics-table__status-column"
+        }
+      ]) %}
+    {% endfor %}
+
+    {{ table({
+      compact: true,
+      striped: true,
+      classes: "app-clinics-table",
+      head: [
+        {
+          text: "Clinic name and location",
+          classes: "app-clinics-table__location-column"
+        },
+        {
+          text: "Date and time",
+          classes: "app-clinics-table__date-time-column"
+        },
+        {
+          text: "Clinic type",
+          classes: "app-clinics-table__clinic-type-column"
+        },
+        {
+          text: "Participants",
+          format: "numeric",
+          classes: "app-clinics-table__participants-column"
+        },
+        {
+          text: "Status",
+          classes: "app-clinics-table__status-column"
+        }
+      ],
+      rows: tableRows
+    }) }}
 
   {% endif %}
 {% endblock %}

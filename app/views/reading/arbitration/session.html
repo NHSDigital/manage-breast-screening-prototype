@@ -154,28 +154,28 @@
       <p class="nhsuk-body app-text-grey">Progress: {{ arbitratedCount }} arbitrated{%- if awaitingPriorsCount > 0 -%}, {{ awaitingPriorsCount }} awaiting priors{%- endif -%}{%- if sessionIssueCount > 0 -%}, {{ sessionIssueCount }} with an issue{%- endif -%}, {{ remainingCount }} remaining</p>
     {% endif %}
 
-    <table class="nhsuk-table app-reading-session-table">
-      <thead>
-        <tr>
-          <th scope="col">No.</th>
-          <th scope="col">Participant</th>
-          <th scope="col">Screening date</th>
-          <th scope="col">1st read</th>
-          <th scope="col">2nd read</th>
-          <th scope="col">Outcome</th>
-          <th scope="col">Action</th>
+    <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped app-reading-session-table">
+      <thead class="nhsuk-table__head">
+        <tr class="nhsuk-table__row">
+          <th scope="col" class="nhsuk-table__header">No.</th>
+          <th scope="col" class="nhsuk-table__header">Participant</th>
+          <th scope="col" class="nhsuk-table__header">Screening date</th>
+          <th scope="col" class="nhsuk-table__header">1st read</th>
+          <th scope="col" class="nhsuk-table__header">2nd read</th>
+          <th scope="col" class="nhsuk-table__header">Outcome</th>
+          <th scope="col" class="nhsuk-table__header">Action</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody class="nhsuk-table__body">
         {% for appointment in appointments %}
           {% set arbitrationRead = appointment.readingCase | getArbitrationRead %}
           {% set isNextCase = resumeAppointment and appointment.id == resumeAppointment.id and not arbitrationRead %}
           {% set originalReads = appointment.readingCase | getOriginalReads %}
-          <tr{% if isNextCase %} class="app-placeholder-row--next"{% endif %}>
-            <td>
+          <tr class="nhsuk-table__row{{ ' app-placeholder-row--next' if isNextCase }}">
+            <td class="nhsuk-table__cell">
               <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ loop.index }}.</span>
             </td>
-            <td>
+            <td class="nhsuk-table__cell">
               <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
                 {{ appointment.participant | getFullNameReversed }}
               </p>
@@ -186,7 +186,7 @@
                 <span class="app-reading-case-tag">{{ "Has symptoms" | toTag }}</span>
               {% endif %}
             </td>
-            <td>
+            <td class="nhsuk-table__cell">
               {% set daysSinceScreening = appointment.timing.startTime | daysSince %}
               {% if daysSinceScreening >= data.config.reading.urgentThreshold %}
                 {{ "Urgent" | toTag }}<br>
@@ -204,7 +204,7 @@
                forms their own view first; who read is never sensitive. #}
             {% set hideReads = (data.settings.reading.arbitration.hideReadsUntilArbitrated != 'false') and not arbitrationRead %}
             {% for readIndex in [0, 1] %}
-              <td>
+              <td class="nhsuk-table__cell">
                 {% set originalRead = originalReads[readIndex] %}
                 {% if originalRead %}
                   {{ readOpinionTag(originalRead, { blinded: hideReads }) }}
@@ -220,7 +220,7 @@
               </td>
             {% endfor %}
 
-            <td>
+            <td class="nhsuk-table__cell">
               {% if arbitrationRead %}
                 {{ caseOutcomeTag(appointment.readingCase, { showFinalisedTime: true }) }}
               {% elseif data | hasOpenIssueOnEpisode(appointment) %}
@@ -235,7 +235,7 @@
                 {{ "Not arbitrated" | toTag }}
               {% endif %}
             </td>
-            <td class="app-placeholder-action-cell">
+            <td class="nhsuk-table__cell app-placeholder-action-cell">
               {% if isNextCase %}
                 <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ arbitrationActionText }}</a>
               {% else %}
@@ -262,21 +262,21 @@
         {# Placeholder rows for pending lazy session slots #}
         {% set placeholderRowsShown = 3 if pendingCount > 3 else pendingCount %}
         {% for i in range(0, placeholderRowsShown) %}
-          <tr class="app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeAppointment and pendingCount > 3 and loop.last }}">
-            <td>
+          <tr class="nhsuk-table__row app-placeholder-row{{ ' app-placeholder-row--with-more' if resumeAppointment and pendingCount > 3 and loop.last }}">
+            <td class="nhsuk-table__cell">
               <span class="app-row-number nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">{{ (appointments | length) + loop.index }}.</span>
             </td>
-            <td>
+            <td class="nhsuk-table__cell">
               <span class="app-placeholder-tag"></span>
               {% if resumeAppointment and pendingCount > 3 and loop.last %}
                 <span class="app-placeholder-more nhsuk-u-secondary-text-colour nhsuk-body-s">and {{ pendingCount - 3 }} more in this session</span>
               {% endif %}
             </td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
+            <td class="nhsuk-table__cell"></td>
+            <td class="nhsuk-table__cell"></td>
+            <td class="nhsuk-table__cell"></td>
+            <td class="nhsuk-table__cell"></td>
+            <td class="nhsuk-table__cell"></td>
           </tr>
         {% endfor %}
       </tbody>

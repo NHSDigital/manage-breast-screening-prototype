@@ -19,7 +19,7 @@
   {% set appointmentBaseUrl = getAppointmentUrl(appointment) %}
   {% set statusTagId = "status-tag-" + appointment.id %}
 
-  <tr class="appointment-row" id="appointment-row-{{ appointment.id }}" data-fragment-id="{{ appointment.id }}">
+  <tr class="nhsuk-table__row appointment-row" id="appointment-row-{{ appointment.id }}" data-fragment-id="{{ appointment.id }}">
 
     {# Appointment time #}
     <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">{{ appointment.statusHistory[0].timestamp | formatTimeString }}

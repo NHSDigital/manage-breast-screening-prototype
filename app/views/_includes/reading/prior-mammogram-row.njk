@@ -13,7 +13,7 @@
 
 {% macro priorMammogramRow(thisAppointment, mammogram) %}
   {% set priorsFragment = "row" %}
-  <tr data-fragment-id="{{ mammogram.id }}">
+  <tr class="nhsuk-table__row" data-fragment-id="{{ mammogram.id }}">
     {# The name isn't a link: names only link to a participant record. The
        row's link to the case sits in the last column instead, pointing at
        the case's priors view - falling back to the appointment for the odd
@@ -22,7 +22,7 @@
     {% set thisEpisode = data | getEpisode(thisAppointment.episodeId) %}
     {% set thisReadingCase = getReadingCaseForAppointment(thisEpisode, thisAppointment.id) if thisEpisode %}
     {% set caseHref = (getReadingCaseUrl(thisReadingCase) + '/priors') if thisReadingCase else getAppointmentUrl(thisAppointment) %}
-    <td>
+    <td class="nhsuk-table__cell">
       <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
         {{ thisParticipant | getFullNameReversed }}
       </p>
@@ -32,7 +32,7 @@
     </td>
 
     {# Screening date #}
-    <td>
+    <td class="nhsuk-table__cell">
       {% set urgency = thisAppointment.timing.startTime | getReadingUrgency(data.config.reading) %}
       {% if urgency == "urgent" %}
         {{ "Urgent" | toTag }}<br>
@@ -47,7 +47,7 @@
 
     {% include "_includes/priors/prior-row-cells.njk" %}
 
-    <td>
+    <td class="nhsuk-table__cell">
       <a href="{{ caseHref }}" class="app-nowrap">View case {{- ((" for " + (thisParticipant | getShortName)) | asVisuallyHiddenText) | safe }}</a>
     </td>
   </tr>

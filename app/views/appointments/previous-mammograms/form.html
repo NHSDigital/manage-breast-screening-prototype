@@ -85,6 +85,7 @@
   {% endset %}
 
   {{ radios({
+    small: true,
     idPrefix: "location",
     name: "appointment[previousMammogramTemp][location]",
     fieldset: {
@@ -201,6 +202,7 @@
 
   {# Radios for when were they taken #}
   {{ radios({
+    small: true,
     idPrefix: "dateType",
     name: "appointment[previousMammogramTemp][dateType]",
     fieldset: {
@@ -253,6 +255,7 @@
   {% endset %}
 
   {{ radios({
+    small: true,
     idPrefix: "sameName",
     name: "appointment[previousMammogramTemp][sameName]",
     fieldset: {

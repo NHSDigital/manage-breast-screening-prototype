@@ -19,8 +19,8 @@
     {{ pageHeading }}
   </h1>
 
-  {% set stoppedFieldsNamePrefix = "closeReasonForm" %}
-  {% set stoppedFieldsValues = data.closeReasonForm %}
+  {% set stoppedFieldsNamePrefix = "closeReasonForm[" + appointment.id + "]" %}
+  {% set stoppedFieldsValues = data.closeReasonForm[appointment.id] %}
   {% include "_includes/forms/attended-not-screened-fields.njk" %}
 
   <div class="nhsuk-button-group">
