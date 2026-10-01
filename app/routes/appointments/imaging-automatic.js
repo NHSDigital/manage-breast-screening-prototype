@@ -340,9 +340,10 @@ module.exports = (router) => {
         `/review/issues/${issue.id}`,
         manualImagesUrlWithProblem
       )
+      // A new tab, so the user stays in their appointment
       req.flash('success', {
         html: `<p class="nhsuk-notification-banner__heading">Issue raised for ${getShortName(data.participant)}</p>
-<p class="nhsuk-body"><a class="nhsuk-notification-banner__link" href="${issueUrl}">View issue</a></p>`
+<p class="nhsuk-body"><a class="nhsuk-notification-banner__link" href="${issueUrl}" target="_blank" rel="noopener noreferrer">View issue (opens in new tab)</a></p>`
       })
     }
 

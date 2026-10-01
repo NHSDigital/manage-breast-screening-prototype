@@ -112,13 +112,11 @@
   {% if showNavigation %}
     
     {% if isAppointmentWorkflow %}
-      {# Workflow mode: side navigation layout, after flash messages and the
-         episode's open issues #}
+      {# Workflow mode: side navigation layout, after flash messages. The
+         episode's open issues sit at the top of the main column #}
       <div class="app-u-max-width-three-quarters">
         {% include "_includes/flash-messages.njk" %}
       </div>
-
-      {{ openIssuesCallout(episode) }}
 
       <div class="app-workflow-container">
         <div class="nhsuk-grid-row app-workflow-container__row">
@@ -126,6 +124,14 @@
             {% include '_includes/workflow/workflow-side-navigation.njk' %}
           </div>
           <div class="nhsuk-grid-column-three-quarters app-workflow-container__main">
+            {% set workflowOpenIssuesHtml = openIssuesCallout(episode, { classes: "nhsuk-u-margin-top-0" }) | trim %}
+            {% if workflowOpenIssuesHtml %}
+              <div class="nhsuk-grid-row">
+                <div class="nhsuk-grid-column-full">
+                  {{ workflowOpenIssuesHtml | safe }}
+                </div>
+              </div>
+            {% endif %}
             {{ wrappedPageContent | safe }}
           </div>
         </div>

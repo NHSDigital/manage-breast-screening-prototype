@@ -12,7 +12,8 @@
    - record - participant, episode, appointment or reading case
    - options.recordName - names the record in the heading, such as
      "this participant", where the page is not about a single episode
-   - options.classes - extra classes for the callout
+   - options.classes - classes for the callout, replacing the default reduced
+     top margin
 
    The callout is capped at three-quarters of the page, the width of the
    content on record pages, so it lines up however wide its container is.
@@ -37,7 +38,9 @@
     on {{ raisedDate }}
   </p>
   <p class="{{ options.classes }}">
-    <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(options.returnChain or currentUrl) }}" class="nhsuk-link--no-visited-state">View issue {{- ((" raised on " + raisedDate) | asVisuallyHiddenText) | safe }}</a>
+    {# A new tab, so the user stays in their appointment #}
+    <a href="{{ ('/review/issues/' + issue.id) | urlWithReferrer(options.returnChain or currentUrl) }}" class="nhsuk-link--no-visited-state"
+      {%- if isAppointmentWorkflow %} target="_blank" rel="noopener noreferrer"{% endif %}>View issue {{- ((" raised on " + raisedDate) | asVisuallyHiddenText) | safe }}{% if isAppointmentWorkflow %} (opens in new tab){% endif %}</a>
   </p>
 {% endmacro %}
 
@@ -53,7 +56,7 @@
       {% endfor %}
     {% endset %}
 
-    {% set headingText = "Open " + ("issue" | pluralise(openIssues | length)) %}
+    {% set headingText = ("Issue" | pluralise(openIssues | length)) + " raised" %}
     {% if options.recordName %}
       {% set headingText = headingText + " for " + options.recordName %}
     {% endif %}
@@ -64,7 +67,7 @@
         level: 2
       },
       html: openIssuesHtml,
-      classes: ("app-u-max-width-three-quarters " + (options.classes or "")) | trim
+      classes: ("app-u-max-width-three-quarters " + (options.classes or "nhsuk-u-margin-top-4")) | trim
     }) }}
   {% endif %}
 {% endmacro %}

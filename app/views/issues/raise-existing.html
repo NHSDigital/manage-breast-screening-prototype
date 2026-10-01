@@ -1,9 +1,9 @@
 {# app/views/issues/raise-existing.html
 
    Shown before the raise an issue form when the episode already has an open
-   issue, so the same problem is not raised twice. Yes goes on to the form, no
-   to the existing issue. The route (routes/issues.js) sets openIssues,
-   participant, answers, raiseUrl and returnFallbackUrl. #}
+   issue, so the same problem is not raised twice. The button goes on to the
+   form, Cancel back to where the user came from. The route (routes/issues.js)
+   sets openIssues, participant, raiseUrl and returnFallbackUrl. #}
 
 {% extends parentLayout or 'layout-app.html' %}
 
@@ -12,8 +12,9 @@
 {% set hasOneOpenIssue = openIssues | length == 1 %}
 {% set pageHeading = "There is already an open issue" if hasOneOpenIssue else "There are already open issues" %}
 {% set formAction = (raiseUrl + "/existing-answer") | urlWithReferrer(referrerChain) %}
+{% set returnHref = returnFallbackUrl | getReturnUrl(referrerChain) %}
 {% set back = {
-  href: returnFallbackUrl | getReturnUrl(referrerChain),
+  href: returnHref,
   text: "Back"
 } %}
 
@@ -31,31 +32,18 @@
     }) }}
   {% endfor %}
 
-  {{ radios({
-    name: "issueTemp[raise][aboutSomethingElse]",
-    idPrefix: "raiseIssueAboutSomethingElse",
-    value: answers.aboutSomethingElse,
-    classes: "nhsuk-radios--inline",
-    fieldset: {
-      legend: {
-        text: "Is the issue you want to raise about something else?",
-        size: "m"
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Raise another issue"
+    }) }}
+    {{ appLink({
+      text: "Cancel",
+      href: returnHref,
+      classes: "nhsuk-link--no-visited-state",
+      attributes: {
+        "data-modal-action": "close"
       }
-    },
-    items: [
-      {
-        value: "yes",
-        text: "Yes"
-      },
-      {
-        value: "no",
-        text: "No"
-      }
-    ]
-  } | populateErrors) }}
-
-  {{ button({
-    text: "Continue"
-  }) }}
+    }) | trim | safe }}
+  </div>
 
 {% endblock %}

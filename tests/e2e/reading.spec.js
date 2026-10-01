@@ -435,7 +435,7 @@ test.describe('Image reading', () => {
       page.getByText('Image re-sent from the mammography machine')
     ).toBeVisible()
     await page.getByRole('link', { name: 'View reading case' }).click()
-    await expect(page.getByRole('heading', { name: 'Open issue' })).toHaveCount(
+    await expect(page.getByRole('heading', { name: 'Issue raised' })).toHaveCount(
       0
     )
     await expect(page.getByRole('button', { name: 'Read now' })).toBeVisible()
@@ -568,10 +568,7 @@ test.describe('Image reading', () => {
     })
     await expect(finaliseAction).toBeVisible()
 
-    const raiseModal = await clickLinkToOpenModal(
-      page,
-      'Raise an issue with this case'
-    )
+    const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
     await raiseModal
       .getByLabel('Describe the issue')
       .fill('RMLO will not open in the viewer')

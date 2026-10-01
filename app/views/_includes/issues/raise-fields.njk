@@ -9,9 +9,14 @@
    The type question is left out for now. A type chosen by the link still
    rides along in data.issueTemp.raise.type.
 
-   Expects: answers (data.issueTemp.raise), raisedFrom and recordId. #}
+   Expects: answers (data.issueTemp.raise), raisedFrom and recordId.
+   isAppointmentWorkflow is true when raised during the user's appointment. #}
 
-<p>This problem will need to be reviewed before this participant’s episode can continue.</p>
+{% if isAppointmentWorkflow %}
+  <p>You can still complete this appointment, but this problem will need to be reviewed before this participant’s episode can continue.</p>
+{% else %}
+  <p>This problem will need to be reviewed before this participant’s episode can continue.</p>
+{% endif %}
 
 {{ textarea({
   name: "issueTemp[raise][description]",

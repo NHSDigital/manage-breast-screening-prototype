@@ -3,8 +3,8 @@
 // Raising an issue from any page outside the reading workflow. Links to the
 // form come from _includes/issues/raise-link.njk, which puts the record in the
 // path and the journey in the query string; the form returns the user to where
-// they came from. If the episode already has an open issue, the user is asked
-// first whether this one is about something else.
+// they came from. If the episode already has an open issue, the user is shown
+// it first, and goes on to the form only if they choose to raise another.
 
 const {
   createIssue,
@@ -20,6 +20,7 @@ const {
 } = require('../lib/utils/episodes')
 const { getAppointment } = require('../lib/utils/appointment-data')
 const { getParticipant, getShortName } = require('../lib/utils/participants')
+const { isAppointmentWorkflow } = require('../lib/utils/status')
 const {
   getReturnUrl,
   urlWithReferrer,
@@ -148,6 +149,9 @@ module.exports = (router) => {
       ),
       raisedFrom,
       recordId,
+      isAppointmentWorkflow:
+        recordType === 'appointment' &&
+        isAppointmentWorkflow(getAppointment(data, recordId), data.currentUser),
       raiseUrl: `/issues/raise/${recordType}/${recordId}`,
       returnFallbackUrl: record.returnUrl,
       issueRecordIds: record.issueRecordIds
@@ -156,8 +160,8 @@ module.exports = (router) => {
     next()
   }
 
-  // An episode with an open issue asks first whether this is a new one, so
-  // the same problem is not raised twice
+  // An episode with an open issue shows it first, so the same problem is not
+  // raised twice
   router.get(RAISE_PATH, loadRaiseContext, (req, res) => {
     const data = req.session.data
     const { openIssues } = res.locals
@@ -174,38 +178,13 @@ module.exports = (router) => {
 
   router.post(`${RAISE_PATH}/existing-answer`, loadRaiseContext, (req, res) => {
     const data = req.session.data
-    const referrerChain = req.query.referrerChain
-    const { raiseUrl, returnFallbackUrl } = res.locals
-    const answer = data.issueTemp?.raise?.aboutSomethingElse
-
-    if (answer === 'yes') {
-      return res.redirect(urlWithReferrer(raiseUrl, referrerChain))
+    const { raiseUrl, recordId } = res.locals
+    data.issueTemp = {
+      ...data.issueTemp,
+      raise: { ...data.issueTemp?.raise, recordId, aboutSomethingElse: 'yes' }
     }
 
-    if (answer === 'no') {
-      delete data.issueTemp?.raise
-
-      // Nothing new to raise, so go back to what they were doing. The check
-      // page links to each open issue for anyone who wants to see it
-      return res.redirect(
-        modalBreakout(getReturnUrl(returnFallbackUrl, referrerChain))
-      )
-    }
-
-    const error = {
-      text: 'Select yes if the issue is about something else',
-      name: 'issueTemp[raise][aboutSomethingElse]',
-      href: '#raiseIssueAboutSomethingElse'
-    }
-
-    if (req.headers['x-requested-with'] === 'XMLHttpRequest') {
-      return res.status(422).render('issues/raise-existing', {
-        flash: { error: [error] }
-      })
-    }
-
-    req.flash('error', error)
-    res.redirect(urlWithReferrer(raiseUrl, referrerChain))
+    res.redirect(urlWithReferrer(raiseUrl, req.query.referrerChain))
   })
 
   router.post(`${RAISE_PATH}/answer`, loadRaiseContext, (req, res) => {
@@ -248,10 +227,13 @@ module.exports = (router) => {
     const returnUrl = getReturnUrl(returnFallbackUrl, referrerChain)
     const issueUrl = urlWithReferrer(`/review/issues/${issue.id}`, returnUrl)
     const participantName = getShortName(res.locals.participant)
+    const issueLink = res.locals.isAppointmentWorkflow
+      ? `<a class="nhsuk-notification-banner__link" href="${issueUrl}" target="_blank" rel="noopener noreferrer">View issue (opens in new tab)</a>`
+      : `<a class="nhsuk-notification-banner__link" href="${issueUrl}">View issue</a>`
 
     req.flash('success', {
       html: `<p class="nhsuk-notification-banner__heading">Issue raised for ${participantName}</p>
-        <p class="nhsuk-body"><a class="nhsuk-notification-banner__link" href="${issueUrl}">View issue</a></p>`
+        <p class="nhsuk-body">${issueLink}</p>`
     })
 
     res.redirect(modalBreakout(returnUrl))
