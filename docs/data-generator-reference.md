@@ -43,11 +43,15 @@ generate-seed-data.js (main orchestrator)
   │     finaliseEpisodeStage() then sets each episode's stage/outcome from
   │     its appointments and reads
   │
-  └─> episode-generator.js (historic episodes)
-        generateHistoricEpisodes() adds summary-level past screening rounds
-        per participant (outcome-first: dates, outcome and a
-        mammogramSummary — no appointments or reads).
-        checkEpisodes() validates the combined result
+  ├─> episode-generator.js (historic episodes)
+  │     generateHistoricEpisodes() adds summary-level past screening rounds
+  │     per participant (outcome-first: dates, outcome and a
+  │     mammogramSummary — no appointments or reads).
+  │     checkEpisodes() validates the combined result
+  │
+  └─> issue-generator.js
+        generateIssues() seeds open and resolved issues on current episodes
+        (see docs/issues.md). checkIssues() confirms every link resolves
 ```
 
 **Key points:**
@@ -56,6 +60,7 @@ generate-seed-data.js (main orchestrator)
 - Medical information is generated for completed and in-progress appointments
 - Participants are mostly created upfront, but can be generated on-demand
 - Reading data is added after all appointments are created, then episode stages are finalised
+- Issues are generated last, from the finished episodes, and written to their own `issues.json`
 - Historic episodes are summary-level only — see `docs/data-conventions.md` for the episode data model
 
 ### Storage Locations

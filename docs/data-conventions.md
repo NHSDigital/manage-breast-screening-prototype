@@ -1,12 +1,10 @@
 # Data conventions: reading and updating seed data
 
-How participant, clinic, appointment and episode data works in this prototype, and
-the rules to follow when changing it.
+How participant, clinic, appointment, episode and issue data works in this prototype, and the rules to follow when changing it.
 
 ## How it works
 
-The generated seed data (`data.participants`, `data.clinics`, `data.appointments`,
-`data.episodes`)
+The generated seed data (`data.participants`, `data.clinics`, `data.appointments`, `data.episodes`, `data.issues`)
 is **shared and read-only**. It is loaded once at boot into a shared store
 ([app/lib/data-store.js](../app/lib/data-store.js)) and attached to every
 request by middleware in [app/routes.js](../app/routes.js) - it is not copied
@@ -176,7 +174,7 @@ sets `episode.mammograms` records, from the other side:
 {
   id, appointmentId, openedDate,
   reads: [{ readerId, readerType, readType, readNumber, timestamp, opinion, ... }],
-  deferral, deferralHistory
+  arbitration   // { releasedAt, releasedBy } once released into arbitration
 }
 ```
 
@@ -189,14 +187,14 @@ case, and the episode's reading state comes from the **latest** one.
 Reads are an ordered array, and each records its own `readType` (`first`,
 `second`, `arbitration`). The type is settled when the read is written, from
 where the case had got to at the time — which is not recoverable later, because
-reads can be withdrawn (deferring after giving an opinion does exactly that).
+reads can be withdrawn (raising an issue after giving an opinion does exactly that).
 
 Two functions answer the two different questions, and the split matters:
 
 | | |
 |---|---|
-| `getReadingCaseState(case, settings, now)` | where the case has got to: `awaiting_first_read`, `awaiting_second_read`, `awaiting_finalisation`, `awaiting_arbitration`, `in_arbitration`, `concluded` |
-| `getReadingCaseOutcome(case, settings, now)` | what it found — `normal` / `technical_recall` / `recall_for_assessment`, or **null** while reading is still under way |
+| `getReadingCaseState(case, settings, issuePeriods)` | where the case has got to: `awaiting_first_read`, `awaiting_second_read`, `awaiting_finalisation`, `awaiting_arbitration`, `in_arbitration`, `concluded` |
+| `getReadingCaseOutcome(case, settings, issuePeriods)` | what it found — `normal` / `technical_recall` / `recall_for_assessment`, or **null** while reading is still under way |
 
 Two reads are not a result by themselves — the result becomes real once the
 reads are finalised, explicitly (`read.finalisedAt` / `finalisedBy`) or
@@ -205,22 +203,19 @@ automatically when the finalisation delay passes
 `'never'` manual only — see `isReadFinalised`). Until then the case sits in
 `awaiting_finalisation`. Whether it is heading for arbitration is a **fact
 about the case, not a separate state**: `getReadingCaseStatus(case, settings,
-now)` returns `{ state, finalised, willArbitrate, provisionalOutcome }`, so
+issuePeriods)` returns `{ state, finalised, willArbitrate, provisionalOutcome }`, so
 "awaiting finalisation, then arbitration" is one state with a destination.
 
 `awaiting_arbitration` and `in_arbitration` are deliberately different:
 finalised discordant reads put a case in the arbitration backlog, but
 `in_arbitration` is reserved for a future claim/lock while someone actively
 arbitrates it — nothing sets it yet. The state exists so the vocabulary is
-whole rather than growing a value later across every call site. Deferral works
-the same way already: the act is recorded
-(`deferral: { deferredAt, deferredBy, reason }`) and `isCaseDeferred` reads the
+whole rather than growing a value later across every call site. Arbitration
+release works the same way already: the act is recorded
+(`arbitration: { releasedAt, releasedBy }`) and `isCaseInArbitration` reads the
 state back from its presence.
 
-Priors are the exception that stays on the appointment
-(`appointment.previousMammograms`), so `canUserReadAppointment` combines the two.
-Deferral and outstanding priors are **states, not outcomes** — both hold a case
-up, and a case held up still owes an outcome once it is released.
+Two things hold a case up from outside it. Outstanding priors live on the appointment (`appointment.previousMammograms`), and open issues live in their own collection and are asked of the episode (see [Issues](#issues)), so `canUserReadAppointment` combines all three. An open issue and outstanding priors are **states, not outcomes**: both hold a case up, and a case held up still owes an outcome once it is released.
 
 **Where the code lives.** `reading-cases.js` holds the case logic and is
 deliberately pure — everything there takes a case. `episodes.js` owns getting
@@ -295,6 +290,18 @@ fidelity for the round being worked on; a summary for everything before it.
 This is why `getLastMammogram` and `getNextAppointment`
 ([episodes.js](../app/lib/utils/episodes.js)) read across episodes rather than
 scanning old appointments - a past round may have no appointment record at all.
+
+## Issues
+
+An **issue** records that something is wrong with a participant's record or images. Issues are a top-level collection, `data.issues`, rather than a field on another record, because one issue can name any mix of participant, episode, appointment and reading case. [issues.md](issues.md) covers the model and where issues appear; this section is how the collection behaves as data.
+
+- **Shared like the others.** `issues` is in `STORE_COLLECTIONS` in [app/routes.js](../app/routes.js), loaded into the store with an `issuesById` index, and changes go to `data._changes.issues`.
+- **Records created in a session.** Most collections only ever change records the store already has. Issues are also created, and a new issue exists only in `_changes.issues`, so the attach middleware appends any change whose id the store does not know after the overlaid shared records. `createIssue`, `updateIssue` and `resolveIssue` ([app/lib/utils/issues.js](../app/lib/utils/issues.js)) write there and update `data.issues` for the rest of the request.
+- **Stamped with their generation.** `issues.json` carries the `generatedAt` of the run that wrote it, and the store loads it only when that matches `generation-info.json`. Issues link to records by id, so issues from an older generation would point at records that no longer exist; a mismatch loads as no issues rather than broken links.
+- **Nothing is deleted.** An issue is open until it has a `resolved` object. A mistaken one is resolved as `raised_in_error`.
+- **Lookups are plain filters.** Issues are few, so `getIssuesFor(data, record)` filters the array on each issue's `links` rather than keeping another index.
+
+The seed generator ([issue-generator.js](../app/lib/generators/issue-generator.js)) seeds a handful of open and resolved issues after episodes, and `checkIssues` warns if any link does not resolve.
 
 ## Escape hatch
 

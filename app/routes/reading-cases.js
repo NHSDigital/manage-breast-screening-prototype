@@ -41,7 +41,6 @@ const {
   getReadingCaseOutcome,
   getReadingMetadata,
   getDecidingRead,
-  isCaseDeferred,
   isCaseInArbitration,
   isReadFinalised,
   canUserReadCase
@@ -49,6 +48,11 @@ const {
 const { finaliseReadOnCase } = require('../lib/utils/reading')
 const { describeReadingCaseStatus } = require('../lib/utils/status')
 const { awaitingPriors } = require('../lib/utils/prior-mammograms')
+const {
+  hasOpenIssue,
+  getOpenIssuesFor,
+  getOpenIssuePeriods
+} = require('../lib/utils/issues')
 
 /**
  * Pagination items for a list that isn't really paged.
@@ -188,8 +192,9 @@ module.exports = (router) => {
   })
 
   // Finalise every outstanding read on a case, concluding it now rather than
-  // waiting out the auto-finalise delay. Registered before the :tab redirect
-  // below, which would otherwise swallow the path.
+  // waiting out the auto-finalise delay. A case held by an open issue is left
+  // alone - the case page offers no finalise action for one. Registered before
+  // the :tab redirect below, which would otherwise swallow the path.
   router.get('/reading/cases/:caseId/finalise', (req, res) => {
     const data = req.session.data
 
@@ -198,13 +203,19 @@ module.exports = (router) => {
       return res.redirect('/reading/cases')
     }
 
+    const caseUrl = `/reading/cases/${req.params.caseId}`
+    if (hasOpenIssue(data, found.episode)) {
+      return res.redirect(caseUrl)
+    }
+
     const appointment = getAppointment(data, found.readingCase.appointmentId)
     const finalisedAt = new Date().toISOString()
+    const issuePeriods = getOpenIssuePeriods(data, found.episode)
 
     // finaliseReadOnCase stores an updated case each time, so re-fetch it for
     // each author rather than reusing the stale record
     for (const read of getReadsAsArray(found.readingCase)) {
-      if (isReadFinalised(read, data.settings)) continue
+      if (isReadFinalised(read, data.settings, issuePeriods)) continue
       const { readingCase } = getReadingCaseById(data, req.params.caseId)
       finaliseReadOnCase(
         data,
@@ -216,7 +227,7 @@ module.exports = (router) => {
     }
 
     req.flash('success', 'Outcome finalised')
-    res.redirect(`/reading/cases/${req.params.caseId}`)
+    res.redirect(caseUrl)
   })
 
   // The case's prior mammograms: request statuses and the actions to progress
@@ -239,8 +250,18 @@ module.exports = (router) => {
       return res.redirect(`/reading/cases/${req.params.caseId}`)
     }
 
-    const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)
-    const caseStatus = getReadingCaseStatus(readingCase, data.settings)
+    // Time with an open issue doesn't count toward the reads' finalisation
+    const issuePeriods = getOpenIssuePeriods(data, episode)
+    const caseOutcome = getReadingCaseOutcome(
+      readingCase,
+      data.settings,
+      issuePeriods
+    )
+    const caseStatus = getReadingCaseStatus(
+      readingCase,
+      data.settings,
+      issuePeriods
+    )
 
     res.render('reading/case-priors', {
       readingCase,
@@ -250,7 +271,7 @@ module.exports = (router) => {
       caseState: caseStatus.state,
       caseStatus,
       caseOutcome,
-      isDeferred: isCaseDeferred(readingCase),
+      openIssues: getOpenIssuesFor(data, episode),
       caseAwaitingPriors: appointment ? awaitingPriors(appointment) : false
     })
   })
@@ -288,6 +309,10 @@ module.exports = (router) => {
     // Once they have read it - or it is no longer theirs to read - the reads
     // are theirs to see. Arbitration is the exception: the arbitrator's job is
     // to weigh the two reads, so they see them.
+    //
+    // An open issue is deliberately not passed here: a held case keeps its
+    // opinions hidden, because it returns to reading once the issue is
+    // resolved and the viewer may still be its next reader.
     const blindReading = data.settings?.reading?.blindReading === 'true'
     const readsHidden =
       blindReading &&
@@ -296,14 +321,30 @@ module.exports = (router) => {
 
     const caseAwaitingPriors = appointment ? awaitingPriors(appointment) : false
 
+    // Open issues hold the case out of reading and finalisation, and time
+    // spent with one doesn't count toward the reads' finalisation delay
+    const openIssues = getOpenIssuesFor(data, episode)
+    const issuePeriods = getOpenIssuePeriods(data, episode)
+
     // Whether the case is the viewer's to read right now - outstanding priors
     // hold reading up, so they block the offer too
     const canReadCase =
-      !caseAwaitingPriors && canUserReadCase(readingCase, data.currentUser?.id)
+      !caseAwaitingPriors &&
+      canUserReadCase(readingCase, data.currentUser?.id, {
+        episodeHasOpenIssue: openIssues.length > 0
+      })
 
     const allReads = getReadsAsArray(readingCase)
-    const caseOutcome = getReadingCaseOutcome(readingCase, data.settings)
-    const caseStatus = getReadingCaseStatus(readingCase, data.settings)
+    const caseOutcome = getReadingCaseOutcome(
+      readingCase,
+      data.settings,
+      issuePeriods
+    )
+    const caseStatus = getReadingCaseStatus(
+      readingCase,
+      data.settings,
+      issuePeriods
+    )
 
     // Until a case has its second read, the first opinion is only its
     // author's to see - anyone else could be the second reader. The view
@@ -315,7 +356,7 @@ module.exports = (router) => {
     // an unfinalised decision as provisional.
     const decidingRead =
       caseOutcome || caseStatus.provisionalOutcome
-        ? getDecidingRead(readingCase, data.settings)
+        ? getDecidingRead(readingCase, data.settings, issuePeriods)
         : null
 
     // A historic round has no appointment or clinic to name a location from -
@@ -346,8 +387,13 @@ module.exports = (router) => {
       caseStatusDisplay: describeReadingCaseStatus(caseStatus),
       caseOutcome,
       decidingRead,
-      readingMetadata: getReadingMetadata(readingCase, data.settings),
-      isDeferred: isCaseDeferred(readingCase),
+      readingMetadata: getReadingMetadata(
+        readingCase,
+        data.settings,
+        issuePeriods
+      ),
+      openIssues,
+      issuePeriods,
       caseAwaitingPriors,
       casePosition,
       caseTotal: casesOnEpisode.length

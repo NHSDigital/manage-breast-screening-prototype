@@ -84,8 +84,8 @@ const findTodayAppointment = ({ status = 'scheduled', index = 0 } = {}) => {
  *
  * The first read must be someone else's (nobody reads the same case twice) and
  * carry the requested opinion, so a test can mirror it and land a concordant
- * pair. Skips deferred cases and appointments awaiting priors, which the
- * reading routes would bounce to the existing-read page.
+ * pair. Skips cases whose episode has an open issue and appointments awaiting
+ * priors, which the reading routes would bounce to the existing-read page.
  *
  * @param {object} [options] - Options
  * @param {string} [options.firstOpinion] - Opinion the seeded read must carry
@@ -100,13 +100,24 @@ const findCaseAwaitingSecondRead = ({ firstOpinion = 'normal' } = {}) => {
   const episodes = readCollection('episodes.json', 'episodes')
   const appointments = readCollection('appointments.json', 'appointments')
 
+  // Issues are asked of the episode, so any open issue linked to it holds
+  // every case in it
+  const episodeIdsWithOpenIssue = new Set(
+    readCollection('issues.json', 'issues')
+      .filter((issue) => !issue.resolved)
+      .flatMap((issue) => issue.links || [])
+      .filter((link) => link.type === 'episode')
+      .map((link) => link.id)
+  )
+
   for (const episode of episodes) {
+    if (episodeIdsWithOpenIssue.has(episode.id)) continue
+
     for (const readingCase of episode.readingCases || []) {
       const reads = readingCase.reads || []
       if (reads.length !== 1) continue
       if (reads[0].opinion !== firstOpinion) continue
       if (reads[0].readerId === currentUserId) continue
-      if (readingCase.deferral) continue
 
       const appointment = appointments.find(
         (item) => item.id === readingCase.appointmentId

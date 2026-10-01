@@ -13,6 +13,7 @@
 
 {%- from 'tag/macro.njk' import tag -%}
 {%- from '_components/check-in/macro.njk' import appCheckIn %}
+{%- from '_includes/issues/tag.njk' import issueTag with context %}
 
 {% macro clinicAppointmentRow(appointment, participant, clinicId) %}
   {% set appointmentBaseUrl = getAppointmentUrl(appointment) %}
@@ -47,6 +48,12 @@
       <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
         NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
       </p>
+      {# Asked of the episode, so an issue raised anywhere in the round shows #}
+      {% if data | hasOpenIssue(appointment.episodeId) %}
+        <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+          {{ issueTag() }}
+        </p>
+      {% endif %}
     </td>
 
     {# Date of birth #}

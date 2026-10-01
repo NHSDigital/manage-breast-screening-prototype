@@ -14,18 +14,14 @@
       {{ participant | getFullNameReversed }}
     </h1>
   </div>
-  <div class="nhsuk-grid-column-one-quarter app-header-with-status__status-tag">
+  <div class="nhsuk-grid-column-one-quarter app-header-with-status__status-tag app-header-with-status__tags">
 
     {# Urgency tags #}
     {% set appointmentAge = appointment.timing.startTime | daysSince %}
-    {% if appointmentAge >= data.config.reading.priorityThreshold %}
-      <div class="nhsuk-u-margin-bottom-2">
-        {% if appointmentAge >= data.config.reading.urgentThreshold %}
-          {{ "Urgent" | toTag }}
-        {% elseif appointmentAge >= data.config.reading.priorityThreshold %}
-          {{ "Due soon" | toTag }}
-        {% endif %}
-      </div>
+    {% if appointmentAge >= data.config.reading.urgentThreshold %}
+      {{ "Urgent" | toTag }}
+    {% elseif appointmentAge >= data.config.reading.priorityThreshold %}
+      {{ "Due soon" | toTag }}
     {% endif %}
 
     {# First/second read tag - arbitration is its own kind of read #}
@@ -57,14 +53,15 @@
     {% if priorsSummary.total > 0 %}
       {% if priorsSummary.hasAwaiting %}
         {% set awaitingPriorsList = appointment | getAwaitingPriors %}
-        {{ "Awaiting priors" | toTag | safe }}<br>
+        {{ "Awaiting priors" | toTag | safe }}
         {% for prior in awaitingPriorsList %}
           {% if prior.requestedDate %}
-            Requested {{ prior.requestedDate | formatDate }}
-            {% if prior.requestReason %}
-              – {{ prior.requestReason }}
-            {% endif %}
-            {% if not loop.last %}<br>{% endif %}
+            <span>
+              Requested {{ prior.requestedDate | formatDate }}
+              {% if prior.requestReason %}
+                – {{ prior.requestReason }}
+              {% endif %}
+            </span>
           {% endif %}
         {% endfor %}
       {% endif %}
@@ -75,13 +72,13 @@
         {{ "Has priors" | toTag }}
       {% endif %}
       {% if appointment.mammogramData.metadata.hasAdditionalImages %}
-        <br>{{ "Has additional" | toTag }}
+        {{ "Has additional" | toTag }}
       {% endif %}
       {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
-          <br>{{ "Imperfect" | toTag }}
+        {{ "Imperfect" | toTag }}
       {% endif %}
       {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
-          <br>{{ "Incomplete" | toTag }}
+        {{ "Incomplete" | toTag }}
       {% endif %}
     {% endif %}
   </div>

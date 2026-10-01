@@ -1,4 +1,7 @@
 // app/assets/sass/components/_status.scss
+
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
 .app-header-with-status {
   position: relative;
   // min-height: 120px; // Make sure there's enough space for the status tags
@@ -12,4 +15,13 @@
   .app-modal {
     text-align: initial;
   }
+}
+
+// Several tags in the status area, one under another with a gap, so
+// neighbouring tags don't touch
+.app-header-with-status__tags {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: nhsuk-spacing(1);
 }

@@ -14,6 +14,8 @@ The chain is a query parameter, `referrerChain`, holding a comma-separated list 
 - Going back pops the last entry and goes there, carrying the rest of the chain.
 - When the chain is empty the fallback URL is used.
 
+The filters encode the chain, so an entry can carry its own query string. A filtered or tabbed list passes its full URL rather than `currentUrl` (which is the path alone), so coming back restores the filters: see the issue links in `app/views/review/issues/index.html`.
+
 Every view has `currentUrl` (the current path) and `referrerChain` (from the query string) available as locals, set in [app/locals.js](../app/locals.js). Routes read it from `req.query.referrerChain`.
 
 The filters are in [app/lib/utils/referrers.js](../app/lib/utils/referrers.js) and are available in templates and routes:

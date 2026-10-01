@@ -3,64 +3,77 @@
 
 {% extends 'layout-reading.html' %}
 
+{% from "_includes/issues/tag.njk" import issueTag with context %}
+
 {% set pageHeading = "Arbitration outcome" if isArbitration else "Your opinion" %}
 {% set showWorkflowNav = true %}
 
 {% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 
 
+{% set hasUserRead = (readingCase | caseHasBeenArbitrated) if isArbitration else (readingCase | userHasReadCase(data.currentUser.id)) %}
+{% set openIssues = data | getOpenIssuesFor(appointment.episodeId) %}
+
+{# The page shows the issue in place of an opinion, so the layout need not #}
+{% set hideOpenIssues = openIssues | length and not hasUserRead %}
+
 {% block pageContent %}
 
   {% set isAwaitingPriors = appointment | awaitingPriors %}
-  {% set hasUserRead = (readingCase | caseHasBeenArbitrated) if isArbitration else (readingCase | userHasReadCase(data.currentUser.id)) %}
-  {% set isDeferredCase = readingCase | isCaseDeferred %}
 
   <span class="nhsuk-caption-l">
     {{ participant | getFullNameReversed }}
   </span>
 
-  {% if isDeferredCase and not hasUserRead %}
-    {# Appointment has been deferred - show deferral summary #}
+  {% if openIssues | length and not hasUserRead %}
+    {# An open issue holds the case - show it in place of an opinion #}
     <h1 class="nhsuk-heading-l">{{ "Arbitration outcome" if isArbitration else "Your opinion" }}</h1>
 
-    {% set deferral = readingCase.deferral %}
-    {% set canUndo = deferral.deferredBy == data.currentUser.id %}
+    {# Only the issue the user raised can be withdrawn here #}
+    {% set ownIssue = openIssues | find("raisedBy", data.currentUser.id) %}
 
-    {% set deferralSummaryHtml %}
+    {% set issueSummaryHtml %}
       {% call appSummaryList() %}
         {{ appSummaryListRow({
           key: {
             text: "Opinion"
           },
           value: {
-            html: "Deferred" | toTag
+            html: issueTag()
           },
           actions: {
             items: [{
-              href: "./undo-defer",
-              text: "Undo deferral",
-              visuallyHiddenText: "case deferral"
+              href: "./withdraw-issue/" + ownIssue.id,
+              text: "Withdraw issue"
             }]
-          } if canUndo
+          } if ownIssue
         }) }}
 
-        {% if deferral.reason %}
+        {% for issue in openIssues %}
           {{ appSummaryListRow({
             key: {
-              text: "Reason"
+              text: "Issue"
             },
             value: {
-              text: deferral.reason
+              text: issue.description or "No description given"
             },
             actions: {
               items: [{
-                href: "./defer-case" | urlWithReferrer(currentUrl),
-                text: "Change",
-                visuallyHiddenText: "deferral reason"
+                href: ("/review/issues/" + issue.id) | urlWithReferrer(currentUrl),
+                text: "View issue"
               }]
-            } if canUndo
-          } | openInModal) }}
-        {% endif %}
+            }
+          }) }}
+
+          {{ appSummaryListRow({
+            key: {
+              text: "Raised by"
+            },
+            value: {
+              text: issue.raisedBy | getUsername({ identifyCurrentUser: true })
+            }
+          }) }}
+        {% endfor %}
 
       {% endcall %}
     {% endset %}
@@ -69,7 +82,7 @@
       heading: "Outcome" if isArbitration else "Your read",
       headingLevel: "2",
       feature: true,
-      descriptionHtml: deferralSummaryHtml
+      descriptionHtml: issueSummaryHtml
     }) }}
 
   {% elseif isAwaitingPriors and not hasUserRead %}
@@ -145,23 +158,28 @@
     {# The read this page is about: in arbitration the case's one arbitration
        read, otherwise the current user's own #}
     {% set thisRead = (readingCase | getArbitrationRead) if isArbitration else (readingCase | getReadForUser(data.currentUser.id)) %}
-    {% set isFinalised = thisRead | isReadFinalised(data.settings) %}
+    {% set isFinalised = thisRead | isReadFinalised(data.settings, issuePeriods) %}
     {% set finalisationNoun = "outcome" if isArbitration else "read" %}
 
     {# Until it finalises, the result isn't yet real - nothing has been released
        to arbitration or moved the episode on. Say when that happens, and offer
-       to bring it forward. Once finalised it can no longer be changed, so the
-       summary below drops its change links. #}
+       to bring it forward - unless an open issue is holding the case, which
+       finalising or changing the read would get round. Once finalised, or
+       while held, the summary below drops its change links. #}
     {% if thisRead and not isFinalised %}
-      {% set autoFinaliseAt = thisRead | getAutoFinaliseTime(data.settings) %}
+      {% set autoFinaliseAt = thisRead | getAutoFinaliseTime(data.settings, issuePeriods) %}
       {% set finalisationInsetHtml %}
-        <p>
-          This {{ finalisationNoun }} {%- if autoFinaliseAt %} will be automatically finalised at {{ autoFinaliseAt | formatTimeString }}. You can add or amend information until then.{% else %} has not been finalised.
-          {% endif %}
-        </p>
-        <p class="nhsuk-u-margin-bottom-0">
-          <a href="./finalise-read">Finalise now</a>
-        </p>
+        {% if caseIsHeld %}
+          <p class="nhsuk-u-margin-bottom-0">This {{ finalisationNoun }} cannot be changed or finalised while an issue is open.</p>
+        {% else %}
+          <p>
+            This {{ finalisationNoun }} {%- if autoFinaliseAt %} will be automatically finalised at {{ autoFinaliseAt | formatTimeString }}. You can add or amend information until then.{% else %} has not been finalised.
+            {% endif %}
+          </p>
+          <p class="nhsuk-u-margin-bottom-0">
+            <a href="./finalise-read">Finalise now</a>
+          </p>
+        {% endif %}
       {% endset %}
 
       {{ insetText({
@@ -171,7 +189,7 @@
 
     {% set readSummaryHtml %}
       {% set read = thisRead %}
-      {% set allowEdits = not isFinalised %}
+      {% set allowEdits = not isFinalised and not caseIsHeld %}
       {% set changeOpinionUrl = ("./" + decisionStep) | urlWithReferrer(currentUrl) %}
       {% set showAnnotationImages = withImages %}
       {% set annotationImagePaths = allPaths %}

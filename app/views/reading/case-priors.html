@@ -8,6 +8,9 @@
 
 {% extends 'layout-app.html' %}
 
+{% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
+
 {% set pageHeading = participant | getFullNameReversed %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
@@ -25,6 +28,8 @@
   {% include "_includes/reading-case/case-header.njk" %}
   {% include "_includes/reading-case/case-nav.njk" %}
 
+  {{ openIssuesCallout(episode) }}
+
   <h2 class="nhsuk-heading-m">Disclosed mammograms</h2>
 
   {# The route redirects to the case when there are no disclosed mammograms,
@@ -41,5 +46,7 @@
   {% endfor %}
 
   <p><a href="/reading/priors">View all priors requests</a></p>
+
+  {{ raiseIssueLink("reading_case") }}
 
 {% endblock %}
