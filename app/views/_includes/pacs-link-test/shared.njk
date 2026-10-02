@@ -1,0 +1,145 @@
+{# app/views/_includes/pacs-link-test/shared.njk #}
+
+{# Shared by the two PACS link test pages. Imported with context so the
+   variables below read session data, and both pages see the same
+   participants. Usage:
+     {% import "_includes/pacs-link-test/shared.njk" as pacs with context %}
+   Macros in an imported file do not see the layout's macro imports, so the
+   NHS Frontend ones used here are imported again. #}
+
+{% from "input/macro.njk" import input %}
+{% from "details/macro.njk" import details %}
+
+{% set test = data.pacsTest or {} %}
+{% set baseUrl = test.baseUrl or "http://pacs.example.nhs.uk/masterview/mv.jsp" %}
+{% set identifyBy = test.identifyBy or "Accession number" %}
+
+{# Rows are 0-based because the query parser turns numbered keys into an array.
+   Before anything has been submitted, row 1 carries an example. #}
+{% set participants = test.participants or [
+  {
+    label: "Example participant",
+    nhsNumber: "9990000001",
+    accessionNumber: "1963943"
+  },
+  {},
+  {}
+] %}
+
+{# Free-text extra parameters, one key=value per line, become a query fragment #}
+{% set extraQuery = (test.extraParams or "") | trim | replace("\r\n", "&") | replace("\n", "&") %}
+
+{# Builds the activation URL for one participant. When an shs token is
+   present it replaces the whole query. #}
+{% macro pacsUrl(participant) -%}
+  {%- if test.shsToken -%}
+    {{ baseUrl }}?shs={{ test.shsToken | trim | urlencode }}
+  {%- else -%}
+    {%- set query = "" -%}
+    {%- if identifyBy != "NHS number" and participant.accessionNumber -%}
+      {%- set query = query + "&accession_number=" + (participant.accessionNumber | trim | urlencode) -%}
+    {%- endif -%}
+    {%- if identifyBy != "Accession number" and participant.nhsNumber -%}
+      {%- set query = query + "&patient_id=" + (participant.nhsNumber | trim | replace(" ", "") | urlencode) -%}
+    {%- endif -%}
+    {%- if extraQuery -%}
+      {%- set query = query + "&" + extraQuery -%}
+    {%- endif -%}
+    {{ baseUrl }}?{{ query | replace("&", "", 1) }}
+  {%- endif -%}
+{%- endmacro %}
+
+{# Navigation between the two pages #}
+{% macro pageNavigation(current) %}
+  {% from "_components/secondary-navigation/macro.njk" import appSecondaryNavigation %}
+  {{ appSecondaryNavigation({
+    visuallyHiddenTitle: "Ways of reaching the viewer",
+    items: [
+      {
+        href: "/pacs-link-test",
+        text: "Activation URLs",
+        current: current == "urls"
+      },
+      {
+        href: "/pacs-link-test/websocket",
+        text: "WebSocket",
+        current: current == "websocket"
+      }
+    ]
+  }) }}
+{% endmacro %}
+
+{# The participant rows, one details element each #}
+{% macro participantFields() %}
+  <h2 class="nhsuk-heading-m">Participants</h2>
+
+  {% for participant in participants %}
+    {% set index = loop.index0 %}
+
+    {% set fields %}
+      {{ input({
+        id: "participant-" + index + "-label",
+        name: "pacsTest[participants][" + index + "][label]",
+        label: {
+          text: "Label"
+        },
+        classes: "nhsuk-input--width-20",
+        value: participant.label
+      }) }}
+
+      {{ input({
+        id: "participant-" + index + "-nhs-number",
+        name: "pacsTest[participants][" + index + "][nhsNumber]",
+        label: {
+          text: "NHS number"
+        },
+        hint: {
+          text: "Sent as the patient ID"
+        },
+        classes: "nhsuk-input--width-10",
+        inputmode: "numeric",
+        value: participant.nhsNumber
+      }) }}
+
+      {{ input({
+        id: "participant-" + index + "-accession-number",
+        name: "pacsTest[participants][" + index + "][accessionNumber]",
+        label: {
+          text: "Accession number"
+        },
+        hint: {
+          text: "Several can be joined with backslashes"
+        },
+        classes: "nhsuk-input--width-20",
+        value: participant.accessionNumber
+      }) }}
+    {% endset %}
+
+    {% set summaryText = "Participant " + loop.index %}
+    {% if participant.label %}
+      {% set summaryText = summaryText + ": " + participant.label %}
+    {% elseif not (participant.nhsNumber or participant.accessionNumber) %}
+      {% set summaryText = summaryText + " (empty)" %}
+    {% endif %}
+
+    {{ details({
+      summaryText: summaryText,
+      html: fields,
+      open: loop.first
+    }) }}
+  {% endfor %}
+{% endmacro %}
+
+{# The participants that have something to identify a study by #}
+{% set filledParticipants = [] %}
+{% for participant in participants %}
+  {% if participant.nhsNumber or participant.accessionNumber %}
+    {% set filledParticipants = (filledParticipants.push({
+      index: loop.index,
+      label: participant.label or ("Participant " + loop.index),
+      nhsNumber: (participant.nhsNumber or "") | trim | replace(" ", ""),
+      accessionNumber: (participant.accessionNumber or "") | trim,
+      url: pacsUrl(participant)
+    }), filledParticipants) %}
+  {% endif %}
+{% endfor %}
