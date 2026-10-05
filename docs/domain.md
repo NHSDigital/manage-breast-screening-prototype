@@ -84,6 +84,23 @@ A participant's visit to a clinic, within a screening episode:
 - Keeps a status history with timestamps
 - Future appointment types will be technical recall and assessment
 
+### Issues
+
+A record that something is seriously wrong with a participant's record or images, raised by a user and resolved by a user. It is the service's way of stopping the round until someone has looked at it:
+
+- Examples: images of a different participant, missing or unopenable images, images labelled with the wrong side or view, recorded information that does not match the images (medical history says implants, the images show none), personal details that are wrong and cannot be corrected where the user is
+- Links to the records it is about: always the participant and episode, and the appointment or reading case it was raised on where there is one
+- While open it holds the episode's case out of reading and arbitration, and is shown on every page in that episode and on the participant
+- Closed with a note as resolved, or as raised in error. Nothing is deleted
+- Listed under Review, the service's lists of things needing someone's attention
+
+Two things that hold a case up are deliberately not issues:
+
+- **Technical recall** is a clinical opinion that the images need retaking. It is a reading outcome and brings the participant back
+- **Awaiting priors** is routine workflow: earlier images are being fetched from another unit
+
+Small errors, such as a wrong address, are corrected in the service there and then rather than raised. See [issues.md](issues.md) for how issues work in the prototype.
+
 ## User workflows
 
 The application supports the day-to-day running of clinics:
@@ -110,7 +127,7 @@ After screening appointments, mammograms are reviewed by radiologists. This is a
 - **Technical recall**: images need retaking for technical or quality reasons
 - **Recall for assessment**: potential abnormality, participant recalled for further tests
 - **Request priors**: pause reading while earlier images from another location are retrieved
-- **Defer** (also "raise an exception"): postpone reading a case where something is wrong, such as the wrong images
+- **Raise an issue**: hold the case out of reading because something is wrong, such as images of the wrong participant (see [issues](#issues))
 
 ### Quality requirements
 

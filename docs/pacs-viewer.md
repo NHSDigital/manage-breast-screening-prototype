@@ -24,6 +24,9 @@ This prototype simulates that behaviour using:
 
 - **Manual**: Click "Open PACS viewer" link in header navigation (visible during reading workflow)
 - **Auto-open**: If `autoOpenPacsViewer` setting is enabled, viewer opens automatically when entering reading workflow
+- **From an issue**: "Open study in PACS" on an issue page opens the viewer for that issue's images (see [issues.md](issues.md#images-on-the-issue-page))
+
+Pages give the viewer their study with `_includes/images/pacs-viewer-meta.njk`, included in the head after setting `viewerAppointment`, `viewerParticipant` and `viewerAutoOpen`. The reading layout and the issue page use it.
 
 ### Communication Flow
 

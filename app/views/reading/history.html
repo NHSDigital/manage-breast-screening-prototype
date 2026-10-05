@@ -217,10 +217,12 @@
         {% set readTypeText = "Unknown" %}
       {% endif %}
 
+      {% set issuePeriods = data | getOpenIssuePeriods(appointment.episodeId) %}
       {% set opinionHtml %}
         {{ readOpinionTag(reading, {
           context: 'own' if (reading | getReadAuthorIds) | includes(data.currentUser.id) else 'context',
-          showFinalisation: 'unfinalised'
+          showFinalisation: 'unfinalised',
+          issuePeriods: issuePeriods
         }) }}
       {% endset %}
 
@@ -230,7 +232,7 @@
          the opinion cell can't show #}
       {% set outcomeHtml %}
         {{ caseOutcomeTag(readingCase, {
-          unfinalisedCaption: "After reads finalise" if not (reading | isReadFinalised(data.settings))
+          unfinalisedCaption: "After reads finalise" if not (reading | isReadFinalised(data.settings, issuePeriods))
         }) }}
       {% endset %}
 

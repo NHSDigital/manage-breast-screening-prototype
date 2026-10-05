@@ -1,0 +1,39 @@
+{# app/views/review/issues/description.html
+
+   Change an open issue's description. Opens in a modal where modal forms are
+   on. The route (routes/review.js) passes the answers keyed to this issue as
+   descriptionAnswers. #}
+
+{% extends parentLayout or 'layout-app.html' %}
+
+{% set pageHeading = "Describe the issue" %}
+{% set formAction = ("/review/issues/" + issue.id + "/description-answer") | urlWithReferrer(referrerChain) %}
+{% set back = {
+  href: ("/review/issues/" + issue.id) | urlWithReferrer(referrerChain),
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  {{ textarea({
+    name: "issueTemp[edit][description]",
+    id: "issueDescription",
+    label: {
+      text: pageHeading,
+      size: "l",
+      isPageHeading: true
+    },
+    rows: 4,
+    value: descriptionAnswers.description
+  } | populateErrors) }}
+
+  {{ appHiddenInput({
+    name: "issueTemp[edit][issueId]",
+    value: issue.id
+  }) }}
+
+  {{ button({
+    text: "Save description"
+  }) }}
+
+{% endblock %}

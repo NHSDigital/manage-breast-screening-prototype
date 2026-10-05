@@ -825,6 +825,61 @@ const getResolvedAnnotations = (set, source = 'diagrams') => {
   return []
 }
 
+// Order of views within a breast, by the mammogramViewOrder setting. Implant
+// displaced views sit beside their regular counterpart.
+const VIEW_ORDERS = {
+  'cc-first': ['CC', 'CCID', 'MLO', 'MLOID'],
+  'mlo-first': ['MLO', 'MLOID', 'CC', 'CCID']
+}
+
+/**
+ * What an appointment's images are, in brief: when they were taken, how many
+ * there are and which views, right breast first.
+ *
+ * @param {object} appointment - Appointment with mammogramData
+ * @param {object} [options] - Options
+ * @param {string} [options.viewOrder] - 'cc-first' (default) or 'mlo-first', as data.settings.mammogramViewOrder
+ * @returns {object | null} { takenAt, imageCount, views }, where each view is a
+ *   label such as 'RCC', or 'RMLO ×2' when it has more than one image. Null
+ *   when the appointment has no images.
+ * @example
+ * summariseMammogramImages(appointment).views // ['RCC', 'RMLO', 'LCC', 'LMLO']
+ */
+const summariseMammogramImages = (appointment, options = {}) => {
+  const mammogramData = appointment?.mammogramData
+  const views = Object.values(mammogramData?.views || {}).filter(Boolean)
+  if (!views.length) return null
+
+  const order = VIEW_ORDERS[options.viewOrder] || VIEW_ORDERS['cc-first']
+  // Right breast first, then by view; a view not in the order goes last
+  const rank = (view) =>
+    (view.side === 'right' ? 0 : order.length) +
+    (order.includes(view.viewShort)
+      ? order.indexOf(view.viewShort)
+      : order.length - 1)
+
+  // Manual entry records a count per view; automatic entry the images themselves
+  const counted = views
+    .map((view) => ({
+      view,
+      count:
+        (mammogramData.isManualEntry ? view.count : view.images?.length) || 1
+    }))
+    .sort((a, b) => rank(a.view) - rank(b.view))
+
+  return {
+    takenAt:
+      mammogramData.metadata?.startTime ||
+      appointment.timing?.actualStartTime ||
+      appointment.timing?.startTime ||
+      null,
+    imageCount: counted.reduce((total, { count }) => total + count, 0),
+    views: counted.map(({ view, count }) =>
+      count > 1 ? `${view.viewShortWithSide} ×${count}` : view.viewShortWithSide
+    )
+  }
+}
+
 module.exports = {
   IMAGE_SOURCES,
   VIEWS,
@@ -837,5 +892,6 @@ module.exports = {
   getImagesForAppointment,
   hasImageSets,
   extractAppointmentContext,
-  getResolvedAnnotations
+  getResolvedAnnotations,
+  summariseMammogramImages
 }
