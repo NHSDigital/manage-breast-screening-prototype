@@ -21,23 +21,7 @@
   <tr class="nhsuk-table__row appointment-row" id="appointment-row-{{ appointment.id }}" data-fragment-id="{{ appointment.id }}">
 
     {# Appointment time #}
-    <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">{{ appointment.statusHistory[0].timestamp | formatTimeString }}
-      <br>
-      {% if appointment | isSpecialAppointment %}
-        {{ tag({
-        text: "Special appointment",
-        colour: "yellow",
-        classes: "nhsuk-u-margin-top-2 app-nowrap"
-        })}}
-      {% endif %}
-      {% if appointment | hasAppointmentNote %}
-        {{ tag({
-        text: "Appointment note",
-        colour: "yellow",
-        classes: "nhsuk-u-margin-top-2 app-nowrap"
-        })}}
-      {% endif %}
-    </td>
+    <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
 
     {# Appointment details - Name and NHS number #}
     <td class="nhsuk-table__cell">
@@ -47,6 +31,35 @@
       <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
         NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
       </p>
+      {% if appointment | isSpecialAppointment %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          {{ tag({
+          text: "Special appointment",
+          colour: "yellow",
+          classes: "app-nowrap"
+          })}}
+        </p>
+        {% set specialAppointmentReasons = [] %}
+        {% for supportType in appointment.specialAppointment.supportTypes %}
+          {% if supportType and supportType != '_unchecked' and supportType.trim() %}
+            {% set specialAppointmentReasons = specialAppointmentReasons | push(supportType) %}
+          {% endif %}
+        {% endfor %}
+        {% if specialAppointmentReasons | length %}
+          <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+            {{ specialAppointmentReasons | join(", ") }}
+          </p>
+        {% endif %}
+      {% endif %}
+      {% if appointment | hasAppointmentNote %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          {{ tag({
+          text: "Appointment note",
+          colour: "yellow",
+          classes: "app-nowrap"
+          })}}
+        </p>
+      {% endif %}
     </td>
 
     {# Date of birth #}
@@ -59,7 +72,21 @@
     <td class="nhsuk-table__cell">
       {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
 
-      {% if appointment | isInProgressNotPaused %}
+      {% if appointment.status == 'checked_in' %}
+        {% set checkInTime = appointment | getCheckInTime %}
+        {% set waitingMinutes = appointment | getWaitingMinutes %}
+        {% if checkInTime %}
+          <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0 app-nowrap">
+            Checked in {{ checkInTime | formatTimeString }}
+          </p>
+        {% endif %}
+        {% if waitingMinutes !== null %}
+          <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0 app-nowrap">
+            Waiting {{ waitingMinutes | formatWaitingTime }}
+          </p>
+        {% endif %}
+
+      {% elseif appointment | isInProgressNotPaused %}
         <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
           appointment.sessionDetails.startedBy | getUsername({
           format: 'short',

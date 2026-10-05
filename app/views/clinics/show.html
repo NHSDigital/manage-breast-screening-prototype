@@ -2,6 +2,8 @@
 {% extends 'layout-app.html' %}
 
 {% from "_includes/clinic-appointment-row.njk" import clinicAppointmentRow with context %}
+{% from "nhsuk/components/card/macro.njk" import card %}
+{% from "nhsuk/components/search-input/macro.njk" import searchInput %}
 
 {% set pageHeading = "Screening clinic - " ~ clinic.clinicCode %}
 
@@ -58,6 +60,33 @@
 <p>
   {{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}<br>
 </p>
+
+{# Participant search - posts to the all-participants page, which handles the
+   search query #}
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-one-half">
+    {% set findParticipantHtml %}
+      {{ searchInput({
+        id: "participant-search",
+        name: "search",
+        label: {
+          text: "Search by name, postcode, NHS or SX number"
+        },
+        button: { variant: "secondary" }
+      }) }}
+    {% endset %}
+    <form method="get" action="/participants">
+      {{ card({
+        heading: "Find participant",
+        headingLevel: 2,
+        headingSize: "s",
+        feature: true,
+        classes: "app-card--feature-grey",
+        descriptionHtml: findParticipantHtml
+      }) }}
+    </form>
+  </div>
+</div>
 
 {% set secondaryNavItems = [] %}
 

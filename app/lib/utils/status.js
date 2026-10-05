@@ -1,6 +1,7 @@
 // app/lib/utils/status.js
 
 const dayjs = require('dayjs')
+const config = require('../../config')
 
 /**
  * Define status groups for easier checking
@@ -471,6 +472,65 @@ const hasStoppedDetails = (appointment) => {
   return Boolean(appointment?.appointmentStopped?.stoppedReason?.length)
 }
 
+/**
+ * The timestamp an appointment was checked in, taken from its status history.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {string | null} ISO timestamp of the latest check-in, or null
+ */
+const getCheckInTime = (appointment) => {
+  const history = appointment?.statusHistory
+  if (!history) return null
+
+  const checkIn = [...history]
+    .reverse()
+    .find((entry) => entry.status === 'checked_in')
+  return checkIn ? checkIn.timestamp : null
+}
+
+/**
+ * How long a checked-in participant has been waiting, measured against the
+ * prototype's simulated "now" (config.clinics.simulatedTime) so the figure
+ * stays stable whatever the real time of viewing.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {number | null} Whole minutes waited, or null if not checked in
+ */
+const getWaitingMinutes = (appointment) => {
+  const checkInTime = getCheckInTime(appointment)
+  if (!checkInTime) return null
+
+  const [hours, minutes] = config.clinics.simulatedTime.split(':')
+  const simulatedNow = dayjs()
+    .hour(parseInt(hours, 10))
+    .minute(parseInt(minutes, 10))
+    .second(0)
+    .millisecond(0)
+
+  return Math.max(0, simulatedNow.diff(dayjs(checkInTime), 'minute'))
+}
+
+/**
+ * Format a waiting duration in minutes as words, e.g. "14 minutes",
+ * "1 hour", "1 hour 30 minutes".
+ *
+ * @param {number | null} totalMinutes - Whole minutes waited
+ * @returns {string} Human-readable duration, or empty string if not a number
+ */
+const formatWaitingTime = (totalMinutes) => {
+  if (typeof totalMinutes !== 'number' || isNaN(totalMinutes)) return ''
+
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  const parts = []
+  if (hours > 0) parts.push(`${hours} hour${hours === 1 ? '' : 's'}`)
+  if (minutes > 0 || hours === 0) {
+    parts.push(`${minutes} minute${minutes === 1 ? '' : 's'}`)
+  }
+  return parts.join(' ')
+}
+
 module.exports = {
   hasNotStarted,
   isCompleted,
@@ -489,6 +549,9 @@ module.exports = {
   hasAppointmentNote,
   hasSymptoms,
   hasStoppedDetails,
+  getCheckInTime,
+  getWaitingMinutes,
+  formatWaitingTime,
   // Export groups and display vocabularies for testing/reference
   STATUS_GROUPS,
   STATUS_TAGS
