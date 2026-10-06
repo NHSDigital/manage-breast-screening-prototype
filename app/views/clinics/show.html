@@ -61,21 +61,26 @@
   {{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}<br>
 </p>
 
-{# Participant search - posts to the all-participants page, which handles the
-   search query #}
+{# Everything that the participant search narrows - the search box, the tabs
+   and the list - sits in one live region so JavaScript can update it in place.
+   Without JavaScript the form submits and the page reloads, still filtered. #}
+<div id="clinic-appointments">
+
+{# Participant search - filters this clinic's list by name or NHS number #}
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-one-half">
     {% set findParticipantHtml %}
       {{ searchInput({
         id: "participant-search",
         name: "search",
+        value: search,
         label: {
           text: "Search by name, postcode, NHS or SX number"
         },
         button: { variant: "secondary" }
       }) }}
     {% endset %}
-    <form method="get" action="/participants">
+    <form method="get" action="{{ currentUrl }}" data-live-filters="#clinic-appointments">
       {{ card({
         heading: "Find participant",
         headingLevel: 2,
@@ -113,7 +118,7 @@
 
 {% for filter in tabItems %}
   {% set href -%}
-  /clinics/{{ clinicId }}/{{ filter.id if filter.id !== 'remaining' }}
+  /clinics/{{ clinicId }}/{{ filter.id if filter.id !== 'remaining' }}{{ ("?search=" + (search | urlencode)) if search }}
   {% endset %}
   {% set secondaryNavItems = secondaryNavItems | push({
   text: (filter.label + " " + appCount(appointments | filterAppointmentsByStatus(filter.id) | length)) | safe,
@@ -145,7 +150,11 @@
 {% endif %}
 
 {% if filteredAppointments.length === 0 %}
-  <p>{{ noAppointmentsMessage }}</p>
+  {% if search %}
+    <p>No participants in this clinic match “{{ search }}”.</p>
+  {% else %}
+    <p>{{ noAppointmentsMessage }}</p>
+  {% endif %}
 {% else %}
   <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped app-clinic-appointments-table">
     <thead class="nhsuk-table__head">
@@ -165,5 +174,6 @@
   </table>
 {% endif %}
 
+</div>
 
 {% endblock %}

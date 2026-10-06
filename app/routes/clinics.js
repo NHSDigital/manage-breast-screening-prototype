@@ -14,6 +14,7 @@ const {
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
+const { participantMatchesQuery } = require('../lib/utils/search')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
 const { getAppointment, updateAppointmentData } = require('../lib/utils/appointment-data')
 const { pluralise } = require('../lib/utils/strings')
@@ -486,13 +487,23 @@ module.exports = (router) => {
       return res.redirect('/clinics')
     }
 
-    const filteredAppointments = filterAppointmentsByStatus(clinicData.appointments, filter)
+    // Free-text search narrows the list by participant, keeping the counts and
+    // the current tab in step. Empty query matches everyone.
+    const search = req.query.search?.trim() || ''
+    const matchedAppointments = search
+      ? clinicData.appointments.filter((appointment) =>
+          participantMatchesQuery(appointment.participant, search)
+        )
+      : clinicData.appointments
+
+    const filteredAppointments = filterAppointmentsByStatus(matchedAppointments, filter)
 
     res.render('clinics/show', {
       clinicId: req.params.id,
       clinic: clinicData.clinic,
-      allAppointments: clinicData.appointments,
+      allAppointments: matchedAppointments,
       filteredAppointments,
+      search,
       status: filter,
       unit: clinicData.unit,
       currentFilter: filter,
