@@ -72,8 +72,8 @@
 
     {# Date of birth #}
     <td class="nhsuk-table__cell">{{ participant.demographicInformation.dateOfBirth | formatDate }}<br>
-      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true)
-        }})</span>
+      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">{{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true)
+        }}</span>
     </td>
 
     {# Appointment status, length and view appointment link #}

@@ -10,7 +10,8 @@ const {
 const {
   filterAppointmentsByStatus,
   isInProgress,
-  isFinal
+  isFinal,
+  isSpecialAppointment
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
@@ -490,11 +491,23 @@ module.exports = (router) => {
     // Free-text search narrows the list by participant, keeping the counts and
     // the current tab in step. Empty query matches everyone.
     const search = req.query.search?.trim() || ''
-    const matchedAppointments = search
-      ? clinicData.appointments.filter((appointment) =>
-          participantMatchesQuery(appointment.participant, search)
-        )
-      : clinicData.appointments
+    // Checkbox filter - the unchecked-checkbox script posts "_unchecked" when
+    // off, so match on the "yes" value rather than mere presence
+    const filterSpecialAppointment = []
+      .concat(req.query.specialAppointment || [])
+      .includes('yes')
+
+    let matchedAppointments = clinicData.appointments
+    if (search) {
+      matchedAppointments = matchedAppointments.filter((appointment) =>
+        participantMatchesQuery(appointment.participant, search)
+      )
+    }
+    if (filterSpecialAppointment) {
+      matchedAppointments = matchedAppointments.filter((appointment) =>
+        isSpecialAppointment(appointment)
+      )
+    }
 
     const filteredAppointments = filterAppointmentsByStatus(matchedAppointments, filter)
 
@@ -504,6 +517,7 @@ module.exports = (router) => {
       allAppointments: matchedAppointments,
       filteredAppointments,
       search,
+      specialAppointment: filterSpecialAppointment,
       status: filter,
       unit: clinicData.unit,
       currentFilter: filter,

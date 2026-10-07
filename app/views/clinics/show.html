@@ -4,6 +4,7 @@
 {% from "_includes/clinic-appointment-row.njk" import clinicAppointmentRow with context %}
 {% from "nhsuk/components/card/macro.njk" import card %}
 {% from "nhsuk/components/search-input/macro.njk" import searchInput %}
+{% from "nhsuk/components/checkboxes/macro.njk" import checkboxes %}
 
 {% set pageHeading = "Screening clinic - " ~ clinic.clinicCode %}
 
@@ -79,6 +80,19 @@
         },
         button: { variant: "secondary" }
       }) }}
+      {{ checkboxes({
+        idPrefix: "filter-special-appointment",
+        name: "specialAppointment",
+        small: true,
+        formGroup: { classes: "nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-0" },
+        items: [
+          {
+            value: "yes",
+            text: "Special appointment",
+            checked: true if specialAppointment
+          }
+        ]
+      }) }}
     {% endset %}
     <form method="get" action="{{ currentUrl }}" data-live-filters="#clinic-appointments">
       {{ card({
@@ -117,8 +131,15 @@
 {% endif %}
 
 {% for filter in tabItems %}
+  {% set tabQuery = [] %}
+  {% if search %}
+    {% set tabQuery = tabQuery | push("search=" + (search | urlencode)) %}
+  {% endif %}
+  {% if specialAppointment %}
+    {% set tabQuery = tabQuery | push("specialAppointment=yes") %}
+  {% endif %}
   {% set href -%}
-  /clinics/{{ clinicId }}/{{ filter.id if filter.id !== 'remaining' }}{{ ("?search=" + (search | urlencode)) if search }}
+  /clinics/{{ clinicId }}/{{ filter.id if filter.id !== 'remaining' }}{{ ("?" + (tabQuery | join("&"))) if tabQuery | length }}
   {% endset %}
   {% set secondaryNavItems = secondaryNavItems | push({
   text: (filter.label + " " + appCount(appointments | filterAppointmentsByStatus(filter.id) | length)) | safe,
