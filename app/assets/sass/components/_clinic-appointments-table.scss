@@ -6,9 +6,31 @@
   width: 100%;
 
   .app-clinic-appointments-table__time-column {
-    width: 10%;
+    width: 15%;
   }
 
+  // Clinic list table columns: Time, Details, Date of birth, Appointment,
+  // Actions. Short columns are kept narrow so the five space evenly.
+  .app-clinic-appointments-table__details-column {
+    width: 28%;
+  }
+
+  .app-clinic-appointments-table__dob-column {
+    width: 18%;
+  }
+
+  .app-clinic-appointments-table__appointment-column {
+    width: 21%;
+  }
+
+  .app-clinic-appointments-table__actions-column {
+    width: 18%;
+  }
+}
+
+// Close clinic table has a different shape (Time, Details, Status, Actions),
+// so it sets its own status and actions widths
+.app-clinic-appointments-table--flush {
   .app-clinic-appointments-table__status-column {
     width: 25%;
   }

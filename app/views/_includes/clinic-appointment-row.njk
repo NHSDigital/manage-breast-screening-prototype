@@ -12,6 +12,7 @@
 #}
 
 {%- from 'tag/macro.njk' import tag -%}
+{%- from 'button/macro.njk' import button -%}
 {%- from '_components/check-in/macro.njk' import appCheckIn %}
 {%- from '_includes/issues/tag.njk' import issueTag with context %}
 
@@ -21,15 +22,23 @@
 
   <tr class="nhsuk-table__row appointment-row" id="appointment-row-{{ appointment.id }}" data-fragment-id="{{ appointment.id }}">
 
-    {# Appointment time #}
-    <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
+    {# Appointment time and length #}
+    <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">
+      {{ appointment.statusHistory[0].timestamp | formatTimeString }}
+      <br>
+      {{ tag({
+      text: appointment.timing.duration + " mins",
+      colour: "white",
+      classes: "nhsuk-u-margin-top-1 app-nowrap"
+      }) }}
+    </td>
 
     {# Appointment details - Name and NHS number #}
     <td class="nhsuk-table__cell">
       <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
-        {{ participant | getFullNameReversed }}
+        <a href="{{ appointmentBaseUrl }}">{{ participant | getFullNameReversed }}</a>
       </p>
-      <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
+      <p class="nhsuk-u-secondary-text-colour nhsuk-body-s app-nowrap nhsuk-u-margin-bottom-0">
         NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
       </p>
       {% if appointment | isSpecialAppointment %}
@@ -47,7 +56,7 @@
           {% endif %}
         {% endfor %}
         {% if specialAppointmentReasons | length %}
-          <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+          <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
             {{ specialAppointmentReasons | join(", ") }}
           </p>
         {% endif %}
@@ -71,7 +80,7 @@
 
     {# Date of birth #}
     <td class="nhsuk-table__cell">{{ participant.demographicInformation.dateOfBirth | formatDate }}<br>
-      <span class="nhsuk-u-secondary-text-colour">({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true)
+      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true)
         }})</span>
     </td>
 
@@ -83,12 +92,12 @@
         {% set checkInTime = appointment | getCheckInTime %}
         {% set waitingMinutes = appointment | getWaitingMinutes %}
         {% if checkInTime %}
-          <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0 app-nowrap">
+          <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0 app-nowrap">
             Checked in {{ checkInTime | formatTimeString }}
           </p>
         {% endif %}
         {% if waitingMinutes !== null %}
-          <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0 app-nowrap">
+          <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0 app-nowrap">
             Waiting {{ waitingMinutes | formatWaitingTime }}
           </p>
         {% endif %}
@@ -109,11 +118,6 @@
             }) }}</span>
         {% endif %}
       {% endif %}
-
-      <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0 app-nowrap">
-        <a href="{{ appointmentBaseUrl }}">View appointment {{- ((" for " + (participant | getShortName)) |
-          asVisuallyHiddenText) | safe }}</a>
-      </p>
     </td>
 
     {# Actions - check-in or start appointment #}
@@ -131,12 +135,15 @@
 
       {% if (currentUser | isClinician) and (appointment | isActive) %}
         {% if appointment | hasNotStarted %}
-          {# Start appointment link gets rendered hidden if the appointment is not checked in - js can later remove this
-          class to make the link visible #}
-          <a href="{{ appointmentBaseUrl }}/start?appointment[workflowStatus][appointment]=started"
-            class="app-nowrap {{ 'app-display-none' if appointment.status == 'scheduled' }} js-start-appointment-link">
-            Start appointment
-          </a>
+          {# Start button is rendered hidden until the appointment is checked in -
+          the check-in fragment re-render drops app-display-none once it is #}
+          {{ button({
+            text: "Start appointment",
+            href: appointmentBaseUrl + "/start?appointment[workflowStatus][appointment]=started",
+            variant: "secondary",
+            small: true,
+            classes: "app-nowrap js-start-appointment-link" + (" app-display-none" if appointment.status == 'scheduled')
+          }) }}
 
         {% elseif appointment | isPaused or appointment | isInProgress %}
           <a href="{{ appointmentBaseUrl }}/resume">
