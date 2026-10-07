@@ -199,6 +199,8 @@ const generateClinicsForDay = (
 
   // Handle regular clinic slot allocation for all clinics
   newClinics.forEach((clinic) => {
+    const episodesBefore = episodes.length
+
     const remainingSlots = clinic.slots
       .filter(() => Math.random() < config.generation.bookingProbability)
       .filter((slot) => !appointments.some((e) => e.slotId === slot.id))
@@ -265,6 +267,28 @@ const generateClinicsForDay = (
       }
     })
 
+    // Flag one or two of this clinic's participants as attending screening for
+    // the first time. Prefer the youngest, since first invitations land at the
+    // start of the screening age range; generateHistoricEpisodesForParticipants
+    // then gives them no past rounds, so the flag stays true.
+    const clinicEpisodes = episodes.slice(episodesBefore)
+    if (clinic.clinicType === 'screening' && clinicEpisodes.length > 0) {
+      const youngestFirst = [...clinicEpisodes].sort((a, b) => {
+        const dobA = participants.find((p) => p.id === a.participantId)
+          ?.demographicInformation.dateOfBirth
+        const dobB = participants.find((p) => p.id === b.participantId)
+          ?.demographicInformation.dateOfBirth
+        return new Date(dobB) - new Date(dobA)
+      })
+      const firstTimeCount = Math.min(
+        youngestFirst.length,
+        Math.random() < 0.5 ? 1 : 2
+      )
+      youngestFirst.slice(0, firstTimeCount).forEach((episode) => {
+        episode.isFirstScreening = true
+      })
+    }
+
     clinics.push(clinic)
   })
 
@@ -323,6 +347,9 @@ const generateHistoricEpisodesForParticipants = (
   earliestEpisodes.forEach((earliest, participantId) => {
     const participant = participantsById.get(participantId)
     if (!participant) return
+
+    // A first-time participant has no past screening rounds
+    if (earliest.isFirstScreening) return
 
     historic.push(
       ...generateHistoricEpisodes({

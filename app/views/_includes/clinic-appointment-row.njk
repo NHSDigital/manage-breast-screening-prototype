@@ -22,16 +22,8 @@
 
   <tr class="nhsuk-table__row appointment-row" id="appointment-row-{{ appointment.id }}" data-fragment-id="{{ appointment.id }}">
 
-    {# Appointment time and length #}
-    <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">
-      {{ appointment.statusHistory[0].timestamp | formatTimeString }}
-      <br>
-      {{ tag({
-      text: appointment.timing.duration + " mins",
-      colour: "white",
-      classes: "nhsuk-u-margin-top-1 app-nowrap"
-      }) }}
-    </td>
+    {# Appointment time #}
+    <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
 
     {# Appointment details - Name and NHS number #}
     <td class="nhsuk-table__cell">
@@ -41,6 +33,15 @@
       <p class="nhsuk-u-secondary-text-colour nhsuk-body-s app-nowrap nhsuk-u-margin-bottom-0">
         NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
       </p>
+      {% if (data | getEpisode(appointment.episodeId)).isFirstScreening %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          {{ tag({
+          text: "1st time participant",
+          colour: "blue",
+          classes: "app-nowrap"
+          })}}
+        </p>
+      {% endif %}
       {% if appointment | isSpecialAppointment %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
           {{ tag({
@@ -61,15 +62,6 @@
           </p>
         {% endif %}
       {% endif %}
-      {% if appointment | hasAppointmentNote %}
-        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-          {{ tag({
-          text: "Appointment note",
-          colour: "yellow",
-          classes: "app-nowrap"
-          })}}
-        </p>
-      {% endif %}
       {# Asked of the episode, so an issue raised anywhere in the round shows #}
       {% if data | hasOpenIssue(appointment.episodeId) %}
         <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
@@ -84,9 +76,16 @@
         }})</span>
     </td>
 
-    {# Appointment status and view appointment link #}
+    {# Appointment status, length and view appointment link #}
     <td class="nhsuk-table__cell">
-      {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
+      <div class="app-clinic-appointments-table__tag-group">
+        {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
+        {{ tag({
+        text: appointment.timing.duration + " mins",
+        colour: "white" if appointment | isSpecialAppointment else "grey",
+        classes: "app-nowrap"
+        }) }}
+      </div>
 
       {% if appointment.status == 'checked_in' %}
         {% set checkInTime = appointment | getCheckInTime %}
@@ -117,6 +116,16 @@
             identifyCurrentUser: true
             }) }}</span>
         {% endif %}
+      {% endif %}
+
+      {% if appointment | hasAppointmentNote %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          {{ tag({
+          text: "Appointment note",
+          colour: "purple",
+          classes: "app-nowrap"
+          })}}
+        </p>
       {% endif %}
     </td>
 

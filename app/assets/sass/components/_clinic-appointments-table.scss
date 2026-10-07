@@ -1,9 +1,27 @@
 // app/assets/sass/components/_clinic-appointments-table.scss
 // Appointment tables on the clinic pages (clinic view and close clinic)
 
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
 .app-clinic-appointments-table {
   table-layout: fixed;
   width: 100%;
+
+  // A little breathing room between rows on top of the compact padding
+  .nhsuk-table__cell {
+    padding-top: nhsuk-spacing(3);
+    padding-bottom: nhsuk-spacing(3);
+  }
+
+  // Status tag and appointment length sit as a unit: a long status (e.g.
+  // "Attended not screened") wraps the length tag to the next line cleanly,
+  // rather than leaving it dangling indented under the status
+  .app-clinic-appointments-table__tag-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: nhsuk-spacing(1);
+  }
 
   .app-clinic-appointments-table__time-column {
     width: 15%;
