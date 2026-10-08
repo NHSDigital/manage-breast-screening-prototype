@@ -520,8 +520,24 @@ const getWaitingMinutes = (appointment) => {
 }
 
 /**
- * Format a waiting duration in minutes as words, e.g. "14 minutes",
- * "1 hour", "1 hour 30 minutes".
+ * A real-time anchor for the waiting figure: now minus the minutes already
+ * waited. The clinic page's client script counts up from this, so the "N
+ * minutes ago" ticks over while the page stays open. Anchored to real now
+ * (not the simulated clinic time) precisely so it advances.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {string | null} ISO timestamp to count up from, or null
+ */
+const getWaitingSince = (appointment) => {
+  const minutes = getWaitingMinutes(appointment)
+  if (minutes === null) return null
+
+  return dayjs().subtract(minutes, 'minute').toISOString()
+}
+
+/**
+ * Format a waiting duration as whole minutes, e.g. "1 min", "75 mins".
+ * Always minutes, never hours. Seconds are added live by the client script.
  *
  * @param {number | null} totalMinutes - Whole minutes waited
  * @returns {string} Human-readable duration, or empty string if not a number
@@ -529,15 +545,7 @@ const getWaitingMinutes = (appointment) => {
 const formatWaitingTime = (totalMinutes) => {
   if (typeof totalMinutes !== 'number' || isNaN(totalMinutes)) return ''
 
-  const hours = Math.floor(totalMinutes / 60)
-  const minutes = totalMinutes % 60
-
-  const parts = []
-  if (hours > 0) parts.push(`${hours} hour${hours === 1 ? '' : 's'}`)
-  if (minutes > 0 || hours === 0) {
-    parts.push(`${minutes} minute${minutes === 1 ? '' : 's'}`)
-  }
-  return parts.join(' ')
+  return `${totalMinutes} min${totalMinutes === 1 ? '' : 's'}`
 }
 
 module.exports = {
@@ -560,6 +568,7 @@ module.exports = {
   hasStoppedDetails,
   getCheckInTime,
   getWaitingMinutes,
+  getWaitingSince,
   formatWaitingTime,
   // Export groups and display vocabularies for testing/reference
   STATUS_GROUPS,

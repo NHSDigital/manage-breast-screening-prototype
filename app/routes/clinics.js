@@ -11,7 +11,8 @@ const {
   filterAppointmentsByStatus,
   isInProgress,
   isFinal,
-  isSpecialAppointment
+  isSpecialAppointment,
+  getWaitingMinutes
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
@@ -509,7 +510,35 @@ module.exports = (router) => {
       )
     }
 
-    const filteredAppointments = filterAppointmentsByStatus(matchedAppointments, filter)
+    let filteredAppointments = filterAppointmentsByStatus(matchedAppointments, filter)
+
+    // Optional column sort (NHS sortable table, server-side). Time sorts by
+    // appointment time; the Appointment column sorts by waiting time, with
+    // not-yet-checked-in appointments sinking to the bottom in time order.
+    const SORTS = [
+      'time-ascending',
+      'time-descending',
+      'waiting-ascending',
+      'waiting-descending'
+    ]
+    const sort = SORTS.includes(req.query.sort) ? req.query.sort : ''
+    const sortDescending = sort.endsWith('descending')
+    if (sort.startsWith('waiting')) {
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const aWaiting = getWaitingMinutes(a)
+        const bWaiting = getWaitingMinutes(b)
+        if (aWaiting === null && bWaiting === null) return 0
+        if (aWaiting === null) return 1
+        if (bWaiting === null) return -1
+        return sortDescending ? bWaiting - aWaiting : aWaiting - bWaiting
+      })
+    } else if (sort.startsWith('time')) {
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const diff =
+          new Date(a.timing.startTime) - new Date(b.timing.startTime)
+        return sortDescending ? -diff : diff
+      })
+    }
 
     res.render('clinics/show', {
       clinicId: req.params.id,
@@ -518,6 +547,7 @@ module.exports = (router) => {
       filteredAppointments,
       search,
       specialAppointment: filterSpecialAppointment,
+      sort,
       status: filter,
       unit: clinicData.unit,
       currentFilter: filter,

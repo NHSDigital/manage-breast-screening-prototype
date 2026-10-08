@@ -22,21 +22,31 @@
 
   <tr class="nhsuk-table__row appointment-row" id="appointment-row-{{ appointment.id }}" data-fragment-id="{{ appointment.id }}">
 
-    {# Appointment time #}
-    <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
+    {# Appointment time, with length shown only for the longer special appointments #}
+    <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">
+      {{ appointment.statusHistory[0].timestamp | formatTimeString }}
+      {% if appointment | isSpecialAppointment %}
+        <br>
+        {{ tag({
+        text: appointment.timing.duration + " mins",
+        colour: "white",
+        classes: "nhsuk-u-margin-top-1 app-nowrap"
+        }) }}
+      {% endif %}
+    </td>
 
     {# Appointment details - Name and NHS number #}
     <td class="nhsuk-table__cell">
       <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
         <a href="{{ appointmentBaseUrl }}">{{ participant | getFullNameReversed }}</a>
       </p>
-      <p class="nhsuk-u-secondary-text-colour nhsuk-body-s app-nowrap nhsuk-u-margin-bottom-0">
-        NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
+      <p class="nhsuk-u-secondary-text-colour nhsuk-body-s app-nowrap app-code-font nhsuk-u-margin-bottom-0">
+        {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
       </p>
       {% if (data | getEpisode(appointment.episodeId)).isFirstScreening %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
           {{ tag({
-          text: "1st time participant",
+          text: "New",
           colour: "blue",
           classes: "app-nowrap"
           })}}
@@ -57,7 +67,7 @@
           {% endif %}
         {% endfor %}
         {% if specialAppointmentReasons | length %}
-          <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+          <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-0">
             {{ specialAppointmentReasons | join(", ") }}
           </p>
         {% endif %}
@@ -76,28 +86,16 @@
         }}</span>
     </td>
 
-    {# Appointment status, length and view appointment link #}
+    {# Appointment status and view appointment link #}
     <td class="nhsuk-table__cell">
-      <div class="app-clinic-appointments-table__tag-group">
-        {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
-        {{ tag({
-        text: appointment.timing.duration + " mins",
-        colour: "white" if appointment | isSpecialAppointment else "grey",
-        classes: "app-nowrap"
-        }) }}
-      </div>
+      {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
 
       {% if appointment.status == 'checked_in' %}
         {% set checkInTime = appointment | getCheckInTime %}
         {% set waitingMinutes = appointment | getWaitingMinutes %}
         {% if checkInTime %}
-          <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0 app-nowrap">
-            Checked in {{ checkInTime | formatTimeString }}
-          </p>
-        {% endif %}
-        {% if waitingMinutes !== null %}
-          <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0 app-nowrap">
-            Waiting {{ waitingMinutes | formatWaitingTime }}
+          <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-0">
+            at {{ checkInTime | formatTimeString }}{% if waitingMinutes !== null %} (<span class="js-waiting-time" data-waiting-since="{{ appointment | getWaitingSince }}">{{ waitingMinutes | formatWaitingTime }} ago</span>){% endif %}
           </p>
         {% endif %}
 
@@ -122,7 +120,7 @@
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
           {{ tag({
           text: "Appointment note",
-          colour: "purple",
+          colour: "yellow",
           classes: "app-nowrap"
           })}}
         </p>

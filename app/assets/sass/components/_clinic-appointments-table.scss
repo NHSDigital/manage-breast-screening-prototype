@@ -13,14 +13,25 @@
     padding-bottom: nhsuk-spacing(3);
   }
 
-  // Status tag and appointment length sit as a unit: a long status (e.g.
-  // "Attended not screened") wraps the length tag to the next line cleanly,
-  // rather than leaving it dangling indented under the status
-  .app-clinic-appointments-table__tag-group {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: nhsuk-spacing(1);
+  // Headings top-align so their words line up across columns even though the
+  // Appointment heading carries the sort link below it
+  .nhsuk-table__header {
+    vertical-align: top;
+  }
+
+  // The nhsuk sort-arrow mask points at an SVG asset that this kit serves as
+  // text/html, which the browser refuses to use as a mask. Point it at an
+  // inline copy so the up/down/both arrows render.
+  .nhsuk-table__header[data-sort] .nhsuk-link::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1.5 9.3l5-5c.2-.2.4-.3.7-.3.3 0 .5.1.7.3l5 5a1 1 0 0 1-1.4 1.4l-3.3-3.3L8.2 19a1 1 0 0 1-2 0L6.2 7.4l-3.3 3.3a1 1 0 1 1-1.4-1.4Z'/%3E%3Cpath d='M22.5 14.7l-5 5c-.2.2-.4.3-.7.3-.3 0-.5-.1-.7-.3l-5-5a1 1 0 0 1 1.4-1.4l3.3 3.3L15.8 5a1 1 0 0 1 2 0L17.8 16.6l3.3-3.3a1 1 0 1 1 1.4 1.4Z'/%3E%3C/svg%3E");
+  }
+
+  .nhsuk-table__header[aria-sort="ascending"] .nhsuk-link::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.3 9.3l5-5c.2-.2.4-.3.7-.3.3 0 .5.1.7.3l5 5a1 1 0 0 1-1.4 1.4l-3.3-3.3L13 19a1 1 0 0 1-2 0L11 7.4l-3.3 3.3a1 1 0 1 1-1.4-1.4Z'/%3E%3C/svg%3E");
+  }
+
+  .nhsuk-table__header[aria-sort="descending"] .nhsuk-link::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17.7 14.7l-5 5c-.2.2-.4.3-.7.3-.3 0-.5-.1-.7-.3l-5-5a1 1 0 0 1 1.4-1.4l3.3 3.3L11 5a1 1 0 0 1 2 0L13 16.6l3.3-3.3a1 1 0 1 1 1.4 1.4Z'/%3E%3C/svg%3E");
   }
 
   .app-clinic-appointments-table__time-column {
