@@ -1,14 +1,65 @@
 // app/assets/sass/components/_clinic-appointments-table.scss
 // Appointment tables on the clinic pages (clinic view and close clinic)
 
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
 .app-clinic-appointments-table {
   table-layout: fixed;
   width: 100%;
 
-  .app-clinic-appointments-table__time-column {
-    width: 22%;
+  // A little breathing room between rows on top of the compact padding
+  .nhsuk-table__cell {
+    padding-top: nhsuk-spacing(3);
+    padding-bottom: nhsuk-spacing(3);
   }
 
+  // Headings top-align so their words line up across columns even though the
+  // Appointment heading carries the sort link below it
+  .nhsuk-table__header {
+    vertical-align: top;
+  }
+
+  // The nhsuk sort-arrow mask points at an SVG asset that this kit serves as
+  // text/html, which the browser refuses to use as a mask. Point it at an
+  // inline copy so the up/down/both arrows render.
+  .nhsuk-table__header[data-sort] .nhsuk-link::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M1.5 9.3l5-5c.2-.2.4-.3.7-.3.3 0 .5.1.7.3l5 5a1 1 0 0 1-1.4 1.4l-3.3-3.3L8.2 19a1 1 0 0 1-2 0L6.2 7.4l-3.3 3.3a1 1 0 1 1-1.4-1.4Z'/%3E%3Cpath d='M22.5 14.7l-5 5c-.2.2-.4.3-.7.3-.3 0-.5-.1-.7-.3l-5-5a1 1 0 0 1 1.4-1.4l3.3 3.3L15.8 5a1 1 0 0 1 2 0L17.8 16.6l3.3-3.3a1 1 0 1 1 1.4 1.4Z'/%3E%3C/svg%3E");
+  }
+
+  .nhsuk-table__header[aria-sort="ascending"] .nhsuk-link::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M6.3 9.3l5-5c.2-.2.4-.3.7-.3.3 0 .5.1.7.3l5 5a1 1 0 0 1-1.4 1.4l-3.3-3.3L13 19a1 1 0 0 1-2 0L11 7.4l-3.3 3.3a1 1 0 1 1-1.4-1.4Z'/%3E%3C/svg%3E");
+  }
+
+  .nhsuk-table__header[aria-sort="descending"] .nhsuk-link::after {
+    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M17.7 14.7l-5 5c-.2.2-.4.3-.7.3-.3 0-.5-.1-.7-.3l-5-5a1 1 0 0 1 1.4-1.4l3.3 3.3L11 5a1 1 0 0 1 2 0L13 16.6l3.3-3.3a1 1 0 1 1 1.4 1.4Z'/%3E%3C/svg%3E");
+  }
+
+  .app-clinic-appointments-table__time-column {
+    width: 15%;
+  }
+
+  // Clinic list table columns: Time, Details, Date of birth, Appointment,
+  // Actions. Short columns are kept narrow so the five space evenly.
+  .app-clinic-appointments-table__details-column {
+    width: 28%;
+  }
+
+  .app-clinic-appointments-table__dob-column {
+    width: 18%;
+  }
+
+  .app-clinic-appointments-table__appointment-column {
+    width: 21%;
+  }
+
+  .app-clinic-appointments-table__actions-column {
+    width: 18%;
+  }
+}
+
+// Close clinic table has a different shape (Time, Details, Status, Actions),
+// so it sets its own status and actions widths
+.app-clinic-appointments-table--flush {
   .app-clinic-appointments-table__status-column {
     width: 25%;
   }

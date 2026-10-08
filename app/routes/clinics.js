@@ -10,10 +10,13 @@ const {
 const {
   filterAppointmentsByStatus,
   isInProgress,
-  isFinal
+  isFinal,
+  isSpecialAppointment,
+  getWaitingMinutes
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
+const { participantMatchesQuery } = require('../lib/utils/search')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
 const { getAppointment, updateAppointmentData } = require('../lib/utils/appointment-data')
 const { pluralise } = require('../lib/utils/strings')
@@ -486,13 +489,65 @@ module.exports = (router) => {
       return res.redirect('/clinics')
     }
 
-    const filteredAppointments = filterAppointmentsByStatus(clinicData.appointments, filter)
+    // Free-text search narrows the list by participant, keeping the counts and
+    // the current tab in step. Empty query matches everyone.
+    const search = req.query.search?.trim() || ''
+    // Checkbox filter - the unchecked-checkbox script posts "_unchecked" when
+    // off, so match on the "yes" value rather than mere presence
+    const filterSpecialAppointment = []
+      .concat(req.query.specialAppointment || [])
+      .includes('yes')
+
+    let matchedAppointments = clinicData.appointments
+    if (search) {
+      matchedAppointments = matchedAppointments.filter((appointment) =>
+        participantMatchesQuery(appointment.participant, search)
+      )
+    }
+    if (filterSpecialAppointment) {
+      matchedAppointments = matchedAppointments.filter((appointment) =>
+        isSpecialAppointment(appointment)
+      )
+    }
+
+    let filteredAppointments = filterAppointmentsByStatus(matchedAppointments, filter)
+
+    // Optional column sort (NHS sortable table, server-side). Time sorts by
+    // appointment time; the Appointment column sorts by waiting time, with
+    // not-yet-checked-in appointments sinking to the bottom in time order.
+    const SORTS = [
+      'time-ascending',
+      'time-descending',
+      'waiting-ascending',
+      'waiting-descending'
+    ]
+    const sort = SORTS.includes(req.query.sort) ? req.query.sort : ''
+    const sortDescending = sort.endsWith('descending')
+    if (sort.startsWith('waiting')) {
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const aWaiting = getWaitingMinutes(a)
+        const bWaiting = getWaitingMinutes(b)
+        if (aWaiting === null && bWaiting === null) return 0
+        if (aWaiting === null) return 1
+        if (bWaiting === null) return -1
+        return sortDescending ? bWaiting - aWaiting : aWaiting - bWaiting
+      })
+    } else if (sort.startsWith('time')) {
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const diff =
+          new Date(a.timing.startTime) - new Date(b.timing.startTime)
+        return sortDescending ? -diff : diff
+      })
+    }
 
     res.render('clinics/show', {
       clinicId: req.params.id,
       clinic: clinicData.clinic,
-      allAppointments: clinicData.appointments,
+      allAppointments: matchedAppointments,
       filteredAppointments,
+      search,
+      specialAppointment: filterSpecialAppointment,
+      sort,
       status: filter,
       unit: clinicData.unit,
       currentFilter: filter,

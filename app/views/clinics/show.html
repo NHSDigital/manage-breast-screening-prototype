@@ -2,6 +2,9 @@
 {% extends 'layout-app.html' %}
 
 {% from "_includes/clinic-appointment-row.njk" import clinicAppointmentRow with context %}
+{% from "nhsuk/components/details/macro.njk" import details %}
+{% from "nhsuk/components/search-input/macro.njk" import searchInput %}
+{% from "nhsuk/components/checkboxes/macro.njk" import checkboxes %}
 
 {% set pageHeading = "Screening clinic - " ~ clinic.clinicCode %}
 
@@ -59,6 +62,50 @@
   {{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}<br>
 </p>
 
+{# Everything that the participant search narrows - the search box, the tabs
+   and the list - sits in one live region so JavaScript can update it in place.
+   Without JavaScript the form submits and the page reloads, still filtered. #}
+<div id="clinic-appointments">
+
+{# Participant search - filters this clinic's list by name or NHS number #}
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-one-half">
+    {% set findParticipantHtml %}
+      <form method="get" action="{{ currentUrl }}" data-live-filters="#clinic-appointments">
+        {{ searchInput({
+          id: "participant-search",
+          name: "search",
+          value: search,
+          label: {
+            text: "Search by name or NHS number"
+          },
+          button: { variant: "secondary" }
+        }) }}
+        {{ checkboxes({
+          idPrefix: "filter-special-appointment",
+          name: "specialAppointment",
+          small: true,
+          formGroup: { classes: "nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-0" },
+          items: [
+            {
+              value: "yes",
+              text: "Special appointment",
+              checked: true if specialAppointment
+            }
+          ]
+        }) }}
+      </form>
+    {% endset %}
+    {# Open when a search or filter is active so a live update doesn't collapse it #}
+    {{ details({
+      summaryText: "Find participant",
+      html: findParticipantHtml,
+      classes: "nhsuk-expander",
+      open: true if (search or specialAppointment)
+    }) }}
+  </div>
+</div>
+
 {% set secondaryNavItems = [] %}
 
 {% set tabItems = [
@@ -82,9 +129,20 @@
   ] %}
 {% endif %}
 
+{# Query parts the tabs and the sort link share, so switching tab or sorting
+   keeps the active search and filters #}
+{% set filterParams = [] %}
+{% if search %}
+  {% set filterParams = filterParams | push("search=" + (search | urlencode)) %}
+{% endif %}
+{% if specialAppointment %}
+  {% set filterParams = filterParams | push("specialAppointment=yes") %}
+{% endif %}
+
 {% for filter in tabItems %}
+  {% set tabQuery = (filterParams | push("sort=" + sort)) if sort else filterParams %}
   {% set href -%}
-  /clinics/{{ clinicId }}/{{ filter.id if filter.id !== 'remaining' }}
+  /clinics/{{ clinicId }}/{{ filter.id if filter.id !== 'remaining' }}{{ ("?" + (tabQuery | join("&"))) if tabQuery | length }}
   {% endset %}
   {% set secondaryNavItems = secondaryNavItems | push({
   text: (filter.label + " " + appCount(appointments | filterAppointmentsByStatus(filter.id) | length)) | safe,
@@ -116,16 +174,38 @@
 {% endif %}
 
 {% if filteredAppointments.length === 0 %}
-  <p>{{ noAppointmentsMessage }}</p>
+  {% if search %}
+    <p>No participants in this clinic match “{{ search }}”.</p>
+  {% else %}
+    <p>{{ noAppointmentsMessage }}</p>
+  {% endif %}
 {% else %}
-  <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped app-clinic-appointments-table">
+  <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped nhsuk-table--sortable app-clinic-appointments-table">
+    <caption class="nhsuk-table__caption nhsuk-u-visually-hidden">Appointments. Column headers with links are sortable.</caption>
     <thead class="nhsuk-table__head">
       <tr class="nhsuk-table__row">
-        <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
-        <th scope="col" class="nhsuk-table__header">Details</th>
-        <th scope="col" class="nhsuk-table__header">Date of birth</th>
-        <th scope="col" class="nhsuk-table__header">Appointment</th>
-        <th scope="col" class="nhsuk-table__header">Actions</th>
+        {# Time - sortable by appointment time (earliest first by default) #}
+        {% set timeDirection = "ascending" if sort == "time-ascending" else ("descending" if sort == "time-descending" else none) %}
+        {% set timeNext = ("descending" if timeDirection == "ascending" else "ascending") if timeDirection else "ascending" %}
+        {% set timeParams = filterParams | push("sort=time-" + timeNext) %}
+        <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__time-column" data-sort{% if timeDirection %} aria-sort="{{ timeDirection }}"{% endif %}>
+          <a class="nhsuk-link" href="{{ currentUrl }}?{{ timeParams | join('&') }}">Time</a>
+        </th>
+        <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__details-column">Participant</th>
+        <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__dob-column">Date of birth</th>
+        {# Appointment - sortable by waiting time, longest first by default, but
+           only when someone is checked in and waiting times exist to order by #}
+        {% if filteredAppointments | filterAppointmentsByStatus('checked-in') | length %}
+          {% set waitingDirection = "ascending" if sort == "waiting-ascending" else ("descending" if sort == "waiting-descending" else none) %}
+          {% set waitingNext = ("descending" if waitingDirection == "ascending" else "ascending") if waitingDirection else "descending" %}
+          {% set waitingParams = filterParams | push("sort=waiting-" + waitingNext) %}
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column" data-sort{% if waitingDirection %} aria-sort="{{ waitingDirection }}"{% endif %}>
+            <a class="nhsuk-link" href="{{ currentUrl }}?{{ waitingParams | join('&') }}">Appointment</a>
+          </th>
+        {% else %}
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column">Appointment</th>
+        {% endif %}
+        <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__actions-column">Actions</th>
       </tr>
     </thead>
     <tbody class="nhsuk-table__body">
@@ -136,5 +216,10 @@
   </table>
 {% endif %}
 
+</div>
 
+{% endblock %}
+
+{% block pageScripts %}
+  <script type="module" src="/assets/javascript/waiting-time.js"></script>
 {% endblock %}

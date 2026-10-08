@@ -415,6 +415,29 @@ const generateAppointment = ({
       }
     }
 
+    // Record the check-in on checked-in appointments so the clinic list can
+    // show the check-in time and how long the participant has been waiting.
+    // Arrival is a few minutes either side of their slot, never after now.
+    if (appointmentStatus === 'checked_in') {
+      let checkInTime = slotDateTime.add(
+        faker.number.int({ min: -5, max: 10 }),
+        'minute'
+      )
+      if (checkInTime.isAfter(simulatedDateTime)) {
+        checkInTime = simulatedDateTime.subtract(
+          faker.number.int({ min: 1, max: 5 }),
+          'minute'
+        )
+      }
+      appointment.statusHistory = [
+        ...appointment.statusHistory,
+        {
+          status: 'checked_in',
+          timestamp: checkInTime.toISOString()
+        }
+      ]
+    }
+
     // Select image set for appointments with mammogram data
     // Done at the end so full appointment context (symptoms, implants, etc.) is available
     if (appointment.mammogramData) {
