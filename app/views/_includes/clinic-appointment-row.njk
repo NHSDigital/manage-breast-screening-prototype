@@ -7,6 +7,7 @@
   appointment - appointment record
   participant - participant the appointment belongs to
   clinicId - id of the clinic being viewed
+  filter - the current tab (e.g. "remaining"), which decides the columns shown
 
   Import with context - the row reads settings and the current user from data.
 #}
@@ -16,9 +17,15 @@
 {%- from '_components/check-in/macro.njk' import appCheckIn %}
 {%- from '_includes/issues/tag.njk' import issueTag with context %}
 
-{% macro clinicAppointmentRow(appointment, participant, clinicId) %}
+{% macro clinicAppointmentRow(appointment, participant, clinicId, filter="remaining") %}
   {% set appointmentBaseUrl = getAppointmentUrl(appointment) %}
   {% set statusTagId = "status-tag-" + appointment.id %}
+
+  {# Which broken-out columns this tab shows (shared with the table header and
+     the sort logic). Remaining and Checked in break out the check-in time;
+     In progress, Complete and All break out the mammographer and screening
+     order; Complete has no actions as every row is final. #}
+  {% set columns = filter | getClinicTableColumns %}
 
   <tr class="nhsuk-table__row appointment-row" id="appointment-row-{{ appointment.id }}" data-fragment-id="{{ appointment.id }}">
 
@@ -87,10 +94,10 @@
     </td>
 
     {# Appointment status and view appointment link #}
-    <td class="nhsuk-table__cell">
+    <td class="nhsuk-table__cell app-clinic-appointments-table__appointment-column">
       {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
 
-      {% if appointment.status == 'checked_in' %}
+      {% if appointment.status == 'checked_in' and not columns.checkedIn %}
         {% set checkInTime = appointment | getCheckInTime %}
         {% set waitingMinutes = appointment | getWaitingMinutes %}
         {% if checkInTime %}
@@ -99,14 +106,14 @@
           </p>
         {% endif %}
 
-      {% elseif appointment | isInProgressNotPaused %}
+      {% elseif (appointment | isInProgressNotPaused) and not columns.screenedBy %}
         <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
           appointment.sessionDetails.startedBy | getUsername({
           format: 'short',
           identifyCurrentUser: true
           }) }}</span>
 
-      {% elseif (appointment | isFinal) %}
+      {% elseif (appointment | isFinal) and not columns.screenedBy %}
         {% if appointment.sessionDetails.startedBy %}
           <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ appointment.sessionDetails.startedBy
             | getUsername({
@@ -127,7 +134,49 @@
       {% endif %}
     </td>
 
+    {# Checked in - the check-in time with the wait so far underneath. Its own
+       sortable column on the Remaining and Checked in tabs; blank until the
+       participant checks in. Minute granularity, with no live-ticking seconds. #}
+    {% if columns.checkedIn %}
+      <td class="nhsuk-table__cell app-clinic-appointments-table__checked-in-column">
+        {% if appointment.status == 'checked_in' %}
+          {% set checkInTime = appointment | getCheckInTime %}
+          {% set waitingMinutes = appointment | getWaitingMinutes %}
+          {% if checkInTime %}
+            {{ checkInTime | formatTimeString }}
+            {% if waitingMinutes !== null %}
+              <br>
+              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">Waiting {{ waitingMinutes | formatWaitingTime }}</span>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      </td>
+    {% endif %}
+
+    {# Screened by - the mammographer who ran the appointment, with a badge
+       showing the order they were screened in to its left. Its own sortable
+       column on the In progress and Complete tabs; blank until started. #}
+    {% if columns.screenedBy %}
+      <td class="nhsuk-table__cell app-clinic-appointments-table__screened-by-column">
+        {# Attended not screened means a mammographer saw them but no screening
+           happened, so leave this blank rather than naming them #}
+        {% if appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
+          {% if appointment.screeningOrder %}
+            <span class="nhsapp-badge app-nowrap nhsuk-u-margin-right-2">
+              <span aria-hidden="true">{{ appointment.screeningOrder }}</span>
+              <span class="nhsuk-u-visually-hidden">Screened {{ appointment.screeningOrder | getOrdinalNumber }}</span>
+            </span>
+          {% endif %}
+          {{ appointment.sessionDetails.startedBy | getUsername({
+            format: 'short',
+            identifyCurrentUser: true
+          }) }}
+        {% endif %}
+      </td>
+    {% endif %}
+
     {# Actions - check-in or start appointment #}
+    {% if columns.actions %}
     <td class="nhsuk-table__cell">
       {% if appointment.status == 'scheduled' %}
         {{ appCheckIn({
@@ -136,7 +185,8 @@
           participant: participant,
           confirmIdentityOnCheckIn: true if data.settings.appointment.confirmIdentityOnCheckIn == 'true' else false,
           statusTagId: statusTagId,
-          currentUser: currentUser
+          currentUser: currentUser,
+          currentFilter: filter
         }) }}
       {% endif %}
 
@@ -159,5 +209,6 @@
         {% endif %}
       {% endif %}
     </td>
+    {% endif %}
   </tr>
 {% endmacro %}

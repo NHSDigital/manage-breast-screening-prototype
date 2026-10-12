@@ -5,6 +5,7 @@ const {
   getClinic,
   getFilteredClinics,
   getClinicAppointments,
+  getClinicTableColumns,
   updateClinic
 } = require('../lib/utils/clinics')
 const {
@@ -12,6 +13,7 @@ const {
   isInProgress,
   isFinal,
   isSpecialAppointment,
+  getCheckInTime,
   getWaitingMinutes
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
@@ -177,7 +179,8 @@ module.exports = (router) => {
       return res.render('clinics/clinic-appointment-row', {
         appointment: updatedAppointment,
         participant: getParticipant(data, updatedAppointment.participantId),
-        clinicId
+        clinicId,
+        currentFilter
       })
     }
 
@@ -512,18 +515,71 @@ module.exports = (router) => {
 
     let filteredAppointments = filterAppointmentsByStatus(matchedAppointments, filter)
 
-    // Optional column sort (NHS sortable table, server-side). Time sorts by
-    // appointment time; the Appointment column sorts by waiting time, with
-    // not-yet-checked-in appointments sinking to the bottom in time order.
-    const SORTS = [
-      'time-ascending',
-      'time-descending',
-      'waiting-ascending',
-      'waiting-descending'
-    ]
-    const sort = SORTS.includes(req.query.sort) ? req.query.sort : ''
+    // Optional column sort (NHS sortable table, server-side). The Remaining and
+    // Checked in tabs sort by scheduled Time or by the check-in timestamp; the
+    // In progress, Complete and All tabs sort by Time or by the order of
+    // screening; the other tabs sort by Time or waiting time. Rows with no value
+    // for the active sort sink to the bottom, either direction.
+    const columns = getClinicTableColumns(filter)
+    let allowedSorts
+    if (columns.checkedIn) {
+      allowedSorts = [
+        'time-ascending',
+        'time-descending',
+        'checkedIn-ascending',
+        'checkedIn-descending'
+      ]
+    } else if (columns.screenedBy) {
+      allowedSorts = [
+        'time-ascending',
+        'time-descending',
+        'screeningOrder-ascending',
+        'screeningOrder-descending'
+      ]
+    } else {
+      allowedSorts = [
+        'time-ascending',
+        'time-descending',
+        'waiting-ascending',
+        'waiting-descending'
+      ]
+    }
+    let sort = allowedSorts.includes(req.query.sort) ? req.query.sort : ''
+
+    // Each tab's default sort, reset to whenever a tab is opened without an
+    // explicit sort: Remaining and All by Time ascending, Checked in by
+    // check-in time ascending so the longest wait is first, and In progress and
+    // Complete by the order of screening ascending. All stays in chronological
+    // Time order because it mixes screened and unscreened participants.
+    if (!sort && (filter === 'remaining' || filter === 'all')) {
+      sort = 'time-ascending'
+    } else if (!sort && filter === 'checked-in') {
+      sort = 'checkedIn-ascending'
+    } else if (!sort && (filter === 'in-progress' || filter === 'complete')) {
+      sort = 'screeningOrder-ascending'
+    }
+
     const sortDescending = sort.endsWith('descending')
-    if (sort.startsWith('waiting')) {
+    if (sort.startsWith('checkedIn')) {
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const aCheckIn = getCheckInTime(a)
+        const bCheckIn = getCheckInTime(b)
+        if (!aCheckIn && !bCheckIn) return 0
+        if (!aCheckIn) return 1
+        if (!bCheckIn) return -1
+        const diff = new Date(aCheckIn) - new Date(bCheckIn)
+        return sortDescending ? -diff : diff
+      })
+    } else if (sort.startsWith('screeningOrder')) {
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const aOrder = a.screeningOrder
+        const bOrder = b.screeningOrder
+        if (aOrder == null && bOrder == null) return 0
+        if (aOrder == null) return 1
+        if (bOrder == null) return -1
+        return sortDescending ? bOrder - aOrder : aOrder - bOrder
+      })
+    } else if (sort.startsWith('waiting')) {
       filteredAppointments = [...filteredAppointments].sort((a, b) => {
         const aWaiting = getWaitingMinutes(a)
         const bWaiting = getWaitingMinutes(b)

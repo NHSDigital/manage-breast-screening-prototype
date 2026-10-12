@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-10-08 11:26 UTC
+- **Generated:** 2026-10-12 10:24 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -22,29 +22,29 @@
 | `appointment-data.js` | Appointment lookups and mutations in session data | 177 |
 | `episodes.js` | Episode lookups and stage changes | 192 |
 | `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 229 |
-| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 247 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 294 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 350 |
-| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 372 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 398 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 425 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 438 |
-| `objects.js` | Object utilities for extracting and flattening values. | 456 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 467 |
-| `random.js` | Seeded random functions for stable prototype data | 477 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 494 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 509 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 519 |
-| `roles-and-permissions.js` | User role checks | 532 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 557 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 573 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 585 |
+| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 249 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 296 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 352 |
+| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 374 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 400 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 427 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 440 |
+| `objects.js` | Object utilities for extracting and flattening values. | 458 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 469 |
+| `random.js` | Seeded random functions for stable prototype data | 479 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 496 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 511 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 521 |
+| `roles-and-permissions.js` | User role checks | 534 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 559 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 575 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 587 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 601 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 613 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 625 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 639 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 649 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 603 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 616 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 628 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 642 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 652 |
 
 ---
 
@@ -239,10 +239,12 @@ Clinic filtering by time period, slot formatting, and opening hours calculation.
 | `getBreastScreeningUnitName(data, unitId)` | Get a breast screening unit's name by id. | 57 |
 | `getTodaysClinics(clinics)` | Get today's clinics | 74 |
 | `getClinicAppointments(appointments, clinicId)` | Get appointments for a specific clinic | 85 |
-| `formatTimeSlot(dateTime)` | Format clinic time slot | 99 |
-| `getClinicHours(clinic)` | Get clinic opening hours | 125 |
-| `getFilteredClinics(clinics, [filter])` | Get clinics filtered by time period | 143 |
-| `updateClinic(data, clinicId, updates)` | Find and update a clinic in session data | 190 |
+| `getNextScreeningOrder(data, clinicId)` | The next order-of-screening number for a clinic: one more than the highest | 99 |
+| `getClinicTableColumns(filter)` | Which broken-out columns the clinic appointments table shows for a tab. | 117 |
+| `formatTimeSlot(dateTime)` | Format clinic time slot | 139 |
+| `getClinicHours(clinic)` | Get clinic opening hours | 165 |
+| `getFilteredClinics(clinics, [filter])` | Get clinics filtered by time period | 183 |
+| `updateClinic(data, clinicId, updates)` | Find and update a clinic in session data | 230 |
 
 ### reading-cases.js
 
@@ -609,6 +611,7 @@ Display formatting for yes/no answers and ordinal names.
 | `formatAnswer(value, [options], [options.yesValue], [options.noText], [options.notAnsweredText], [options.yesPrefix])` | Format a yes/no/not answered response with optional additional details — e.g. `formatAnswer("yes", { yesValue: "Details here" }) // Returns "Yes - Details here"` | 3 |
 | `getOrdinalName(integer)` | Convert a 1-based integer to its ordinal name — e.g. `getOrdinalName(1) // 'first'` | 41 |
 | `getOrdinalNameIndex0(integer)` | Convert a 0-based index to its ordinal name (0 → 'first', 1 → 'second', etc) — e.g. `getOrdinalNameIndex0(0) // 'first'` | 79 |
+| `getOrdinalNumber(integer)` | Convert a 1-based integer to its ordinal number with suffix — e.g. `getOrdinalNumber(1) // '1st'` | 90 |
 
 ### forms.js
 

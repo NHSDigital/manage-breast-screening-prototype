@@ -17,6 +17,7 @@ const {
 const {
   updateAppointmentStatus
 } = require('../../lib/utils/appointment-status')
+const { getNextScreeningOrder } = require('../../lib/utils/clinics')
 const {
   getReturnUrl,
   urlWithReferrer,
@@ -46,6 +47,15 @@ module.exports = (router) => {
       ) {
         // Update status to in progress
         updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
+
+        // Assign the order of screening for the clinic, once. Starting is what
+        // fixes the order, so it never changes if the appointment is later
+        // paused, resumed or amended.
+        if (appointment.screeningOrder == null) {
+          updateAppointmentData(data, req.params.appointmentId, {
+            screeningOrder: getNextScreeningOrder(data, req.params.clinicId)
+          })
+        }
 
         // Store session details
         updateAppointmentData(data, req.params.appointmentId, {

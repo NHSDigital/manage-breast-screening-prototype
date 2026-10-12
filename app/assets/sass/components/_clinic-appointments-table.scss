@@ -57,6 +57,97 @@
   }
 }
 
+// Remaining and Checked in tabs add a Checked in column, so the six columns
+// need their own widths
+.app-clinic-appointments-table--with-checked-in {
+  .app-clinic-appointments-table__time-column {
+    width: 12%;
+  }
+
+  .app-clinic-appointments-table__details-column {
+    width: 23%;
+  }
+
+  .app-clinic-appointments-table__dob-column {
+    width: 15%;
+  }
+
+  .app-clinic-appointments-table__appointment-column {
+    width: 14%;
+  }
+
+  .app-clinic-appointments-table__checked-in-column {
+    width: 18%;
+  }
+
+  .app-clinic-appointments-table__actions-column {
+    width: 18%;
+  }
+}
+
+// In progress and Complete tabs add a Screened by column, so the six columns
+// need their own widths
+.app-clinic-appointments-table--with-screened-by {
+  .app-clinic-appointments-table__time-column {
+    width: 11%;
+  }
+
+  .app-clinic-appointments-table__details-column {
+    width: 20%;
+  }
+
+  .app-clinic-appointments-table__dob-column {
+    width: 14%;
+  }
+
+  .app-clinic-appointments-table__appointment-column {
+    width: 15%;
+  }
+
+  .app-clinic-appointments-table__screened-by-column {
+    width: 23%;
+  }
+
+  .app-clinic-appointments-table__actions-column {
+    width: 17%;
+  }
+
+  // Long status labels (e.g. "Attended not screened") would otherwise overflow
+  // the narrow column and collide with the Screened by badge, so let them wrap
+  .app-clinic-appointments-table__appointment-column .nhsuk-tag {
+    white-space: normal;
+  }
+
+  // Align the order badge with the mammographer name beside it
+  .nhsapp-badge {
+    vertical-align: middle;
+  }
+}
+
+// Complete tab drops the Actions column (every row is final), so the remaining
+// five columns share the space
+.app-clinic-appointments-table--with-screened-by.app-clinic-appointments-table--no-actions {
+  .app-clinic-appointments-table__time-column {
+    width: 12%;
+  }
+
+  .app-clinic-appointments-table__details-column {
+    width: 26%;
+  }
+
+  .app-clinic-appointments-table__dob-column {
+    width: 17%;
+  }
+
+  .app-clinic-appointments-table__appointment-column {
+    width: 18%;
+  }
+
+  .app-clinic-appointments-table__screened-by-column {
+    width: 27%;
+  }
+}
+
 // Close clinic table has a different shape (Time, Details, Status, Actions),
 // so it sets its own status and actions widths
 .app-clinic-appointments-table--flush {

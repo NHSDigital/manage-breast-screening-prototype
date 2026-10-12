@@ -21,6 +21,7 @@ const {
 } = require('./generators/episode-generator')
 const { generateIssues, checkIssues } = require('./generators/issue-generator')
 const { getCurrentRiskLevel } = require('./utils/participants')
+const { isInProgress, isCompleted } = require('./utils/status')
 const {
   generateReadingData,
   generateSingleRead
@@ -153,6 +154,17 @@ const generateClinicsForDay = (
     breastScreeningUnit: unit
   })
 
+  // Staff each clinic with a small team of two or three mammographers, so its
+  // screened list shows just a couple of names with the order numbers
+  // interleaved between them, rather than a different name on every row.
+  const clinicians = users.filter((user) => user.role.includes('clinician'))
+  const mammographersByClinic = new Map()
+  newClinics.forEach((clinic) => {
+    const teamSize = Math.random() < 0.5 ? 2 : 3
+    const shuffled = [...clinicians].sort(() => Math.random() - 0.5)
+    mammographersByClinic.set(clinic.id, shuffled.slice(0, teamSize))
+  })
+
   // Track if we've created an in-progress appointment for today
   let hasCreatedInProgressAppointment = false
 
@@ -181,13 +193,17 @@ const generateClinicsForDay = (
         return
       }
 
+      const scheduling = scenario.participant.config.scheduling
       addAppointmentToNewEpisode(participant, {
         slot,
         participant,
         clinic: firstClinic,
         id: scenario?.participant?.config?.appointmentId,
         outcomeWeights: config.screening.outcomes[firstClinic.clinicType],
-        forceStatus: scenario.participant.config.scheduling.status,
+        forceStatus: scheduling.status,
+        checkInTime: scheduling.checkInTime,
+        screenedAt: scheduling.screenedAt,
+        mammographers: mammographersByClinic.get(firstClinic.id),
         specialAppointmentOverride:
           scenario?.participant?.config?.specialAppointment,
         seedDataProfile
@@ -252,6 +268,7 @@ const generateClinicsForDay = (
           clinic,
           outcomeWeights: config.screening.outcomes[clinic.clinicType],
           forceInProgress: shouldBeInProgress,
+          mammographers: mammographersByClinic.get(clinic.id),
           seedDataProfile
         })
 
@@ -288,6 +305,25 @@ const generateClinicsForDay = (
         episode.isFirstScreening = true
       })
     }
+
+    // Assign the order of screening for this clinic: a single 1 to N sequence
+    // across all its mammographers, in the order appointments were started.
+    // This mirrors what the running app does the moment an appointment starts.
+    const screenedAppointments = appointments
+      .filter((appointment) => appointment.clinicId === clinic.id)
+      .filter(
+        (appointment) => isInProgress(appointment) || isCompleted(appointment)
+      )
+      .sort((a, b) => {
+        const aStart =
+          a.timing?.actualStartTime || a.sessionDetails?.startedAt || 0
+        const bStart =
+          b.timing?.actualStartTime || b.sessionDetails?.startedAt || 0
+        return new Date(aStart) - new Date(bStart)
+      })
+    screenedAppointments.forEach((appointment, index) => {
+      appointment.screeningOrder = index + 1
+    })
 
     clinics.push(clinic)
   })

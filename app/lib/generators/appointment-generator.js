@@ -92,7 +92,10 @@ const generateAppointment = ({
   id = null,
   specialAppointmentOverride = null,
   forceInProgress = false,
-  seedDataProfile = null
+  seedDataProfile = null,
+  checkInTime = null,
+  mammographers = null,
+  screenedAt = null
 }) => {
   // Parse dates once
   const [hours, minutes] = config.clinics.simulatedTime.split(':')
@@ -103,6 +106,26 @@ const generateAppointment = ({
     .millisecond(0)
   const slotDateTime = dayjs(slot.dateTime)
   const isPast = slotDateTime.isBefore(simulatedDateTime)
+
+  // The mammographer running the appointment is picked from the clinic's small
+  // team, so its screened list shows just two or three names; falls back to any
+  // clinician if no team was passed.
+  const pickMammographerId = () => {
+    const pool = mammographers?.length
+      ? mammographers
+      : users.filter((user) => user.role.includes('clinician'))
+    return faker.helpers.arrayElement(pool).id
+  }
+
+  // A clock time (e.g. "9:05") as a dayjs on the clinic day
+  const onClinicDay = (clockTime) => {
+    const [clockHours, clockMinutes] = clockTime.split(':')
+    return slotDateTime
+      .hour(parseInt(clockHours, 10))
+      .minute(parseInt(clockMinutes, 10))
+      .second(0)
+      .millisecond(0)
+  }
 
   // Generate special appointment requirements for this appointment
   const specialAppointment =
@@ -188,22 +211,18 @@ const generateAppointment = ({
     appointmentBase.specialAppointment = specialAppointment
   }
 
-  // For in-progress appointments, add session details with current time
+  // For in-progress appointments, add session details. Started a few minutes
+  // before the simulated "now" so they sit on the clinic's timeline, after the
+  // morning's completed appointments - an in-progress participant is the one
+  // being screened right now, so they come last in the order of screening.
   if (appointmentStatus === 'in_progress') {
-    const clinicalUsers = users.filter((user) =>
-      user.role.includes('clinician')
-    )
-    // For forced in-progress (test scenarios), use first user; otherwise random
-    const randomUser =
-      forceStatus === 'in_progress'
-        ? clinicalUsers[0]
-        : faker.helpers.arrayElement(clinicalUsers.slice(1))
+    const startedAt = screenedAt
+      ? onClinicDay(screenedAt)
+      : simulatedDateTime.subtract(faker.number.int({ min: 5, max: 45 }), 'minutes')
 
     appointmentBase.sessionDetails = {
-      startedAt: dayjs()
-        .subtract(faker.number.int({ min: 5, max: 45 }), 'minutes')
-        .toISOString(),
-      startedBy: randomUser.id
+      startedAt: startedAt.toISOString(),
+      startedBy: pickMammographerId()
     }
 
     // Add workflow status from participant config if provided
@@ -212,7 +231,12 @@ const generateAppointment = ({
     }
   }
 
-  if (!isPast && !forceInProgress && forceStatus !== 'in_progress') {
+  if (
+    !isPast &&
+    !forceInProgress &&
+    forceStatus !== 'in_progress' &&
+    appointmentStatus !== 'checked_in'
+  ) {
     // Generate appointment note for scheduled appointments (5% probability)
     const appointmentNote = generateAppointmentNote({
       isScheduled: true,
@@ -259,7 +283,11 @@ const generateAppointment = ({
         ? faker.number.int({ min: -3, max: 10 })
         : faker.number.int({ min: -3, max: 5 })
 
-      const actualStartTime = slotDateTime.add(actualStartOffset, 'minute')
+      // A scenario can pin when screening started, so the order of screening
+      // can be made to differ from the scheduled time and check-in order
+      const actualStartTime = screenedAt
+        ? onClinicDay(screenedAt)
+        : slotDateTime.add(actualStartOffset, 'minute')
       const actualEndTime = actualStartTime.add(
         slot.duration + durationOffset,
         'minute'
@@ -273,14 +301,9 @@ const generateAppointment = ({
       }
 
       // Add session details for completed appointments
-      const clinicalUsers = users.filter((user) =>
-        user.role.includes('clinician')
-      )
-      const randomUser = faker.helpers.arrayElement(clinicalUsers)
-
       appointment.sessionDetails = {
         startedAt: actualStartTime.toISOString(),
-        startedBy: randomUser.id,
+        startedBy: pickMammographerId(),
         endedAt: actualEndTime.toISOString()
       }
 
@@ -381,11 +404,6 @@ const generateAppointment = ({
 
     // Add session details for attended-not-screened appointments
     if (appointmentStatus === 'attended_not_screened') {
-      const clinicalUsers = users.filter((user) =>
-        user.role.includes('clinician')
-      )
-      const randomUser = faker.helpers.arrayElement(clinicalUsers)
-
       // They would have started the appointment process
       const actualStartTime = slotDateTime.add(
         faker.number.int({ min: -5, max: 5 }),
@@ -399,7 +417,7 @@ const generateAppointment = ({
 
       appointment.sessionDetails = {
         startedAt: actualStartTime.toISOString(),
-        startedBy: randomUser.id,
+        startedBy: pickMammographerId(),
         endedAt: actualEndTime.toISOString()
       }
 
@@ -417,14 +435,14 @@ const generateAppointment = ({
 
     // Record the check-in on checked-in appointments so the clinic list can
     // show the check-in time and how long the participant has been waiting.
-    // Arrival is a few minutes either side of their slot, never after now.
+    // A test scenario can pin the check-in to a clock time; otherwise arrival
+    // is a few minutes either side of their slot. Never after now.
     if (appointmentStatus === 'checked_in') {
-      let checkInTime = slotDateTime.add(
-        faker.number.int({ min: -5, max: 10 }),
-        'minute'
-      )
-      if (checkInTime.isAfter(simulatedDateTime)) {
-        checkInTime = simulatedDateTime.subtract(
+      let checkInDateTime = checkInTime
+        ? onClinicDay(checkInTime)
+        : slotDateTime.add(faker.number.int({ min: -5, max: 10 }), 'minute')
+      if (checkInDateTime.isAfter(simulatedDateTime)) {
+        checkInDateTime = simulatedDateTime.subtract(
           faker.number.int({ min: 1, max: 5 }),
           'minute'
         )
@@ -433,7 +451,21 @@ const generateAppointment = ({
         ...appointment.statusHistory,
         {
           status: 'checked_in',
-          timestamp: checkInTime.toISOString()
+          timestamp: checkInDateTime.toISOString()
+        }
+      ]
+    } else if (
+      checkInTime &&
+      (isCompleted(appointmentStatus) || appointmentStatus === 'in_progress')
+    ) {
+      // A screened participant was checked in before screening. A scenario can
+      // pin that time so the check-in order can be made to differ from the
+      // order of screening.
+      appointment.statusHistory = [
+        ...appointment.statusHistory,
+        {
+          status: 'checked_in',
+          timestamp: onClinicDay(checkInTime).toISOString()
         }
       ]
     }
