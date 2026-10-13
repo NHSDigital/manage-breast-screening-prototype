@@ -108,6 +108,73 @@ module.exports = (router) => {
       }
     })
 
+    const inProgressReadingSession =
+      layout === 'complex'
+        ? Object.values(data.readingSessions || {})
+            .map((session) => {
+              const progress = sessionProgressById[session.id]
+              const isFinished =
+                session.endedAt || (progress && progress.targetRemaining === 0)
+
+              if (
+                session.type === 'arbitration' ||
+                isFinished ||
+                !progress?.userReadCount
+              ) {
+                return null
+              }
+
+              return {
+                id: session.id,
+                createdAt: session.createdAt,
+                userReadCount: progress.userReadCount,
+                targetSize:
+                  progress.effectiveTargetSize ||
+                  session.targetSize ||
+                  session.appointmentIds.length
+              }
+            })
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] ||
+          null
+        : null
+
+    const inProgressArbitrationSession =
+      layout === 'complex'
+        ? Object.values(data.readingSessions || {})
+            .map((session) => {
+              const progress = sessionProgressById[session.id]
+              const isFinished =
+                session.endedAt || (progress && progress.targetRemaining === 0)
+              const arbitratorIds = session.arbitration?.arbitratorIds || []
+              const userIsOnPanel =
+                arbitratorIds.length === 0 ||
+                arbitratorIds.includes(currentUserId)
+
+              if (
+                session.type !== 'arbitration' ||
+                !progress ||
+                isFinished ||
+                !userIsOnPanel
+              ) {
+                return null
+              }
+
+              return {
+                id: session.id,
+                createdAt: session.createdAt,
+                arbitratedCount: progress.doneCount,
+                targetSize:
+                  progress.effectiveTargetSize ||
+                  session.targetSize ||
+                  session.appointmentIds.length
+              }
+            })
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] ||
+          null
+        : null
+
     // The arbitration backlog, counted the same way the case list and the
     // arbitration setup page count it so the three agree. Only the complex
     // layout shows the card, and the count walks every episode - don't pay
@@ -132,6 +199,8 @@ module.exports = (router) => {
       layout === 'complex'
         ? Object.values(data.readingSessions || {})
             .map((session) => {
+              if (session.type === 'arbitration') return null
+
               const progress = sessionProgressById[session.id]
               const isFinished =
                 session.endedAt || (progress && progress.targetRemaining === 0)
@@ -217,6 +286,8 @@ module.exports = (router) => {
 
     res.render(template, {
       sessionProgressById,
+      inProgressReadingSession,
+      inProgressArbitrationSession,
       arbitrationCount,
       readingCaseCount,
       recentCompletedSessions,

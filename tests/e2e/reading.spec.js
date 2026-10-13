@@ -169,18 +169,79 @@ const recordTechnicalRecallDetails = async (modal, view, reason) => {
 }
 
 test.describe('Image reading', () => {
+  test('shows correctly pluralised backlog summary on the simple dashboard', async ({
+    page
+  }) => {
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][indexLayout]': 'simple'
+    })
+
+    await page.goto('/reading')
+    await expect(
+      page.locator('p').filter({
+        hasText: /^(?:1 case is|(?:0|[2-9]|[1-9]\d+) cases are) awaiting an outcome$/
+      })
+    ).toBeVisible()
+  })
+
   test('reads a session of cases as normal and recall', async ({ page }) => {
-    await pinSettings(page, readingSettings)
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][indexLayout]': 'complex'
+    })
+
+    await page.goto('/reading')
+    await expect(
+      page.locator('p').filter({
+        hasText:
+          /^(?:1 case is|(?:0|[2-9]|[1-9]\d+) cases are) awaiting an outcome \(see all cases\)$/
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'see all cases', exact: true })
+    ).toHaveAttribute(
+      'href',
+      '/reading/cases?status=awaiting_first_read&status=awaiting_second_read'
+    )
+    await expect(
+      page.getByRole('heading', { name: /cases available for reading/ })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Resume reading', exact: true })
+    ).toHaveCount(0)
 
     await page.goto(
       `/reading/create-session?type=all_reads&limit=${sessionSize}&lazy=false`
     )
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
 
     // Read all but the last case as normal
     for (let caseNumber = 1; caseNumber < sessionSize; caseNumber++) {
       await recordNormal(page)
     }
+
+    await page.goto('/reading')
+    await expect(
+      page.getByRole('heading', { name: 'Resume reading', exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByText(
+        'You have an image reading session in progress. Finish it before starting a new one.'
+      )
+    ).toBeVisible()
+    const sessionProgress = page.getByText('2 of 3 cases read')
+    await expect(sessionProgress).toBeVisible()
+    await expect(sessionProgress).toHaveClass(/nhsuk-u-font-size-16/)
+
+    const resumeSessionButton = page.getByRole('button', {
+      name: 'Resume reading session'
+    })
+    await resumeSessionButton.click()
+    await expect(page).toHaveURL(
+      new RegExp(`/reading/session/${sessionId}/appointments/`)
+    )
 
     // Recall the last case for assessment
     await expect(
@@ -706,6 +767,58 @@ test.describe('Image reading', () => {
 
     await page.goto(`/reading/session/${sessionId}/all-reads`)
     await expect(caseRows).toHaveCount(rowsBefore + 1)
+  })
+
+  test('resumes an in-progress arbitration session from the dashboard', async ({
+    page
+  }) => {
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][indexLayout]': 'complex'
+    })
+
+    await page.goto('/reading')
+    await expect(
+      page.getByRole('heading', { name: /cases require arbitration/ })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', { name: 'Resume arbitration', exact: true })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('link', { name: 'View arbitration case list' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('button', { name: 'Start arbitration session' })
+    ).toBeVisible()
+
+    await page.goto('/reading/arbitration/start')
+    await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
+    await page
+      .getByRole('button', { name: /Continue/i })
+      .first()
+      .click()
+    await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    await recordArbitrationNormal(page)
+
+    await page.goto('/reading')
+    await expect(
+      page.getByRole('heading', { name: 'Resume arbitration', exact: true })
+    ).toBeVisible()
+    await expect(
+      page.getByText(
+        'You have an arbitration session in progress. Finish it before starting a new one.'
+      )
+    ).toBeVisible()
+    await expect(page.getByText(/1 of \d+ cases read/)).toBeVisible()
+
+    await page
+      .getByRole('button', { name: 'Resume arbitration session' })
+      .click()
+    await expect(page).toHaveURL(
+      new RegExp(`/reading/session/${sessionId}/appointments/`)
+    )
   })
 
   test('does not load an extra arbitration case when one is settled out of order', async ({
