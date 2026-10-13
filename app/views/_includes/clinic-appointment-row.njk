@@ -102,7 +102,11 @@
         {% set waitingMinutes = appointment | getWaitingMinutes %}
         {% if checkInTime %}
           <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-0">
-            at {{ checkInTime | formatTimeString }}{% if waitingMinutes !== null %} (<span class="js-waiting-time" data-waiting-since="{{ appointment | getWaitingSince }}">{{ waitingMinutes | formatWaitingTime }} ago</span>){% endif %}
+            at {{ checkInTime | formatTimeString }}
+            {% if waitingMinutes !== null %}
+              <br>
+              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">{{ waitingMinutes | formatWaitingTime }} ago</span>
+            {% endif %}
           </p>
         {% endif %}
 
