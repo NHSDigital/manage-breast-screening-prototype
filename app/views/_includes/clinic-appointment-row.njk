@@ -14,6 +14,7 @@
 
 {%- from 'tag/macro.njk' import tag -%}
 {%- from 'button/macro.njk' import button -%}
+{%- from '_components/copy-to-clipboard/macro.njk' import appCopyToClipboard -%}
 {%- from '_components/check-in/macro.njk' import appCheckIn %}
 {%- from '_includes/issues/tag.njk' import issueTag with context %}
 
@@ -48,7 +49,12 @@
         <a href="{{ appointmentBaseUrl }}">{{ participant | getFullNameReversed }}</a>
       </p>
       <p class="nhsuk-u-secondary-text-colour nhsuk-body-s app-nowrap app-code-font nhsuk-u-margin-bottom-0">
-        {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
+        {{ appCopyToClipboard({
+          text: participant.medicalInformation.nhsNumber,
+          type: "value",
+          html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>',
+          label: "NHS number"
+        }) }}
       </p>
       {% if (data | getEpisode(appointment.episodeId)).isFirstScreening %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
