@@ -162,7 +162,9 @@ const generateClinicsForDay = (
   newClinics.forEach((clinic) => {
     const teamSize = Math.random() < 0.5 ? 2 : 3
     const shuffled = [...clinicians].sort(() => Math.random() - 0.5)
-    mammographersByClinic.set(clinic.id, shuffled.slice(0, teamSize))
+    const mammographers = shuffled.slice(0, teamSize)
+    clinic.staffing.mammographers = mammographers.map((user) => user.id)
+    mammographersByClinic.set(clinic.id, mammographers)
   })
 
   // Track if we've created an in-progress appointment for today

@@ -85,7 +85,7 @@
   }
 }
 
-// In progress and Complete tabs add a Screened by column, so the six columns
+// In progress and All tabs merge Screened by into Status, so five columns
 // need their own widths
 .app-clinic-appointments-table--with-screened-by {
   .app-clinic-appointments-table__time-column {
@@ -93,19 +93,15 @@
   }
 
   .app-clinic-appointments-table__details-column {
-    width: 20%;
+    width: 34%;
   }
 
   .app-clinic-appointments-table__dob-column {
-    width: 14%;
+    width: 20%;
   }
 
   .app-clinic-appointments-table__appointment-column {
-    width: 15%;
-  }
-
-  .app-clinic-appointments-table__screened-by-column {
-    width: 23%;
+    width: 18%;
   }
 
   .app-clinic-appointments-table__actions-column {
@@ -132,7 +128,26 @@
   }
 
   .app-clinic-appointments-table__details-column {
-    width: 26%;
+    width: 40%;
+  }
+
+  .app-clinic-appointments-table__dob-column {
+    width: 24%;
+  }
+
+  .app-clinic-appointments-table__appointment-column {
+    width: 24%;
+  }
+}
+
+// All tab adds a Time completed column alongside Screened by and Actions
+.app-clinic-appointments-table--with-completed {
+  .app-clinic-appointments-table__time-column {
+    width: 9%;
+  }
+
+  .app-clinic-appointments-table__details-column {
+    width: 30%;
   }
 
   .app-clinic-appointments-table__dob-column {
@@ -143,8 +158,35 @@
     width: 18%;
   }
 
-  .app-clinic-appointments-table__screened-by-column {
-    width: 27%;
+  .app-clinic-appointments-table__completed-column {
+    width: 10%;
+  }
+
+  .app-clinic-appointments-table__actions-column {
+    width: 16%;
+  }
+}
+
+// Complete tab has Time completed but no Actions
+.app-clinic-appointments-table--with-completed.app-clinic-appointments-table--no-actions {
+  .app-clinic-appointments-table__time-column {
+    width: 11%;
+  }
+
+  .app-clinic-appointments-table__details-column {
+    width: 34%;
+  }
+
+  .app-clinic-appointments-table__dob-column {
+    width: 20%;
+  }
+
+  .app-clinic-appointments-table__appointment-column {
+    width: 18%;
+  }
+
+  .app-clinic-appointments-table__completed-column {
+    width: 17%;
   }
 }
 

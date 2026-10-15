@@ -120,7 +120,7 @@ const getNextScreeningOrder = (data, clinicId) => {
  * never fall out of step.
  *
  * @param {string} filter - The tab id (e.g. 'remaining', 'complete', 'all')
- * @returns {{checkedIn: boolean, screenedBy: boolean, actions: boolean}}
+ * @returns {{checkedIn: boolean, screenedBy: boolean, completed: boolean, actions: boolean}}
  */
 const getClinicTableColumns = (filter) => {
   return {
@@ -129,6 +129,8 @@ const getClinicTableColumns = (filter) => {
     // In progress, Complete and All show the mammographer and screening order
     screenedBy:
       filter === 'in-progress' || filter === 'complete' || filter === 'all',
+    // Complete and All show when each appointment finished
+    completed: filter === 'complete' || filter === 'all',
     // Completed appointments are all final, so there is nothing to action
     actions: filter !== 'complete'
   }

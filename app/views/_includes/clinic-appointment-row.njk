@@ -95,6 +95,24 @@
 
     {# Appointment status and view appointment link #}
     <td class="nhsuk-table__cell app-clinic-appointments-table__appointment-column">
+      {# Screened by - the mammographer who ran the appointment, with a badge
+         showing the order they were screened in to its left. Attended not
+         screened is left out as no screening happened. #}
+      {% if columns.screenedBy and appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
+        <p class="nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-2">
+          {% if appointment.screeningOrder %}
+            <span class="nhsapp-badge app-nowrap nhsuk-u-margin-right-2">
+              <span aria-hidden="true">{{ appointment.screeningOrder }}</span>
+              <span class="nhsuk-u-visually-hidden">Screened {{ appointment.screeningOrder | getOrdinalNumber }}</span>
+            </span>
+          {% endif %}
+          {{ appointment.sessionDetails.startedBy | getUsername({
+            format: 'short',
+            identifyCurrentUser: true
+          }) }}
+        </p>
+      {% endif %}
+
       {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
 
       {% if appointment.status == 'checked_in' and not columns.checkedIn %}
@@ -157,24 +175,12 @@
       </td>
     {% endif %}
 
-    {# Screened by - the mammographer who ran the appointment, with a badge
-       showing the order they were screened in to its left. Its own sortable
-       column on the In progress and Complete tabs; blank until started. #}
-    {% if columns.screenedBy %}
-      <td class="nhsuk-table__cell app-clinic-appointments-table__screened-by-column">
-        {# Attended not screened means a mammographer saw them but no screening
-           happened, so leave this blank rather than naming them #}
-        {% if appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
-          {% if appointment.screeningOrder %}
-            <span class="nhsapp-badge app-nowrap nhsuk-u-margin-right-2">
-              <span aria-hidden="true">{{ appointment.screeningOrder }}</span>
-              <span class="nhsuk-u-visually-hidden">Screened {{ appointment.screeningOrder | getOrdinalNumber }}</span>
-            </span>
-          {% endif %}
-          {{ appointment.sessionDetails.startedBy | getUsername({
-            format: 'short',
-            identifyCurrentUser: true
-          }) }}
+    {# Time completed - when the appointment ended, for screened (including
+       partially screened) and attended not screened; blank otherwise #}
+    {% if columns.completed %}
+      <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
+        {% if (appointment.status in ['complete', 'partially_screened', 'attended_not_screened']) and appointment.sessionDetails.endedAt %}
+          {{ appointment.sessionDetails.endedAt | formatTimeString }}
         {% endif %}
       </td>
     {% endif %}
@@ -207,9 +213,12 @@
           }) }}
 
         {% elseif appointment | isPaused or appointment | isInProgress %}
-          <a href="{{ appointmentBaseUrl }}/resume">
-            Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
-          </a>
+          {{ button({
+            html: "Resume appointment" ~ ((" for " + (participant | getShortName)) | asVisuallyHiddenText),
+            href: appointmentBaseUrl + "/resume",
+            variant: "secondary",
+            small: true
+          }) }}
         {% endif %}
       {% endif %}
     </td>

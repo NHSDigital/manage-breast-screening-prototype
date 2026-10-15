@@ -500,6 +500,25 @@ module.exports = (router) => {
     const filterSpecialAppointment = []
       .concat(req.query.specialAppointment || [])
       .includes('yes')
+    const staffedMammographerIds =
+      clinicData.clinic.staffing?.mammographers || []
+    const appointmentMammographerIds = [
+      ...new Set(
+        clinicData.appointments
+          .map((appointment) => appointment.sessionDetails?.startedBy)
+          .filter(Boolean)
+      )
+    ]
+    const mammographerIds = staffedMammographerIds.length
+      ? staffedMammographerIds
+      : appointmentMammographerIds
+    const mammographers = mammographerIds
+      .map((userId) => req.session.data.users.find((user) => user.id === userId))
+      .filter(Boolean)
+      .sort((a, b) => a.lastName.localeCompare(b.lastName))
+    const selectedMammographers = []
+      .concat(req.query.mammographer || [])
+      .filter((userId) => mammographerIds.includes(userId))
 
     let matchedAppointments = clinicData.appointments
     if (search) {
@@ -510,6 +529,11 @@ module.exports = (router) => {
     if (filterSpecialAppointment) {
       matchedAppointments = matchedAppointments.filter((appointment) =>
         isSpecialAppointment(appointment)
+      )
+    }
+    if (selectedMammographers.length) {
+      matchedAppointments = matchedAppointments.filter((appointment) =>
+        selectedMammographers.includes(appointment.sessionDetails?.startedBy)
       )
     }
 
@@ -536,6 +560,9 @@ module.exports = (router) => {
         'screeningOrder-ascending',
         'screeningOrder-descending'
       ]
+      if (columns.completed) {
+        allowedSorts.push('completed-ascending', 'completed-descending')
+      }
     } else {
       allowedSorts = [
         'time-ascending',
@@ -579,6 +606,22 @@ module.exports = (router) => {
         if (bOrder == null) return -1
         return sortDescending ? bOrder - aOrder : aOrder - bOrder
       })
+    } else if (sort.startsWith('completed')) {
+      const getCompletedTime = (appointment) =>
+        ['complete', 'partially_screened', 'attended_not_screened'].includes(
+          appointment.status
+        )
+          ? appointment.sessionDetails?.endedAt
+          : null
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const aCompleted = getCompletedTime(a)
+        const bCompleted = getCompletedTime(b)
+        if (!aCompleted && !bCompleted) return 0
+        if (!aCompleted) return 1
+        if (!bCompleted) return -1
+        const diff = new Date(aCompleted) - new Date(bCompleted)
+        return sortDescending ? -diff : diff
+      })
     } else if (sort.startsWith('waiting')) {
       filteredAppointments = [...filteredAppointments].sort((a, b) => {
         const aWaiting = getWaitingMinutes(a)
@@ -603,6 +646,8 @@ module.exports = (router) => {
       filteredAppointments,
       search,
       specialAppointment: filterSpecialAppointment,
+      mammographers,
+      selectedMammographers,
       sort,
       status: filter,
       unit: clinicData.unit,
