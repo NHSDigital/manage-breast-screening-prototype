@@ -15,8 +15,12 @@ document.addEventListener('DOMContentLoaded', () => {
   checkInLinks.forEach((link) => {
     link.addEventListener('click', async (e) => {
       e.preventDefault()
-      const { clinicId, appointmentId } = e.currentTarget.dataset
-      const url = `/clinics/${clinicId}/check-in/${appointmentId}`
+      const { clinicId, appointmentId, currentFilter } = e.currentTarget.dataset
+      // Pass the current tab so the re-rendered row matches the table it sits
+      // in - the Remaining and Checked in tabs carry an extra Checked in column
+      const url = currentFilter
+        ? `/clinics/${clinicId}/check-in/${appointmentId}?currentFilter=${currentFilter}`
+        : `/clinics/${clinicId}/check-in/${appointmentId}`
 
       try {
         const response = await fetch(url, {

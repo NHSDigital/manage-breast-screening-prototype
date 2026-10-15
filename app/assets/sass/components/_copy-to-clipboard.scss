@@ -27,6 +27,10 @@
   cursor: pointer;
 }
 
+.app-copy-to-clipboard[hidden] {
+  display: none;
+}
+
 .app-copy-to-clipboard:hover {
   text-decoration-thickness: 3px;
 }
@@ -104,6 +108,7 @@
 // below the box rather than an inset one
 .app-copy-to-clipboard--value:focus {
   background-image: none;
+  background-color: $nhsuk-focus-colour;
   box-shadow:
     0 -2px $nhsuk-focus-colour,
     0 $nhsuk-focus-width $nhsuk-focus-text-colour;

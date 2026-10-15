@@ -72,17 +72,25 @@ class CopyToClipboard {
   }
 }
 
-// Initialise all copy-to-clipboard buttons when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+const initialiseCopyButtons = (container) => {
   if (!('clipboard' in navigator)) {
     return
   }
 
-  const buttons = document.querySelectorAll(
+  const buttons = container.querySelectorAll(
     '[data-module="app-copy-to-clipboard"]'
   )
 
   buttons.forEach((element) => {
     new CopyToClipboard(element)
   })
+}
+
+document.addEventListener('fragment:swapped', (event) => {
+  initialiseCopyButtons(event.detail.fragment)
+})
+
+// Initialise all copy-to-clipboard buttons when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  initialiseCopyButtons(document)
 })

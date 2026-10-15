@@ -42,6 +42,7 @@
         class="nhsuk-link nhsuk-link--no-visited-state js-check-in-link"
         data-clinic-id="{{ params.clinicId }}"
         data-appointment-id="{{ params.appointment.id }}"
+        data-current-filter="{{ params.currentFilter }}"
         data-status-tag-id="{{ statusTagId }}">
         {{ checkInText | safe }}
       </a>

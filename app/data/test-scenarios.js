@@ -33,7 +33,109 @@ module.exports = [
         scheduling: {
           whenRelativeToToday: 0,
           status: 'checked_in',
-          approximateTime: '10:30'
+          approximateTime: '10:30',
+          checkInTime: '10:10'
+        }
+      }
+    }
+  },
+  {
+    // Scheduled earlier than Janet (9:30) but checked in later (10:20), so
+    // sorting the clinic list by Time and by Checked in gives a different order
+    participant: {
+      id: 'd4f8a1c2',
+      demographicInformation: {
+        firstName: 'Priya',
+        middleName: null,
+        lastName: 'Shah',
+        dateOfBirth: '1958-11-03',
+        ethnicGroup: null,
+        ethnicBackground: null
+      },
+      config: {
+        appointmentId: 'ck1shah0',
+        defaultRiskLevel: 'routine',
+        scheduling: {
+          whenRelativeToToday: 0,
+          status: 'checked_in',
+          approximateTime: '9:30',
+          checkInTime: '10:20'
+        }
+      }
+    }
+  },
+  {
+    // Longest wait of the checked-in group: scheduled 9:15, checked in 9:20
+    participant: {
+      id: 'e7b23f90',
+      demographicInformation: {
+        firstName: 'Margaret',
+        middleName: null,
+        lastName: 'Osei',
+        dateOfBirth: '1961-05-19',
+        ethnicGroup: null,
+        ethnicBackground: null
+      },
+      config: {
+        appointmentId: 'ck2osei1',
+        defaultRiskLevel: 'routine',
+        scheduling: {
+          whenRelativeToToday: 0,
+          status: 'checked_in',
+          approximateTime: '9:15',
+          checkInTime: '9:20'
+        }
+      }
+    }
+  },
+  {
+    // Screened pair that shows screening order differs from arrival order:
+    // Harriet checked in first (9:00) but was screened later (9:30)
+    participant: {
+      id: 'f1a2b3c4',
+      demographicInformation: {
+        firstName: 'Harriet',
+        middleName: null,
+        lastName: 'Nguyen',
+        dateOfBirth: '1957-02-14',
+        ethnicGroup: null,
+        ethnicBackground: null
+      },
+      config: {
+        appointmentId: 'scrq0001',
+        defaultRiskLevel: 'routine',
+        scheduling: {
+          whenRelativeToToday: 0,
+          status: 'complete',
+          approximateTime: '9:00',
+          checkInTime: '9:00',
+          screenedAt: '9:30'
+        }
+      }
+    }
+  },
+  {
+    // Carmen checked in later (9:20) than Harriet but was screened earlier
+    // (9:25), so sorting by Screened by differs from arrival and scheduled time
+    participant: {
+      id: 'a9b8c7d6',
+      demographicInformation: {
+        firstName: 'Carmen',
+        middleName: null,
+        lastName: 'Lewis',
+        dateOfBirth: '1960-08-09',
+        ethnicGroup: null,
+        ethnicBackground: null
+      },
+      config: {
+        appointmentId: 'scrp0002',
+        defaultRiskLevel: 'routine',
+        scheduling: {
+          whenRelativeToToday: 0,
+          status: 'complete',
+          approximateTime: '9:20',
+          checkInTime: '9:20',
+          screenedAt: '9:25'
         }
       }
     }

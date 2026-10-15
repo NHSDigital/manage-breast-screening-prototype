@@ -5,15 +5,19 @@ const {
   getClinic,
   getFilteredClinics,
   getClinicAppointments,
+  getClinicTableColumns,
   updateClinic
 } = require('../lib/utils/clinics')
 const {
   filterAppointmentsByStatus,
   isInProgress,
-  isFinal
+  isFinal,
+  isSpecialAppointment,
+  getCheckInTime
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
+const { participantMatchesQuery } = require('../lib/utils/search')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
 const { getAppointment, updateAppointmentData } = require('../lib/utils/appointment-data')
 const { pluralise } = require('../lib/utils/strings')
@@ -174,7 +178,8 @@ module.exports = (router) => {
       return res.render('clinics/clinic-appointment-row', {
         appointment: updatedAppointment,
         participant: getParticipant(data, updatedAppointment.participantId),
-        clinicId
+        clinicId,
+        currentFilter
       })
     }
 
@@ -486,13 +491,150 @@ module.exports = (router) => {
       return res.redirect('/clinics')
     }
 
-    const filteredAppointments = filterAppointmentsByStatus(clinicData.appointments, filter)
+    // Free-text search narrows the list by participant, keeping the counts and
+    // the current tab in step. Empty query matches everyone.
+    const search = req.query.search?.trim() || ''
+    // Checkbox filter - the unchecked-checkbox script posts "_unchecked" when
+    // off, so match on the "yes" value rather than mere presence
+    const filterSpecialAppointment = []
+      .concat(req.query.specialAppointment || [])
+      .includes('yes')
+    // Appointments after the free-text search and special-appointment filter,
+    // but before the mammographer filter, so the mammographer options reflect
+    // the current view without one selection hiding the other names.
+    let baseAppointments = clinicData.appointments
+    if (search) {
+      baseAppointments = baseAppointments.filter((appointment) =>
+        participantMatchesQuery(appointment.participant, search)
+      )
+    }
+    if (filterSpecialAppointment) {
+      baseAppointments = baseAppointments.filter((appointment) =>
+        isSpecialAppointment(appointment)
+      )
+    }
+
+    // Mammographer filter options - only those with an appointment in the
+    // current tab's view. startedBy is set once an appointment is in progress
+    // or complete, so the Remaining and Checked in tabs show no options and the
+    // filter hides itself. Sorted by first name.
+    const viewAppointments = filterAppointmentsByStatus(baseAppointments, filter)
+    const mammographerIds = [
+      ...new Set(
+        viewAppointments
+          .map((appointment) => appointment.sessionDetails?.startedBy)
+          .filter(Boolean)
+      )
+    ]
+    const mammographers = mammographerIds
+      .map((userId) => req.session.data.users.find((user) => user.id === userId))
+      .filter(Boolean)
+      .sort((a, b) => a.firstName.localeCompare(b.firstName))
+    const selectedMammographers = []
+      .concat(req.query.mammographer || [])
+      .filter((userId) => mammographerIds.includes(userId))
+
+    // Apply the mammographer selection to get the final filtered list
+    let matchedAppointments = baseAppointments
+    if (selectedMammographers.length) {
+      matchedAppointments = matchedAppointments.filter((appointment) =>
+        selectedMammographers.includes(appointment.sessionDetails?.startedBy)
+      )
+    }
+
+    let filteredAppointments = filterAppointmentsByStatus(matchedAppointments, filter)
+
+    // Optional column sort (NHS sortable table, server-side). The Remaining and
+    // Checked in tabs sort by scheduled Time or by the check-in timestamp; the
+    // In progress, Complete and All tabs sort by Time, and Complete and All also
+    // by Time completed. The Status column is not sortable. Rows with no value
+    // for the active sort sink to the bottom, either direction.
+    const columns = getClinicTableColumns(filter)
+    let allowedSorts
+    if (columns.checkedIn) {
+      allowedSorts = [
+        'time-ascending',
+        'time-descending',
+        'checkedIn-ascending',
+        'checkedIn-descending'
+      ]
+    } else if (columns.screenedBy) {
+      allowedSorts = ['time-ascending', 'time-descending']
+      if (columns.completed) {
+        allowedSorts.push('completed-ascending', 'completed-descending')
+      }
+    } else {
+      allowedSorts = ['time-ascending', 'time-descending']
+    }
+    let sort = allowedSorts.includes(req.query.sort) ? req.query.sort : ''
+
+    // Each tab's default sort, reset to whenever a tab is opened without an
+    // explicit sort: Remaining and All by Time ascending, Checked in by
+    // check-in time ascending so the longest wait is first, and In progress and
+    // Complete by the order of screening ascending. All stays in chronological
+    // Time order because it mixes screened and unscreened participants.
+    if (!sort && (filter === 'remaining' || filter === 'all')) {
+      sort = 'time-ascending'
+    } else if (!sort && filter === 'checked-in') {
+      sort = 'checkedIn-ascending'
+    } else if (!sort && (filter === 'in-progress' || filter === 'complete')) {
+      sort = 'screeningOrder-ascending'
+    }
+
+    const sortDescending = sort.endsWith('descending')
+    if (sort.startsWith('checkedIn')) {
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const aCheckIn = getCheckInTime(a)
+        const bCheckIn = getCheckInTime(b)
+        if (!aCheckIn && !bCheckIn) return 0
+        if (!aCheckIn) return 1
+        if (!bCheckIn) return -1
+        const diff = new Date(aCheckIn) - new Date(bCheckIn)
+        return sortDescending ? -diff : diff
+      })
+    } else if (sort.startsWith('screeningOrder')) {
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const aOrder = a.screeningOrder
+        const bOrder = b.screeningOrder
+        if (aOrder == null && bOrder == null) return 0
+        if (aOrder == null) return 1
+        if (bOrder == null) return -1
+        return sortDescending ? bOrder - aOrder : aOrder - bOrder
+      })
+    } else if (sort.startsWith('completed')) {
+      const getCompletedTime = (appointment) =>
+        ['complete', 'partially_screened', 'attended_not_screened'].includes(
+          appointment.status
+        )
+          ? appointment.sessionDetails?.endedAt
+          : null
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const aCompleted = getCompletedTime(a)
+        const bCompleted = getCompletedTime(b)
+        if (!aCompleted && !bCompleted) return 0
+        if (!aCompleted) return 1
+        if (!bCompleted) return -1
+        const diff = new Date(aCompleted) - new Date(bCompleted)
+        return sortDescending ? -diff : diff
+      })
+    } else if (sort.startsWith('time')) {
+      filteredAppointments = [...filteredAppointments].sort((a, b) => {
+        const diff =
+          new Date(a.timing.startTime) - new Date(b.timing.startTime)
+        return sortDescending ? -diff : diff
+      })
+    }
 
     res.render('clinics/show', {
       clinicId: req.params.id,
       clinic: clinicData.clinic,
-      allAppointments: clinicData.appointments,
+      allAppointments: matchedAppointments,
       filteredAppointments,
+      search,
+      specialAppointment: filterSpecialAppointment,
+      mammographers,
+      selectedMammographers,
+      sort,
       status: filter,
       unit: clinicData.unit,
       currentFilter: filter,
