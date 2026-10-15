@@ -108,6 +108,73 @@ module.exports = (router) => {
       }
     })
 
+    const inProgressReadingSession =
+      layout === 'complex'
+        ? Object.values(data.readingSessions || {})
+            .map((session) => {
+              const progress = sessionProgressById[session.id]
+              const isFinished =
+                session.endedAt || (progress && progress.targetRemaining === 0)
+
+              if (
+                session.type === 'arbitration' ||
+                isFinished ||
+                !progress?.userReadCount
+              ) {
+                return null
+              }
+
+              return {
+                id: session.id,
+                createdAt: session.createdAt,
+                userReadCount: progress.userReadCount,
+                targetSize:
+                  progress.effectiveTargetSize ||
+                  session.targetSize ||
+                  session.appointmentIds.length
+              }
+            })
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] ||
+          null
+        : null
+
+    const inProgressArbitrationSession =
+      layout === 'complex'
+        ? Object.values(data.readingSessions || {})
+            .map((session) => {
+              const progress = sessionProgressById[session.id]
+              const isFinished =
+                session.endedAt || (progress && progress.targetRemaining === 0)
+              const arbitratorIds = session.arbitration?.arbitratorIds || []
+              const userIsOnPanel =
+                arbitratorIds.length === 0 ||
+                arbitratorIds.includes(currentUserId)
+
+              if (
+                session.type !== 'arbitration' ||
+                !progress ||
+                isFinished ||
+                !userIsOnPanel
+              ) {
+                return null
+              }
+
+              return {
+                id: session.id,
+                createdAt: session.createdAt,
+                arbitratedCount: progress.doneCount,
+                targetSize:
+                  progress.effectiveTargetSize ||
+                  session.targetSize ||
+                  session.appointmentIds.length
+              }
+            })
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] ||
+          null
+        : null
+
     // The arbitration backlog, counted the same way the case list and the
     // arbitration setup page count it so the three agree. Only the complex
     // layout shows the card, and the count walks every episode - don't pay
@@ -124,10 +191,107 @@ module.exports = (router) => {
         ? getReadingCaseRows(data, { view: 'current' }).length
         : null
 
+    // Finished reading sessions the current user has worked in, newest first,
+    // for the reading card preview. Falls back to a single historic stand-in so
+    // the card always shows a recent session and its "See all" link, even on a
+    // fresh prototype where the user hasn't finished one yet.
+    const recentCompletedSessions =
+      layout === 'complex'
+        ? Object.values(data.readingSessions || {})
+            .map((session) => {
+              if (session.type === 'arbitration') return null
+
+              const progress = sessionProgressById[session.id]
+              const isFinished =
+                session.endedAt || (progress && progress.targetRemaining === 0)
+              const userHasRead = session.appointmentIds.some((id) => {
+                const appointment = data.appointments.find((a) => a.id === id)
+                return (
+                  appointment &&
+                  userHasReadAppointment(data, appointment, currentUserId)
+                )
+              })
+              if (!isFinished || !userHasRead) return null
+              return {
+                id: session.id,
+                createdAt: session.createdAt,
+                caseCount:
+                  (progress && progress.effectiveTargetSize) ||
+                  session.targetSize ||
+                  session.appointmentIds.length
+              }
+            })
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 3)
+        : null
+
+    // Nothing finished in this browser yet - show one display-only historic
+    // session so the card is never empty
+    if (layout === 'complex' && recentCompletedSessions.length === 0) {
+      const historic = getHistoricReadingSessions(data)[0]
+      if (historic) {
+        recentCompletedSessions.push({
+          id: null,
+          createdAt: historic.createdAt,
+          caseCount: historic.progress.effectiveTargetSize
+        })
+      }
+    }
+
+    // Finished arbitration sessions the current user was on, newest first, for
+    // the arbitration card preview. Same fallback as the reading card.
+    const recentCompletedArbitrationSessions =
+      layout === 'complex'
+        ? Object.values(data.readingSessions || {})
+            .map((session) => {
+              if (session.type !== 'arbitration') return null
+              const progress = sessionProgressById[session.id]
+              const isFinished =
+                session.endedAt || (progress && progress.targetRemaining === 0)
+              const arbitratorIds = session.arbitration?.arbitratorIds || []
+              const userWasOnPanel =
+                arbitratorIds.length === 0 ||
+                arbitratorIds.includes(currentUserId)
+              if (!isFinished || !userWasOnPanel) return null
+              return {
+                id: session.id,
+                createdAt: session.createdAt,
+                caseCount:
+                  (progress && progress.effectiveTargetSize) ||
+                  session.targetSize ||
+                  session.appointmentIds.length
+              }
+            })
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 3)
+        : null
+
+    if (
+      layout === 'complex' &&
+      recentCompletedArbitrationSessions.length === 0
+    ) {
+      const historic = getHistoricReadingSessions(data).find(
+        (session) => session.type === 'arbitration'
+      )
+      if (historic) {
+        recentCompletedArbitrationSessions.push({
+          id: null,
+          createdAt: historic.createdAt,
+          caseCount: historic.progress.effectiveTargetSize
+        })
+      }
+    }
+
     res.render(template, {
       sessionProgressById,
+      inProgressReadingSession,
+      inProgressArbitrationSession,
       arbitrationCount,
-      readingCaseCount
+      readingCaseCount,
+      recentCompletedSessions,
+      recentCompletedArbitrationSessions
     })
   })
 

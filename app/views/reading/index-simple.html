@@ -93,7 +93,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       <h1>{{ pageHeading }}</h1>
-      <p class="nhsuk-u-secondary-text-colour nhsuk-body-l">{{ backlogTotal }} {{ "case" | pluralise(backlogTotal) }} are awaiting an outcome</p>
+      <p class="nhsuk-u-secondary-text-colour nhsuk-body-l">{{ backlogTotal }} {{ "case" | pluralise(backlogTotal) }} {{ "is" if backlogTotal == 1 else "are" }} awaiting an outcome</p>
 
   {% if inProgressSession %}
 

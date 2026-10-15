@@ -2,10 +2,16 @@
 
 {% extends 'layout-app.html' %}
 
+{% from "details/macro.njk" import details %}
+
 {% set pageHeading = "Image reading" %}
 {% set hideBackLink = true %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 {% set showRemaining = data.settings.reading.showRemaining | falsify %}
+
+{# filterAppointmentsByNeedsAnyRead takes data first (it resolves each
+  appointment's reading case), so it can't be piped like the other filters #}
+{% set allReadsAppointmentsWithAwaitingPriors = filterAppointmentsByNeedsAnyRead(data, data.appointments | filterAppointmentsByEligibleForReading) | sortAppointmentsByScreeningDate %}
 
 {% block pageContent %}
   <h1>{{ pageHeading }}</h1>
@@ -17,10 +23,6 @@
     {% set awaitingPriorsAppointments = awaitingPriorsAppointments | push(thisAppointment) %}
   {% endif %}
 {% endfor %}
-
-{# filterAppointmentsByNeedsAnyRead takes data first (it resolves each
-   appointment's reading case), so it can't be piped like the other filters #}
-{% set allReadsAppointmentsWithAwaitingPriors = filterAppointmentsByNeedsAnyRead(data, data.appointments | filterAppointmentsByEligibleForReading) | sortAppointmentsByScreeningDate %}
 
 {# Split readable appointments into awaiting priors and available for reading #}
 {# Appointments with 'requested' status mammograms are held from reading #}
@@ -53,92 +55,146 @@
 {% set oldestSecondRead = secondReadsAppointments[0].timing.startTime if secondReadsAppointments.length > 0 %}
 {% set oldestAwaitingPrior = awaitingPriorsAppointments[0].timing.startTime if awaitingPriorsAppointments.length > 0 %}
 
+{% set allReadsHeading = (allReadsAppointments | length) ~ " cases available for reading" %}
+{% if inProgressReadingSession %}
+  {% set allReadsHeading = "Resume reading" %}
+{% endif %}
+
 {# All reads card content #}
 {% set allReadsContent %}
 
-  {% set allReadCount = allReadsAppointments | length %}
+  {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
 
-  {% set hasPriorityTags = priorityAppointments or urgentAppointments %}
-  <p class="{{ "nhsuk-u-margin-bottom-2" if hasPriorityTags }}">
-    {{ allReadCount }} cases needing reading
-  </p>
+  {% if inProgressReadingSession %}
+    <p>You have an image reading session in progress. Finish it before starting a new one.</p>
 
-  {% if hasPriorityTags %}
-    <div class="nhsuk-u-margin-bottom-4">
-      {% if urgentAppointments | length %}
-        {{ ((urgentAppointments | length) ~ " urgent cases") | toTag({colour: "red"}) }}
-      {% endif %}
-      {% if priorityAppointments | length %}
-        {{ ((priorityAppointments | length) ~ " cases due soon") | toTag({colour: "orange"}) }}
-      {% endif %}
-    </div>
+    {{ button({
+      text: "Resume reading session",
+      variant: "secondary",
+      href: "/reading/session/" + inProgressReadingSession.id + "/resume",
+      classes: "nhsuk-u-margin-bottom-1"
+    }) }}
+
+    <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ inProgressReadingSession.userReadCount }} of {{ inProgressReadingSession.targetSize }} cases read</p>
+  {% else %}
+
+    <p><a href="/reading/cases?status=awaiting_first_read&status=awaiting_second_read" class="nhsuk-link--no-visited-state">View cases awaiting 1st or 2nd read</a></p>
+
+    {{ button({
+      text: "Start reading session",
+      variant: "secondary",
+      href: "/reading/create-session?type=all_reads",
+      classes: "nhsuk-u-margin-bottom-1"
+    }) }}
+
+    <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
+      Read up to {{ defaultSessionSize }} cases (<a href="/settings" class="nhsuk-link--no-visited-state">change</a>)
+    </p>
+
+    {% if recentCompletedSessions | length %}
+      {% set completedReadingSessionsHtml %}
+        <ul class="nhsuk-list nhsuk-u-margin-bottom-2">
+          {% for session in recentCompletedSessions %}
+            <li>
+              {% if session.id %}
+                <a href="/reading/session/{{ session.id }}">{{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.caseCount }} cases)</a>
+              {% else %}
+                {# Display-only stand-in - no real session to open, so link to history #}
+                <a href="/reading/history/sessions">{{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.caseCount }} cases)</a>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history">See all</a></p>
+      {% endset %}
+      {{ details({
+        summaryText: "Completed reading sessions",
+        html: completedReadingSessionsHtml,
+        classes: "nhsuk-u-margin-bottom-0"
+      }) }}
+    {% endif %}
   {% endif %}
 
-  {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
-  {% set maxCases = allReadCount if allReadCount < defaultSessionSize else defaultSessionSize %}
-
-  {% set actionLinkHtml %}
-    Start session<br>
-    <span class="nhsuk-u-font-size-19">
-      ({{ maxCases }} cases)
-    </span>
-  {% endset %}
-  {{ actionLink({
-    classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
-    text: actionLinkHtml | safe,
-    href: "/reading/create-session?type=all_reads"
-  }) }}
-
 {% endset %}
+
+{% set arbitrationHeading = arbitrationCount ~ " cases require arbitration" %}
+{% if inProgressArbitrationSession %}
+  {% set arbitrationHeading = "Resume arbitration" %}
+{% endif %}
 
 {# Arbitration card content #}
 {% set arbitrationContent %}
-<p>{{ arbitrationCount }} {{ "case" | pluralise(arbitrationCount) }} need{{ "s" if arbitrationCount == 1 }} arbitration</p>
-{{ actionLink({
-  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
-  text: "Start arbitration session",
-  href: "/reading/arbitration/start"
-}) }}
-<br>
-{{ actionLink({
-  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
-  text: "See arbitration cases",
-  href: "/reading/cases?status=awaiting_arbitration"
-}) }}
-{% endset %}
 
-{# Reading cases card content #}
-{% set readingCasesContent %}
-<p>{{ readingCaseCount }} open and recently closed {{ "case" | pluralise(readingCaseCount) }}</p>
-{{ actionLink({
-  classes: "nhsuk-link--no-visited-state nhsuk-u-margin-top-2",
-  text: "View reading cases",
-  href: "/reading/cases"
-}) }}
+  {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
+
+  {% if inProgressArbitrationSession %}
+    <p>You have an arbitration session in progress. Finish it before starting a new one.</p>
+
+    {{ button({
+      text: "Resume arbitration session",
+      variant: "secondary",
+      href: "/reading/session/" + inProgressArbitrationSession.id + "/resume",
+      classes: "nhsuk-u-margin-bottom-1"
+    }) }}
+
+    <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ inProgressArbitrationSession.arbitratedCount }} of {{ inProgressArbitrationSession.targetSize }} cases read</p>
+  {% else %}
+
+    <p><a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View arbitration case list</a></p>
+
+    {{ button({
+      text: "Start arbitration session",
+      variant: "secondary",
+      href: "/reading/arbitration/start",
+      classes: "nhsuk-u-margin-bottom-1"
+    }) }}
+
+    <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
+      Arbitrate up to {{ defaultSessionSize }} cases (<a href="/settings" class="nhsuk-link--no-visited-state">change</a>)
+    </p>
+
+    {% if recentCompletedArbitrationSessions | length %}
+      {% set completedArbitrationSessionsHtml %}
+        <ul class="nhsuk-list nhsuk-u-margin-bottom-2">
+          {% for session in recentCompletedArbitrationSessions %}
+            <li>
+              {% if session.id %}
+                <a href="/reading/session/{{ session.id }}">{{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.caseCount }} cases)</a>
+              {% else %}
+                {# Display-only stand-in - no real session to open, so link to history #}
+                <a href="/reading/history/sessions">{{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.caseCount }} cases)</a>
+              {% endif %}
+            </li>
+          {% endfor %}
+        </ul>
+        <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history/sessions">See all</a></p>
+      {% endset %}
+      {{ details({
+        summaryText: "Completed arbitration sessions",
+        html: completedArbitrationSessionsHtml,
+        classes: "nhsuk-u-margin-bottom-0"
+      }) }}
+    {% endif %}
+  {% endif %}
+
 {% endset %}
 
 <ul class="nhsuk-grid-row nhsuk-card-group">
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+  <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
     {{ card({
-      heading: "Start reading oldest cases",
+      heading: allReadsHeading,
       headingClasses: "nhsuk-heading-s",
+      variant: "feature",
       descriptionHtml: allReadsContent
     }) }}
   </li>
 
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
+  <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
     {{ card({
-      heading: "Arbitration",
+      heading: arbitrationHeading,
       headingClasses: "nhsuk-heading-s",
+      variant: "feature",
       descriptionHtml: arbitrationContent
-    }) }}
-  </li>
-
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "Reading cases",
-      headingClasses: "nhsuk-heading-s",
-      descriptionHtml: readingCasesContent
     }) }}
   </li>
 
@@ -154,49 +210,65 @@
   #}
 </ul>
 
-<h2>Other options</h2>
-<ul class="nhsuk-grid-row nhsuk-card-group">
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "View by clinic",
-      headingClasses: "nhsuk-heading-s",
-      clickable: true,
-      href: "/reading/clinics"
-    }) }}
-  </li>
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "Reading history",
-      headingClasses: "nhsuk-heading-s",
-      clickable: true,
-      href: "/reading/history"
-    }) }}
-  </li>
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: (awaitingPriorsAppointments | length) ~ " Awaiting priors",
-      headingClasses: "nhsuk-heading-s",
-      clickable: true,
-      href: "/reading/priors"
-    }) }}
-  </li>
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "Issues",
-      headingClasses: "nhsuk-heading-s",
-      clickable: true,
-      href: "/review/issues"
-    }) }}
-  </li>
-  <li class="nhsuk-grid-column-one-third nhsuk-card-group__item">
-    {{ card({
-      heading: "Reading statistics",
-      headingClasses: "nhsuk-heading-s",
-      clickable: true,
-      href: "/reading/reading-statistics"
-    }) }}
-  </li>
+<h2>View and manage cases</h2>
 
+<p class="nhsuk-u-margin-bottom-4">
+  {{ actionLink({
+    text: "Cases by clinic",
+    href: "/reading/clinics",
+    classes: "app-action-link--small nhsuk-u-margin-bottom-0 nhsuk-u-margin-right-5"
+  }) }}
+  {{ actionLink({
+    text: "All open cases",
+    href: "/reading/cases?view=current&status=awaiting_first_read&status=awaiting_second_read&status=awaiting_finalisation&status=awaiting_arbitration",
+    classes: "app-action-link--small nhsuk-u-margin-bottom-0 nhsuk-u-margin-right-5"
+  }) }}
+  {{ actionLink({
+    text: "All completed cases",
+    href: "/reading/cases?view=all&status=concluded",
+    classes: "app-action-link--small nhsuk-u-margin-bottom-0"
+  }) }}
+</p>
+
+{# Cases held from reading or arbitration by an open issue on their episode #}
+{% set openIssueCaseCount = 0 %}
+{% for thisAppointment in data.appointments %}
+  {% if (data | getReadingCase(thisAppointment)) and (data | hasOpenIssueOnEpisode(thisAppointment)) %}
+    {% set openIssueCaseCount = openIssueCaseCount + 1 %}
+  {% endif %}
+{% endfor %}
+
+{% set awaitingPriorsContent %}
+  {% if awaitingPriorsAppointments | length %}
+    <p>Cases on hold pending prior mammogram images.</p>
+  {% endif %}
+  <p class="nhsuk-u-margin-bottom-0"><a href="/reading/priors" class="nhsuk-link--no-visited-state">Manage requests for priors</a></p>
+{% endset %}
+
+{% set openIssuesContent %}
+  {% if openIssueCaseCount %}
+    <p>Cases will be available for reading or arbitration once resolved.</p>
+  {% endif %}
+  <p class="nhsuk-u-margin-bottom-0"><a href="/review/issues?stage=reading" class="nhsuk-link--no-visited-state">Review open issues</a></p>
+{% endset %}
+
+<ul class="nhsuk-grid-row nhsuk-card-group">
+  <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
+    {{ card({
+      heading: (awaitingPriorsAppointments | length) ~ " " ~ ("case" | pluralise(awaitingPriorsAppointments | length)) ~ " awaiting priors",
+      headingClasses: "nhsuk-heading-s",
+      headingLevel: 3,
+      descriptionHtml: awaitingPriorsContent
+    }) }}
+  </li>
+  <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
+    {{ card({
+      heading: openIssueCaseCount ~ " cases with open issues",
+      headingClasses: "nhsuk-heading-s",
+      headingLevel: 3,
+      descriptionHtml: openIssuesContent
+    }) }}
+  </li>
 </ul>
 
 
