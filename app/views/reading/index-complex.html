@@ -12,11 +12,9 @@
 {# filterAppointmentsByNeedsAnyRead takes data first (it resolves each
   appointment's reading case), so it can't be piped like the other filters #}
 {% set allReadsAppointmentsWithAwaitingPriors = filterAppointmentsByNeedsAnyRead(data, data.appointments | filterAppointmentsByEligibleForReading) | sortAppointmentsByScreeningDate %}
-{% set awaitingOutcomeCount = allReadsAppointmentsWithAwaitingPriors | length %}
 
 {% block pageContent %}
   <h1>{{ pageHeading }}</h1>
-  <p>{{ awaitingOutcomeCount }} {{ "case" | pluralise(awaitingOutcomeCount) }} {{ "is" if awaitingOutcomeCount == 1 else "are" }} awaiting an outcome (<a href="/reading/cases?status=awaiting_first_read&status=awaiting_second_read">see all cases</a>)</p>
 
 {# Awaiting priors — count across all eligible appointments, not just those needing reads #}
 {% set awaitingPriorsAppointments = [] %}
@@ -80,11 +78,8 @@
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ inProgressReadingSession.userReadCount }} of {{ inProgressReadingSession.targetSize }} cases read</p>
   {% else %}
 
-    {{ actionLink({
-      text: "View cases awaiting 1st or 2nd read",
-      href: "/reading/cases?status=awaiting_first_read&status=awaiting_second_read",
-      classes: "app-action-link--small nhsuk-u-display-block"
-    }) }}
+    <p><a href="/reading/cases?status=awaiting_first_read&status=awaiting_second_read" class="nhsuk-link--no-visited-state">View cases awaiting 1st or 2nd read</a></p>
+
     {{ button({
       text: "Start reading session",
       variant: "secondary",
@@ -145,11 +140,7 @@
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ inProgressArbitrationSession.arbitratedCount }} of {{ inProgressArbitrationSession.targetSize }} cases read</p>
   {% else %}
 
-    {{ actionLink({
-      text: "View arbitration case list",
-      href: "/reading/cases?status=awaiting_arbitration",
-      classes: "app-action-link--small nhsuk-u-display-block"
-    }) }}
+    <p><a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View arbitration case list</a></p>
 
     {{ button({
       text: "Start arbitration session",
@@ -251,22 +242,14 @@
   {% if awaitingPriorsAppointments | length %}
     <p>Cases on hold pending prior mammogram images.</p>
   {% endif %}
-  {{ actionLink({
-    text: "Manage requests for priors",
-    href: "/reading/priors",
-    classes: "app-action-link--small nhsuk-u-display-block nhsuk-u-margin-bottom-0"
-  }) }}
+  <p class="nhsuk-u-margin-bottom-0"><a href="/reading/priors" class="nhsuk-link--no-visited-state">Manage requests for priors</a></p>
 {% endset %}
 
 {% set openIssuesContent %}
   {% if openIssueCaseCount %}
     <p>Cases will be available for reading or arbitration once resolved.</p>
   {% endif %}
-  {{ actionLink({
-    text: "Review open issues",
-    href: "/review/issues?stage=reading",
-    classes: "app-action-link--small nhsuk-u-display-block nhsuk-u-margin-bottom-0"
-  }) }}
+  <p class="nhsuk-u-margin-bottom-0"><a href="/review/issues?stage=reading" class="nhsuk-link--no-visited-state">Review open issues</a></p>
 {% endset %}
 
 <ul class="nhsuk-grid-row nhsuk-card-group">
