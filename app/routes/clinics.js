@@ -13,8 +13,7 @@ const {
   isInProgress,
   isFinal,
   isSpecialAppointment,
-  getCheckInTime,
-  getWaitingMinutes
+  getCheckInTime
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
@@ -500,37 +499,43 @@ module.exports = (router) => {
     const filterSpecialAppointment = []
       .concat(req.query.specialAppointment || [])
       .includes('yes')
-    const staffedMammographerIds =
-      clinicData.clinic.staffing?.mammographers || []
-    const appointmentMammographerIds = [
-      ...new Set(
-        clinicData.appointments
-          .map((appointment) => appointment.sessionDetails?.startedBy)
-          .filter(Boolean)
-      )
-    ]
-    const mammographerIds = staffedMammographerIds.length
-      ? staffedMammographerIds
-      : appointmentMammographerIds
-    const mammographers = mammographerIds
-      .map((userId) => req.session.data.users.find((user) => user.id === userId))
-      .filter(Boolean)
-      .sort((a, b) => a.lastName.localeCompare(b.lastName))
-    const selectedMammographers = []
-      .concat(req.query.mammographer || [])
-      .filter((userId) => mammographerIds.includes(userId))
-
-    let matchedAppointments = clinicData.appointments
+    // Appointments after the free-text search and special-appointment filter,
+    // but before the mammographer filter, so the mammographer options reflect
+    // the current view without one selection hiding the other names.
+    let baseAppointments = clinicData.appointments
     if (search) {
-      matchedAppointments = matchedAppointments.filter((appointment) =>
+      baseAppointments = baseAppointments.filter((appointment) =>
         participantMatchesQuery(appointment.participant, search)
       )
     }
     if (filterSpecialAppointment) {
-      matchedAppointments = matchedAppointments.filter((appointment) =>
+      baseAppointments = baseAppointments.filter((appointment) =>
         isSpecialAppointment(appointment)
       )
     }
+
+    // Mammographer filter options - only those with an appointment in the
+    // current tab's view. startedBy is set once an appointment is in progress
+    // or complete, so the Remaining and Checked in tabs show no options and the
+    // filter hides itself. Sorted by first name.
+    const viewAppointments = filterAppointmentsByStatus(baseAppointments, filter)
+    const mammographerIds = [
+      ...new Set(
+        viewAppointments
+          .map((appointment) => appointment.sessionDetails?.startedBy)
+          .filter(Boolean)
+      )
+    ]
+    const mammographers = mammographerIds
+      .map((userId) => req.session.data.users.find((user) => user.id === userId))
+      .filter(Boolean)
+      .sort((a, b) => a.firstName.localeCompare(b.firstName))
+    const selectedMammographers = []
+      .concat(req.query.mammographer || [])
+      .filter((userId) => mammographerIds.includes(userId))
+
+    // Apply the mammographer selection to get the final filtered list
+    let matchedAppointments = baseAppointments
     if (selectedMammographers.length) {
       matchedAppointments = matchedAppointments.filter((appointment) =>
         selectedMammographers.includes(appointment.sessionDetails?.startedBy)
@@ -541,8 +546,8 @@ module.exports = (router) => {
 
     // Optional column sort (NHS sortable table, server-side). The Remaining and
     // Checked in tabs sort by scheduled Time or by the check-in timestamp; the
-    // In progress, Complete and All tabs sort by Time or by the order of
-    // screening; the other tabs sort by Time or waiting time. Rows with no value
+    // In progress, Complete and All tabs sort by Time, and Complete and All also
+    // by Time completed. The Status column is not sortable. Rows with no value
     // for the active sort sink to the bottom, either direction.
     const columns = getClinicTableColumns(filter)
     let allowedSorts
@@ -554,22 +559,12 @@ module.exports = (router) => {
         'checkedIn-descending'
       ]
     } else if (columns.screenedBy) {
-      allowedSorts = [
-        'time-ascending',
-        'time-descending',
-        'screeningOrder-ascending',
-        'screeningOrder-descending'
-      ]
+      allowedSorts = ['time-ascending', 'time-descending']
       if (columns.completed) {
         allowedSorts.push('completed-ascending', 'completed-descending')
       }
     } else {
-      allowedSorts = [
-        'time-ascending',
-        'time-descending',
-        'waiting-ascending',
-        'waiting-descending'
-      ]
+      allowedSorts = ['time-ascending', 'time-descending']
     }
     let sort = allowedSorts.includes(req.query.sort) ? req.query.sort : ''
 
@@ -621,15 +616,6 @@ module.exports = (router) => {
         if (!bCompleted) return -1
         const diff = new Date(aCompleted) - new Date(bCompleted)
         return sortDescending ? -diff : diff
-      })
-    } else if (sort.startsWith('waiting')) {
-      filteredAppointments = [...filteredAppointments].sort((a, b) => {
-        const aWaiting = getWaitingMinutes(a)
-        const bWaiting = getWaitingMinutes(b)
-        if (aWaiting === null && bWaiting === null) return 0
-        if (aWaiting === null) return 1
-        if (bWaiting === null) return -1
-        return sortDescending ? bWaiting - aWaiting : aWaiting - bWaiting
       })
     } else if (sort.startsWith('time')) {
       filteredAppointments = [...filteredAppointments].sort((a, b) => {

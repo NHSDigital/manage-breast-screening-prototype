@@ -101,17 +101,13 @@
 
     {# Appointment status and view appointment link #}
     <td class="nhsuk-table__cell app-clinic-appointments-table__appointment-column">
-      {# Screened by - the mammographer who ran the appointment, with a badge
-         showing the order they were screened in to its left. Attended not
-         screened is left out as no screening happened. #}
-      {% if columns.screenedBy and appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
+      {# Screened by - the mammographer who ran the appointment. Attended not
+         screened is left out as no screening happened. The screening order
+         badge is only shown once screening is complete, so the In progress tab
+         shows the name alone; on the Complete and All tabs this moves to the
+         Time completed column with the badge. #}
+      {% if columns.screenedBy and not columns.completed and appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
         <p class="nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-2">
-          {% if appointment.screeningOrder %}
-            <span class="nhsapp-badge app-nowrap nhsuk-u-margin-right-2">
-              <span aria-hidden="true">{{ appointment.screeningOrder }}</span>
-              <span class="nhsuk-u-visually-hidden">Screened {{ appointment.screeningOrder | getOrdinalNumber }}</span>
-            </span>
-          {% endif %}
           {{ appointment.sessionDetails.startedBy | getUsername({
             format: 'short',
             identifyCurrentUser: true
@@ -182,11 +178,27 @@
     {% endif %}
 
     {# Time completed - when the appointment ended, for screened (including
-       partially screened) and attended not screened; blank otherwise #}
+       partially screened) and attended not screened; blank otherwise. Carries
+       the mammographer and screening order badge below the time on the
+       Complete and All tabs, moved here from the Status column. #}
     {% if columns.completed %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
         {% if (appointment.status in ['complete', 'partially_screened', 'attended_not_screened']) and appointment.sessionDetails.endedAt %}
           {{ appointment.sessionDetails.endedAt | formatTimeString }}
+        {% endif %}
+        {% if appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
+          <p class="nhsuk-body-s nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+            {% if appointment.screeningOrder %}
+              <span class="nhsapp-badge nhsapp-badge--small app-nowrap nhsuk-u-margin-right-1">
+                <span aria-hidden="true">{{ appointment.screeningOrder }}</span>
+                <span class="nhsuk-u-visually-hidden">Screened {{ appointment.screeningOrder | getOrdinalNumber }}</span>
+              </span>
+            {% endif %}
+            {{ appointment.sessionDetails.startedBy | getUsername({
+              format: 'short',
+              identifyCurrentUser: true
+            }) }}
+          </p>
         {% endif %}
       </td>
     {% endif %}

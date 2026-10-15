@@ -95,13 +95,13 @@
           items: [
             {
               value: "yes",
-              text: "Special appointment",
+              text: "Special appointments",
               checked: true if specialAppointment
             }
           ]
         }) }}
         {% if mammographerItems | length %}
-          <h4 class="nhsuk-heading-xs nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-2">Filter by mammographer</h4>
+          <h4 class="nhsuk-heading-xs nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-2">Show active and completed appointments by mammographer</h4>
           {{ checkboxes({
             idPrefix: "filter-mammographer",
             name: "mammographer",
@@ -236,20 +236,15 @@
             <a class="nhsuk-link" href="{{ currentUrl }}?{{ checkedInParams | join('&') }}">Checked in</a>
           </th>
         {% elseif columns.screenedBy %}
-          {# Time and Status are the two sortable columns; set aria-sort on
-             the active one and "none" on the other so only one sorts at a time #}
+          {# Time is sortable, and Time completed too on the Complete and All
+             tabs; set aria-sort on the active one and "none" on the other so
+             only one sorts at a time. Status is not sortable. #}
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__time-column" data-sort aria-sort="{{ timeDirection or 'none' }}">
             <a class="nhsuk-link" href="{{ currentUrl }}?{{ timeParams | join('&') }}">Time</a>
           </th>
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__details-column">Participant</th>
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__dob-column">Date of birth</th>
-          {# Status and screened by - sortable by the order of screening number #}
-          {% set screenedByDirection = "ascending" if sort == "screeningOrder-ascending" else ("descending" if sort == "screeningOrder-descending" else none) %}
-          {% set screenedByNext = ("descending" if screenedByDirection == "ascending" else "ascending") if screenedByDirection else "ascending" %}
-          {% set screenedByParams = filterParams | push("sort=screeningOrder-" + screenedByNext) %}
-          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column" data-sort aria-sort="{{ screenedByDirection or 'none' }}">
-            <a class="nhsuk-link" href="{{ currentUrl }}?{{ screenedByParams | join('&') }}">Status</a>
-          </th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column">Status</th>
           {% if columns.completed %}
             {% set completedDirection = "ascending" if sort == "completed-ascending" else ("descending" if sort == "completed-descending" else none) %}
             {% set completedNext = ("descending" if completedDirection == "ascending" else "ascending") if completedDirection else "ascending" %}
@@ -264,18 +259,7 @@
           </th>
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__details-column">Participant</th>
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__dob-column">Date of birth</th>
-          {# Appointment - sortable by waiting time, longest first by default, but
-             only when someone is checked in and waiting times exist to order by #}
-          {% if filteredAppointments | filterAppointmentsByStatus('checked-in') | length %}
-            {% set waitingDirection = "ascending" if sort == "waiting-ascending" else ("descending" if sort == "waiting-descending" else none) %}
-            {% set waitingNext = ("descending" if waitingDirection == "ascending" else "ascending") if waitingDirection else "descending" %}
-            {% set waitingParams = filterParams | push("sort=waiting-" + waitingNext) %}
-            <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column" data-sort{% if waitingDirection %} aria-sort="{{ waitingDirection }}"{% endif %}>
-              <a class="nhsuk-link" href="{{ currentUrl }}?{{ waitingParams | join('&') }}">Status</a>
-            </th>
-          {% else %}
-            <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column">Status</th>
-          {% endif %}
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column">Status</th>
         {% endif %}
         {% if columns.actions %}
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__actions-column">Actions</th>

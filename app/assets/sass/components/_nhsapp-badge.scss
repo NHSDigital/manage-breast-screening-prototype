@@ -21,3 +21,8 @@
     padding: 0 12px;
   }
 }
+
+// One size smaller, to sit as secondary detail beneath other content
+.nhsapp-badge--small {
+  @include nhsuk-font-size(16);
+}
