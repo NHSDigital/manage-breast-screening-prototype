@@ -498,6 +498,23 @@ const getCheckInTime = (appointment) => {
 }
 
 /**
+ * The prototype's simulated "now" (config.clinics.simulatedTime on today's
+ * date), so every timestamp and duration is measured against one clock rather
+ * than the real time of viewing. Status changes made at runtime stamp this too,
+ * so a live check-in lines up with the seed data's simulated times.
+ *
+ * @returns {object} dayjs instance for the simulated current time
+ */
+const getSimulatedNow = () => {
+  const [hours, minutes] = config.clinics.simulatedTime.split(':')
+  return dayjs()
+    .hour(parseInt(hours, 10))
+    .minute(parseInt(minutes, 10))
+    .second(0)
+    .millisecond(0)
+}
+
+/**
  * How long a checked-in participant has been waiting, measured against the
  * prototype's simulated "now" (config.clinics.simulatedTime) so the figure
  * stays stable whatever the real time of viewing.
@@ -509,14 +526,7 @@ const getWaitingMinutes = (appointment) => {
   const checkInTime = getCheckInTime(appointment)
   if (!checkInTime) return null
 
-  const [hours, minutes] = config.clinics.simulatedTime.split(':')
-  const simulatedNow = dayjs()
-    .hour(parseInt(hours, 10))
-    .minute(parseInt(minutes, 10))
-    .second(0)
-    .millisecond(0)
-
-  return Math.max(0, simulatedNow.diff(dayjs(checkInTime), 'minute'))
+  return Math.max(0, getSimulatedNow().diff(dayjs(checkInTime), 'minute'))
 }
 
 /**
@@ -569,6 +579,7 @@ module.exports = {
   getCheckInTime,
   getWaitingMinutes,
   getWaitingSince,
+  getSimulatedNow,
   formatWaitingTime,
   // Export groups and display vocabularies for testing/reference
   STATUS_GROUPS,

@@ -17,6 +17,7 @@ const {
   syncReadingCasesForAppointment,
   advanceEpisodeForAppointmentStatus
 } = require('./episodes')
+const { getSimulatedNow } = require('./status')
 
 /**
  * Update appointment status and add to history
@@ -42,7 +43,9 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
       ...baseAppointment.statusHistory,
       {
         status: newStatus,
-        timestamp: new Date().toISOString()
+        // Stamp the simulated clinic clock, not real time, so a live check-in
+        // matches the seed data's simulated times and its wait reads correctly
+        timestamp: getSimulatedNow().toISOString()
       }
     ]
   })
