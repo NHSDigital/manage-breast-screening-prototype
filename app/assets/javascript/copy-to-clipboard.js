@@ -22,6 +22,10 @@ class CopyToClipboard {
 
   init() {
     this.element.insertAdjacentElement('afterend', this.status)
+    const fallback = this.element.previousElementSibling
+    if (fallback?.classList.contains('app-copy-to-clipboard__value-fallback')) {
+      fallback.hidden = true
+    }
     this.element.removeAttribute('hidden')
 
     this.element.addEventListener('click', () => {

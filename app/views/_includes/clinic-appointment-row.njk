@@ -17,6 +17,7 @@
 {%- from '_components/copy-to-clipboard/macro.njk' import appCopyToClipboard -%}
 {%- from '_components/check-in/macro.njk' import appCheckIn %}
 {%- from '_includes/issues/tag.njk' import issueTag with context %}
+{%- from "_includes/appointment-stopped-reason.njk" import appointmentStoppedReasonText %}
 
 {% macro clinicAppointmentRow(appointment, participant, clinicId, filter="remaining") %}
   {% set appointmentBaseUrl = getAppointmentUrl(appointment) %}
@@ -117,6 +118,12 @@
 
       {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
 
+      {% if appointment.status == 'attended_not_screened' and appointment | hasStoppedDetails %}
+        <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+          {{ appointmentStoppedReasonText(appointment) }}
+        </p>
+      {% endif %}
+
       {% if appointment.status == 'checked_in' and not columns.checkedIn %}
         {% set checkInTime = appointment | getCheckInTime %}
         {% set waitingMinutes = appointment | getWaitingMinutes %}
@@ -178,27 +185,29 @@
     {% endif %}
 
     {# Time completed - when the appointment ended, for screened (including
-       partially screened) and attended not screened; blank otherwise. Carries
-       the mammographer and screening order badge below the time on the
-       Complete and All tabs, moved here from the Status column. #}
+       partially screened) and attended not screened; blank otherwise. The
+       mammographer and screening order badge sit on the same line after the
+       time on the Complete and All tabs, moved here from the Status column.
+       The time is a fixed-width block so the badge and name line up across
+       rows however wide each time string is. #}
     {% if columns.completed %}
+      {% set completedTime = appointment.sessionDetails.endedAt if (appointment.status in ['complete', 'partially_screened', 'attended_not_screened']) and appointment.sessionDetails.endedAt %}
+      {% set completedScreener = appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
-        {% if (appointment.status in ['complete', 'partially_screened', 'attended_not_screened']) and appointment.sessionDetails.endedAt %}
-          {{ appointment.sessionDetails.endedAt | formatTimeString }}
-        {% endif %}
-        {% if appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
-          <p class="nhsuk-body-s nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+        {% if completedTime or completedScreener %}
+          <span class="app-clinic-appointments-table__completed-time">{% if completedTime %}{{ completedTime | formatTimeString }}{% endif %}</span>
+          {% if completedScreener %}
             {% if appointment.screeningOrder %}
               <span class="nhsapp-badge nhsapp-badge--small app-nowrap nhsuk-u-margin-right-1">
                 <span aria-hidden="true">{{ appointment.screeningOrder }}</span>
                 <span class="nhsuk-u-visually-hidden">Screened {{ appointment.screeningOrder | getOrdinalNumber }}</span>
               </span>
             {% endif %}
-            {{ appointment.sessionDetails.startedBy | getUsername({
+            <span class="nhsuk-u-font-size-16">{{ appointment.sessionDetails.startedBy | getUsername({
               format: 'short',
               identifyCurrentUser: true
-            }) }}
-          </p>
+            }) }}</span>
+          {% endif %}
         {% endif %}
       </td>
     {% endif %}

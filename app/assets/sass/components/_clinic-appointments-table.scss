@@ -57,6 +57,15 @@
   }
 }
 
+// Time completed cell lays the time out as a fixed-width block so the
+// screening order badge and mammographer name line up in a column across rows,
+// however wide each time string is
+.app-clinic-appointments-table__completed-time {
+  display: inline-block;
+  min-width: 4.5em;
+  padding-right: nhsuk-spacing(1);
+}
+
 // Remaining and Checked in tabs add a Checked in column, so the six columns
 // need their own widths
 .app-clinic-appointments-table--with-checked-in {
@@ -147,19 +156,19 @@
   }
 
   .app-clinic-appointments-table__details-column {
-    width: 28%;
+    width: 22%;
   }
 
   .app-clinic-appointments-table__dob-column {
-    width: 16%;
+    width: 14%;
   }
 
   .app-clinic-appointments-table__appointment-column {
-    width: 12%;
+    width: 17%;
   }
 
   .app-clinic-appointments-table__completed-column {
-    width: 19%;
+    width: 22%;
   }
 
   .app-clinic-appointments-table__actions-column {
@@ -174,19 +183,19 @@
   }
 
   .app-clinic-appointments-table__details-column {
-    width: 32%;
+    width: 26%;
   }
 
   .app-clinic-appointments-table__dob-column {
-    width: 18%;
+    width: 16%;
   }
 
   .app-clinic-appointments-table__appointment-column {
-    width: 14%;
+    width: 17%;
   }
 
   .app-clinic-appointments-table__completed-column {
-    width: 25%;
+    width: 30%;
   }
 }
 
