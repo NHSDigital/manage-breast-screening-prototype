@@ -200,8 +200,12 @@
 {% endif %}
 
 {% if filteredAppointments.length === 0 %}
-  {% if search %}
+  {% if search and (specialAppointment or selectedMammographers | length) %}
+    <p>No participants in this clinic match “{{ search }}” and the selected filters.</p>
+  {% elseif search %}
     <p>No participants in this clinic match “{{ search }}”.</p>
+  {% elseif specialAppointment or selectedMammographers | length %}
+    <p>No participants in this clinic match the selected filters.</p>
   {% else %}
     <p>{{ noAppointmentsMessage }}</p>
   {% endif %}
