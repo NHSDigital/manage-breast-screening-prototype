@@ -7,6 +7,7 @@ const { appointmentSettings, pinSettings } = require('./helpers/settings')
 const { findTodayAppointment, readCollection } = require('./helpers/seed-data')
 const { waitForModalsReady, expectModalClosed } = require('./helpers/modals')
 const dayjs = require('dayjs')
+const users = require('../../app/data/users')
 
 const findTodayStandardAppointment = () => {
   const today = dayjs().format('YYYY-MM-DD')
@@ -74,7 +75,94 @@ const findTodayOpenClinicWithRemainingAppointments = () => {
   return clinic
 }
 
+const findTodayClinicWithMammographerAndRemainingAppointments = () => {
+  const today = dayjs().format('YYYY-MM-DD')
+  const clinics = readCollection('clinics.json', 'clinics')
+  const appointments = readCollection('appointments.json', 'appointments')
+
+  const clinic = clinics.find(
+    (candidate) =>
+      candidate.date === today &&
+      appointments.some(
+        (appointment) =>
+          appointment.clinicId === candidate.id &&
+          appointment.status === 'scheduled'
+      ) &&
+      appointments.some(
+        (appointment) =>
+          appointment.clinicId === candidate.id &&
+          appointment.status === 'complete' &&
+          appointment.sessionDetails?.startedBy
+      )
+  )
+
+  if (!clinic) {
+    throw new Error(
+      'Seed data has no clinic today with both remaining appointments and a completed appointment assigned to a mammographer.'
+    )
+  }
+
+  return clinic
+}
+
 test.describe('Clinic appointment list', () => {
+  test('does not show completed screening details for an in-progress appointment on the All tab', async ({
+    page
+  }) => {
+    const { clinic, appointment } = findTodayAppointment({
+      status: 'in_progress'
+    })
+    const mammographer = users.find(
+      (user) => user.id === appointment.sessionDetails.startedBy
+    )
+    const row = page.locator(`tr[data-fragment-id="${appointment.id}"]`)
+    const statusColumn = row.locator(
+      '.app-clinic-appointments-table__appointment-column'
+    )
+    const completedColumn = row.locator(
+      '.app-clinic-appointments-table__completed-column'
+    )
+
+    await page.goto(`/clinics/${clinic.id}/all`)
+
+    await expect(row).toBeVisible()
+    await expect(statusColumn).not.toContainText(
+      `${mammographer.firstName.charAt(0)}. ${mammographer.lastName}`
+    )
+    await expect(completedColumn).toBeEmpty()
+    await expect(completedColumn.locator('.nhsapp-badge')).toHaveCount(0)
+  })
+
+  test('keeps mammographer options visible on every tab', async ({ page }) => {
+    const clinic = findTodayClinicWithMammographerAndRemainingAppointments()
+
+    for (const tab of [
+      'remaining',
+      'checked-in',
+      'in-progress',
+      'complete',
+      'all'
+    ]) {
+      const tabUrl =
+        tab === 'remaining'
+          ? `/clinics/${clinic.id}?search=NoMatchClinicListTest`
+          : `/clinics/${clinic.id}/${tab}?search=NoMatchClinicListTest`
+      await page.goto(tabUrl)
+      const activeTab = page
+        .getByRole('navigation', { name: 'Secondary menu' })
+        .getByRole('link', { name: new RegExp(tab.replaceAll('-', ' '), 'i') })
+      await expect(
+        activeTab.locator('strong.app-secondary-navigation__current')
+      ).toBeVisible()
+      await expect(
+        page.getByRole('heading', {
+          name: 'Filter appointments by mammographer'
+        })
+      ).toBeVisible()
+      await expect(page.locator('#filter-mammographer')).toBeVisible()
+    }
+  })
+
   test('keeps clinic tabs available when search has no matching remaining appointments', async ({
     page
   }) => {
@@ -90,9 +178,7 @@ test.describe('Clinic appointment list', () => {
     })
     const remainingTab = navigation.getByRole('link', { name: /Remaining/ })
     await expect(remainingTab.locator('.app-count')).toHaveText('(0)')
-    await expect(
-      navigation
-    ).toContainText('Checked in')
+    await expect(navigation).toContainText('Checked in')
     const checkedInTab = navigation.getByRole('link', { name: /Checked in/ })
     await expect(checkedInTab.locator('.app-count')).toHaveText('(0)')
   })
@@ -187,6 +273,9 @@ test.describe('Clinic appointment list', () => {
       status: 'checked_in'
     })
 
+    await page.clock.install({
+      time: new Date(Date.now() + 60000)
+    })
     await page.goto(`/clinics/${clinic.id}/checked-in`)
 
     const waitingTime = page.locator(
@@ -194,10 +283,12 @@ test.describe('Clinic appointment list', () => {
     )
     await expect(waitingTime).toHaveAttribute('data-waiting-since', /\d{4}/)
     const initialText = await waitingTime.innerText()
+    await expect(waitingTime).toHaveText(/^\d+ mins? ago$/)
 
-    await expect
-      .poll(() => waitingTime.innerText(), { timeout: 5000 })
-      .not.toBe(initialText)
+    await page.clock.fastForward(60000)
+
+    await expect(waitingTime).not.toHaveText(initialText)
+    await expect(waitingTime).toHaveText(/^\d+ mins? ago$/)
   })
 
   test('explains that search and filters together excluded participants', async ({

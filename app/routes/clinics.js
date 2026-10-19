@@ -500,8 +500,7 @@ module.exports = (router) => {
       .concat(req.query.specialAppointment || [])
       .includes('yes')
     // Appointments after the free-text search and special-appointment filter,
-    // but before the mammographer filter, so the mammographer options reflect
-    // the current view without one selection hiding the other names.
+    // but before the mammographer filter.
     let baseAppointments = clinicData.appointments
     if (search) {
       baseAppointments = baseAppointments.filter((appointment) =>
@@ -514,14 +513,12 @@ module.exports = (router) => {
       )
     }
 
-    // Mammographer filter options - only those with an appointment in the
-    // current tab's view. startedBy is set once an appointment is in progress
-    // or complete, so the Remaining and Checked in tabs show no options and the
-    // filter hides itself. Sorted by first name.
-    const viewAppointments = filterAppointmentsByStatus(baseAppointments, filter)
+    // Keep mammographer options available on every tab and while participant
+    // search or the special-appointment filter narrows the rows. Sorted by
+    // first name.
     const mammographerIds = [
       ...new Set(
-        viewAppointments
+        clinicData.appointments
           .map((appointment) => appointment.sessionDetails?.startedBy)
           .filter(Boolean)
       )

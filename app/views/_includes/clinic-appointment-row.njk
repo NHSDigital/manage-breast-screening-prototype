@@ -192,7 +192,7 @@
        rows however wide each time string is. #}
     {% if columns.completed %}
       {% set completedTime = appointment.sessionDetails.endedAt if (appointment.status in ['complete', 'partially_screened', 'attended_not_screened']) and appointment.sessionDetails.endedAt %}
-      {% set completedScreener = appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
+      {% set completedScreener = appointment.sessionDetails.startedBy and appointment.status in ['complete', 'partially_screened'] %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
         {% if completedTime or completedScreener %}
           <span class="app-clinic-appointments-table__completed-time">{% if completedTime %}{{ completedTime | formatTimeString }}{% endif %}</span>

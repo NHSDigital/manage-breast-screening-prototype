@@ -1,23 +1,17 @@
 // app/assets/javascript/waiting-time.js
 //
-// Ticks the "(N mins M secs ago)" waiting time on the clinic appointment list
-// up in real time. The server renders a minute-granular initial value and a
+// Ticks the "(N mins ago)" waiting time on the clinic appointment list up in
+// real time. The server renders a minute-granular initial value and a
 // data-waiting-since timestamp anchored to now minus that value, so the figure
-// is correct without JavaScript - this adds live seconds and keeps it current
-// while the page stays open, re-reading the DOM each tick so rows swapped in by
-// live filtering or check-in are picked up.
+// is correct without JavaScript. Re-read the DOM each tick so rows swapped in
+// by live filtering or check-in are picked up.
 
 const label = (value, unit) => `${value} ${unit}${value === 1 ? '' : 's'}`
 
-const formatWaitingTime = (totalSeconds) => {
-  if (typeof totalSeconds !== 'number' || isNaN(totalSeconds)) return ''
+const formatWaitingTime = (totalMinutes) => {
+  if (typeof totalMinutes !== 'number' || isNaN(totalMinutes)) return ''
 
-  // Always minutes and seconds, never hours
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-
-  if (minutes > 0) return `${label(minutes, 'min')} ${label(seconds, 'sec')}`
-  return label(seconds, 'sec')
+  return label(totalMinutes, 'min')
 }
 
 const update = () => {
@@ -25,15 +19,15 @@ const update = () => {
     const since = element.dataset.waitingSince
     if (!since) return
 
-    const seconds = Math.max(
+    const minutes = Math.max(
       0,
-      Math.floor((Date.now() - Date.parse(since)) / 1000)
+      Math.floor((Date.now() - Date.parse(since)) / 60000)
     )
-    element.textContent = `${formatWaitingTime(seconds)} ago`
+    element.textContent = `${formatWaitingTime(minutes)} ago`
   })
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   update()
-  window.setInterval(update, 1000)
+  window.setInterval(update, 60000)
 })
