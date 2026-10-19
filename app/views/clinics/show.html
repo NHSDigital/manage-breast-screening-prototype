@@ -6,7 +6,7 @@
 {% from "nhsuk/components/search-input/macro.njk" import searchInput %}
 {% from "nhsuk/components/checkboxes/macro.njk" import checkboxes %}
 
-{% set pageHeading = "Screening clinic  " ~ clinic.clinicCode %}
+{% set pageHeading = "Screening clinic " ~ clinic.clinicCode %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
@@ -22,7 +22,7 @@
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
   {{ filteredAppointments | log("Filtered appointments")}}
   {# {% set appointments = data.appointments | getClinicAppointments(clinicId) %} #}
-  {% set appointments = allAppointments %}
+  {% set appointments = matchedAppointments %}
   {% set mammographerItems = [] %}
   {% for mammographer in mammographers %}
     {% set mammographerItems = mammographerItems | push({
@@ -140,7 +140,7 @@
   { id: 'all', label: 'All' }
 ] %}
 
-{% set remainingCount = appointments | filterAppointmentsByStatus(filter.id) | length %}
+{% set remainingCount = allAppointments | filterAppointmentsByStatus('remaining') | length %}
 
 {% if clinic.status == 'closed' or remainingCount == 0 %}
   {% set tabItems = [

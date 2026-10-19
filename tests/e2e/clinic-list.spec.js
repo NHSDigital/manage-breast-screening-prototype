@@ -49,7 +49,54 @@ const findTodayStandardAppointment = () => {
   }
 }
 
+const findTodayOpenClinicWithRemainingAppointments = () => {
+  const today = dayjs().format('YYYY-MM-DD')
+  const clinics = readCollection('clinics.json', 'clinics')
+  const appointments = readCollection('appointments.json', 'appointments')
+
+  const clinic = clinics.find(
+    (candidate) =>
+      candidate.date === today &&
+      !['closed', 'scheduled'].includes(candidate.status) &&
+      appointments.some(
+        (appointment) =>
+          appointment.clinicId === candidate.id &&
+          appointment.status === 'scheduled'
+      )
+  )
+
+  if (!clinic) {
+    throw new Error(
+      'Seed data has no open clinic today with remaining appointments.'
+    )
+  }
+
+  return clinic
+}
+
 test.describe('Clinic appointment list', () => {
+  test('keeps clinic tabs available when search has no matching remaining appointments', async ({
+    page
+  }) => {
+    const clinic = findTodayOpenClinicWithRemainingAppointments()
+
+    await page.goto(`/clinics/${clinic.id}?search=NoMatchClinicListTest`)
+
+    await expect(
+      page.getByRole('navigation', { name: 'Secondary menu' })
+    ).toContainText('Remaining')
+    const navigation = page.getByRole('navigation', {
+      name: 'Secondary menu'
+    })
+    const remainingTab = navigation.getByRole('link', { name: /Remaining/ })
+    await expect(remainingTab.locator('.app-count')).toHaveText('(0)')
+    await expect(
+      navigation
+    ).toContainText('Checked in')
+    const checkedInTab = navigation.getByRole('link', { name: /Checked in/ })
+    await expect(checkedInTab.locator('.app-count')).toHaveText('(0)')
+  })
+
   test('checks in a row added by live search and keeps the All tab layout', async ({
     page
   }) => {

@@ -18,7 +18,7 @@
   border-radius: nhsuk-spacing(1);
 
   @include nhsuk-media-query($from: tablet) {
-    padding: 0 12px;
+    padding: 0 nhsuk-spacing(3);
   }
 }
 

@@ -628,7 +628,8 @@ module.exports = (router) => {
     res.render('clinics/show', {
       clinicId: req.params.id,
       clinic: clinicData.clinic,
-      allAppointments: matchedAppointments,
+      allAppointments: clinicData.appointments,
+      matchedAppointments,
       filteredAppointments,
       search,
       specialAppointment: filterSpecialAppointment,
