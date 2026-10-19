@@ -199,6 +199,13 @@ class LiveFilters {
         ignoreActiveValue
       })
 
+      this.region.dispatchEvent(
+        new CustomEvent('fragment:swapped', {
+          bubbles: true,
+          detail: { fragment: this.region }
+        })
+      )
+
       this.enhance()
       this.announce()
 

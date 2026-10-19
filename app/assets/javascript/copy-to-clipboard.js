@@ -4,12 +4,14 @@
 // clipboard API is available.
 
 const RESET_DELAY = 5000
+const copyButtonInstances = new WeakMap()
 
 class CopyToClipboard {
   constructor(element) {
     this.element = element
     this.resetTimeout = null
     this.defaultLabel = element.getAttribute('aria-label')
+    this.listenerAdded = false
 
     // Visually hidden live region so screen readers hear the result.
     // Swapping the button's aria-label alone is not announced.
@@ -21,12 +23,21 @@ class CopyToClipboard {
   }
 
   init() {
-    this.element.insertAdjacentElement('afterend', this.status)
+    if (this.status.previousElementSibling !== this.element) {
+      this.element.insertAdjacentElement('afterend', this.status)
+    }
+    const fallback = this.element.previousElementSibling
+    if (fallback?.classList.contains('app-copy-to-clipboard__value-fallback')) {
+      fallback.hidden = true
+    }
     this.element.removeAttribute('hidden')
 
-    this.element.addEventListener('click', () => {
-      this.copy()
-    })
+    if (!this.listenerAdded) {
+      this.element.addEventListener('click', () => {
+        this.copy()
+      })
+      this.listenerAdded = true
+    }
   }
 
   copy() {
@@ -72,17 +83,30 @@ class CopyToClipboard {
   }
 }
 
-// Initialise all copy-to-clipboard buttons when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+const initialiseCopyButtons = (container) => {
   if (!('clipboard' in navigator)) {
     return
   }
 
-  const buttons = document.querySelectorAll(
+  const buttons = container.querySelectorAll(
     '[data-module="app-copy-to-clipboard"]'
   )
 
   buttons.forEach((element) => {
-    new CopyToClipboard(element)
+    const instance = copyButtonInstances.get(element)
+    if (instance) {
+      instance.init()
+    } else {
+      copyButtonInstances.set(element, new CopyToClipboard(element))
+    }
   })
+}
+
+document.addEventListener('fragment:swapped', (event) => {
+  initialiseCopyButtons(event.detail.fragment)
+})
+
+// Initialise all copy-to-clipboard buttons when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  initialiseCopyButtons(document)
 })
