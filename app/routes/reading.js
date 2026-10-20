@@ -295,6 +295,39 @@ module.exports = (router) => {
     })
   })
 
+  router.post('/reading/settings/save', (req, res) => {
+    const validSessionSizes = ['10', '25', '50', '100']
+    const sessionSize = req.body?._readingSessionSize
+    const darkMode = req.body?._readingDarkMode
+    const errors = []
+
+    if (!validSessionSizes.includes(sessionSize)) {
+      errors.push({
+        text: 'Select how many cases to read in a session',
+        name: '_readingSessionSize',
+        href: '#readingSessionSize-10'
+      })
+    }
+
+    if (!['true', 'false'].includes(darkMode)) {
+      errors.push({
+        text: 'Select a background colour',
+        name: '_readingDarkMode',
+        href: '#readingDarkMode-false'
+      })
+    }
+
+    if (errors.length) {
+      errors.forEach((error) => req.flash('error', error))
+      return res.redirect('/reading/settings')
+    }
+
+    req.session.data.settings.darkMode = darkMode
+    req.session.data.settings.reading.defaultSessionSize = sessionSize
+
+    res.redirect(modalBreakout('/reading'))
+  })
+
   // Default clinics list to "mine"
   router.get('/reading/clinics', (req, res) => {
     res.redirect('/reading/clinics/mine')

@@ -57,7 +57,7 @@
 
 {% set allReadsHeading = (allReadsAppointments | length) ~ " cases available for reading" %}
 {% if inProgressReadingSession %}
-  {% set allReadsHeading = "Resume reading" %}
+  {% set allReadsHeading = "Reading session in progress" %}
 {% endif %}
 
 {# All reads card content #}
@@ -66,10 +66,10 @@
   {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
 
   {% if inProgressReadingSession %}
-    <p>You have an image reading session in progress. Finish it before starting a new one.</p>
+    <p>Finish the session before starting a new one.</p>
 
     {{ button({
-      text: "Resume reading session",
+      text: "Resume reading",
       variant: "secondary",
       href: "/reading/session/" + inProgressReadingSession.id + "/resume",
       classes: "nhsuk-u-margin-bottom-1"
@@ -78,7 +78,7 @@
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ inProgressReadingSession.userReadCount }} of {{ inProgressReadingSession.targetSize }} cases read</p>
   {% else %}
 
-    <p><a href="/reading/cases?status=awaiting_first_read&status=awaiting_second_read" class="nhsuk-link--no-visited-state">View cases awaiting 1st or 2nd read</a></p>
+    <p><a href="/reading/cases?status=awaiting_first_read&status=awaiting_second_read" class="nhsuk-link--no-visited-state">View reading list</a></p>
 
     {{ button({
       text: "Start reading session",
@@ -88,7 +88,7 @@
     }) }}
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
-      Read up to {{ defaultSessionSize }} cases (<a href="/settings" class="nhsuk-link--no-visited-state">change</a>)
+      Read up to {{ defaultSessionSize }} cases ({{ appLink({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
     </p>
 
     {% if recentCompletedSessions | length %}
@@ -119,7 +119,7 @@
 
 {% set arbitrationHeading = arbitrationCount ~ " cases require arbitration" %}
 {% if inProgressArbitrationSession %}
-  {% set arbitrationHeading = "Resume arbitration" %}
+  {% set arbitrationHeading = "Arbitration session in progress" %}
 {% endif %}
 
 {# Arbitration card content #}
@@ -128,16 +128,16 @@
   {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
 
   {% if inProgressArbitrationSession %}
-    <p>You have an arbitration session in progress. Finish it before starting a new one.</p>
+    <p>Finish the session before starting a new one.</p>
 
     {{ button({
-      text: "Resume arbitration session",
+      text: "Resume arbitration",
       variant: "secondary",
       href: "/reading/session/" + inProgressArbitrationSession.id + "/resume",
       classes: "nhsuk-u-margin-bottom-1"
     }) }}
 
-    <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ inProgressArbitrationSession.arbitratedCount }} of {{ inProgressArbitrationSession.targetSize }} cases read</p>
+    <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ inProgressArbitrationSession.arbitratedCount }} of {{ inProgressArbitrationSession.targetSize }} cases arbitrated</p>
   {% else %}
 
     <p><a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View arbitration case list</a></p>
@@ -150,7 +150,7 @@
     }) }}
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
-      Arbitrate up to {{ defaultSessionSize }} cases (<a href="/settings" class="nhsuk-link--no-visited-state">change</a>)
+      Arbitrate up to {{ defaultSessionSize }} cases ({{ appLink({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
     </p>
 
     {% if recentCompletedArbitrationSessions | length %}

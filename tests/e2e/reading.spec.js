@@ -185,6 +185,31 @@ test.describe('Image reading', () => {
     ).toBeVisible()
   })
 
+  test('changes reading session size and dark mode from dashboard settings', async ({
+    page
+  }) => {
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[darkMode]': 'false',
+      'settings[reading][defaultSessionSize]': '25',
+      'settings[reading][indexLayout]': 'complex'
+    })
+
+    await page.goto('/reading')
+    await expect(page.getByText(/Read up to 25 cases/)).toBeVisible()
+    await expect(page.getByText(/Arbitrate up to 25 cases/)).toBeVisible()
+
+    const modal = await clickLinkToOpenModal(page, 'change')
+    await modal.getByLabel('Use dark background').check()
+    await modal.getByLabel('10', { exact: true }).check()
+    await modal.getByRole('button', { name: 'Save' }).click()
+    await expectModalClosed(modal)
+
+    await expect(page.getByText(/Read up to 10 cases/)).toBeVisible()
+    await expect(page.getByText(/Arbitrate up to 10 cases/)).toBeVisible()
+    await expect(page.locator('body')).toHaveClass(/app-dark-mode/)
+  })
+
   test('reads a session of cases as normal and recall', async ({ page }) => {
     await pinSettings(page, {
       ...readingSettings,
