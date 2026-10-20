@@ -559,6 +559,9 @@ Use in templates: `{% set allReads = appointment | getReadsAsArray %}`
 
 Reading behavior is configured via:
 
+The complex reading dashboard settings modal controls the default session size
+for both reading and arbitration, and the global dark-mode preference.
+
 **User settings** (in `data.settings.reading`):
 
 - `confirmNormal` - Require confirmation for normal results
@@ -571,7 +574,8 @@ Reading behavior is configured via:
 - `secondReaderComparison` - When to show compare page: `'early'` | `'late'` | `'off'` (default)
 - `compareWhen` - Which cases trigger compare: `'non_normal'` (default) | `'discordant_only'`
 - `lazySessions` - Build sessions lazily one case at a time: `'true'` (default) | `'false'`
-- `defaultSessionSize` - Default session size (default: 25)
+- `defaultSessionSize` - Default session size for reading and arbitration
+  sessions (default: 25; dashboard options: 10, 25, 50 or 100)
 
 **Arbitration settings** (in `settings.reading.arbitration`):
 
