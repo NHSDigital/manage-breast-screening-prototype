@@ -200,7 +200,7 @@ test.describe('Image reading', () => {
     await expect(page.getByText(/Arbitrate up to 25 cases/)).toBeVisible()
 
     const modal = await clickLinkToOpenModal(page, 'change')
-    await modal.getByLabel('Use dark background').check()
+    await modal.getByLabel('Dark').check()
     await modal.getByLabel('10', { exact: true }).check()
     await modal.getByRole('button', { name: 'Save' }).click()
     await expectModalClosed(modal)

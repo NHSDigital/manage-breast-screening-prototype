@@ -15,17 +15,17 @@
     value: data.settings.darkMode or "false",
     fieldset: {
       legend: {
-        text: "Dark mode"
+        text: "Colour mode"
       }
     },
     items: [
       {
         value: "false",
-        text: "Use light background"
+        text: "Light"
       },
       {
         value: "true",
-        text: "Use dark background"
+        text: "Dark"
       }
     ]
   } | populateErrors) }}
@@ -37,7 +37,7 @@
     value: data.settings.reading.defaultSessionSize or "25",
     fieldset: {
       legend: {
-        text: "Image reading session size"
+        text: "Cases per image reading or arbitration session"
       }
     },
     items: [
