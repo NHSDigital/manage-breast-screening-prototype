@@ -218,22 +218,22 @@ test.describe('Image reading', () => {
 
     await page.goto('/reading')
     await expect(
-      page.locator('p').filter({
-        hasText:
-          /^(?:1 case is|(?:0|[2-9]|[1-9]\d+) cases are) awaiting an outcome \(see all cases\)$/
-      })
+      page.getByRole('link', { name: 'View reading list' })
     ).toBeVisible()
     await expect(
-      page.getByRole('link', { name: 'see all cases', exact: true })
+      page.getByRole('link', { name: 'View reading list' })
     ).toHaveAttribute(
       'href',
       '/reading/cases?status=awaiting_first_read&status=awaiting_second_read'
     )
     await expect(
-      page.getByRole('heading', { name: /cases available for reading/ })
+      page.getByRole('heading', { name: /cases? available for reading/ })
     ).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: 'Resume reading', exact: true })
+      page.getByRole('heading', {
+        name: 'Reading session in progress',
+        exact: true
+      })
     ).toHaveCount(0)
 
     await page.goto(
@@ -249,21 +249,22 @@ test.describe('Image reading', () => {
 
     await page.goto('/reading')
     await expect(
-      page.getByRole('heading', { name: 'Resume reading', exact: true })
+      page.getByRole('heading', {
+        name: 'Reading session in progress',
+        exact: true
+      })
     ).toBeVisible()
     await expect(
-      page.getByText(
-        'You have an image reading session in progress. Finish it before starting a new one.'
-      )
+      page.getByText('Finish the session before starting a new one.')
     ).toBeVisible()
     const sessionProgress = page.getByText('2 of 3 cases read')
     await expect(sessionProgress).toBeVisible()
     await expect(sessionProgress).toHaveClass(/nhsuk-u-font-size-16/)
 
-    const resumeSessionButton = page.getByRole('button', {
-      name: 'Resume reading session'
+    const resumeSessionLink = page.getByRole('link', {
+      name: 'Resume reading'
     })
-    await resumeSessionButton.click()
+    await resumeSessionLink.click()
     await expect(page).toHaveURL(
       new RegExp(`/reading/session/${sessionId}/appointments/`)
     )
@@ -804,16 +805,19 @@ test.describe('Image reading', () => {
 
     await page.goto('/reading')
     await expect(
-      page.getByRole('heading', { name: /cases require arbitration/ })
+      page.getByRole('heading', { name: /cases? requir(es|e) arbitration/ })
     ).toBeVisible()
     await expect(
-      page.getByRole('heading', { name: 'Resume arbitration', exact: true })
+      page.getByRole('heading', {
+        name: 'Arbitration session in progress',
+        exact: true
+      })
     ).toHaveCount(0)
     await expect(
       page.getByRole('link', { name: 'View arbitration case list' })
     ).toBeVisible()
     await expect(
-      page.getByRole('button', { name: 'Start arbitration session' })
+      page.getByRole('link', { name: 'Start arbitration session' })
     ).toBeVisible()
 
     await page.goto('/reading/arbitration/start')
@@ -829,17 +833,18 @@ test.describe('Image reading', () => {
 
     await page.goto('/reading')
     await expect(
-      page.getByRole('heading', { name: 'Resume arbitration', exact: true })
+      page.getByRole('heading', {
+        name: 'Arbitration session in progress',
+        exact: true
+      })
     ).toBeVisible()
     await expect(
-      page.getByText(
-        'You have an arbitration session in progress. Finish it before starting a new one.'
-      )
+      page.getByText('Finish the session before starting a new one.')
     ).toBeVisible()
-    await expect(page.getByText(/1 of \d+ cases read/)).toBeVisible()
+    await expect(page.getByText(/1 of \d+ cases arbitrated/)).toBeVisible()
 
     await page
-      .getByRole('button', { name: 'Resume arbitration session' })
+      .getByRole('link', { name: 'Resume arbitration' })
       .click()
     await expect(page).toHaveURL(
       new RegExp(`/reading/session/${sessionId}/appointments/`)

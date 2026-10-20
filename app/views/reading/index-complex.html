@@ -55,7 +55,8 @@
 {% set oldestSecondRead = secondReadsAppointments[0].timing.startTime if secondReadsAppointments.length > 0 %}
 {% set oldestAwaitingPrior = awaitingPriorsAppointments[0].timing.startTime if awaitingPriorsAppointments.length > 0 %}
 
-{% set allReadsHeading = (allReadsAppointments | length) ~ " cases available for reading" %}
+{% set allReadsCount = allReadsAppointments | length %}
+{% set allReadsHeading = allReadsCount ~ " " ~ ("case" | pluralise(allReadsCount)) ~ " available for reading" %}
 {% if inProgressReadingSession %}
   {% set allReadsHeading = "Reading session in progress" %}
 {% endif %}
@@ -68,11 +69,10 @@
   {% if inProgressReadingSession %}
     <p>Finish the session before starting a new one.</p>
 
-    {{ button({
+    {{ appLink({
       text: "Resume reading",
-      variant: "secondary",
       href: "/reading/session/" + inProgressReadingSession.id + "/resume",
-      classes: "nhsuk-u-margin-bottom-1"
+      classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
     }) }}
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ inProgressReadingSession.userReadCount }} of {{ inProgressReadingSession.targetSize }} cases read</p>
@@ -80,11 +80,10 @@
 
     <p><a href="/reading/cases?status=awaiting_first_read&status=awaiting_second_read" class="nhsuk-link--no-visited-state">View reading list</a></p>
 
-    {{ button({
+    {{ appLink({
       text: "Start reading session",
-      variant: "secondary",
       href: "/reading/create-session?type=all_reads",
-      classes: "nhsuk-u-margin-bottom-1"
+      classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
     }) }}
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
@@ -105,7 +104,7 @@
             </li>
           {% endfor %}
         </ul>
-        <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history">See all</a></p>
+        <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history/sessions">See all</a></p>
       {% endset %}
       {{ details({
         summaryText: "Completed reading sessions",
@@ -117,7 +116,7 @@
 
 {% endset %}
 
-{% set arbitrationHeading = arbitrationCount ~ " cases require arbitration" %}
+{% set arbitrationHeading = arbitrationCount ~ " " ~ ("case" | pluralise(arbitrationCount)) ~ (" requires" if arbitrationCount == 1 else " require") ~ " arbitration" %}
 {% if inProgressArbitrationSession %}
   {% set arbitrationHeading = "Arbitration session in progress" %}
 {% endif %}
@@ -130,11 +129,10 @@
   {% if inProgressArbitrationSession %}
     <p>Finish the session before starting a new one.</p>
 
-    {{ button({
+    {{ appLink({
       text: "Resume arbitration",
-      variant: "secondary",
       href: "/reading/session/" + inProgressArbitrationSession.id + "/resume",
-      classes: "nhsuk-u-margin-bottom-1"
+      classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
     }) }}
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ inProgressArbitrationSession.arbitratedCount }} of {{ inProgressArbitrationSession.targetSize }} cases arbitrated</p>
@@ -142,11 +140,10 @@
 
     <p><a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View arbitration case list</a></p>
 
-    {{ button({
+    {{ appLink({
       text: "Start arbitration session",
-      variant: "secondary",
       href: "/reading/arbitration/start",
-      classes: "nhsuk-u-margin-bottom-1"
+      classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
     }) }}
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
@@ -263,7 +260,7 @@
   </li>
   <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
     {{ card({
-      heading: openIssueCaseCount ~ " cases with open issues",
+      heading: openIssueCaseCount ~ " " ~ ("case" | pluralise(openIssueCaseCount)) ~ " with open issues",
       headingClasses: "nhsuk-heading-s",
       headingLevel: 3,
       descriptionHtml: openIssuesContent

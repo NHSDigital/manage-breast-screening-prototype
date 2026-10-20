@@ -58,10 +58,7 @@ const {
   userRequestedPriors
 } = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
-const {
-  getArbitrationBacklogCounts,
-  getReadingCaseRows
-} = require('../lib/utils/reading-case-list')
+const { getArbitrationBacklogCounts } = require('../lib/utils/reading-case-list')
 const {
   getHistoricReadingSessions
 } = require('../lib/utils/historic-reading-sessions')
@@ -184,13 +181,6 @@ module.exports = (router) => {
         ? getArbitrationBacklogCounts(data, { view: 'current' }).total
         : null
 
-    // What the reading case list card offers - the same population its
-    // default view shows
-    const readingCaseCount =
-      layout === 'complex'
-        ? getReadingCaseRows(data, { view: 'current' }).length
-        : null
-
     // Finished reading sessions the current user has worked in, newest first,
     // for the reading card preview. Falls back to a single historic stand-in so
     // the card always shows a recent session and its "See all" link, even on a
@@ -289,7 +279,6 @@ module.exports = (router) => {
       inProgressReadingSession,
       inProgressArbitrationSession,
       arbitrationCount,
-      readingCaseCount,
       recentCompletedSessions,
       recentCompletedArbitrationSessions
     })
