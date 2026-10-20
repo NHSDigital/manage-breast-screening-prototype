@@ -26,6 +26,10 @@
   {% set copiedAnnouncement = "Copied to clipboard" %}
 {% endif %}
 
+{% if type == "value" %}
+  <span class="app-copy-to-clipboard__value-fallback">{{ params.html | safe }}</span>
+{% endif %}
+
 {# The value variant has visible text, so its accessible name comes from its
    content rather than an aria-label, keeping the visible value in the name #}
 <button

@@ -943,10 +943,29 @@ class AppModal {
   }
 }
 
+const initialiseModals = (container) => {
+  const modals = [...container.querySelectorAll('.app-modal')]
+
+  if (container instanceof Element && container.matches('.app-modal')) {
+    modals.unshift(container)
+  }
+
+  modals.forEach((modal) => {
+    if (!modal.appModal) {
+      modal.appModal = new AppModal(modal)
+    }
+  })
+}
+
 // Initialize modals on page load
 document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.app-modal').forEach((modal) => {
-    modal.appModal = new AppModal(modal)
+  initialiseModals(document)
+
+  // Clinic rows can be replaced by live filters or check-in. Initialise any
+  // row-specific modals that the fragment adds, without rebinding retained ones.
+  document.addEventListener('fragment:swapped', (event) => {
+    const fragment = event.detail?.fragment
+    if (fragment) initialiseModals(fragment)
   })
 
   // Global delegated click handler for [data-load-modal-url] — used by the
