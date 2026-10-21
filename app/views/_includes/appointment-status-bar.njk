@@ -1,5 +1,7 @@
 {# app/views/_includes/appointment-status-bar.njk #}
 
+{% from "_includes/issues/tag.njk" import issueTag with context %}
+
 {# Appointment row items - date, time, tags #}
 {% set appointmentRowItems = [] %}
 
@@ -13,6 +15,8 @@
       classes: "nhsuk-u-margin-left-1"
     })}}
   {% endif %}
+  {# Asked of the episode, so an issue raised anywhere in the round shows #}
+  {{ issueTag(episode, { classes: "nhsuk-u-margin-left-1" }) }}
 {% endset %}
 {% set appointmentRowItems = appointmentRowItems | push({
   key: '<abbr title="Appointment">Appt</abbr>:',

@@ -84,6 +84,7 @@ Pipe the component config through `| populateErrors`:
 
 ```njk
 {{ radios({
+  small: true,
   name: "appointment[someField]",
   value: appointment.someField,
   fieldset: {

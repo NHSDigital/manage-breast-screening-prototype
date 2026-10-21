@@ -39,8 +39,8 @@
   {%- if progress.sessionAwaitingPriorsCount > 0 -%}
     , {{ progress.sessionAwaitingPriorsCount }} awaiting priors
   {%- endif -%}
-  {%- if progress.deferredCount > 0 -%}
-    , {{ progress.deferredCount }} deferred
+  {%- if progress.openIssueCount > 0 -%}
+    , {{ progress.openIssueCount }} with an issue
   {%- endif -%}
   , {{ progress.targetRemaining }} remaining
   {%- if progress.skippedAppointments | length > 0 %}

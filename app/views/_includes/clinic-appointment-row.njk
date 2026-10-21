@@ -7,66 +7,144 @@
   appointment - appointment record
   participant - participant the appointment belongs to
   clinicId - id of the clinic being viewed
+  filter - the current tab (e.g. "remaining"), which decides the columns shown
 
   Import with context - the row reads settings and the current user from data.
 #}
 
 {%- from 'tag/macro.njk' import tag -%}
+{%- from 'button/macro.njk' import button -%}
+{%- from '_components/copy-to-clipboard/macro.njk' import appCopyToClipboard -%}
 {%- from '_components/check-in/macro.njk' import appCheckIn %}
+{%- from '_includes/issues/tag.njk' import issueTag with context %}
+{%- from "_includes/appointment-stopped-reason.njk" import appointmentStoppedReasonText %}
 
-{% macro clinicAppointmentRow(appointment, participant, clinicId) %}
+{% macro clinicAppointmentRow(appointment, participant, clinicId, filter="remaining") %}
   {% set appointmentBaseUrl = getAppointmentUrl(appointment) %}
   {% set statusTagId = "status-tag-" + appointment.id %}
 
-  <tr class="appointment-row" id="appointment-row-{{ appointment.id }}" data-fragment-id="{{ appointment.id }}">
+  {# Which broken-out columns this tab shows (shared with the table header and
+     the sort logic). Remaining and Checked in break out the check-in time;
+     In progress, Complete and All break out the mammographer and screening
+     order; Complete has no actions as every row is final. #}
+  {% set columns = filter | getClinicTableColumns %}
 
-    {# Appointment time #}
-    <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">{{ appointment.statusHistory[0].timestamp | formatTimeString }}
-      <br>
+  <tr class="nhsuk-table__row appointment-row" id="appointment-row-{{ appointment.id }}" data-fragment-id="{{ appointment.id }}">
+
+    {# Appointment time, with length shown only for the longer special appointments #}
+    <td class="nhsuk-table__cell app-clinic-appointments-table__time-column">
+      {{ appointment.statusHistory[0].timestamp | formatTimeString }}
       {% if appointment | isSpecialAppointment %}
+        <br>
         {{ tag({
-        text: "Special appointment",
-        colour: "yellow",
-        classes: "nhsuk-u-margin-top-2 app-nowrap"
-        })}}
-      {% endif %}
-      {% if appointment | hasAppointmentNote %}
-        {{ tag({
-        text: "Appointment note",
-        colour: "yellow",
-        classes: "nhsuk-u-margin-top-2 app-nowrap"
-        })}}
+        text: appointment.timing.duration + " mins",
+        colour: "white",
+        classes: "nhsuk-u-margin-top-1 app-nowrap"
+        }) }}
       {% endif %}
     </td>
 
     {# Appointment details - Name and NHS number #}
     <td class="nhsuk-table__cell">
       <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
-        {{ participant | getFullNameReversed }}
+        <a href="{{ appointmentBaseUrl }}">{{ participant | getFullNameReversed }}</a>
       </p>
-      <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
-        NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
+      <p class="nhsuk-u-secondary-text-colour nhsuk-body-s app-nowrap app-code-font nhsuk-u-margin-bottom-0">
+        {{ appCopyToClipboard({
+          text: participant.medicalInformation.nhsNumber,
+          type: "value",
+          html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>',
+          label: "NHS number"
+        }) }}
       </p>
+      {% if (data | getEpisode(appointment.episodeId)).isFirstScreening %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          {{ tag({
+          text: "New",
+          colour: "blue",
+          classes: "app-nowrap"
+          })}}
+        </p>
+      {% endif %}
+      {% if appointment | isSpecialAppointment %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          {{ tag({
+          text: "Special appointment",
+          colour: "yellow",
+          classes: "app-nowrap"
+          })}}
+        </p>
+        {% set specialAppointmentReasons = [] %}
+        {% for supportType in appointment.specialAppointment.supportTypes %}
+          {% if supportType and supportType != '_unchecked' and supportType.trim() %}
+            {% set specialAppointmentReasons = specialAppointmentReasons | push(supportType) %}
+          {% endif %}
+        {% endfor %}
+        {% if specialAppointmentReasons | length %}
+          <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-0">
+            {{ specialAppointmentReasons | join(", ") }}
+          </p>
+        {% endif %}
+      {% endif %}
+      {# Asked of the episode, so an issue raised anywhere in the round shows #}
+      {% if data | hasOpenIssue(appointment.episodeId) %}
+        <p class="nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+          {{ issueTag() }}
+        </p>
+      {% endif %}
     </td>
 
     {# Date of birth #}
     <td class="nhsuk-table__cell">{{ participant.demographicInformation.dateOfBirth | formatDate }}<br>
-      <span class="nhsuk-u-secondary-text-colour">({{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true)
-        }})</span>
+      <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">{{ participant.demographicInformation.dateOfBirth | formatRelativeDate(true)
+        }}</span>
     </td>
 
     {# Appointment status and view appointment link #}
-    <td class="nhsuk-table__cell">
+    <td class="nhsuk-table__cell app-clinic-appointments-table__appointment-column">
+      {# Screened by - the mammographer who ran the appointment. Attended not
+         screened is left out as no screening happened. The screening order
+         badge is only shown once screening is complete, so the In progress tab
+         shows the name alone; on the Complete and All tabs this moves to the
+         Time completed column with the badge. #}
+      {% if columns.screenedBy and not columns.completed and appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
+        <p class="nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-2">
+          {{ appointment.sessionDetails.startedBy | getUsername({
+            format: 'short',
+            identifyCurrentUser: true
+          }) }}
+        </p>
+      {% endif %}
+
       {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
 
-      {% if appointment | isInProgressNotPaused %}
+      {% if appointment.status == 'attended_not_screened' and appointment | hasStoppedDetails %}
+        <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-1 nhsuk-u-margin-bottom-0">
+          {{ appointmentStoppedReasonText(appointment) }}
+        </p>
+      {% endif %}
+
+      {% if appointment.status == 'checked_in' and not columns.checkedIn %}
+        {% set checkInTime = appointment | getCheckInTime %}
+        {% set waitingMinutes = appointment | getWaitingMinutes %}
+        {% if checkInTime %}
+          <p class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-0">
+            at {{ checkInTime | formatTimeString }}
+            {% if waitingMinutes !== null %}
+              <br>
+              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s js-waiting-time" data-waiting-since="{{ appointment | getWaitingSince }}">{{ waitingMinutes | formatWaitingTime }} ago</span>
+            {% endif %}
+          </p>
+        {% endif %}
+
+      {% elseif (appointment | isInProgressNotPaused) and not columns.screenedBy %}
         <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
           appointment.sessionDetails.startedBy | getUsername({
           format: 'short',
           identifyCurrentUser: true
           }) }}</span>
 
-      {% elseif (appointment | isFinal) %}
+      {% elseif (appointment | isFinal) and not columns.screenedBy %}
         {% if appointment.sessionDetails.startedBy %}
           <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ appointment.sessionDetails.startedBy
             | getUsername({
@@ -76,13 +154,66 @@
         {% endif %}
       {% endif %}
 
-      <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0 app-nowrap">
-        <a href="{{ appointmentBaseUrl }}">View appointment {{- ((" for " + (participant | getShortName)) |
-          asVisuallyHiddenText) | safe }}</a>
-      </p>
+      {% if appointment | hasAppointmentNote %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          {{ tag({
+          text: "Appointment note",
+          colour: "yellow",
+          classes: "app-nowrap"
+          })}}
+        </p>
+      {% endif %}
     </td>
 
+    {# Checked in - the check-in time with the wait so far underneath. Its own
+       sortable column on the Remaining and Checked in tabs; blank until the
+       participant checks in. Minute granularity, with no live-ticking seconds. #}
+    {% if columns.checkedIn %}
+      <td class="nhsuk-table__cell app-clinic-appointments-table__checked-in-column">
+        {% if appointment.status == 'checked_in' %}
+          {% set checkInTime = appointment | getCheckInTime %}
+          {% set waitingMinutes = appointment | getWaitingMinutes %}
+          {% if checkInTime %}
+            {{ checkInTime | formatTimeString }}
+            {% if waitingMinutes !== null %}
+              <br>
+              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s js-waiting-time" data-waiting-since="{{ appointment | getWaitingSince }}">{{ waitingMinutes | formatWaitingTime }} ago</span>
+            {% endif %}
+          {% endif %}
+        {% endif %}
+      </td>
+    {% endif %}
+
+    {# Time completed - when the appointment ended, for screened (including
+       partially screened) and attended not screened; blank otherwise. The
+       mammographer and screening order badge sit on the same line after the
+       time on the Complete and All tabs, moved here from the Status column.
+       The time is a fixed-width block so the badge and name line up across
+       rows however wide each time string is. #}
+    {% if columns.completed %}
+      {% set completedTime = appointment.sessionDetails.endedAt if (appointment.status in ['complete', 'partially_screened', 'attended_not_screened']) and appointment.sessionDetails.endedAt %}
+      {% set completedScreener = appointment.sessionDetails.startedBy and appointment.status in ['complete', 'partially_screened'] %}
+      <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
+        {% if completedTime or completedScreener %}
+          <span class="app-clinic-appointments-table__completed-time">{% if completedTime %}{{ completedTime | formatTimeString }}{% endif %}</span>
+          {% if completedScreener %}
+            {% if appointment.screeningOrder %}
+              <span class="nhsapp-badge nhsapp-badge--small app-nowrap nhsuk-u-margin-right-1">
+                <span aria-hidden="true">{{ appointment.screeningOrder }}</span>
+                <span class="nhsuk-u-visually-hidden">Screened {{ appointment.screeningOrder | getOrdinalNumber }}</span>
+              </span>
+            {% endif %}
+            <span class="nhsuk-u-font-size-16">{{ appointment.sessionDetails.startedBy | getUsername({
+              format: 'short',
+              identifyCurrentUser: true
+            }) }}</span>
+          {% endif %}
+        {% endif %}
+      </td>
+    {% endif %}
+
     {# Actions - check-in or start appointment #}
+    {% if columns.actions %}
     <td class="nhsuk-table__cell">
       {% if appointment.status == 'scheduled' %}
         {{ appCheckIn({
@@ -91,25 +222,33 @@
           participant: participant,
           confirmIdentityOnCheckIn: true if data.settings.appointment.confirmIdentityOnCheckIn == 'true' else false,
           statusTagId: statusTagId,
-          currentUser: currentUser
+          currentUser: currentUser,
+          currentFilter: filter
         }) }}
       {% endif %}
 
       {% if (currentUser | isClinician) and (appointment | isActive) %}
         {% if appointment | hasNotStarted %}
-          {# Start appointment link gets rendered hidden if the appointment is not checked in - js can later remove this
-          class to make the link visible #}
-          <a href="{{ appointmentBaseUrl }}/start?appointment[workflowStatus][appointment]=started"
-            class="app-nowrap {{ 'app-display-none' if appointment.status == 'scheduled' }} js-start-appointment-link">
-            Start appointment
-          </a>
+          {# Start button is rendered hidden until the appointment is checked in -
+          the check-in fragment re-render drops app-display-none once it is #}
+          {{ button({
+            text: "Start appointment",
+            href: appointmentBaseUrl + "/start?appointment[workflowStatus][appointment]=started",
+            variant: "secondary",
+            small: true,
+            classes: "app-nowrap js-start-appointment-link" + (" app-display-none" if appointment.status == 'scheduled')
+          }) }}
 
         {% elseif appointment | isPaused or appointment | isInProgress %}
-          <a href="{{ appointmentBaseUrl }}/resume">
-            Resume appointment {{- ((" for " + (participant | getShortName)) | asVisuallyHiddenText) | safe }}
-          </a>
+          {{ button({
+            html: "Resume appointment" ~ ((" for " + (participant | getShortName)) | asVisuallyHiddenText),
+            href: appointmentBaseUrl + "/resume",
+            variant: "secondary",
+            small: true
+          }) }}
         {% endif %}
       {% endif %}
     </td>
+    {% endif %}
   </tr>
 {% endmacro %}

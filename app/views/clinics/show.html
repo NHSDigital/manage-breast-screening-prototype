@@ -2,8 +2,11 @@
 {% extends 'layout-app.html' %}
 
 {% from "_includes/clinic-appointment-row.njk" import clinicAppointmentRow with context %}
+{% from "nhsuk/components/details/macro.njk" import details %}
+{% from "nhsuk/components/search-input/macro.njk" import searchInput %}
+{% from "nhsuk/components/checkboxes/macro.njk" import checkboxes %}
 
-{% set pageHeading = "Screening clinic - " ~ clinic.clinicCode %}
+{% set pageHeading = "Screening clinic " ~ clinic.clinicCode %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
@@ -19,7 +22,14 @@
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
   {{ filteredAppointments | log("Filtered appointments")}}
   {# {% set appointments = data.appointments | getClinicAppointments(clinicId) %} #}
-  {% set appointments = allAppointments %}
+  {% set appointments = matchedAppointments %}
+  {% set mammographerItems = [] %}
+  {% for mammographer in mammographers %}
+    {% set mammographerItems = mammographerItems | push({
+      value: mammographer.id,
+      text: mammographer.firstName + " " + mammographer.lastName
+    }) %}
+  {% endfor %}
 
   {# {% set clinicRiskType %}
   {% if clinic.riskLevels | length == 1 %}
@@ -55,9 +65,70 @@
 
 {# Clinic time and date #}
 {# 9am to midday - 31 December 2024 #}
-<p>
-  {{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}<br>
-</p>
+<p class="nhsuk-body-m nhsuk-u-margin-bottom-1">{{ clinic.date | formatDate("dddd D MMMM YYYY") }}</p>
+<p class="nhsuk-u-secondary-text-colour nhsuk-body-m nhsuk-u-margin-bottom-4">{{ clinic.sessionTimes | formatTimeRange }}</p>
+
+{# Everything that the participant search narrows - the search box, the tabs
+   and the list - sits in one live region so JavaScript can update it in place.
+   Without JavaScript the form submits and the page reloads, still filtered. #}
+<div id="clinic-appointments">
+
+{# Participant search - filters this clinic's list by name or NHS number #}
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-one-half">
+    {% set findParticipantHtml %}
+      <form method="get" action="{{ currentUrl }}" data-live-filters="#clinic-appointments">
+        {{ searchInput({
+          id: "participant-search",
+          name: "search",
+          value: search,
+          label: {
+            text: "Search by name or NHS number"
+          },
+          button: { variant: "secondary" }
+        }) }}
+        {{ checkboxes({
+          idPrefix: "filter-special-appointment",
+          name: "specialAppointment",
+          small: true,
+          formGroup: { classes: "nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-0" },
+          items: [
+            {
+              value: "yes",
+              text: "Special appointments",
+              checked: true if specialAppointment
+            }
+          ]
+        }) }}
+        {% if mammographerItems | length %}
+          <h4 class="nhsuk-heading-xs nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-2">Filter appointments by mammographer</h4>
+          {{ checkboxes({
+            idPrefix: "filter-mammographer",
+            name: "mammographer",
+            small: true,
+            inline: true,
+            values: selectedMammographers,
+            fieldset: {
+              legend: {
+                text: "Mammographers",
+                classes: "nhsuk-u-visually-hidden"
+              }
+            },
+            formGroup: { classes: "nhsuk-u-margin-bottom-0" },
+            items: mammographerItems
+          }) }}
+        {% endif %}
+      </form>
+    {% endset %}
+    {# Open when a search or filter is active so a live update doesn't collapse it #}
+    {{ details({
+      summaryText: "Filter appointments",
+      html: findParticipantHtml,
+      classes: "nhsuk-expander",
+      open: true if (search or specialAppointment or selectedMammographers | length)
+    }) }}
+  </div>
+</div>
 
 {% set secondaryNavItems = [] %}
 
@@ -69,7 +140,7 @@
   { id: 'all', label: 'All' }
 ] %}
 
-{% set remainingCount = appointments | filterAppointmentsByStatus(filter.id) | length %}
+{% set remainingCount = allAppointments | filterAppointmentsByStatus('remaining') | length %}
 
 {% if clinic.status == 'closed' or remainingCount == 0 %}
   {% set tabItems = [
@@ -82,9 +153,22 @@
   ] %}
 {% endif %}
 
+{# Query parts the tabs and the sort link share, so switching tab or sorting
+   keeps the active search and filters #}
+{% set filterParams = [] %}
+{% if search %}
+  {% set filterParams = filterParams | push("search=" + (search | urlencode)) %}
+{% endif %}
+{% if specialAppointment %}
+  {% set filterParams = filterParams | push("specialAppointment=yes") %}
+{% endif %}
+{% for mammographerId in selectedMammographers %}
+  {% set filterParams = filterParams | push("mammographer=" + (mammographerId | urlencode)) %}
+{% endfor %}
+
 {% for filter in tabItems %}
   {% set href -%}
-  /clinics/{{ clinicId }}/{{ filter.id if filter.id !== 'remaining' }}
+  /clinics/{{ clinicId }}/{{ filter.id if filter.id !== 'remaining' }}{{ ("?" + (filterParams | join("&"))) if filterParams | length }}
   {% endset %}
   {% set secondaryNavItems = secondaryNavItems | push({
   text: (filter.label + " " + appCount(appointments | filterAppointmentsByStatus(filter.id) | length)) | safe,
@@ -116,25 +200,88 @@
 {% endif %}
 
 {% if filteredAppointments.length === 0 %}
-  <p>{{ noAppointmentsMessage }}</p>
+  {% if search and (specialAppointment or selectedMammographers | length) %}
+    <p>No participants in this clinic match “{{ search }}” and the selected filters.</p>
+  {% elseif search %}
+    <p>No participants in this clinic match “{{ search }}”.</p>
+  {% elseif specialAppointment or selectedMammographers | length %}
+    <p>No participants in this clinic match the selected filters.</p>
+  {% else %}
+    <p>{{ noAppointmentsMessage }}</p>
+  {% endif %}
 {% else %}
-  <table class="nhsuk-table app-clinic-appointments-table">
+  {# Remaining and Checked in break the check-in time into its own sortable
+     column; In progress, Complete and All break out the mammographer and
+     screening order; Complete drops the Actions column as every row is final #}
+  {% set columns = status | getClinicTableColumns %}
+  <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped nhsuk-table--sortable app-clinic-appointments-table{{ " app-clinic-appointments-table--with-checked-in" if columns.checkedIn }}{{ " app-clinic-appointments-table--with-screened-by" if columns.screenedBy }}{{ " app-clinic-appointments-table--with-completed" if columns.completed }}{{ " app-clinic-appointments-table--no-actions" if not columns.actions }}">
+    <caption class="nhsuk-table__caption nhsuk-u-visually-hidden">Appointments. Column headers with links are sortable.</caption>
     <thead class="nhsuk-table__head">
-      <tr>
-        <th class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
-        <th class="nhsuk-table__header">Details</th>
-        <th class="nhsuk-table__header">Date of birth</th>
-        <th class="nhsuk-table__header">Appointment</th>
-        <th class="nhsuk-table__header">Actions</th>
+      <tr class="nhsuk-table__row">
+        {# Time - sortable by scheduled appointment time #}
+        {% set timeDirection = "ascending" if sort == "time-ascending" else ("descending" if sort == "time-descending" else none) %}
+        {% set timeNext = ("descending" if timeDirection == "ascending" else "ascending") if timeDirection else "ascending" %}
+        {% set timeParams = filterParams | push("sort=time-" + timeNext) %}
+        {% if columns.checkedIn %}
+          {# Time and Checked in are the two sortable columns; set aria-sort on
+             the active one and "none" on the other so only one sorts at a time #}
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__time-column" data-sort aria-sort="{{ timeDirection or 'none' }}">
+            <a class="nhsuk-link" href="{{ currentUrl }}?{{ timeParams | join('&') }}">Time</a>
+          </th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__details-column">Participant</th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__dob-column">Date of birth</th>
+          {# Appointment - status only, not sortable #}
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column">Status</th>
+          {# Checked in - sortable by check-in timestamp #}
+          {% set checkedInDirection = "ascending" if sort == "checkedIn-ascending" else ("descending" if sort == "checkedIn-descending" else none) %}
+          {% set checkedInNext = ("descending" if checkedInDirection == "ascending" else "ascending") if checkedInDirection else "ascending" %}
+          {% set checkedInParams = filterParams | push("sort=checkedIn-" + checkedInNext) %}
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__checked-in-column" data-sort aria-sort="{{ checkedInDirection or 'none' }}">
+            <a class="nhsuk-link" href="{{ currentUrl }}?{{ checkedInParams | join('&') }}">Checked in</a>
+          </th>
+        {% elseif columns.screenedBy %}
+          {# Time is sortable, and Time completed too on the Complete and All
+             tabs; set aria-sort on the active one and "none" on the other so
+             only one sorts at a time. Status is not sortable. #}
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__time-column" data-sort aria-sort="{{ timeDirection or 'none' }}">
+            <a class="nhsuk-link" href="{{ currentUrl }}?{{ timeParams | join('&') }}">Time</a>
+          </th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__details-column">Participant</th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__dob-column">Date of birth</th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column">Status</th>
+          {% if columns.completed %}
+            {% set completedDirection = "ascending" if sort == "completed-ascending" else ("descending" if sort == "completed-descending" else none) %}
+            {% set completedNext = ("descending" if completedDirection == "ascending" else "ascending") if completedDirection else "ascending" %}
+            {% set completedParams = filterParams | push("sort=completed-" + completedNext) %}
+            <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__completed-column" data-sort aria-sort="{{ completedDirection or 'none' }}">
+              <a class="nhsuk-link" href="{{ currentUrl }}?{{ completedParams | join('&') }}">Time completed</a>
+            </th>
+          {% endif %}
+        {% else %}
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__time-column" data-sort{% if timeDirection %} aria-sort="{{ timeDirection }}"{% endif %}>
+            <a class="nhsuk-link" href="{{ currentUrl }}?{{ timeParams | join('&') }}">Time</a>
+          </th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__details-column">Participant</th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__dob-column">Date of birth</th>
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column">Status</th>
+        {% endif %}
+        {% if columns.actions %}
+          <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__actions-column">Actions</th>
+        {% endif %}
       </tr>
     </thead>
     <tbody class="nhsuk-table__body">
       {% for appointment in filteredAppointments %}
-        {{ clinicAppointmentRow(appointment, data.participants | findById(appointment.participantId), clinicId) }}
+        {{ clinicAppointmentRow(appointment, data.participants | findById(appointment.participantId), clinicId, status) }}
       {% endfor %}
     </tbody>
   </table>
 {% endif %}
 
+</div>
 
+{% endblock %}
+
+{% block pageScripts %}
+  <script type="module" src="/assets/javascript/waiting-time.js"></script>
 {% endblock %}

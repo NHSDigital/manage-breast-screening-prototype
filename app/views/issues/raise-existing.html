@@ -1,0 +1,49 @@
+{# app/views/issues/raise-existing.html
+
+   Shown before the raise an issue form when the episode already has an open
+   issue, so the same problem is not raised twice. The button goes on to the
+   form, Cancel back to where the user came from. The route (routes/issues.js)
+   sets openIssues, participant, raiseUrl and returnFallbackUrl. #}
+
+{% extends parentLayout or 'layout-app.html' %}
+
+{% from "_includes/issues/open-issues.njk" import openIssueSummary with context %}
+
+{% set hasOneOpenIssue = openIssues | length == 1 %}
+{% set pageHeading = "There is already an open issue" if hasOneOpenIssue else "There are already open issues" %}
+{% set formAction = (raiseUrl + "/existing-answer") | urlWithReferrer(referrerChain) %}
+{% set returnHref = returnFallbackUrl | getReturnUrl(referrerChain) %}
+{% set back = {
+  href: returnHref,
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">{{ participant | getFullNameReversed }}</span>
+    {{ pageHeading }}
+  </h1>
+
+  {% for issue in openIssues %}
+    {{ openIssueSummary(issue, {
+      returnChain: referrerChain | appendReferrer(raiseUrl),
+      classes: "nhsuk-u-margin-bottom-6"
+    }) }}
+  {% endfor %}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Raise another issue"
+    }) }}
+    {{ appLink({
+      text: "Cancel",
+      href: returnHref,
+      classes: "nhsuk-link--no-visited-state",
+      attributes: {
+        "data-modal-action": "close"
+      }
+    }) | trim | safe }}
+  </div>
+
+{% endblock %}

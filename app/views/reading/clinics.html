@@ -40,91 +40,98 @@
   {% if incompleteClinics | length === 0 %}
     <p>No clinics available for reading.</p>
   {% else %}
-    <table class="nhsuk-table">
-      <thead class="nhsuk-table__head">
-        <tr>
-          <th scope="col">Reading</th>
-          <th scope="col" class="nhsuk-u-width-one-third">Clinic</th>
-          <th scope="col">Date</th>
-          <th scope="col">Cases</th>
-          <th scope="col">1st read</th>
-          <th scope="col">2nd read</th>
-          {# <th scope="col">Status</th> #}
-        </tr>
-      </thead>
-      <tbody class="nhsuk-table__body">
-        {% for clinic in clinicsToDisplay %}
-          {% set location = clinic.location %}
-          {% set stats = clinic.readingStatus %}
+    {% set tableRows = [] %}
+    {% for clinic in clinicsToDisplay %}
+      {% set location = clinic.location %}
+      {% set stats = clinic.readingStatus %}
+      {% set currentUserHasRead = stats.userReadCount > 0 %}
+      {% set currentUserCanRead = stats.userReadableCount > 0 %}
 
-          <tr>
-            <td>
+      {% set readingHtml %}
+        {% if currentUserCanRead %}
+          <a href="/reading/clinics/{{ clinic.id }}/start" class="nhsuk-link">
+            {{ "Resume reading" if currentUserHasRead else "Start reading" }}
+          </a>
+        {% elseif stats.userReadCount > 0 %}
+          {{ 'You have read this' | toTag({colour: 'grey'}) }}
+        {% else %}
+          <span class="nhsuk-u-secondary-text-colour">No cases for you to read</span>
+        {% endif %}
+      {% endset %}
 
-              {% set currentUserHasRead = stats.userReadCount > 0 %}
-              {% set currentUserCanRead = stats.userReadableCount > 0 %}
+      {% set clinicHtml %}
+        <a href="/reading/clinics/{{ clinic.id }}" class="nhsuk-link">
+          {% if location.type === 'mobile_unit' %}
+            {{ location.name }} at {{ clinic.siteName }}
+          {% else %}
+            {{ location.name }}
+          {% endif %}
+          <br>
+          {{ clinic.sessionType }} ({{ clinic.clinicCode }})
+        </a>
+      {% endset %}
 
-              {% if currentUserCanRead %}
-                <a href="/reading/clinics/{{ clinic.id }}/start" class="nhsuk-link">
-                  {{ "Resume reading" if currentUserHasRead else "Start reading" }}
-                </a>
-              {% elseif stats.userReadCount > 0 %}
-                {{ 'You have read this' | toTag({colour: 'grey'}) }}
-              {% else %}
-                <span class="nhsuk-u-secondary-text-colour">No cases for you to read</span>
-              {% endif %}
-            </td>
-            <td>
-              <a href="/reading/clinics/{{ clinic.id }}" class="nhsuk-link">
-                {% if location.type === 'mobile_unit' %}
-                  {{ location.name }} at {{ clinic.siteName }}
-                {% else %}
-                  {{ location.name }}
-                {% endif %}
-                <br>
-                {{ clinic.sessionType }} ({{ clinic.clinicCode }})
-              </a>
-            </td>
-            <td>
-              {% set daysSinceClinic = clinic.date | daysSince %}
+      {% set daysSinceClinic = clinic.date | daysSince %}
+      {% set dateHtml %}
+        {% if daysSinceClinic >= data.config.reading.urgentThreshold %}
+          {{ "Urgent" | toTag }}
+          <br>
+        {% elseif daysSinceClinic >= data.config.reading.priorityThreshold %}
+          {{ "Due soon" | toTag }}
+          <br>
+        {% endif %}
+        {{ clinic.date | formatDate | noWrap }}<br>
+        {{ clinic.date | formatRelativeDate | sentenceCase | asHint }}
+      {% endset %}
 
-              {% if daysSinceClinic >= data.config.reading.urgentThreshold %}
-                {{ "Urgent" | toTag }}
-                <br>
-              {% elseif daysSinceClinic >= data.config.reading.priorityThreshold %}
-                {{ "Due soon" | toTag }}
-                <br>
-              {% endif %}
-              {{ clinic.date | formatDate | noWrap }}<br>
-              {{ clinic.date | formatRelativeDate | sentenceCase | asHint }}
-            </td>
+      {% set tableRows = tableRows | push([
+        {
+          html: readingHtml
+        },
+        {
+          html: clinicHtml
+        },
+        {
+          html: dateHtml
+        },
+        {
+          text: stats.total | string
+        },
+        {
+          text: (stats.firstReadRemaining if showRemaining else stats.firstReadCount) | string
+        },
+        {
+          text: (stats.secondReadReady if showRemaining else stats.secondReadCount) | string
+        }
+      ]) %}
+    {% endfor %}
 
-            {# Total cases #}
-            <td>
-              {{ stats.total }}
-            </td>
-            {# First read #}
-            <td>
-              {% if showRemaining %}
-                {{ stats.firstReadRemaining }}
-              {% else %}
-                {{ stats.firstReadCount }}
-              {% endif %}
-            </td>
-            <td>
-              {% if showRemaining %}
-                {{ stats.secondReadReady }}
-              {% else %}
-                {{ stats.secondReadCount }}
-              {% endif %}
-            </td>
-            {# Reading status #}
-            {# <td>
-              {{ stats.status | toTag }}
-            </td> #}
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {{ table({
+      compact: true,
+      striped: true,
+      head: [
+        {
+          text: "Reading"
+        },
+        {
+          text: "Clinic",
+          width: "one-third"
+        },
+        {
+          text: "Date"
+        },
+        {
+          text: "Cases"
+        },
+        {
+          text: "1st read"
+        },
+        {
+          text: "2nd read"
+        }
+      ],
+      rows: tableRows
+    }) }}
   {% endif %}
 
 {% endblock %}

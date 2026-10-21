@@ -1,0 +1,360 @@
+{# app/views/review/issues/show.html
+
+   One issue: what was raised, the participant it is about with the records it
+   links to and any images, and either the ways to close it or how it was
+   closed. The route (routes/review.js) only serves issues in the user's BSU.
+   The participants come in as `issueParticipants` so they are not taken for
+   the page's own context. #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Issue" %}
+{% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
+
+{% set breadcrumbItems = getCaseBreadcrumb(issueParticipants[0].participant if issueParticipants | length) %}
+
+{# Returns to the tab and filters the list was on, but only when the user came from the list #}
+{% set listReturnUrl = "/review/issues" | getReturnUrl(referrerChain) %}
+{% set back = {
+  href: listReturnUrl if listReturnUrl.startsWith("/review/issues") else "/review/issues",
+  text: "All issues"
+} %}
+
+{# Tells the PACS viewer which study "Open study in PACS" should show #}
+{% block head %}
+  {{ super() }}
+
+  {% if pacsEntry %}
+    {% set viewerAppointment = pacsEntry.images.appointment %}
+    {% set viewerParticipant = pacsEntry.participant %}
+    {% set viewerAutoOpen = false %}
+    {% include "_includes/images/pacs-viewer-meta.njk" %}
+  {% endif %}
+{% endblock head %}
+
+{% block pageContent %}
+
+  {% set issueStatus = issue | getIssueStatus %}
+  {% set linkedReferrerChain = referrerChain | appendReferrer(currentUrl) %}
+
+  <div class="app-header-with-status">
+    <h1 class="nhsuk-heading-l">
+      {% if issueParticipants | length %}
+        <span class="nhsuk-caption-l">{{ issueParticipants[0].participant | getFullNameReversed }}</span>
+      {% endif %}
+      {{ pageHeading }}
+    </h1>
+    <div class="app-header-with-status__status-tag">
+      {{ issueStatus | toTag({ vocabulary: "issue" }) }}
+    </div>
+  </div>
+
+  {# How it was closed leads once it has been, as that is what anyone opening
+     a closed issue came for #}
+  {% if issue.resolved %}
+    {% set isRaisedInError = issue.resolved.outcome == "raised_in_error" %}
+
+    {% call card({
+      heading: {
+        text: "Resolution",
+        level: 2
+      },
+      variant: "feature"
+    }) %}
+      {{ appSummaryList({
+        rows: [
+          {
+            key: { text: "Outcome" },
+            value: { html: issueStatus | toTag({ vocabulary: "issue" }) }
+          },
+          {
+            key: { text: "Reason" if isRaisedInError else "Solution" },
+            value: { text: issue.resolved.note or "No note given" }
+          },
+          {
+            key: { text: "Closed by" if isRaisedInError else "Resolved by" },
+            value: { text: issue.resolved.resolvedBy | getUsername({ identifyCurrentUser: true }) }
+          },
+          {
+            key: { text: "Verified by" },
+            value: { text: issue.resolved.verifiedBy | getUsername({ identifyCurrentUser: true }) }
+          } if issue.resolved.verifiedBy,
+          {
+            key: { text: "Closed" if isRaisedInError else "Resolved" },
+            value: { text: issue.resolved.resolvedAt | formatDateTime }
+          }
+        ],
+        lastRowBorder: false
+      }) }}
+    {% endcall %}
+  {% endif %}
+
+  {# Only an open issue's description can change: a closed one is a record of
+     what was resolved #}
+  {% set descriptionActions = none %}
+  {% if not issue.resolved %}
+    {% set descriptionActions = {
+      items: [
+        {
+          href: ("/review/issues/" + issue.id + "/description?issueTemp[edit][issueId]=" + issue.id) | urlWithReferrer(referrerChain),
+          text: "Change",
+          visuallyHiddenText: "description"
+        } | openInModal
+      ]
+    } %}
+  {% endif %}
+
+  {% set raisedHtml %}
+    {{ issue.raisedAt | formatDateTime }}
+    {% if issuePlace %}
+      <br>{{ issuePlace.description | asHint }}
+    {% endif %}
+  {% endset %}
+
+  {% call card({
+    heading: {
+      text: "Issue details",
+      level: 2
+    },
+    variant: "feature"
+  }) %}
+    {{ appSummaryList({
+      rows: [
+        {
+          key: { text: "Description" },
+          value: { text: issue.description or "No description given" },
+          actions: descriptionActions
+        },
+        {
+          key: { text: "Raised by" },
+          value: { text: issue.raisedBy | getUsername({ identifyCurrentUser: true }) }
+        },
+        {
+          key: { text: "Raised" },
+          value: { html: raisedHtml }
+        },
+        {
+          key: { text: "Reference" },
+          value: { text: issue.reference }
+        }
+      ],
+      lastRowBorder: false
+    }) }}
+  {% endcall %}
+
+  {# A card per participant - almost always one, but an issue such as images
+     filed against the wrong person can name two #}
+  {% for entry in issueParticipants %}
+    {% set participant = entry.participant %}
+
+    {% call card({
+      heading: {
+        text: "Participant",
+        level: 2
+      }
+    }) %}
+      {% call appSummaryList({
+        lastRowBorder: false
+      }) %}
+        {# The viewer can't open a participant yet, only a study, so "Open
+           participant in PACS" goes nowhere for now #}
+        {{ appSummaryListRow({
+          key: { text: "Name" },
+          value: { text: participant | getFullName },
+          actions: {
+            items: [
+              {
+                href: getParticipantUrl(participant) | urlWithReferrer(linkedReferrerChain),
+                text: "View participant"
+              },
+              {
+                href: "#",
+                text: "Open participant in PACS"
+              }
+            ]
+          }
+        }) }}
+        {% include "_includes/summary-lists/rows/nhs-number.njk" %}
+        {% include "_includes/summary-lists/rows/sx-number.njk" %}
+        {% include "_includes/summary-lists/rows/date-of-birth.njk" %}
+
+        {% if entry.episode %}
+          {{ appSummaryListRow({
+            key: { text: "Episode" },
+            value: { text: entry.episode | getEpisodeLabel },
+            actions: {
+              items: [
+                {
+                  href: getEpisodeUrl(entry.episode) | urlWithReferrer(linkedReferrerChain),
+                  text: "View episode"
+                }
+              ]
+            }
+          }) }}
+        {% endif %}
+
+        {% if entry.appointment %}
+          {% set appointmentHtml %}
+            {{ entry.appointment.timing.startTime | formatDate }}
+            {% if entry.clinic %}
+              <br>{{ data | getClinicLocationName(entry.clinic) | asHint }}
+            {% endif %}
+          {% endset %}
+          {{ appSummaryListRow({
+            key: { text: "Appointment" },
+            value: { html: appointmentHtml },
+            actions: {
+              items: [
+                {
+                  href: getAppointmentUrl(entry.appointment) | urlWithReferrer(linkedReferrerChain),
+                  text: "View appointment"
+                }
+              ]
+            }
+          }) }}
+        {% endif %}
+
+        {% if entry.readingCase %}
+          {{ appSummaryListRow({
+            key: { text: "Reading case" },
+            value: { text: "Opened " + (entry.readingCase.openedDate | formatDate) },
+            actions: {
+              items: [
+                {
+                  href: getReadingCaseUrl(entry.readingCase) | urlWithReferrer(linkedReferrerChain),
+                  text: "View reading case"
+                }
+              ]
+            }
+          }) }}
+        {% endif %}
+      {% endcall %}
+
+      {# Worth knowing before resolving this one: the other issue may be the
+         same problem, or may keep the case held after this one closes #}
+      {% if not issue.resolved and entry.otherOpenIssues | length %}
+        {% set otherIssuesHtml %}
+          <p>{{ participant | getFullName }} has {{ "another open issue" if entry.otherOpenIssues | length == 1 else "other open issues" }}:</p>
+          <ul class="nhsuk-list nhsuk-u-margin-bottom-0">
+            {% for otherIssue in entry.otherOpenIssues %}
+              <li>
+                <a href="{{ ('/review/issues/' + otherIssue.id) | urlWithReferrer(referrerChain) }}">{{ (otherIssue.description or "No description given") | truncate(80) }}</a>
+                {{ ("raised " + (otherIssue.raisedAt | formatDate)) | asHint }}
+              </li>
+            {% endfor %}
+          </ul>
+        {% endset %}
+        {{ insetText({
+          html: otherIssuesHtml,
+          classes: "nhsuk-u-margin-bottom-0"
+        }) }}
+      {% endif %}
+    {% endcall %}
+
+    {# Many issues are about images, and staff look studies up in PACS by
+       accession number #}
+    {% if entry.images %}
+      {% set imagesAppointment = entry.images.appointment %}
+      {% set imagesSummary = entry.images.summary %}
+
+      {% set takenHtml %}
+        {{ imagesSummary.takenAt | formatDateTime }}
+        {% set takenWhere = imagesAppointment.mammogramData.machineRoom or (data | getClinicLocationName(entry.images.clinic) if entry.images.clinic) %}
+        {% if takenWhere %}
+          <br>{{ takenWhere | asHint }}
+        {% endif %}
+      {% endset %}
+
+      {% set mammographerName = (imagesAppointment | getAuthorisedMammographerName({ identifyCurrentUser: true })) or (imagesAppointment.sessionDetails.endedBy | getUsername({ identifyCurrentUser: true }) if imagesAppointment.sessionDetails.endedBy) %}
+
+      {% set imageCountHtml %}
+        {{ imagesSummary.imageCount }} {{ "image" | pluralise(imagesSummary.imageCount) }}
+        <br>{{ imagesSummary.views | join(", ") | asHint }}
+      {% endset %}
+
+      {% set accessionNumberValueHtml %}<span class="nhsuk-u-font-code nhsuk-u-nowrap">{{ imagesAppointment.accessionNumber | formatAccessionNumber }}</span>{% endset %}
+      {% set accessionNumberHtml %}
+        {{ appCopyToClipboard({
+          text: imagesAppointment.accessionNumber,
+          type: "value",
+          html: accessionNumberValueHtml,
+          label: "accession number"
+        }) }}
+      {% endset %}
+
+      {# The viewer opens in its own window, reused if it is already open, and
+         asks this page for the study #}
+      {% set accessionActions = none %}
+      {% if pacsEntry and pacsEntry.images.appointment.id == imagesAppointment.id %}
+        {% set accessionActions = {
+          items: [
+            {
+              href: "/reading/mammogram-viewer",
+              text: "Open study in PACS",
+              attributes: {
+                target: "mammogram-viewer"
+              }
+            }
+          ]
+        } %}
+      {% endif %}
+
+      {# Re-syncing from PACS isn't built yet, so the action goes nowhere #}
+      {% call card({
+        heading: {
+          text: "Images",
+          level: 2
+        },
+        actions: {
+          items: [
+            {
+              href: "#",
+              text: "Re-sync study from PACS"
+            }
+          ]
+        }
+      }) %}
+        {% call appSummaryList({
+          lastRowBorder: false
+        }) %}
+          {{ appSummaryListRow({
+            key: { text: "Taken" },
+            value: { html: takenHtml }
+          }) }}
+          {% if mammographerName %}
+            {{ appSummaryListRow({
+              key: { text: "Mammographer" },
+              value: { text: mammographerName }
+            }) }}
+          {% endif %}
+          {{ appSummaryListRow({
+            key: { text: "Images" },
+            value: { html: imageCountHtml }
+          }) }}
+          {% if imagesAppointment.accessionNumber %}
+            {{ appSummaryListRow({
+              key: { text: "Accession number" },
+              value: { html: accessionNumberHtml },
+              actions: accessionActions
+            }) }}
+          {% endif %}
+        {% endcall %}
+      {% endcall %}
+    {% endif %}
+  {% endfor %}
+
+  {% if not issue.resolved %}
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Resolve issue",
+        href: ("/review/issues/" + issue.id + "/resolve?issueTemp[resolve][issueId]=" + issue.id) | urlWithReferrer(referrerChain)
+      }) }}
+      {{ appLink({
+        text: "Close as raised in error",
+        href: ("/review/issues/" + issue.id + "/raised-in-error?issueTemp[raisedInError][issueId]=" + issue.id) | urlWithReferrer(referrerChain),
+        classes: "nhsuk-link--no-visited-state nhsuk-button-group__item"
+      }) | trim | safe }}
+    </div>
+  {% endif %}
+
+{% endblock %}

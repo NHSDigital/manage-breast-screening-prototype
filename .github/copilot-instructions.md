@@ -59,6 +59,8 @@ These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/rou
 - Comments explain purpose and non-obvious constraints. They do not record history or past bugs
 - Nunjucks: `elseif` not `elif`, no trailing commas, object keys on separate lines, HTML in `set` or `call` blocks rather than inline
 - Prefer NHS.UK Frontend macros over hand-written HTML, and look up parameter names in the component reference rather than guessing
+- Set `small: true` on every `radios` and `checkboxes` macro. Buttons are already a medium size by default (set in Sass), so only add `small: true` to a button when you want the small size
+- `main.scss` sets a tighter spacing scale than NHS Frontend's default, so spacing points 4 to 9 are smaller than the NHS Frontend docs say, and the grid gutter is 24px
 - Sass: BEM with an `app-` namespace, full class names written out (no `&__` nesting), one file per block, NHS Frontend tokens not hard-coded values, no inline styles
 - Server-side rendering first. Client-side JavaScript is progressive enhancement and everything must work without it
 - Reuse before writing: an include, component, layout, helper or filter probably exists
@@ -114,5 +116,6 @@ Read the doc before working in its area. [docs/README.md](../docs/README.md) has
 | [pacs-viewer.md](../docs/pacs-viewer.md)                                     | The mammogram viewer window and image sets                        |
 | [data-generator-reference.md](../docs/data-generator-reference.md)           | Changing how seed data is generated                               |
 | [medical-information-generator.md](../docs/medical-information-generator.md) | Medical history, symptoms and other medical information data      |
+| [issues.md](../docs/issues.md)                                               | Raising, showing or resolving issues, or the Review pages         |
 | [review-checklist.md](../docs/review-checklist.md)                           | Reviewing a change before it is committed or merged               |
 | [testing.md](../docs/testing.md)                                             | Running or adding to the smoke suite                              |

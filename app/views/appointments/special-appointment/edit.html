@@ -21,6 +21,7 @@
   </h1>
 
     {{ checkboxes({
+      small: true,
       name: "appointment[specialAppointment][supportTypes]",
       fieldset: {
         legend: {
@@ -174,6 +175,7 @@
 
     {# Temporary reasons not being built just yet #}
     {# {{ radios({
+      small: true,
       name: "appointment[specialAppointment][temporaryReasons]",
       value: appointment.specialAppointment.temporaryReasons,
       fieldset: {

@@ -17,7 +17,9 @@
      'unfinalised' captions only the pending state - for contexts that already
      show the finalised time elsewhere, like the case view
    - options.forceUnfinalised - treat the read as unfinalised whatever
-     isReadFinalised says (for callers with their own wider condition) #}
+     isReadFinalised says (for callers with their own wider condition)
+   - options.issuePeriods - when the case's episode had an open issue (from
+     getOpenIssuePeriods), which doesn't count toward finalisation #}
 
 {% macro readOpinionTag(read, options = {}) %}
   {% if options.blinded %}
@@ -29,11 +31,11 @@
   {% endif %}
 
   {% if options.showFinalisation and not options.blinded %}
-    {% set isFinalised = (read | isReadFinalised(data.settings)) and not options.forceUnfinalised %}
+    {% set isFinalised = (read | isReadFinalised(data.settings, options.issuePeriods)) and not options.forceUnfinalised %}
     {% if not isFinalised %}
       <br><span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">Unfinalised</span>
     {% elseif options.showFinalisation != 'unfinalised' %}
-      {% set finalisedAt = read.finalisedAt or (read | getAutoFinaliseTime(data.settings)) %}
+      {% set finalisedAt = read.finalisedAt or (read | getAutoFinaliseTime(data.settings, options.issuePeriods)) %}
       {% if finalisedAt %}
         <br><span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">Finalised {{ finalisedAt | formatTimeString }}</span>
       {% endif %}

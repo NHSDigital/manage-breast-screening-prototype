@@ -19,7 +19,9 @@ const {
   finaliseEpisodeStage,
   checkEpisodes
 } = require('./generators/episode-generator')
+const { generateIssues, checkIssues } = require('./generators/issue-generator')
 const { getCurrentRiskLevel } = require('./utils/participants')
+const { isInProgress, isCompleted } = require('./utils/status')
 const {
   generateReadingData,
   generateSingleRead
@@ -152,6 +154,19 @@ const generateClinicsForDay = (
     breastScreeningUnit: unit
   })
 
+  // Staff each clinic with a small team of two or three mammographers, so its
+  // screened list shows just a couple of names with the order numbers
+  // interleaved between them, rather than a different name on every row.
+  const clinicians = users.filter((user) => user.role.includes('clinician'))
+  const mammographersByClinic = new Map()
+  newClinics.forEach((clinic) => {
+    const teamSize = Math.random() < 0.5 ? 2 : 3
+    const shuffled = [...clinicians].sort(() => Math.random() - 0.5)
+    const mammographers = shuffled.slice(0, teamSize)
+    clinic.staffing.mammographers = mammographers.map((user) => user.id)
+    mammographersByClinic.set(clinic.id, mammographers)
+  })
+
   // Track if we've created an in-progress appointment for today
   let hasCreatedInProgressAppointment = false
 
@@ -180,13 +195,17 @@ const generateClinicsForDay = (
         return
       }
 
+      const scheduling = scenario.participant.config.scheduling
       addAppointmentToNewEpisode(participant, {
         slot,
         participant,
         clinic: firstClinic,
         id: scenario?.participant?.config?.appointmentId,
         outcomeWeights: config.screening.outcomes[firstClinic.clinicType],
-        forceStatus: scenario.participant.config.scheduling.status,
+        forceStatus: scheduling.status,
+        checkInTime: scheduling.checkInTime,
+        screenedAt: scheduling.screenedAt,
+        mammographers: mammographersByClinic.get(firstClinic.id),
         specialAppointmentOverride:
           scenario?.participant?.config?.specialAppointment,
         seedDataProfile
@@ -198,6 +217,8 @@ const generateClinicsForDay = (
 
   // Handle regular clinic slot allocation for all clinics
   newClinics.forEach((clinic) => {
+    const episodesBefore = episodes.length
+
     const remainingSlots = clinic.slots
       .filter(() => Math.random() < config.generation.bookingProbability)
       .filter((slot) => !appointments.some((e) => e.slotId === slot.id))
@@ -249,6 +270,7 @@ const generateClinicsForDay = (
           clinic,
           outcomeWeights: config.screening.outcomes[clinic.clinicType],
           forceInProgress: shouldBeInProgress,
+          mammographers: mammographersByClinic.get(clinic.id),
           seedDataProfile
         })
 
@@ -262,6 +284,47 @@ const generateClinicsForDay = (
         usedParticipantsInPeriod.add(participant.id)
         availableParticipants.splice(randomIndex, 1)
       }
+    })
+
+    // Flag one or two of this clinic's participants as attending screening for
+    // the first time. Prefer the youngest, since first invitations land at the
+    // start of the screening age range; generateHistoricEpisodesForParticipants
+    // then gives them no past rounds, so the flag stays true.
+    const clinicEpisodes = episodes.slice(episodesBefore)
+    if (clinic.clinicType === 'screening' && clinicEpisodes.length > 0) {
+      const youngestFirst = [...clinicEpisodes].sort((a, b) => {
+        const dobA = participants.find((p) => p.id === a.participantId)
+          ?.demographicInformation.dateOfBirth
+        const dobB = participants.find((p) => p.id === b.participantId)
+          ?.demographicInformation.dateOfBirth
+        return new Date(dobB) - new Date(dobA)
+      })
+      const firstTimeCount = Math.min(
+        youngestFirst.length,
+        Math.random() < 0.5 ? 1 : 2
+      )
+      youngestFirst.slice(0, firstTimeCount).forEach((episode) => {
+        episode.isFirstScreening = true
+      })
+    }
+
+    // Assign the order of screening for this clinic: a single 1 to N sequence
+    // across all its mammographers, in the order appointments were started.
+    // This mirrors what the running app does the moment an appointment starts.
+    const screenedAppointments = appointments
+      .filter((appointment) => appointment.clinicId === clinic.id)
+      .filter(
+        (appointment) => isInProgress(appointment) || isCompleted(appointment)
+      )
+      .sort((a, b) => {
+        const aStart =
+          a.timing?.actualStartTime || a.sessionDetails?.startedAt || 0
+        const bStart =
+          b.timing?.actualStartTime || b.sessionDetails?.startedAt || 0
+        return new Date(aStart) - new Date(bStart)
+      })
+    screenedAppointments.forEach((appointment, index) => {
+      appointment.screeningOrder = index + 1
     })
 
     clinics.push(clinic)
@@ -322,6 +385,9 @@ const generateHistoricEpisodesForParticipants = (
   earliestEpisodes.forEach((earliest, participantId) => {
     const participant = participantsById.get(participantId)
     if (!participant) return
+
+    // A first-time participant has no past screening rounds
+    if (earliest.isFirstScreening) return
 
     historic.push(
       ...generateHistoricEpisodes({
@@ -695,6 +761,27 @@ const generateData = async (options = {}) => {
     }
   }
 
+  console.log('Generating issues...')
+  const issues = generateIssues({
+    episodes: allEpisodes,
+    appointments: sortedAppointments,
+    clinics: allClinics,
+    participants: finalParticipants,
+    users
+  })
+
+  const issueProblems = checkIssues(issues, {
+    episodes: episodesWithHistory,
+    appointments: sortedAppointments,
+    participants: finalParticipants
+  })
+  if (issueProblems.length) {
+    console.warn(
+      `\nWarning: ${issueProblems.length} issue links do not resolve:`
+    )
+    issueProblems.forEach((problem) => console.warn(`  - ${problem}`))
+  }
+
   const writeData = (filename, data) => {
     fs.writeFileSync(
       path.join(config.paths.generatedData, filename),
@@ -713,14 +800,19 @@ const generateData = async (options = {}) => {
   })
   writeData('appointments.json', { appointments: sortedAppointments })
   writeData('episodes.json', { episodes: episodesWithHistory })
+  // Issues carry the generation they belong to, so a store reading them
+  // alongside another generation's records can tell and ignore them
+  const generatedAt = new Date().toISOString()
+  writeData('issues.json', { generatedAt, issues })
   writeData('generation-info.json', {
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     seedDataProfile: selectedSeedDataProfile.key,
     stats: {
       participants: finalParticipants.length,
       clinics: allClinics.length,
       appointments: sortedAppointments.length,
-      episodes: episodesWithHistory.length
+      episodes: episodesWithHistory.length,
+      issues: issues.length
     }
   })
 
@@ -732,6 +824,10 @@ const generateData = async (options = {}) => {
   console.log(
     `- ${episodesWithHistory.length} episodes ` +
       `(${allEpisodes.length} current, ${historicEpisodes.length} historic)`
+  )
+  console.log(
+    `- ${issues.length} issues ` +
+      `(${issues.filter((issue) => !issue.resolved).length} open)`
   )
 }
 

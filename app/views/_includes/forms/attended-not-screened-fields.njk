@@ -5,7 +5,7 @@
   which store their answers under different form names.
 
   Set before including:
-    stoppedFieldsNamePrefix - prefix for field names, eg "appointment[appointmentStopped]" or "closeReasonForm"
+    stoppedFieldsNamePrefix - prefix for field names, eg "appointment[appointmentStopped]" or "closeReasonForm[<appointment id>]"
     stoppedFieldsValues - object holding the current answers, eg appointment.appointmentStopped
 
   Also expects participant in context for the reschedule hint.
@@ -47,6 +47,7 @@
 }) %}
 
 {{ checkboxes({
+  small: true,
   name: stoppedFieldsNamePrefix + "[stoppedReason]",
   idPrefix: "stoppedReason",
   values: stoppedFieldsValues.stoppedReason,
@@ -64,6 +65,7 @@
 } | populateErrors) }}
 
 {{ radios({
+  small: true,
   name: stoppedFieldsNamePrefix + "[needsReschedule]",
   idPrefix: "needsReschedule",
   value: stoppedFieldsValues.needsReschedule,

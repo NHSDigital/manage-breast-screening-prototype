@@ -97,6 +97,46 @@ const getClinicAppointments = (appointments, clinicId) => {
 }
 
 /**
+ * The next order-of-screening number for a clinic: one more than the highest
+ * already assigned, or 1 if none. Numbers are never reused, so a removed or
+ * changed appointment leaves a gap rather than renumbering the rest.
+ *
+ * @param {object} data - Session data
+ * @param {string} clinicId - Clinic ID
+ * @returns {number} The next screening order number
+ */
+const getNextScreeningOrder = (data, clinicId) => {
+  const clinicAppointments = getClinicAppointments(data.appointments, clinicId)
+  const highest = clinicAppointments.reduce((max, appointment) => {
+    const order = appointment.screeningOrder
+    return typeof order === 'number' && order > max ? order : max
+  }, 0)
+  return highest + 1
+}
+
+/**
+ * Which broken-out columns the clinic appointments table shows for a tab.
+ * Shared by the table header, the row macro and the sort logic so the three
+ * never fall out of step.
+ *
+ * @param {string} filter - The tab id (e.g. 'remaining', 'complete', 'all')
+ * @returns {{checkedIn: boolean, screenedBy: boolean, completed: boolean, actions: boolean}}
+ */
+const getClinicTableColumns = (filter) => {
+  return {
+    // Remaining and Checked in show the check-in time as its own column
+    checkedIn: filter === 'remaining' || filter === 'checked-in',
+    // In progress, Complete and All show the mammographer and screening order
+    screenedBy:
+      filter === 'in-progress' || filter === 'complete' || filter === 'all',
+    // Complete and All show when each appointment finished
+    completed: filter === 'complete' || filter === 'all',
+    // Completed appointments are all final, so there is nothing to action
+    actions: filter !== 'complete'
+  }
+}
+
+/**
  * Format clinic time slot
  *
  * @param {string} dateTime - ISO date string
@@ -217,6 +257,8 @@ module.exports = {
   getTodaysClinics,
   getFilteredClinics,
   getClinicAppointments,
+  getNextScreeningOrder,
+  getClinicTableColumns,
   formatTimeSlot,
   getClinicHours,
   updateClinic

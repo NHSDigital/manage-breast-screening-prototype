@@ -1,0 +1,28 @@
+// app/assets/sass/components/_nhsapp-badge.scss
+// NHS App design system "badge" (large count badge). Ported here because this
+// prototype runs on NHS.UK frontend, which has no badge component.
+// https://design-system.nhsapp.service.nhs.uk/components/badge/
+
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+.nhsapp-badge {
+  @include nhsuk-font-size(19);
+
+  display: inline-block;
+  padding: 0 nhsuk-spacing(2);
+  margin: 0;
+  color: nhsuk-colour("white");
+  font-weight: bold;
+  // NHS blue rather than the component's default red, which reads as an alert
+  background-color: nhsuk-colour("blue");
+  border-radius: nhsuk-spacing(1);
+
+  @include nhsuk-media-query($from: tablet) {
+    padding: 0 nhsuk-spacing(3);
+  }
+}
+
+// One size smaller, to sit as secondary detail beneath other content
+.nhsapp-badge--small {
+  @include nhsuk-font-size(16);
+}

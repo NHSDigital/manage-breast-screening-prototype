@@ -1,0 +1,17 @@
+{# app/views/_includes/issues/tag.njk
+
+   The single way to show that something has an open issue. Pass the record
+   to check and the tag shows only when an open issue links to it; leave it
+   out when the caller already knows.
+
+   Import with context - the check reads issues from data.
+
+   Arguments:
+   - record - participant, episode, appointment or reading case (optional)
+   - options.classes - extra classes for the tag #}
+
+{% macro issueTag(record, options = {}) %}
+  {% if not record or (data | hasOpenIssue(record)) %}
+    {{ "has_issue" | toTag({ vocabulary: "misc", classes: options.classes }) }}
+  {% endif %}
+{% endmacro %}

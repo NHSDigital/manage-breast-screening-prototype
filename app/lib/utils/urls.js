@@ -67,10 +67,54 @@ const getReadingCaseUrl = (readingCaseOrId) => {
   return `/reading/cases/${id}`
 }
 
+/**
+ * Get the URL for the raise an issue form, raised on the most specific record
+ * given: a reading case, else an appointment, else an episode, else a
+ * participant.
+ *
+ * The record goes in the path so the form always knows what it is about. The
+ * journey goes in the query string, where opening the form from a link starts
+ * it afresh. A journey that already knows what is wrong, such as an image
+ * capture failure, can pass the type so the form opens with it chosen.
+ *
+ * @param {object} records - Whatever the page has loaded
+ * @param {object} [records.readingCase] - Reading case
+ * @param {object} [records.appointment] - Appointment
+ * @param {object} [records.episode] - Episode
+ * @param {object} [records.participant] - Participant
+ * @param {string} raisedFrom - Journey raised from, from ISSUE_RAISED_FROM in issues.js
+ * @param {string} [type] - Issue type to preselect, from ISSUE_TYPES in issues.js
+ * @returns {string | null} Raise form URL, or null if no record was given
+ * @example
+ * getRaiseIssueUrl({ readingCase, episode }, 'reading_case')
+ * // '/issues/raise/reading-case/ruj64jdd?issueTemp[raise][raisedFrom]=reading_case'
+ * getRaiseIssueUrl({ appointment }, 'appointment', 'missing_images')
+ * // '/issues/raise/appointment/a1b2c3?issueTemp[raise][raisedFrom]=appointment&issueTemp[raise][type]=missing_images'
+ */
+const getRaiseIssueUrl = (
+  { readingCase, appointment, episode, participant } = {},
+  raisedFrom,
+  type
+) => {
+  const [recordType, record] =
+    [
+      ['reading-case', readingCase],
+      ['appointment', appointment],
+      ['episode', episode],
+      ['participant', participant]
+    ].find(([, candidate]) => candidate?.id) || []
+
+  if (!record) return null
+
+  const typeParam = type ? `&issueTemp[raise][type]=${type}` : ''
+  return `/issues/raise/${recordType}/${record.id}?issueTemp[raise][raisedFrom]=${raisedFrom}${typeParam}`
+}
+
 module.exports = {
   getParticipantUrl,
   getEpisodeUrl,
   getClinicUrl,
   getAppointmentUrl,
-  getReadingCaseUrl
+  getReadingCaseUrl,
+  getRaiseIssueUrl
 }

@@ -84,88 +84,109 @@
 
     {% if view == 'by-day' %}
       {# By day view - show list of dates #}
-      <table class="nhsuk-table">
-        <thead class="nhsuk-table__head">
-          <tr>
-            <th scope="col">Date</th>
-            <th scope="col" class="nhsuk-table__cell--numeric">Clinics</th>
-            <th scope="col" class="nhsuk-table__cell--numeric">Participants</th>
-            {# <th scope="col">Actions</th> #}
-          </tr>
-        </thead>
-        <tbody class="nhsuk-table__body">
-          {% for dayOffset in range(0, 20) %}
-            {% set date = today() | add(0 - dayOffset, 'days') %}
-            {# Generate realistic seeded random numbers for this date #}
-            {% set clinicCount = randomInt(5, 9, date ~ '-clinics') %}
-            {% set avgParticipantsPerClinic = randomInt(25, 45, date ~ '-avg-participants') %}
-            {% set totalParticipants = clinicCount * avgParticipantsPerClinic %}
-            <tr>
-              <td>
-                <a href="#" class="nhsuk-link">{{ date | formatDate | noWrap }}</a>
-                <br>
-                <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ date | formatRelativeDate | sentenceCase }}</span>
-              </td>
-              <td class="nhsuk-table__cell--numeric">
-                {{ clinicCount }}
-              </td>
-              <td class="nhsuk-table__cell--numeric">
-                {{ totalParticipants }}
-              </td>
-              {# <td>
-                <a href="#" class="nhsuk-link">
-                  Download <span class="nhsuk-u-visually-hidden">report for {{ date | formatDate }}</span>
-                </a>
-              </td> #}
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+      {% set tableRows = [] %}
+      {% for dayOffset in range(0, 20) %}
+        {% set date = today() | add(0 - dayOffset, 'days') %}
+        {# Generate realistic seeded random numbers for this date #}
+        {% set clinicCount = randomInt(5, 9, date ~ '-clinics') %}
+        {% set avgParticipantsPerClinic = randomInt(25, 45, date ~ '-avg-participants') %}
+
+        {% set dateHtml %}
+          <a href="#" class="nhsuk-link">{{ date | formatDate | noWrap }}</a>
+          <br>
+          <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ date | formatRelativeDate | sentenceCase }}</span>
+        {% endset %}
+
+        {% set tableRows = tableRows | push([
+          {
+            html: dateHtml
+          },
+          {
+            text: clinicCount | string,
+            format: "numeric"
+          },
+          {
+            text: (clinicCount * avgParticipantsPerClinic) | string,
+            format: "numeric"
+          }
+        ]) %}
+      {% endfor %}
+
+      {{ table({
+        compact: true,
+        striped: true,
+        head: [
+          {
+            text: "Date"
+          },
+          {
+            text: "Clinics",
+            format: "numeric"
+          },
+          {
+            text: "Participants",
+            format: "numeric"
+          }
+        ],
+        rows: tableRows
+      }) }}
 
     {% else %}
       {# By clinic view - show list of clinics #}
-      <table class="nhsuk-table">
-        <thead class="nhsuk-table__head">
-          <tr>
-            <th scope="col">Clinic</th>
-            <th scope="col">Date and time</th>
-            <th scope="col" class="nhsuk-table__cell--numeric">Participants</th>
-            {# <th scope="col">Actions</th> #}
-          </tr>
-        </thead>
-        <tbody class="nhsuk-table__body">
-          {% for clinic in clinics | sort(true, false, 'date') %}
-            {% if loop.index <= 20 %}
-            {% set location = clinic.location %}
-            <tr>
-              <td>
-                <a href="/reports/{{ clinic.id }}" class="nhsuk-link">
-                  {{ clinic.clinicCode }} – {% if location.type == 'mobile_unit' %}
-                    {{ location.name }} at {{ clinic.siteName }}
-                  {% else %}
-                    {{ location.name }}
-                  {% endif %}
-                </a>
-                <br>
-                <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ clinic.sessionType | sentenceCase }} ({{ clinic.clinicType | sentenceCase }})</span>
-              </td>
-              <td>
-                {{ clinic.date | formatDate | noWrap }}<br>
-                <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ clinic.date | formatRelativeDate | sentenceCase }}</span>
-              </td>
-              <td class="nhsuk-table__cell--numeric">
-                {{ clinic.appointments | length }}
-              </td>
-              {# <td>
-                <a href="#" class="nhsuk-link">
-                  Download <span class="nhsuk-u-visually-hidden">report for {{ location.name }} on {{ clinic.date | formatDate }}</span>
-                </a>
-              </td> #}
-            </tr>
-            {% endif %}
-          {% endfor %}
-        </tbody>
-      </table>
+      {% set tableRows = [] %}
+      {% for clinic in clinics | sort(true, false, 'date') %}
+        {% if loop.index <= 20 %}
+          {% set location = clinic.location %}
+
+          {% set clinicHtml %}
+            <a href="/reports/{{ clinic.id }}" class="nhsuk-link">
+              {{ clinic.clinicCode }} – {% if location.type == 'mobile_unit' %}
+                {{ location.name }} at {{ clinic.siteName }}
+              {% else %}
+                {{ location.name }}
+              {% endif %}
+            </a>
+            <br>
+            <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ clinic.sessionType | sentenceCase }} ({{ clinic.clinicType | sentenceCase }})</span>
+          {% endset %}
+
+          {% set dateHtml %}
+            {{ clinic.date | formatDate | noWrap }}<br>
+            <span class="nhsuk-caption-m nhsuk-u-font-size-16">{{ clinic.date | formatRelativeDate | sentenceCase }}</span>
+          {% endset %}
+
+          {% set tableRows = tableRows | push([
+            {
+              html: clinicHtml
+            },
+            {
+              html: dateHtml
+            },
+            {
+              text: clinic.appointments | length | string,
+              format: "numeric"
+            }
+          ]) %}
+        {% endif %}
+      {% endfor %}
+
+      {{ table({
+        compact: true,
+        striped: true,
+        head: [
+          {
+            text: "Clinic"
+          },
+          {
+            text: "Date and time"
+          },
+          {
+            text: "Participants",
+            format: "numeric"
+          }
+        ],
+        rows: tableRows
+      }) }}
     {% endif %}
 
     {# Fake pagination - shows numbered pages if we have more than 20 clinics #}

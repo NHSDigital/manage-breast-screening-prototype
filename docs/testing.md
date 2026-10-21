@@ -39,7 +39,7 @@ name, and the skip list is printed on every run so it stays visible.
 
 **Journeys** (`tests/e2e/`) drive real flows in Chromium via Playwright. This is
 the only layer that exercises POST handlers, session state and the client-side
-JavaScript. Seventeen journeys:
+JavaScript. Twenty journeys, among them:
 
 - a screening appointment recording medical history and a symptom, from
   check-in to completion
@@ -49,7 +49,10 @@ JavaScript. Seventeen journeys:
 - changing a recall from its confirmation page, then confirming, which moves on
   rather than returning to the saved read
 - a technical recall, through its views-to-retake form and the review step
-- deferring a case, then unflagging it from the deferred cases page
+- raising an issue on a case during reading, then resolving it on the issue page so the case is readable again
+- withdrawing an issue raised by mistake, which returns the case to reading
+- an issue raised without a description being refused, then its description changed on the issue page, with an edit abandoned after an error not prefilling the next
+- a case held by an open issue offering no way to finalise its reads
 - a second reader reaching the comparison page and keeping their opinion
 - a concordant second read taking a case to its concluded outcome, checked on
   the case view
@@ -64,7 +67,7 @@ JavaScript. Seventeen journeys:
 - a decision submitted twice landing where the first submit did
 
 Between them the reading journeys cover all four ways a reader can leave a case
-— normal, recall for assessment, technical recall and deferral — which is what
+— normal, recall for assessment, technical recall and raising an issue — which is what
 makes them useful as a net under changes to how reading data is stored.
 
 **Some pages render inside the shared modal, some break out of it.** With

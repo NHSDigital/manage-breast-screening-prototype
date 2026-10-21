@@ -59,10 +59,10 @@
 {# Inset counts. Only the ones an inset actually shows are worked out here -
    an arbitration count and a faked newly-arrived-priors count used to be
    calculated and then never rendered. #}
-{% set deferredCount = 0 %}
+{% set openIssueCaseCount = 0 %}
 {% for thisAppointment in data.appointments %}
-  {% if (data | getReadingCase(thisAppointment)) | isCaseDeferred %}
-    {% set deferredCount = deferredCount + 1 %}
+  {% if (data | getReadingCase(thisAppointment)) and (data | hasOpenIssueOnEpisode(thisAppointment)) %}
+    {% set openIssueCaseCount = openIssueCaseCount + 1 %}
   {% endif %}
 {% endfor %}
 
@@ -145,12 +145,12 @@
     }) }}
   {% endif %}
 
-  {# Deferred cases inset #}
-  {% if deferredCount > 0 %}
+  {# Cases held by an open issue #}
+  {% if openIssueCaseCount > 0 %}
     {% set insetHtml %}
-      <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">{{ deferredCount }} deferred {{ "case" if deferredCount == 1 else "cases" }}</h2>
-      <p>Deferred cases require review before they can be returned to the reading queue.</p>
-      <p class="nhsuk-u-margin-bottom-0"><a href="/reading/deferred">Review deferred cases</a></p>
+      <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">{{ openIssueCaseCount }} {{ "case" | pluralise(openIssueCaseCount) }} with an open issue</h2>
+      <p>These cases are held from reading until the issue is resolved.</p>
+      <p class="nhsuk-u-margin-bottom-0"><a href="/review/issues">Review issues</a></p>
     {% endset %}
     {{ insetText({
       html: insetHtml | safe

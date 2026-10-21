@@ -26,6 +26,7 @@
   {% endfor %}
 
   {{ radios({
+    small: true,
     name: "appointment[symptomTemp][type]",
     idPrefix: "type",
     value: appointment.symptomTemp.type,

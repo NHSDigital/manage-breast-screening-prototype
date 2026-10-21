@@ -20,6 +20,7 @@
 
   {% set repeatReasonsHtml %}
     {{ checkboxes({
+      small: true,
       idPrefix: "repeatReasons-" + viewItem.code,
       name: namePrefix + "[repeatReasons-" + viewItem.code + "]",
       fieldset: {
@@ -37,6 +38,7 @@
   {% endset %}
 
   {{ radios({
+    small: true,
     idPrefix: "repeatNeeded-" + viewItem.code,
     name: namePrefix + "[repeatNeeded-" + viewItem.code + "]",
     fieldset: {
@@ -88,6 +90,7 @@
 
   {% set repeatReasonsAllHtml %}
     {{ checkboxes({
+      small: true,
       idPrefix: "repeatReasons-all-" + viewItem.code,
       name: namePrefix + "[repeatReasonsAll-" + viewItem.code + "]",
       fieldset: {
@@ -106,6 +109,7 @@
 
   {% set repeatReasonsSomeHtml %}
     {{ checkboxes({
+      small: true,
       idPrefix: "repeatReasons-some-" + viewItem.code,
       name: namePrefix + "[repeatReasonsSome-" + viewItem.code + "]",
       fieldset: {
@@ -123,6 +127,7 @@
   {% endset %}
 
   {{ radios({
+    small: true,
     idPrefix: "repeatNeeded-" + viewItem.code,
     name: namePrefix + "[repeatNeeded-" + viewItem.code + "]",
     fieldset: {

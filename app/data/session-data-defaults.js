@@ -94,7 +94,7 @@ const defaultSettings = {
   },
   appointment: {
     confirmIdentityOnCheckIn: 'true',
-    manualImageCollection: 'true',
+    manualImageCollection: 'false',
     showParticipantSection: 'true',
     useCondensedReviewSummaries: 'true',
     addedToWorklist: 'true',

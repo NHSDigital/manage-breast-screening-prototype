@@ -16,6 +16,7 @@
 {% set reasonHtml %}
 
   {{ checkboxes({
+    small: true,
     idPrefix: "incompleteMammographyReasons",
     name: namePrefix + "[incompleteMammographyReasons]",
     values: mammogramSource.incompleteMammographyReasons,
@@ -83,6 +84,7 @@
   {% endset %}
 
   {{ radios({
+    small: true,
     idPrefix: "incompleteMammographyFollowUpAppointment",
     name: namePrefix + "[incompleteMammographyFollowUpAppointment]",
     value: mammogramSource.incompleteMammographyFollowUpAppointment,
@@ -110,6 +112,7 @@
 {% endset %}
 
 {{ checkboxes({
+  small: true,
   idPrefix: "isImperfectButBestPossible",
   name: namePrefix + "[isImperfectButBestPossible]",
   values: mammogramSource.isImperfectButBestPossible,
@@ -125,6 +128,7 @@
 }) }}
 
 {{ checkboxes({
+  small: true,
   idPrefix: "isIncompleteMammography",
   name: namePrefix + "[isIncompleteMammography]",
   values: mammogramSource.isIncompleteMammography,

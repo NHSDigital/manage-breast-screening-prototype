@@ -2,6 +2,9 @@
 
 {% extends 'layout-appointment.html' %}
 
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
+{% from "_includes/appointment-stopped-reason.njk" import appointmentStoppedReasonText %}
+
 {% set pageHeading = "Screening appointment" %}
 {% set showNavigation = true %}
 {% set activeTab = 'appointment' %}
@@ -60,23 +63,9 @@
       </p>
     {% endif %}
 
-    {% if appointment.status === "attended_not_screened" and appointment.appointmentStopped %}
+    {% if appointment.status === "attended_not_screened" and appointment | hasStoppedDetails %}
       <p class="nhsuk-u-margin-top-2">
-        <strong>Reason for stopping:</strong> {% for reason in appointment.appointmentStopped.stoppedReason -%}
-          {{ reason }}
-          {%- if reason === "Failed identity check" and appointment.appointmentStopped.failedIdentityDetails %} ({{ appointment.appointmentStopped.failedIdentityDetails }})
-          {%- elseif reason === "Pain during screening" and appointment.appointmentStopped.painDetails %} ({{ appointment.appointmentStopped.painDetails }})
-          {%- elseif reason === "Has a symptomatic appointment" and appointment.appointmentStopped.symptomaticDetails %} ({{ appointment.appointmentStopped.symptomaticDetails }})
-          {%- elseif reason === "Consent withdrawn" and appointment.appointmentStopped.consentDetails %} ({{ appointment.appointmentStopped.consentDetails }})
-          {%- elseif reason === "Physical health issue" and appointment.appointmentStopped.physicalHealthDetails %} ({{ appointment.appointmentStopped.physicalHealthDetails }})
-          {%- elseif reason === "Mental health issue" and appointment.appointmentStopped.mentalHealthDetails %} ({{ appointment.appointmentStopped.mentalHealthDetails }})
-          {%- elseif reason === "Language difficulties" and appointment.appointmentStopped.languageDetails %} ({{ appointment.appointmentStopped.languageDetails }})
-          {%- elseif reason === "No qualified mammographer available" and appointment.appointmentStopped.mammographerDetails %} ({{ appointment.appointmentStopped.mammographerDetails }})
-          {%- elseif reason === "Technical issues at clinic" and appointment.appointmentStopped.technicalDetails %} ({{ appointment.appointmentStopped.technicalDetails }})
-          {%- elseif reason === "Other reason" and appointment.appointmentStopped.otherDetails %} ({{ appointment.appointmentStopped.otherDetails }})
-          {%- endif -%}
-          {%- if not loop.last %}, {% endif -%}
-        {% endfor %}
+        {{ appointmentStoppedReasonText(appointment) }}
       </p>
       <p class="nhsuk-u-margin-top-2">
         <strong>Reschedule requested:</strong>
@@ -299,5 +288,8 @@
   }) %}
     {{ appointmentHtml | safe }}
   {% endcall %}
+
+  {# Last on the page, where it sits on every page that has it #}
+  {{ raiseIssueLink("appointment") }}
 
 {% endblock %}

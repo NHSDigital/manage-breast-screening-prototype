@@ -40,61 +40,86 @@
       </p>
     {% endif %}
 
-    <table class="nhsuk-table">
-      <thead class="nhsuk-table__head">
-        <tr>
-          <th scope="col">Participant</th>
-          <th scope="col">Opened</th>
-          <th scope="col">Type</th>
-          <th scope="col">Stage</th>
-          <th scope="col">Outcome</th>
-          <th scope="col">Episode</th>
-        </tr>
-      </thead>
-      <tbody class="nhsuk-table__body">
-        {% for row in episodes %}
-          <tr class="nhsuk-table__row">
-            <td class="nhsuk-table__cell">
-              {# The name isn't a link: the row's link goes to the episode,
-                 in the last column #}
-              <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
-                {{ row.participant | getFullNameReversed }}
-              </p>
-              <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
-                NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}
-              </p>
-            </td>
-            <td class="nhsuk-table__cell">
-              {{ row.episode.openedDate | formatDate }}
-            </td>
-            <td class="nhsuk-table__cell">
-              {{ row.episode.type | sentenceCase }}
-            </td>
-            <td class="nhsuk-table__cell">
-              {{ tag({
-                text: row.episode.stage | getEpisodeStageText,
-                colour: row.episode.stage | getEpisodeStageTagColour
-              }) }}
-            </td>
-            <td class="nhsuk-table__cell">
-              {% if row.episode.outcome %}
-                {{ tag({
-                  text: row.episode.outcome | getEpisodeOutcomeText,
-                  colour: row.episode.outcome | getEpisodeOutcomeTagColour
-                }) }}
-              {% else %}
-                <span class="nhsuk-u-secondary-text-colour">Not yet</span>
-              {% endif %}
-            </td>
-            <td class="nhsuk-table__cell">
-              <a href="/participants/{{ row.episode.participantId }}/episodes/{{ row.episode.id }}">
-                View episode
-              </a>
-            </td>
-          </tr>
-        {% endfor %}
-      </tbody>
-    </table>
+    {% set tableRows = [] %}
+    {% for row in episodes %}
+      {# The name isn't a link: the row's link goes to the episode, in the
+         last column #}
+      {% set participantHtml %}
+        <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
+          {{ row.participant | getFullNameReversed }}
+        </p>
+        <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
+          NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}
+        </p>
+      {% endset %}
+
+      {% set outcomeHtml %}
+        {% if row.episode.outcome %}
+          {{ tag({
+            text: row.episode.outcome | getEpisodeOutcomeText,
+            colour: row.episode.outcome | getEpisodeOutcomeTagColour
+          }) }}
+        {% else %}
+          <span class="nhsuk-u-secondary-text-colour">Not yet</span>
+        {% endif %}
+      {% endset %}
+
+      {% set episodeLinkHtml %}
+        <a href="/participants/{{ row.episode.participantId }}/episodes/{{ row.episode.id }}">
+          View episode
+        </a>
+      {% endset %}
+
+      {% set tableRows = tableRows | push([
+        {
+          html: participantHtml
+        },
+        {
+          text: row.episode.openedDate | formatDate
+        },
+        {
+          text: row.episode.type | sentenceCase
+        },
+        {
+          html: tag({
+            text: row.episode.stage | getEpisodeStageText,
+            colour: row.episode.stage | getEpisodeStageTagColour
+          })
+        },
+        {
+          html: outcomeHtml
+        },
+        {
+          html: episodeLinkHtml
+        }
+      ]) %}
+    {% endfor %}
+
+    {{ table({
+      compact: true,
+      striped: true,
+      head: [
+        {
+          text: "Participant"
+        },
+        {
+          text: "Opened"
+        },
+        {
+          text: "Type"
+        },
+        {
+          text: "Stage"
+        },
+        {
+          text: "Outcome"
+        },
+        {
+          text: "Episode"
+        }
+      ],
+      rows: tableRows
+    }) }}
 
   {% else %}
     <p>No episodes at this stage.</p>

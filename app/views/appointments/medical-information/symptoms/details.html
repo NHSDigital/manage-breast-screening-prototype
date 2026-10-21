@@ -63,6 +63,7 @@
 
   {# Whether this is a sign noted by the mammographer rather than a symptom reported by the participant #}
   {{ checkboxes({
+    small: true,
     idPrefix: "isMammographerObserved",
     name: "appointment[symptomTemp][isMammographerObserved]",
     fieldset: {
@@ -99,6 +100,7 @@
         <div class="nhsuk-grid-row">
           <div class="nhsuk-grid-column-one-half">
             {{ checkboxes({
+              small: true,
               name: "appointment[symptomTemp][nippleChangeLocation]",
               values: appointment.symptomTemp.nippleChangeLocation,
               idPrefix: "nippleChangeLocationRight",
@@ -115,6 +117,7 @@
           </div>
           <div class="nhsuk-grid-column-one-half">
             {{ checkboxes({
+              small: true,
               name: "appointment[symptomTemp][nippleChangeLocation]",
               values: appointment.symptomTemp.nippleChangeLocation,
               idPrefix: "nippleChangeLocationLeft",
@@ -168,6 +171,7 @@
         <div class="nhsuk-grid-row">
           <div class="nhsuk-grid-column-one-half">
             {{ checkboxes({
+              small: true,
               name: "appointment[symptomTemp][location]",
               values: appointment.symptomTemp.location,
               idPrefix: "locationRightBreast",
@@ -194,6 +198,7 @@
           </div>
           <div class="nhsuk-grid-column-one-half">
             {{ checkboxes({
+              small: true,
               name: "appointment[symptomTemp][location]",
               values: appointment.symptomTemp.location,
               idPrefix: "locationLeftBreast",
@@ -221,6 +226,7 @@
         </div>
 
         {{ checkboxes({
+          small: true,
           name: "appointment[symptomTemp][location]",
           values: appointment.symptomTemp.location,
           idPrefix: "locationOther",
@@ -271,6 +277,7 @@
   {# Nipple change type #}
   {% elseif appointment.symptomTemp.type == "Nipple change" %}
     {{ radios({
+      small: true,
       idPrefix: "nippleChangeType",
       name: "appointment[symptomTemp][nippleChangeType]",
       value: appointment.symptomTemp.nippleChangeType,
@@ -328,6 +335,7 @@
   {% elseif appointment.symptomTemp.type == "Skin change" %}
 
     {{ radios({
+      small: true,
       idPrefix: "skinChangeType",
       name: "appointment[symptomTemp][skinChangeType]",
       value: appointment.symptomTemp.skinChangeType,
@@ -469,6 +477,7 @@
 
     {# Radios for when were they taken - choices 'Date known' and 'Enter approximate date' and 'Not known'  #}
     {{ radios({
+      small: true,
       idPrefix: "dateType",
       name: "appointment[symptomTemp][dateType]",
       fieldset: {
@@ -520,6 +529,7 @@
   }) %}
 
     {{ checkboxes({
+      small: true,
       idPrefix: "isIntermittent",
       name: "appointment[symptomTemp][isIntermittent]",
       formGroup: {
@@ -535,6 +545,7 @@
     }) }}
 
     {{ checkboxes({
+      small: true,
       idPrefix: "hasStopped",
       name: "appointment[symptomTemp][hasStopped]",
       formGroup: {
@@ -553,6 +564,7 @@
     }) }}
 
     {{ checkboxes({
+      small: true,
       idPrefix: "hasBeenInvestigated",
       name: "appointment[symptomTemp][hasBeenInvestigated]",
       values: appointment.symptomTemp.hasBeenInvestigated,
@@ -583,6 +595,7 @@
       {% endif %}
 
       {{ radios({
+        small: true,
         idPrefix: "isSignificant",
         name: "appointment[symptomTemp][isSignificant]",
         fieldset: {

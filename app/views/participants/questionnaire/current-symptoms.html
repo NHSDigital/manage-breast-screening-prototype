@@ -28,6 +28,7 @@
       {# Skin changes question #}
       {% set skinChangesYesHtml %}
         {{ checkboxes({
+          small: true,
           name: "questionnaire[skinChangeTypes]",
           items: [
             {
@@ -55,6 +56,7 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "skinChanges",
         name: "questionnaire[skinChanges]",
         fieldset: {
@@ -94,6 +96,7 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "lumpsNoticed",
         name: "questionnaire[lumpsNoticed]",
         fieldset: {
@@ -130,6 +133,7 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "shapeChanges",
         name: "questionnaire[shapeChanges]",
         fieldset: {
@@ -165,6 +169,7 @@
 {% endset -%}
 
 {{ checkboxes({
+  small: true,
   idPrefix: "nippleSymptoms",
   name: "questionnaire[nippleSymptoms]",
   fieldset: {
@@ -230,6 +235,7 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "breastScars",
         name: "questionnaire[breastScars]",
         fieldset: {

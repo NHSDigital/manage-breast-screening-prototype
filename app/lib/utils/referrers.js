@@ -90,7 +90,9 @@ const getReturnUrl = function (url, referrerChain, scrollToId = false) {
 
   // Add remaining chain if needed
   if (remainingChain.length > 0) {
-    queryParams.push(`referrerChain=${remainingChain.join(',')}`)
+    queryParams.push(
+      `referrerChain=${encodeURIComponent(remainingChain.join(','))}`
+    )
   }
 
   // Add scrollTo if we have one
@@ -123,7 +125,8 @@ const urlWithReferrer = (url, referrerChain, scrollToId = false) => {
 
   // Check if URL already has query parameters
   const separator = url.includes('?') ? '&' : '?'
-  let resultUrl = `${url}${separator}referrerChain=${referrerChain}`
+  // Encoded so an entry can carry its own query string, such as a filtered list
+  let resultUrl = `${url}${separator}referrerChain=${encodeURIComponent(referrerChain)}`
 
   // Add scrollTo parameter if provided
   if (scrollToId) {

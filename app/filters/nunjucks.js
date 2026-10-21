@@ -33,6 +33,7 @@ const log = (a, description = null) => {
  * join(['a', 'b', 'c'], ', ') // 'a, b, c'
  * join([{name: 'John'}, {name: 'Jane'}], ', ', 'name') // 'John, Jane'
  * join(['a', null, 'b'], ', ') // 'a, b' (filters nulls by default)
+ * join('single value', ', ') // 'single value' (a string is one value, not characters)
  * join(null) // ''
  * join(undefined) // ''
  */
@@ -48,6 +49,9 @@ const join = (input, delimiter = '', attribute = null, options = {}) => {
   let array
   if (Array.isArray(input)) {
     array = input
+  } else if (typeof input === 'string') {
+    // A plain string is a single value, not a list of characters to split
+    array = [input]
   } else if (input.length !== undefined) {
     // Array-like object (NodeList, etc.)
     array = Array.from(input)
