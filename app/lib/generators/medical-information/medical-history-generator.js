@@ -86,13 +86,8 @@ const BREAST_CANCER_CONFIG = {
     'both': 0.2,
     'unknown': 0.1
   },
-  // Procedure types (radio options)
-  procedureTypes: [
-    'Lumpectomy',
-    'Mastectomy (tissue remaining)',
-    'Mastectomy (no tissue remaining)',
-    'No procedure'
-  ],
+  // Procedure types (checkboxes)
+  procedureTypes: ['Lumpectomy', 'Mastectomy'],
   // Other surgery options (checkboxes)
   otherSurgeryOptions: [
     'Lymph node surgery',
@@ -141,19 +136,19 @@ const generateBreastCancerItem = (options = {}) => {
   }
 
   // Procedures - always generate based on which breast is affected
-  // Remove 'No procedure' from options - if they have cancer history, at least one breast had a procedure
-  const actualProcedureTypes = BREAST_CANCER_CONFIG.procedureTypes.filter(
-    (type) => type !== 'No procedure'
-  )
+  const actualProcedureTypes = BREAST_CANCER_CONFIG.procedureTypes
 
   // Even if cancer location is unknown, procedures might still be recorded
   if (breastAffected === 'right-only' || breastAffected === 'both') {
-    item.proceduresRightBreast =
+    item.proceduresRightBreast = [
       faker.helpers.arrayElement(actualProcedureTypes)
+    ]
   }
 
   if (breastAffected === 'left-only' || breastAffected === 'both') {
-    item.proceduresLeftBreast = faker.helpers.arrayElement(actualProcedureTypes)
+    item.proceduresLeftBreast = [
+      faker.helpers.arrayElement(actualProcedureTypes)
+    ]
   }
 
   // If cancer location is unknown, still might have procedures recorded
@@ -166,19 +161,21 @@ const generateBreastCancerItem = (options = {}) => {
     })
 
     if (unknownBreastChoice === 'right' || unknownBreastChoice === 'both') {
-      item.proceduresRightBreast =
+      item.proceduresRightBreast = [
         faker.helpers.arrayElement(actualProcedureTypes)
+      ]
     }
 
     if (unknownBreastChoice === 'left' || unknownBreastChoice === 'both') {
-      item.proceduresLeftBreast =
+      item.proceduresLeftBreast = [
         faker.helpers.arrayElement(actualProcedureTypes)
+      ]
     }
   }
 
   // Other surgery - generate if we have a procedure field for that breast
   if (item.proceduresRightBreast) {
-    // 80% chance of having other surgery (not 'No surgery')
+    // 80% chance of having other surgery
     if (Math.random() < 0.8) {
       const numberOfOptions = weighted.select({ 1: 0.6, 2: 0.3, 3: 0.1 })
       item.otherSurgeryRightBreast = faker.helpers.arrayElements(
@@ -186,12 +183,12 @@ const generateBreastCancerItem = (options = {}) => {
         numberOfOptions
       )
     } else {
-      item.otherSurgeryRightBreast = ['No surgery']
+      item.otherSurgeryRightBreast = []
     }
   }
 
   if (item.proceduresLeftBreast) {
-    // 80% chance of having other surgery (not 'No surgery')
+    // 80% chance of having other surgery
     if (Math.random() < 0.8) {
       const numberOfOptions = weighted.select({ 1: 0.6, 2: 0.3, 3: 0.1 })
       item.otherSurgeryLeftBreast = faker.helpers.arrayElements(
@@ -199,13 +196,13 @@ const generateBreastCancerItem = (options = {}) => {
         numberOfOptions
       )
     } else {
-      item.otherSurgeryLeftBreast = ['No surgery']
+      item.otherSurgeryLeftBreast = []
     }
   }
 
   // Radiotherapy treatment - generate if we have a procedure field for that breast
   if (item.proceduresRightBreast) {
-    // 75% chance of having radiotherapy (not 'No radiotherapy')
+    // 75% chance of having radiotherapy
     if (Math.random() < 0.75) {
       const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
       item.treatmentRightBreast = faker.helpers.arrayElements(
@@ -213,12 +210,12 @@ const generateBreastCancerItem = (options = {}) => {
         numberOfOptions
       )
     } else {
-      item.treatmentRightBreast = ['No radiotherapy']
+      item.treatmentRightBreast = []
     }
   }
 
   if (item.proceduresLeftBreast) {
-    // 75% chance of having radiotherapy (not 'No radiotherapy')
+    // 75% chance of having radiotherapy
     if (Math.random() < 0.75) {
       const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
       item.treatmentLeftBreast = faker.helpers.arrayElements(
@@ -226,7 +223,7 @@ const generateBreastCancerItem = (options = {}) => {
         numberOfOptions
       )
     } else {
-      item.treatmentLeftBreast = ['No radiotherapy']
+      item.treatmentLeftBreast = []
     }
   }
 
@@ -238,9 +235,9 @@ const generateBreastCancerItem = (options = {}) => {
       numberOfTreatments
     )
 
-    // 20% chance of "Other treatment" too
+    // 20% chance of "Other, or not known" too
     if (Math.random() < 0.2) {
-      item.systemicTreatments.push('Other treatment')
+      item.systemicTreatments.push('Other, or not known')
       item.otherTreatmentDetails = faker.helpers.arrayElement([
         'Immunotherapy',
         'Targeted therapy',

@@ -78,10 +78,10 @@
   {% include "_includes/medical-information/medical-history/year.njk" %}
 
   {# Experimental UI: each starred procedure reveals nested laterality radios #}
-  {% macro sideRadios(name, idPrefix, region) %}
+  {% macro sideRadios(name, idPrefix, region, value) %}
     {{ radios({
       name: name,
-      value: "Both",
+      value: value,
       idPrefix: idPrefix,
       small: true,
       inline: true,
@@ -113,6 +113,7 @@
 
   {{ checkboxes({
     name: "appointment[medicalHistoryTemp][procedures]",
+    values: appointment.medicalHistoryTemp.procedures,
     idPrefix: "procedures",
     fieldset: {
       legend: {
@@ -125,14 +126,14 @@
         value: "Lumpectomy",
         text: "Lumpectomy",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][lumpectomySide]", "lumpectomySide", "breast")
+          html: sideRadios("appointment[medicalHistoryTemp][lumpectomySide]", "lumpectomySide", "breast", appointment.medicalHistoryTemp.lumpectomySide)
         }
       },
       {
         value: "Mastectomy",
         text: "Mastectomy",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][mastectomySide]", "mastectomySide", "breast")
+          html: sideRadios("appointment[medicalHistoryTemp][mastectomySide]", "mastectomySide", "breast", appointment.medicalHistoryTemp.mastectomySide)
         }
       }
     ]
@@ -140,6 +141,7 @@
 
   {{ checkboxes({
     name: "appointment[medicalHistoryTemp][otherSurgery]",
+    values: appointment.medicalHistoryTemp.otherSurgery,
     idPrefix: "otherSurgery",
     fieldset: {
       legend: {
@@ -152,21 +154,21 @@
         value: "Lymph node surgery",
         text: "Lymph node surgery",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][lymphNodeSurgerySide]", "lymphNodeSurgerySide", "axilla")
+          html: sideRadios("appointment[medicalHistoryTemp][lymphNodeSurgerySide]", "lymphNodeSurgerySide", "axilla", appointment.medicalHistoryTemp.lymphNodeSurgerySide)
         }
       },
       {
         value: "Reconstruction",
         text: "Reconstruction",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][reconstructionSide]", "reconstructionSide", "breast")
+          html: sideRadios("appointment[medicalHistoryTemp][reconstructionSide]", "reconstructionSide", "breast", appointment.medicalHistoryTemp.reconstructionSide)
         }
       },
       {
         value: "Symmetrisation",
         text: "Symmetrisation",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][symmetrisationSide]", "symmetrisationSide", "breast")
+          html: sideRadios("appointment[medicalHistoryTemp][symmetrisationSide]", "symmetrisationSide", "breast", appointment.medicalHistoryTemp.symmetrisationSide)
         }
       }
     ]
@@ -174,6 +176,7 @@
 
   {{ checkboxes({
     name: "appointment[medicalHistoryTemp][treatment]",
+    values: appointment.medicalHistoryTemp.treatment,
     idPrefix: "treatment",
     fieldset: {
       legend: {
@@ -186,14 +189,14 @@
         value: "Breast radiotherapy",
         text: "Breast radiotherapy",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][breastRadiotherapySide]", "breastRadiotherapySide", "breast")
+          html: sideRadios("appointment[medicalHistoryTemp][breastRadiotherapySide]", "breastRadiotherapySide", "breast", appointment.medicalHistoryTemp.breastRadiotherapySide)
         }
       },
       {
         value: "Lymph node radiotherapy",
         text: "Lymph node radiotherapy",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][lymphNodeRadiotherapySide]", "lymphNodeRadiotherapySide", "axilla")
+          html: sideRadios("appointment[medicalHistoryTemp][lymphNodeRadiotherapySide]", "lymphNodeRadiotherapySide", "axilla", appointment.medicalHistoryTemp.lymphNodeRadiotherapySide)
         }
       },
       {
@@ -205,8 +208,8 @@
         text: "Hormone therapy"
       },
       {
-        value: "Other",
-        text: "Other",
+        value: "Other, or not known",
+        text: "Other, or not known",
         conditional: {
           html: input({
             label: {

@@ -15,6 +15,10 @@ const {
   updateAppointmentStatus
 } = require('../../lib/utils/appointment-status')
 const {
+  breastCancerFormToItem,
+  breastCancerItemToForm
+} = require('../../lib/utils/breast-cancer-history')
+const {
   isValidMedicalHistoryType,
   getMedicalHistoryType,
   getMedicalHistoryKeyFromSlug
@@ -172,7 +176,10 @@ module.exports = (router) => {
           data.appointment.medicalInformation.medicalHistory[dataKey] = []
         }
 
-        const medicalHistoryTemp = data.appointment.medicalHistoryTemp
+        const medicalHistoryTemp =
+          dataKey === 'breastCancer'
+            ? breastCancerFormToItem(data.appointment.medicalHistoryTemp)
+            : data.appointment.medicalHistoryTemp
         isNewItem = !medicalHistoryTemp.id
 
         // Create medical history item
@@ -271,7 +278,10 @@ module.exports = (router) => {
 
       if (medicalHistoryItem) {
         // Copy to temp for editing
-        data.appointment.medicalHistoryTemp = { ...medicalHistoryItem }
+        data.appointment.medicalHistoryTemp =
+          dataKey === 'breastCancer'
+            ? breastCancerItemToForm(medicalHistoryItem)
+            : { ...medicalHistoryItem }
       } else {
         console.log(`Cannot find item ${itemId} in ${dataKey}`)
       }
