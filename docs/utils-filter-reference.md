@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-10-21 11:37 UTC
+- **Generated:** 2026-10-21 12:41 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -411,19 +411,19 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 | `getMedicalHistoryKeyFromSlug(slug)` | Get the camelCase data key for a medical history type from its slug | 32 |
 | `isMedicalHistoryItemRemoved(item)` | Check whether a medical history item records something that has since been removed | 43 |
 | `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 63 |
-| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 272 |
-| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 301 |
-| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 323 |
-| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 345 |
-| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 426 |
-| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 440 |
-| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 462 |
-| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 518 |
-| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 537 |
-| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 564 |
-| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 586 |
-| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 600 |
-| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 626 |
+| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 266 |
+| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 295 |
+| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 317 |
+| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 339 |
+| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 420 |
+| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 434 |
+| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 456 |
+| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 512 |
+| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 531 |
+| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 558 |
+| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 580 |
+| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 594 |
+| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 620 |
 
 ### annotation-summary.js
 

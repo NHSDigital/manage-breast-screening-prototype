@@ -204,7 +204,7 @@
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
 
         {% if historyItem.systemicTreatments %}
-          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Systemic treatments</p>
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Other treatments</p>
           <ul class="nhsuk-list">
             {% for treatment in historyItem.systemicTreatments %}
               <li>
@@ -321,6 +321,20 @@
             },
             value: {
               html: mastectomyLumpectomySurgeryReasonHtml
+            }
+          }) }}
+        {% endif %}
+      {% endset %}
+
+      {# Procedures with no side - mastectomy and lumpectomy #}
+      {% set otherProceduresRow %}
+        {% if historyItem.otherProcedures | length %}
+          {{ summaryListRow({
+            key: {
+              text: "Other procedures"
+            },
+            value: {
+              html: (historyItem.otherProcedureDetails or "Other") | escape
             }
           }) }}
         {% endif %}
@@ -537,6 +551,7 @@
           {% elseif typeData.type == 'mastectomyLumpectomy' %}
             {{ proceduresRow | safe }}
             {{ otherSurgeryRow | safe }}
+            {{ otherProceduresRow | safe }}
             {{ yearRow | safe }}
             {{ surgeryReasonRow | safe }}
             {{ locationRow | safe }}

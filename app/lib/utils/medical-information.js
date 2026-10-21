@@ -201,14 +201,8 @@ const summariseMedicalHistoryItem = (item) => {
       // Be specific about what procedures were done
       const rightProc = item.proceduresRightBreast
       const leftProc = item.proceduresLeftBreast
-      const hasRightMastectomy =
-        rightProc &&
-        (rightProc.includes('Mastectomy (tissue remaining)') ||
-          rightProc.includes('Mastectomy (no tissue remaining)'))
-      const hasLeftMastectomy =
-        leftProc &&
-        (leftProc.includes('Mastectomy (tissue remaining)') ||
-          leftProc.includes('Mastectomy (no tissue remaining)'))
+      const hasRightMastectomy = rightProc && rightProc.includes('Mastectomy')
+      const hasLeftMastectomy = leftProc && leftProc.includes('Mastectomy')
       const hasRightLumpectomy = rightProc && rightProc.includes('Lumpectomy')
       const hasLeftLumpectomy = leftProc && leftProc.includes('Lumpectomy')
 

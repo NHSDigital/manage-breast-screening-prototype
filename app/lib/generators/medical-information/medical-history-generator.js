@@ -30,12 +30,8 @@ const MASTECTOMY_LUMPECTOMY_CONFIG = {
     'left-only': 0.4,
     'both': 0.2
   },
-  // Procedure types (same as breast cancer but for prophylactic/elective surgery)
-  procedureTypes: [
-    'Lumpectomy',
-    'Mastectomy (tissue remaining)',
-    'Mastectomy (no tissue remaining)'
-  ],
+  // Procedure types (checkboxes)
+  procedureTypes: ['Lumpectomy', 'Mastectomy'],
   // Other surgery options
   otherSurgeryOptions: ['Reconstruction', 'Symmetrisation'],
   // Surgery reasons (skip 'Other reason')
@@ -382,56 +378,26 @@ const generateMastectomyLumpectomyItem = (options = {}) => {
     MASTECTOMY_LUMPECTOMY_CONFIG.breastChoice
   )
 
-  if (breastChoice === 'right-only') {
-    item.proceduresRightBreast = faker.helpers.arrayElement(
-      MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
-    )
-    item.proceduresLeftBreast = 'No procedures'
-  } else if (breastChoice === 'left-only') {
-    item.proceduresLeftBreast = faker.helpers.arrayElement(
-      MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
-    )
-    item.proceduresRightBreast = 'No procedures'
-  } // both
-  else {
-    item.proceduresRightBreast = faker.helpers.arrayElement(
-      MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
-    )
-    item.proceduresLeftBreast = faker.helpers.arrayElement(
-      MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
-    )
-  }
+  const hasRight = breastChoice !== 'left-only'
+  const hasLeft = breastChoice !== 'right-only'
 
-  // Other surgery (70% chance)
-  if (
-    item.proceduresRightBreast &&
-    item.proceduresRightBreast !== 'No procedures'
-  ) {
-    if (Math.random() < 0.7) {
-      const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
-      item.otherSurgeryRightBreast = faker.helpers.arrayElements(
-        MASTECTOMY_LUMPECTOMY_CONFIG.otherSurgeryOptions,
-        numberOfOptions
-      )
-    } else {
-      item.otherSurgeryRightBreast = ['No surgery']
-    }
-  }
+  const generateOtherSurgery = () =>
+    Math.random() < 0.7
+      ? faker.helpers.arrayElements(
+          MASTECTOMY_LUMPECTOMY_CONFIG.otherSurgeryOptions,
+          weighted.select({ 1: 0.7, 2: 0.3 })
+        )
+      : []
 
-  if (
-    item.proceduresLeftBreast &&
-    item.proceduresLeftBreast !== 'No procedures'
-  ) {
-    if (Math.random() < 0.7) {
-      const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
-      item.otherSurgeryLeftBreast = faker.helpers.arrayElements(
-        MASTECTOMY_LUMPECTOMY_CONFIG.otherSurgeryOptions,
-        numberOfOptions
-      )
-    } else {
-      item.otherSurgeryLeftBreast = ['No surgery']
-    }
-  }
+  item.proceduresRightBreast = hasRight
+    ? [faker.helpers.arrayElement(MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes)]
+    : []
+  item.proceduresLeftBreast = hasLeft
+    ? [faker.helpers.arrayElement(MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes)]
+    : []
+  item.otherSurgeryRightBreast = hasRight ? generateOtherSurgery() : []
+  item.otherSurgeryLeftBreast = hasLeft ? generateOtherSurgery() : []
+  item.otherProcedures = []
 
   // Year (85% of the time)
   if (Math.random() < 0.85) {

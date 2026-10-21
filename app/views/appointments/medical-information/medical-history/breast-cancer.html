@@ -5,6 +5,8 @@
 {% set pageHeading = "Add breast cancer details" %}
 {% set medicalHistoryType = "breastCancer" %}
 
+{% from "_includes/medical-information/medical-history/side-radios.njk" import sideRadios %}
+
 {% block formContent %}
 
   <h3 class="nhsuk-heading-m">Where was the cancer diagnosed?</h3>
@@ -76,38 +78,6 @@
   {% set yearFieldName = "diagnosisYear" %}
   {% set yearApproximateFieldName = "diagnosisYearIsApproximate" %}
   {% include "_includes/medical-information/medical-history/year.njk" %}
-
-  {# Experimental UI: each starred procedure reveals nested laterality radios #}
-  {% macro sideRadios(name, idPrefix, region, value) %}
-    {{ radios({
-      name: name,
-      value: value,
-      idPrefix: idPrefix,
-      small: true,
-      inline: true,
-      fieldset: {
-        legend: {
-          text: "Which side?" if region == "axilla" else "Which breast?",
-          size: "s",
-          classes: "nhsuk-u-font-weight-normal"
-        }
-      },
-      items: [
-        {
-          value: "Both",
-          text: "Both"
-        },
-        {
-          value: "Right",
-          text: "Right only"
-        },
-        {
-          value: "Left",
-          text: "Left only"
-        }
-      ]
-    }) }}
-  {% endmacro %}
 
   <h3 class="nhsuk-heading-m">What medical interventions have they had?</h3>
 

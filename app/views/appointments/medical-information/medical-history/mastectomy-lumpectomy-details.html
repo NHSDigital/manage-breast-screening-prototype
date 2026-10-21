@@ -1,0 +1,87 @@
+{# app/views/appointments/medical-information/medical-history/mastectomy-lumpectomy-details.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% from "_includes/medical-information/medical-history/side-radios.njk" import sideRadios %}
+
+{% set pageHeading = "Add details of mastectomy or lumpectomy" %}
+{% set medicalHistoryType = "mastectomyLumpectomy" %}
+
+{% block formContent %}
+
+  {% if appointment.medicalHistoryTemp.id and appointment.medicalHistoryTemp.mastectomyLumpectomySurgeryReason %}
+    {% set changeReasonUrl = "./mastectomy-lumpectomy" | urlWithReferrer(referrerChain, query.scrollTo) %}
+    <p>
+      Surgery reason: {{ appointment.medicalHistoryTemp.mastectomyLumpectomySurgeryReason }}
+      (<a href="{{ changeReasonUrl }}" class="nhsuk-link">change<span class="nhsuk-u-visually-hidden"> surgery reason</span></a>)
+    </p>
+  {% endif %}
+
+  {% set otherProcedureDetailsHtml %}
+    {{ input({
+      name: "appointment[medicalHistoryTemp][otherProcedureDetails]",
+      value: appointment.medicalHistoryTemp.otherProcedureDetails,
+      id: "other-procedure-details",
+      label: {
+        text: "Provide details",
+        size: "s"
+      }
+    }) }}
+  {% endset %}
+
+  {{ checkboxes({
+    name: "appointment[medicalHistoryTemp][procedures]",
+    values: appointment.medicalHistoryTemp.procedures,
+    idPrefix: "procedures",
+    fieldset: {
+      legend: {
+        text: "What procedures or surgery have they had?",
+        size: "m"
+      }
+    },
+    items: [
+      {
+        value: "Lumpectomy",
+        text: "Lumpectomy",
+        conditional: {
+          html: sideRadios("appointment[medicalHistoryTemp][lumpectomySide]", "lumpectomySide", "breast", appointment.medicalHistoryTemp.lumpectomySide)
+        }
+      },
+      {
+        value: "Mastectomy",
+        text: "Mastectomy",
+        conditional: {
+          html: sideRadios("appointment[medicalHistoryTemp][mastectomySide]", "mastectomySide", "breast", appointment.medicalHistoryTemp.mastectomySide)
+        }
+      },
+      {
+        value: "Reconstruction",
+        text: "Reconstruction",
+        conditional: {
+          html: sideRadios("appointment[medicalHistoryTemp][reconstructionSide]", "reconstructionSide", "breast", appointment.medicalHistoryTemp.reconstructionSide)
+        }
+      },
+      {
+        value: "Symmetrisation",
+        text: "Symmetrisation",
+        conditional: {
+          html: sideRadios("appointment[medicalHistoryTemp][symmetrisationSide]", "symmetrisationSide", "breast", appointment.medicalHistoryTemp.symmetrisationSide)
+        }
+      },
+      {
+        value: "Other",
+        text: "Other",
+        conditional: {
+          html: otherProcedureDetailsHtml
+        }
+      }
+    ]
+  }) }}
+
+  {% set yearText = "Year of surgery (optional)" %}
+  {% include "_includes/medical-information/medical-history/year.njk" %}
+
+  {% set additionalDetailsHintText = "Include any other relevant information about the surgery" %}
+  {% include "_includes/medical-information/medical-history/additional-details.njk" %}
+
+{% endblock formContent %}

@@ -1,0 +1,41 @@
+{# app/views/_includes/medical-information/medical-history/side-radios.njk #}
+
+{% from 'radios/macro.njk' import radios %}
+
+{#
+  Side question revealed under a ticked item in a medical history form
+  @param name - Field name the answer is saved under
+  @param idPrefix - Prefix for the radio ids
+  @param region - "breast" or "axilla", which changes the legend
+  @param value - Saved answer, if any
+#}
+{% macro sideRadios(name, idPrefix, region, value) %}
+  {{ radios({
+    name: name,
+    value: value,
+    idPrefix: idPrefix,
+    small: true,
+    inline: true,
+    fieldset: {
+      legend: {
+        text: "Which side?" if region == "axilla" else "Which breast?",
+        size: "s",
+        classes: "nhsuk-u-font-weight-normal"
+      }
+    },
+    items: [
+      {
+        value: "Both",
+        text: "Both"
+      },
+      {
+        value: "Right",
+        text: "Right only"
+      },
+      {
+        value: "Left",
+        text: "Left only"
+      }
+    ]
+  } | populateErrors) }}
+{% endmacro %}
