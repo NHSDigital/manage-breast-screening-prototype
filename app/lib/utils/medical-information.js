@@ -119,12 +119,6 @@ const summariseMedicalHistoryItem = (item) => {
         rightProcedures.includes && rightProcedures.includes('Breast implants')
       const hasLeftImplants =
         leftProcedures.includes && leftProcedures.includes('Breast implants')
-      const hasRightAugmentation =
-        rightProcedures.includes &&
-        rightProcedures.includes('Other, or not known')
-      const hasLeftAugmentation =
-        leftProcedures.includes &&
-        leftProcedures.includes('Other, or not known')
 
       // Build a description that names each procedure with its side(s)
       const implantParts = []
@@ -138,12 +132,8 @@ const summariseMedicalHistoryItem = (item) => {
         implantParts.push('Breast implants, left breast')
       }
 
-      if (hasRightAugmentation && hasLeftAugmentation) {
-        augParts.push('other, or not known, both breasts')
-      } else if (hasRightAugmentation) {
-        augParts.push('other, or not known, right breast')
-      } else if (hasLeftAugmentation) {
-        augParts.push('other, or not known, left breast')
+      if (item.otherProcedures && item.otherProcedures.length) {
+        augParts.push('other, or not known')
       }
 
       // Sort: both breasts first, then right, then left
@@ -639,7 +629,32 @@ const hasBilateralMastectomyWithoutImaging = (medicalHistory) =>
     )
   )
 
+/**
+ * Get the mastectomies where images were taken, with which breasts were imaged
+ *
+ * Bilateral mastectomies answered "No" to taking images are left out.
+ *
+ * @param {Object} medicalHistory - Appointment medical history, keyed by type
+ * @returns {Array<{mastectomySide: string, imagedSide: string, details: string}>}
+ * One entry per mastectomy, with sides as Right, Left or Both
+ */
+const getMastectomyImagingNotes = (medicalHistory) =>
+  ['breastCancer', 'mastectomyLumpectomy'].flatMap((type) =>
+    (medicalHistory?.[type] || [])
+      .filter(
+        (item) =>
+          ['Right', 'Left', 'Both'].includes(item.mastectomyImagingFor) &&
+          ['Right', 'Left', 'Both'].includes(item.mastectomyImagingSide)
+      )
+      .map((item) => ({
+        mastectomySide: item.mastectomyImagingFor,
+        imagedSide: item.mastectomyImagingSide,
+        details: item.mastectomyImagingDetails
+      }))
+  )
+
 module.exports = {
+  getMastectomyImagingNotes,
   hasBilateralMastectomyWithoutImaging,
   isValidMedicalHistoryType,
   getMedicalHistoryType,

@@ -30,16 +30,18 @@
     }) }}
   {% endset %}
 
-  {% set yesDetailsHtml %}
-    {{ textarea({
-      name: "appointment[medicalHistoryTemp][mastectomyImagingDetails]",
-      value: appointment.medicalHistoryTemp.mastectomyImagingDetails,
+  {# Each "Yes" option has its own box, as hidden conditionals still submit. The save route keeps the one for the chosen option #}
+  {% macro yesDetails(option, value) %}
+    {{ input({
+      name: "appointment[medicalHistoryTemp][mastectomyImagingDetailsTemp][" + option + "]",
+      id: "mastectomyImagingDetails" + option,
+      value: value,
       label: {
         text: "Provide details",
         size: "s"
       }
     }) }}
-  {% endset %}
+  {% endmacro %}
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
@@ -81,21 +83,21 @@
           value: "Right",
           text: "Yes, right side only",
           conditional: {
-            html: yesDetailsHtml
+            html: yesDetails("Right", appointment.medicalHistoryTemp.mastectomyImagingDetails if imagingSide == "Right")
           }
         },
         {
           value: "Left",
           text: "Yes, left side only",
           conditional: {
-            html: yesDetailsHtml
+            html: yesDetails("Left", appointment.medicalHistoryTemp.mastectomyImagingDetails if imagingSide == "Left")
           }
         },
         {
           value: "Both",
           text: "Yes, both sides",
           conditional: {
-            html: yesDetailsHtml
+            html: yesDetails("Both", appointment.medicalHistoryTemp.mastectomyImagingDetails if imagingSide == "Both")
           }
         }
       ]

@@ -534,7 +534,7 @@ const generateBenignLumpsItem = (options = {}) => {
       BENIGN_LUMPS_CONFIG.procedureOptions,
       numberOfOptions
     )
-    item.proceduresLeftBreast = ['No procedures']
+    item.proceduresLeftBreast = []
   } else if (breastChoice === 'left-only') {
     // Always have procedures on left breast if this is left-only
     const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
@@ -542,7 +542,7 @@ const generateBenignLumpsItem = (options = {}) => {
       BENIGN_LUMPS_CONFIG.procedureOptions,
       numberOfOptions
     )
-    item.proceduresRightBreast = ['No procedures']
+    item.proceduresRightBreast = []
   } // both
   else {
     // At least one breast must have actual procedures
@@ -560,14 +560,14 @@ const generateBenignLumpsItem = (options = {}) => {
           BENIGN_LUMPS_CONFIG.procedureOptions,
           numberOfOptions
         )
-        item.proceduresLeftBreast = ['No procedures']
+        item.proceduresLeftBreast = []
       } else {
         const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
         item.proceduresLeftBreast = faker.helpers.arrayElements(
           BENIGN_LUMPS_CONFIG.procedureOptions,
           numberOfOptions
         )
-        item.proceduresRightBreast = ['No procedures']
+        item.proceduresRightBreast = []
       }
     } else {
       // Generate normally based on the random checks
@@ -578,7 +578,7 @@ const generateBenignLumpsItem = (options = {}) => {
           numberOfOptions
         )
       } else {
-        item.proceduresRightBreast = ['No procedures']
+        item.proceduresRightBreast = []
       }
 
       if (leftHasProcedures) {
@@ -588,7 +588,7 @@ const generateBenignLumpsItem = (options = {}) => {
           numberOfOptions
         )
       } else {
-        item.proceduresLeftBreast = ['No procedures']
+        item.proceduresLeftBreast = []
       }
     }
   }

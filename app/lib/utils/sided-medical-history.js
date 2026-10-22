@@ -88,6 +88,30 @@ const MASTECTOMY_LUMPECTOMY_FORM = {
   }
 }
 
+const BENIGN_LUMPS_FORM = {
+  lists: [
+    {
+      formField: 'procedures',
+      groups: [
+        {
+          storedField: 'procedures',
+          items: {
+            'Needle biopsy': 'needleBiopsySide',
+            'Lump removed': 'lumpRemovedSide'
+          }
+        }
+      ]
+    }
+  ],
+  unsided: {
+    formField: 'procedures',
+    storedField: 'otherProcedures',
+    items: ['Not known'],
+    otherItem: 'Not known',
+    detailsField: 'notKnownDetails'
+  }
+}
+
 const BREAST_IMPLANTS_FORM = {
   lists: [
     {
@@ -96,13 +120,19 @@ const BREAST_IMPLANTS_FORM = {
         {
           storedField: 'procedures',
           items: {
-            'Breast implants': 'breastImplantsSide',
-            'Other, or not known': 'otherAugmentationSide'
+            'Breast implants': 'breastImplantsSide'
           }
         }
       ]
     }
-  ]
+  ],
+  unsided: {
+    formField: 'procedures',
+    storedField: 'otherProcedures',
+    items: ['Other, or not known'],
+    otherItem: 'Other, or not known',
+    detailsField: 'otherAugmentationDetails'
+  }
 }
 
 const toArray = (value) => {
@@ -299,6 +329,32 @@ const mastectomyLumpectomyItemToForm = (item) =>
   itemToForm(MASTECTOMY_LUMPECTOMY_FORM, item)
 
 /**
+ * List the ticked items that have no side chosen
+ *
+ * @param {object} formData - The medicalHistoryTemp object posted by the benign lumps form
+ * @returns {Array<{sideField: string, text: string}>} Side field name and error message for each
+ */
+const getBenignLumpsMissingSides = (formData) =>
+  getMissingSides(BENIGN_LUMPS_FORM, formData)
+
+/**
+ * Convert benign lumps form answers into the stored per-breast fields
+ *
+ * @param {object} formData - The medicalHistoryTemp object posted by the form
+ * @returns {object} Item with proceduresRightBreast and proceduresLeftBreast
+ */
+const benignLumpsFormToItem = (formData) =>
+  formToItem(BENIGN_LUMPS_FORM, formData)
+
+/**
+ * Convert a stored benign lumps item into the answers its form pre-fills from
+ *
+ * @param {object} item - Stored benign lumps history item
+ * @returns {object} Item with the form fields added
+ */
+const benignLumpsItemToForm = (item) => itemToForm(BENIGN_LUMPS_FORM, item)
+
+/**
  * Convert breast implants or augmentation form answers into the stored per-breast fields
  *
  * @param {object} formData - The medicalHistoryTemp object posted by the form
@@ -317,6 +373,9 @@ const breastImplantsItemToForm = (item) =>
   itemToForm(BREAST_IMPLANTS_FORM, item)
 
 module.exports = {
+  getBenignLumpsMissingSides,
+  benignLumpsFormToItem,
+  benignLumpsItemToForm,
   getBreastImplantsMissingSides,
   breastImplantsFormToItem,
   breastImplantsItemToForm,

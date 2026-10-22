@@ -20,6 +20,9 @@ const {
   breastImplantsFormToItem,
   breastImplantsItemToForm,
   getMastectomyLumpectomyMissingSides,
+  getBenignLumpsMissingSides,
+  benignLumpsFormToItem,
+  benignLumpsItemToForm,
   breastCancerFormToItem,
   breastCancerItemToForm,
   mastectomyLumpectomyFormToItem,
@@ -44,6 +47,11 @@ const FORM_CONVERTERS = {
     getMissingSides: getBreastCancerMissingSides,
     toItem: breastCancerFormToItem,
     toForm: breastCancerItemToForm
+  },
+  benignLumps: {
+    getMissingSides: getBenignLumpsMissingSides,
+    toItem: benignLumpsFormToItem,
+    toForm: benignLumpsItemToForm
   },
   breastImplantsAugmentation: {
     getMissingSides: getBreastImplantsMissingSides,
@@ -215,6 +223,15 @@ module.exports = (router) => {
           )
         }
 
+        // Bilateral mastectomy has a details box per "Yes" option; keep the chosen one
+        if (formTemp.mastectomyImagingDetailsTemp) {
+          formTemp.mastectomyImagingDetails =
+            formTemp.mastectomyImagingDetailsTemp[
+              formTemp.mastectomyImagingSide
+            ] || ''
+          delete formTemp.mastectomyImagingDetailsTemp
+        }
+
         if (!hasMastectomy) {
           delete formTemp.mastectomyImagingFor
           delete formTemp.mastectomyImagingSide
@@ -227,14 +244,9 @@ module.exports = (router) => {
         type === 'breast-implants-augmentation' ||
         type === 'breastImplantsAugmentation'
       ) {
-        // The consent page and its answer routes read the stored per-breast fields
-        if (data.appointment?.medicalHistoryTemp) {
-          data.appointment.medicalHistoryTemp = breastImplantsFormToItem(
-            data.appointment.medicalHistoryTemp
-          )
-        }
-
         const medicalHistoryTemp = data.appointment?.medicalHistoryTemp
+          ? breastImplantsFormToItem(data.appointment.medicalHistoryTemp)
+          : undefined
         const rightBreastProcedures =
           medicalHistoryTemp?.proceduresRightBreast || []
         const leftBreastProcedures =
@@ -260,6 +272,9 @@ module.exports = (router) => {
         // - AND implants have NOT been removed
         // - AND consent has NOT already been given
         if (hasBreastImplants && !implantsRemoved && !alreadyConsented) {
+          // The consent page and its answer routes read the stored per-breast fields
+          data.appointment.medicalHistoryTemp = medicalHistoryTemp
+
           // Redirect to consent page immediately - we'll save the data after consent
           return res.redirect(
             urlWithReferrer(

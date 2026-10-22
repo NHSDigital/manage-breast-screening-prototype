@@ -9,6 +9,18 @@
 
 {% block formContent %}
 
+  {% set otherDetailsHtml %}
+    {{ input({
+      name: "appointment[medicalHistoryTemp][otherAugmentationDetails]",
+      value: appointment.medicalHistoryTemp.otherAugmentationDetails,
+      id: "other-augmentation-details",
+      label: {
+        text: "Provide details",
+        size: "s"
+      }
+    }) }}
+  {% endset %}
+
   {{ checkboxes({
     small: true,
     name: "appointment[medicalHistoryTemp][procedures]",
@@ -33,7 +45,7 @@
         value: "Other, or not known",
         text: "Other, or not known",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][otherAugmentationSide]", "otherAugmentationSide", "breast", appointment.medicalHistoryTemp.otherAugmentationSide)
+          html: otherDetailsHtml
         }
       }
     ]

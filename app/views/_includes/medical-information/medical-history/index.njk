@@ -247,6 +247,19 @@
             {% endif %}
           </p>
         {% endif %}
+        {% if historyItem.mastectomyImagingFor %}
+          <p>
+            {{ "Bilateral mastectomy" if historyItem.mastectomyImagingFor == "Both" else "Unilateral mastectomy (" + (historyItem.mastectomyImagingFor | lower) + ")" }}
+            {% if historyItem.mastectomyImagingSide == "Both" %}
+              <br>Images taken of both breasts
+            {% elseif historyItem.mastectomyImagingSide == "Right" or historyItem.mastectomyImagingSide == "Left" %}
+              <br>Images taken of the {{ historyItem.mastectomyImagingSide | lower }} breast only
+            {% endif %}
+            {% if historyItem.mastectomyImagingDetails and historyItem.mastectomyImagingSide != "None" %}
+              <br>Details: {{ historyItem.mastectomyImagingDetails }}
+            {% endif %}
+          </p>
+        {% endif %}
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
 
         {# Used by mastectomy lumpectomy only #}
@@ -550,6 +563,16 @@
           {# Breast implants or augmentation #}
           {% elseif typeData.type == 'breastImplantsAugmentation' %}
             {{ proceduresRow | safe }}
+            {% if historyItem.otherProcedures | length %}
+              {{ summaryListRow({
+                key: {
+                  text: "Other procedures"
+                },
+                value: {
+                  text: historyItem.otherAugmentationDetails or "Other, or not known"
+                }
+              }) }}
+            {% endif %}
             {{ yearRow | safe }}
             {{ removalRow | safe }}
             {{ locationRow | safe }}
@@ -572,6 +595,16 @@
           {# Benign lumps #}
           {% elseif typeData.type == 'benignLumps' %}
             {{ proceduresRow | safe }}
+            {% if historyItem.otherProcedures | length %}
+              {{ summaryListRow({
+                key: {
+                  text: "Procedures not known"
+                },
+                value: {
+                  text: historyItem.notKnownDetails or "No details provided"
+                }
+              }) }}
+            {% endif %}
             {{ yearRow | safe }}
             {{ locationRow | safe }}
 
