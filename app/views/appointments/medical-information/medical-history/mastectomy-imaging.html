@@ -1,0 +1,143 @@
+{# app/views/appointments/medical-information/medical-history/mastectomy-imaging.html #}
+
+{% extends 'layout-medical-history-form.html' %}
+
+{% set medicalHistoryType = appointment.medicalHistoryTemp.medicalHistoryType %}
+{% set mastectomySide = appointment.medicalHistoryTemp.mastectomySide %}
+{% set remainingSide = "Left" if mastectomySide == "Right" else "Right" %}
+
+{# Posts back to the save route, which now finds the follow-up answered #}
+{% set historyTypeSlug = (data.medicalHistoryTypes | where("type", medicalHistoryType) | first).slug %}
+{% set customFormAction = "./" ~ historyTypeSlug ~ "/save" | urlWithReferrer(referrerChain, query.scrollTo) %}
+
+{# Pre-select the default answer unless this side has already been answered #}
+{% if appointment.medicalHistoryTemp.mastectomyImagingFor == mastectomySide %}
+  {% set imagingSide = appointment.medicalHistoryTemp.mastectomyImagingSide %}
+{% else %}
+  {% set imagingSide = "None" if mastectomySide == "Both" else remainingSide %}
+{% endif %}
+
+{% block pageContent %}
+
+  {% set detailsHtml %}
+    {{ textarea({
+      name: "appointment[medicalHistoryTemp][mastectomyImagingDetails]",
+      value: appointment.medicalHistoryTemp.mastectomyImagingDetails,
+      label: {
+        text: "Details",
+        size: "s"
+      }
+    }) }}
+  {% endset %}
+
+  {# Each "Yes" option has its own box, as hidden conditionals still submit. The save route keeps the one for the chosen option #}
+  {% macro yesDetails(option, value) %}
+    {{ input({
+      name: "appointment[medicalHistoryTemp][mastectomyImagingDetailsTemp][" + option + "]",
+      id: "mastectomyImagingDetails" + option,
+      value: value,
+      label: {
+        text: "Provide details",
+        size: "s"
+      }
+    }) }}
+  {% endmacro %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullNameReversed }}
+    </span>
+    {{ "Bilateral mastectomy" if mastectomySide == "Both" else "Unilateral mastectomy (" + (mastectomySide | lower) + ")" }}
+  </h1>
+
+  {% if mastectomySide == "Both" %}
+    <p>As both breasts have been removed, this participant does not require a mammography.</p>
+    <p>You can still take images if there is breast tissue remaining on either side.</p>
+  {% else %}
+    <p>Images are only required for the {{ remainingSide | lower }} breast unless there is breast tissue remaining on the {{ mastectomySide | lower }} side.</p>
+  {% endif %}
+
+  {{ appHiddenInput({
+    name: "appointment[medicalHistoryTemp][mastectomyImagingFor]",
+    value: mastectomySide
+  }) }}
+
+  {% if mastectomySide == "Both" %}
+    {{ radios({
+      small: true,
+      name: "appointment[medicalHistoryTemp][mastectomyImagingSide]",
+      value: imagingSide,
+      idPrefix: "mastectomyImagingSide",
+      fieldset: {
+        legend: {
+          text: "Do you need to take any images?",
+          size: "m"
+        }
+      },
+      items: [
+        {
+          value: "None",
+          text: "No"
+        },
+        {
+          value: "Right",
+          text: "Yes, right side only",
+          conditional: {
+            html: yesDetails("Right", appointment.medicalHistoryTemp.mastectomyImagingDetails if imagingSide == "Right")
+          }
+        },
+        {
+          value: "Left",
+          text: "Yes, left side only",
+          conditional: {
+            html: yesDetails("Left", appointment.medicalHistoryTemp.mastectomyImagingDetails if imagingSide == "Left")
+          }
+        },
+        {
+          value: "Both",
+          text: "Yes, both sides",
+          conditional: {
+            html: yesDetails("Both", appointment.medicalHistoryTemp.mastectomyImagingDetails if imagingSide == "Both")
+          }
+        }
+      ]
+    }) }}
+  {% else %}
+    {{ radios({
+      small: true,
+      name: "appointment[medicalHistoryTemp][mastectomyImagingSide]",
+      value: imagingSide,
+      idPrefix: "mastectomyImagingSide",
+      fieldset: {
+        legend: {
+          text: "Which side will you be taking images of?",
+          size: "m"
+        }
+      },
+      items: [
+        {
+          value: remainingSide,
+          text: remainingSide + " only"
+        },
+        {
+          value: "Both",
+          text: "Both",
+          conditional: {
+            html: detailsHtml
+          }
+        }
+      ]
+    }) }}
+  {% endif %}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Save and continue",
+      attributes: {
+        name: "action",
+        value: "save"
+      }
+    }) }}
+  </div>
+
+{% endblock pageContent %}

@@ -1,0 +1,18 @@
+{# app/views/_includes/mastectomy-imaging-warning.njk #}
+
+{# Tells readers which breasts were imaged after a mastectomy #}
+{% for note in appointment.medicalInformation.medicalHistory | getMastectomyImagingNotes %}
+  {% call warningCallout({
+    heading: "Bilateral mastectomy" if note.mastectomySide == "Both" else "Unilateral mastectomy",
+    headingLevel: 2
+  }) %}
+    {% if note.imagedSide == "Both" %}
+      <p>Images taken of both breasts</p>
+    {% else %}
+      <p>Images taken of the {{ note.imagedSide | lower }} breast only</p>
+    {% endif %}
+    {% if note.details %}
+      <p>Details: {{ note.details }}</p>
+    {% endif %}
+  {% endcall %}
+{% endfor %}

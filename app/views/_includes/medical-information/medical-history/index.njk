@@ -204,7 +204,7 @@
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
 
         {% if historyItem.systemicTreatments %}
-          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Systemic treatments</p>
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Other treatments</p>
           <ul class="nhsuk-list">
             {% for treatment in historyItem.systemicTreatments %}
               <li>
@@ -239,6 +239,27 @@
         {% set leftBreastContent %}
           {{ breastItemsList(historyItem.proceduresLeftBreast, "No procedures added") }}
         {% endset %}
+        {% if historyItem.mastectomyImagingFor == "Both" %}
+          <p>
+            Bilateral mastectomy
+            {% if historyItem.mastectomyImagingSide != "None" and historyItem.mastectomyImagingDetails %}
+              <br>Details: {{ historyItem.mastectomyImagingDetails }}
+            {% endif %}
+          </p>
+        {% endif %}
+        {% if historyItem.mastectomyImagingFor %}
+          <p>
+            {{ "Bilateral mastectomy" if historyItem.mastectomyImagingFor == "Both" else "Unilateral mastectomy (" + (historyItem.mastectomyImagingFor | lower) + ")" }}
+            {% if historyItem.mastectomyImagingSide == "Both" %}
+              <br>Images taken of both breasts
+            {% elseif historyItem.mastectomyImagingSide == "Right" or historyItem.mastectomyImagingSide == "Left" %}
+              <br>Images taken of the {{ historyItem.mastectomyImagingSide | lower }} breast only
+            {% endif %}
+            {% if historyItem.mastectomyImagingDetails and historyItem.mastectomyImagingSide != "None" %}
+              <br>Details: {{ historyItem.mastectomyImagingDetails }}
+            {% endif %}
+          </p>
+        {% endif %}
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
 
         {# Used by mastectomy lumpectomy only #}
@@ -321,6 +342,20 @@
             },
             value: {
               html: mastectomyLumpectomySurgeryReasonHtml
+            }
+          }) }}
+        {% endif %}
+      {% endset %}
+
+      {# Procedures with no side - mastectomy and lumpectomy #}
+      {% set otherProceduresRow %}
+        {% if historyItem.otherProcedures | length %}
+          {{ summaryListRow({
+            key: {
+              text: "Other procedures"
+            },
+            value: {
+              html: (historyItem.otherProcedureDetails or "Other") | escape
             }
           }) }}
         {% endif %}
@@ -528,6 +563,16 @@
           {# Breast implants or augmentation #}
           {% elseif typeData.type == 'breastImplantsAugmentation' %}
             {{ proceduresRow | safe }}
+            {% if historyItem.otherProcedures | length %}
+              {{ summaryListRow({
+                key: {
+                  text: "Other procedures"
+                },
+                value: {
+                  text: historyItem.otherAugmentationDetails or "Other, or not known"
+                }
+              }) }}
+            {% endif %}
             {{ yearRow | safe }}
             {{ removalRow | safe }}
             {{ locationRow | safe }}
@@ -537,6 +582,7 @@
           {% elseif typeData.type == 'mastectomyLumpectomy' %}
             {{ proceduresRow | safe }}
             {{ otherSurgeryRow | safe }}
+            {{ otherProceduresRow | safe }}
             {{ yearRow | safe }}
             {{ surgeryReasonRow | safe }}
             {{ locationRow | safe }}
@@ -549,6 +595,16 @@
           {# Benign lumps #}
           {% elseif typeData.type == 'benignLumps' %}
             {{ proceduresRow | safe }}
+            {% if historyItem.otherProcedures | length %}
+              {{ summaryListRow({
+                key: {
+                  text: "Procedures not known"
+                },
+                value: {
+                  text: historyItem.notKnownDetails or "No details provided"
+                }
+              }) }}
+            {% endif %}
             {{ yearRow | safe }}
             {{ locationRow | safe }}
 

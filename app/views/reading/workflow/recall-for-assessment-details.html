@@ -120,6 +120,7 @@
     <div class="nhsuk-grid-column-full">
       {% set symptoms = appointment.medicalInformation.symptoms %}
       {% include "symptomsWarningCard.njk" %}
+      {% include "_includes/mastectomy-imaging-warning.njk" %}
     </div>
   </div>
 
