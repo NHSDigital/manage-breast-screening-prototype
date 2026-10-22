@@ -88,6 +88,23 @@ const MASTECTOMY_LUMPECTOMY_FORM = {
   }
 }
 
+const BREAST_IMPLANTS_FORM = {
+  lists: [
+    {
+      formField: 'procedures',
+      groups: [
+        {
+          storedField: 'procedures',
+          items: {
+            'Breast implants': 'breastImplantsSide',
+            'Other, or not known': 'otherAugmentationSide'
+          }
+        }
+      ]
+    }
+  ]
+}
+
 const toArray = (value) => {
   if (!value) {
     return []
@@ -142,12 +159,14 @@ const formToItem = (config, formData = {}) => {
   })
 
   const { unsided } = config
-  const selectedUnsided = toArray(formData[unsided.formField])
-  item[unsided.storedField] = unsided.items.filter((name) =>
-    selectedUnsided.includes(name)
-  )
-  if (!item[unsided.storedField].includes(unsided.otherItem)) {
-    delete item[unsided.detailsField]
+  if (unsided) {
+    const selectedUnsided = toArray(formData[unsided.formField])
+    item[unsided.storedField] = unsided.items.filter((name) =>
+      selectedUnsided.includes(name)
+    )
+    if (!item[unsided.storedField].includes(unsided.otherItem)) {
+      delete item[unsided.detailsField]
+    }
   }
 
   getSideFieldNames(config).forEach((sideField) => delete item[sideField])
@@ -189,10 +208,12 @@ const itemToForm = (config, item = {}) => {
   })
 
   const { unsided } = config
-  formData[unsided.formField] = [
-    ...toArray(formData[unsided.formField]),
-    ...toArray(item[unsided.storedField])
-  ]
+  if (unsided) {
+    formData[unsided.formField] = [
+      ...toArray(formData[unsided.formField]),
+      ...toArray(item[unsided.storedField])
+    ]
+  }
 
   return formData
 }
@@ -229,6 +250,15 @@ const getBreastCancerMissingSides = (formData) =>
  */
 const getMastectomyLumpectomyMissingSides = (formData) =>
   getMissingSides(MASTECTOMY_LUMPECTOMY_FORM, formData)
+
+/**
+ * List the ticked items that have no side chosen
+ *
+ * @param {object} formData - The medicalHistoryTemp object posted by the breast implants or augmentation form
+ * @returns {Array<{sideField: string, text: string}>} Side field name and error message for each
+ */
+const getBreastImplantsMissingSides = (formData) =>
+  getMissingSides(BREAST_IMPLANTS_FORM, formData)
 
 /**
  * Convert breast cancer form answers into the stored per-breast fields
@@ -268,7 +298,28 @@ const mastectomyLumpectomyFormToItem = (formData) =>
 const mastectomyLumpectomyItemToForm = (item) =>
   itemToForm(MASTECTOMY_LUMPECTOMY_FORM, item)
 
+/**
+ * Convert breast implants or augmentation form answers into the stored per-breast fields
+ *
+ * @param {object} formData - The medicalHistoryTemp object posted by the form
+ * @returns {object} Item with proceduresRightBreast and proceduresLeftBreast
+ */
+const breastImplantsFormToItem = (formData) =>
+  formToItem(BREAST_IMPLANTS_FORM, formData)
+
+/**
+ * Convert a stored breast implants or augmentation item into the answers its form pre-fills from
+ *
+ * @param {object} item - Stored breast implants or augmentation history item
+ * @returns {object} Item with the form fields added
+ */
+const breastImplantsItemToForm = (item) =>
+  itemToForm(BREAST_IMPLANTS_FORM, item)
+
 module.exports = {
+  getBreastImplantsMissingSides,
+  breastImplantsFormToItem,
+  breastImplantsItemToForm,
   getBreastCancerMissingSides,
   getMastectomyLumpectomyMissingSides,
   breastCancerFormToItem,

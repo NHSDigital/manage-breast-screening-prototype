@@ -16,6 +16,9 @@ const {
 } = require('../../lib/utils/appointment-status')
 const {
   getBreastCancerMissingSides,
+  getBreastImplantsMissingSides,
+  breastImplantsFormToItem,
+  breastImplantsItemToForm,
   getMastectomyLumpectomyMissingSides,
   breastCancerFormToItem,
   breastCancerItemToForm,
@@ -41,6 +44,11 @@ const FORM_CONVERTERS = {
     getMissingSides: getBreastCancerMissingSides,
     toItem: breastCancerFormToItem,
     toForm: breastCancerItemToForm
+  },
+  breastImplantsAugmentation: {
+    getMissingSides: getBreastImplantsMissingSides,
+    toItem: breastImplantsFormToItem,
+    toForm: breastImplantsItemToForm
   },
   mastectomyLumpectomy: {
     getMissingSides: getMastectomyLumpectomyMissingSides,
@@ -163,11 +171,69 @@ module.exports = (router) => {
       // Convert slug to camelCase key for data storage
       const dataKey = getMedicalHistoryKeyFromSlug(type) || type
 
+      const missingSides = FORM_CONVERTERS[dataKey]
+        ? FORM_CONVERTERS[dataKey].getMissingSides(
+            data.appointment?.medicalHistoryTemp
+          )
+        : []
+
+      if (missingSides.length) {
+        missingSides.forEach(({ sideField, text }) =>
+          req.flash('error', {
+            text,
+            name: `appointment[medicalHistoryTemp][${sideField}]`,
+            href: `#${sideField}`
+          })
+        )
+        return res.redirect(
+          urlWithReferrer(
+            `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/${getFormPage(dataKey, type)}`,
+            referrerChain,
+            scrollTo
+          )
+        )
+      }
+
+      // A mastectomy needs a follow-up on which breasts will be imaged,
+      // asked again only if the mastectomy side changes
+      const formTemp = data.appointment?.medicalHistoryTemp
+      if (formTemp && FORM_CONVERTERS[dataKey]) {
+        const mastectomySide = []
+          .concat(formTemp.procedures || [])
+          .includes('Mastectomy')
+          ? formTemp.mastectomySide
+          : undefined
+        const hasMastectomy = ['Right', 'Left', 'Both'].includes(mastectomySide)
+
+        if (hasMastectomy && formTemp.mastectomyImagingFor !== mastectomySide) {
+          return res.redirect(
+            urlWithReferrer(
+              `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/mastectomy-imaging`,
+              referrerChain,
+              scrollTo
+            )
+          )
+        }
+
+        if (!hasMastectomy) {
+          delete formTemp.mastectomyImagingFor
+          delete formTemp.mastectomyImagingSide
+          delete formTemp.mastectomyImagingDetails
+        }
+      }
+
       // Check if consent is needed for breast implants BEFORE processing the data
       if (
         type === 'breast-implants-augmentation' ||
         type === 'breastImplantsAugmentation'
       ) {
+        // The consent page and its answer routes read the stored per-breast fields
+        if (data.appointment?.medicalHistoryTemp) {
+          data.appointment.medicalHistoryTemp = breastImplantsFormToItem(
+            data.appointment.medicalHistoryTemp
+          )
+        }
+
         const medicalHistoryTemp = data.appointment?.medicalHistoryTemp
         const rightBreastProcedures =
           medicalHistoryTemp?.proceduresRightBreast || []
@@ -203,29 +269,6 @@ module.exports = (router) => {
             )
           )
         }
-      }
-
-      const missingSides = FORM_CONVERTERS[dataKey]
-        ? FORM_CONVERTERS[dataKey].getMissingSides(
-            data.appointment?.medicalHistoryTemp
-          )
-        : []
-
-      if (missingSides.length) {
-        missingSides.forEach(({ sideField, text }) =>
-          req.flash('error', {
-            text,
-            name: `appointment[medicalHistoryTemp][${sideField}]`,
-            href: `#${sideField}`
-          })
-        )
-        return res.redirect(
-          urlWithReferrer(
-            `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/${getFormPage(dataKey, type)}`,
-            referrerChain,
-            scrollTo
-          )
-        )
       }
 
       let isNewItem

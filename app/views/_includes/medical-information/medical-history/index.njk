@@ -239,6 +239,14 @@
         {% set leftBreastContent %}
           {{ breastItemsList(historyItem.proceduresLeftBreast, "No procedures added") }}
         {% endset %}
+        {% if historyItem.mastectomyImagingFor == "Both" %}
+          <p>
+            Bilateral mastectomy
+            {% if historyItem.mastectomyImagingSide != "None" and historyItem.mastectomyImagingDetails %}
+              <br>Details: {{ historyItem.mastectomyImagingDetails }}
+            {% endif %}
+          </p>
+        {% endif %}
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
 
         {# Used by mastectomy lumpectomy only #}

@@ -550,6 +550,32 @@ module.exports = (router) => {
     }
   )
 
+  // End the appointment from the medical information review when no images are needed
+  router.post(
+    '/clinics/:clinicId/appointments/:appointmentId/end-appointment-no-images',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const participantName = getFullName(data.participant)
+      const appointment = getAppointment(data, appointmentId)
+
+      if (appointment?.sessionDetails?.startedAt) {
+        captureSessionEndTime(data, appointmentId, data.currentUser.id)
+      }
+
+      saveTempAppointmentToAppointment(data)
+      saveTempParticipantToParticipant(data)
+      updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
+
+      req.flash(
+        'success',
+        `Appointment ended. ${participantName} does not need any images because of their bilateral mastectomy`
+      )
+
+      res.redirect(`/clinics/${clinicId}/`)
+    }
+  )
+
   // Handle screening completion
   router.post(
     '/clinics/:clinicId/appointments/:appointmentId/complete',

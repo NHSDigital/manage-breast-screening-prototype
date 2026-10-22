@@ -308,17 +308,10 @@ const generateBreastImplantsItem = (options = {}) => {
   // Which breast(s) have implants
   const breastChoice = weighted.select(BREAST_IMPLANTS_CONFIG.breastChoice)
 
-  if (breastChoice === 'right-only') {
-    item.proceduresRightBreast = ['Breast implants']
-    item.proceduresLeftBreast = ['No procedures']
-  } else if (breastChoice === 'left-only') {
-    item.proceduresLeftBreast = ['Breast implants']
-    item.proceduresRightBreast = ['No procedures']
-  } // both
-  else {
-    item.proceduresRightBreast = ['Breast implants']
-    item.proceduresLeftBreast = ['Breast implants']
-  }
+  item.proceduresRightBreast =
+    breastChoice === 'left-only' ? [] : ['Breast implants']
+  item.proceduresLeftBreast =
+    breastChoice === 'right-only' ? [] : ['Breast implants']
 
   // Consent is required for breast implants - always set to 'yes' for generated data
   item.consentGiven = 'yes'

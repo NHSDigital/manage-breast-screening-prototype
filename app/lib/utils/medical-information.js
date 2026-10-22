@@ -121,18 +121,14 @@ const summariseMedicalHistoryItem = (item) => {
         leftProcedures.includes && leftProcedures.includes('Breast implants')
       const hasRightAugmentation =
         rightProcedures.includes &&
-        rightProcedures.includes('Other augmentation')
+        rightProcedures.includes('Other, or not known')
       const hasLeftAugmentation =
-        leftProcedures.includes && leftProcedures.includes('Other augmentation')
-      const hasRightNotKnown =
-        rightProcedures.includes && rightProcedures.includes('Not known')
-      const hasLeftNotKnown =
-        leftProcedures.includes && leftProcedures.includes('Not known')
+        leftProcedures.includes &&
+        leftProcedures.includes('Other, or not known')
 
       // Build a description that names each procedure with its side(s)
       const implantParts = []
       const augParts = []
-      const notKnownParts = []
 
       if (hasRightImplants && hasLeftImplants) {
         implantParts.push('Breast implants, both breasts')
@@ -143,23 +139,15 @@ const summariseMedicalHistoryItem = (item) => {
       }
 
       if (hasRightAugmentation && hasLeftAugmentation) {
-        augParts.push('other augmentation, both breasts')
+        augParts.push('other, or not known, both breasts')
       } else if (hasRightAugmentation) {
-        augParts.push('other augmentation, right breast')
+        augParts.push('other, or not known, right breast')
       } else if (hasLeftAugmentation) {
-        augParts.push('other augmentation, left breast')
-      }
-
-      if (hasRightNotKnown && hasLeftNotKnown) {
-        notKnownParts.push('procedure not known, both breasts')
-      } else if (hasRightNotKnown) {
-        notKnownParts.push('procedure not known, right breast')
-      } else if (hasLeftNotKnown) {
-        notKnownParts.push('procedure not known, left breast')
+        augParts.push('other, or not known, left breast')
       }
 
       // Sort: both breasts first, then right, then left
-      const allProcParts = [...implantParts, ...augParts, ...notKnownParts]
+      const allProcParts = [...implantParts, ...augParts]
       allProcParts.sort((a, b) => {
         const sideOrder = (s) =>
           s.includes('both breasts') ? 0 : s.includes('right breast') ? 1 : 2
@@ -635,7 +623,24 @@ const summariseOtherMedicalInformation = (medicalInformation) => {
     : otherInfo
 }
 
+/**
+ * Check whether a bilateral mastectomy has been recorded with no images needed
+ *
+ * @param {Object} medicalHistory - Appointment medical history, keyed by type
+ * @returns {boolean} Whether any breast cancer or mastectomy item has answered
+ * "No" to taking images after a bilateral mastectomy
+ */
+const hasBilateralMastectomyWithoutImaging = (medicalHistory) =>
+  ['breastCancer', 'mastectomyLumpectomy'].some((type) =>
+    (medicalHistory?.[type] || []).some(
+      (item) =>
+        item.mastectomyImagingFor === 'Both' &&
+        item.mastectomyImagingSide === 'None'
+    )
+  )
+
 module.exports = {
+  hasBilateralMastectomyWithoutImaging,
   isValidMedicalHistoryType,
   getMedicalHistoryType,
   getMedicalHistoryKeyFromSlug,
