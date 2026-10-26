@@ -96,6 +96,29 @@ const BREAST_CANCER_CONFIG = {
   systemicTreatmentOptions: ['Chemotherapy', 'Hormone therapy']
 }
 
+const addMastectomyImagingAnswers = (item) => {
+  const mastectomyOnRight = item.proceduresRightBreast?.includes('Mastectomy')
+  const mastectomyOnLeft = item.proceduresLeftBreast?.includes('Mastectomy')
+
+  if (!mastectomyOnRight && !mastectomyOnLeft) {
+    return
+  }
+
+  const mastectomySide =
+    mastectomyOnRight && mastectomyOnLeft
+      ? 'Both'
+      : mastectomyOnRight
+        ? 'Right'
+        : 'Left'
+  const remainingSide = mastectomySide === 'Right' ? 'Left' : 'Right'
+
+  item.mastectomyImagingFor = mastectomySide
+  item.mastectomyImagingSide =
+    mastectomySide === 'Both'
+      ? weighted.select({ None: 0.15, Right: 0.2, Left: 0.2, Both: 0.45 })
+      : weighted.select({ [remainingSide]: 0.8, Both: 0.2 })
+}
+
 /**
  * Generate a single breast cancer history item
  * @param {object} [options] - Generation options
@@ -123,7 +146,7 @@ const generateBreastCancerItem = (options = {}) => {
   } else if (breastAffected === 'both') {
     item.cancerLocation = ['Right breast', 'Left breast']
   } else {
-    item.cancerLocation = ['Does not know']
+    item.cancerLocation = ['Not known']
   }
 
   // Year (90% of the time)
@@ -168,6 +191,8 @@ const generateBreastCancerItem = (options = {}) => {
       ]
     }
   }
+
+  addMastectomyImagingAnswers(item)
 
   // Other surgery - generate if we have a procedure field for that breast
   if (item.proceduresRightBreast) {
@@ -391,6 +416,8 @@ const generateMastectomyLumpectomyItem = (options = {}) => {
   item.otherSurgeryRightBreast = hasRight ? generateOtherSurgery() : []
   item.otherSurgeryLeftBreast = hasLeft ? generateOtherSurgery() : []
   item.otherProcedures = []
+
+  addMastectomyImagingAnswers(item)
 
   // Year (85% of the time)
   if (Math.random() < 0.85) {

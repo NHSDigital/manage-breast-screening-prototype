@@ -143,6 +143,21 @@ module.exports = (router) => {
           ?.mastectomyLumpectomySurgeryReason
       const historyUrl = `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history`
 
+      if (!reason) {
+        req.flash('error', {
+          text: 'Select why this surgery was done',
+          name: 'appointment[medicalHistoryTemp][mastectomyLumpectomySurgeryReason]',
+          href: '#mastectomyLumpectomySurgeryReason'
+        })
+        return res.redirect(
+          urlWithReferrer(
+            `${historyUrl}/mastectomy-lumpectomy`,
+            req.query.referrerChain,
+            req.query.scrollTo
+          )
+        )
+      }
+
       const nextPage =
         reason === 'Breast cancer'
           ? 'breast-cancer/add'
@@ -223,13 +238,43 @@ module.exports = (router) => {
           )
         }
 
-        // Bilateral mastectomy has a details box per "Yes" option; keep the chosen one
-        if (formTemp.mastectomyImagingDetailsTemp) {
-          formTemp.mastectomyImagingDetails =
-            formTemp.mastectomyImagingDetailsTemp[
+        const remainingImagingSide = mastectomySide === 'Right' ? 'Left' : 'Right'
+        const allowedImagingSides =
+          mastectomySide === 'Both'
+            ? ['None', 'Right', 'Left', 'Both']
+            : [remainingImagingSide, 'Both']
+
+        if (
+          hasMastectomy &&
+          !allowedImagingSides.includes(formTemp.mastectomyImagingSide)
+        ) {
+          req.flash('error', {
+            text: 'Select whether any images need to be taken',
+            name: 'appointment[medicalHistoryTemp][mastectomyImagingSide]',
+            href: '#mastectomyImagingSide'
+          })
+          return res.redirect(
+            urlWithReferrer(
+              `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/mastectomy-imaging`,
+              referrerChain,
+              scrollTo
+            )
+          )
+        }
+
+        if (mastectomySide === 'Both') {
+          const selectedDetails =
+            formTemp.mastectomyImagingDetailsTemp?.[
               formTemp.mastectomyImagingSide
-            ] || ''
+            ]
+          if (selectedDetails) {
+            formTemp.mastectomyImagingDetails = selectedDetails
+          } else {
+            delete formTemp.mastectomyImagingDetails
+          }
           delete formTemp.mastectomyImagingDetailsTemp
+        } else if (formTemp.mastectomyImagingSide !== 'Both') {
+          delete formTemp.mastectomyImagingDetails
         }
 
         if (!hasMastectomy) {

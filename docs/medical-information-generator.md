@@ -327,7 +327,7 @@ All medical history items should include:
 
 #### Breast Cancer
 
-- `cancerLocation`: array - ['Right breast', 'Left breast', 'Does not know']
+- `cancerLocation`: array - ['Right breast', 'Left breast', 'Not known']
 - `proceduresRightBreast`: array - Lumpectomy, Mastectomy types, etc.
 - `proceduresLeftBreast`: array
 - `otherSurgeryRightBreast`: array - Lymph node surgery, Reconstruction, etc.
@@ -708,6 +708,12 @@ const generateMedicalInformation = (options = {}) => {
   // Can have different values/selections for each side
 }
 ```
+
+When a procedure includes `Mastectomy`, the item also records the follow-up:
+
+- `mastectomyImagingFor`: `Right`, `Left` or `Both` - the side(s) with a mastectomy
+- `mastectomyImagingSide`: `Right`, `Left`, `Both` or `None` - the side(s) to image, or no images for a bilateral mastectomy
+- `mastectomyImagingDetails`: optional string with details about the images
 
 Not all participants will have procedures on both breasts - weight accordingly:
 

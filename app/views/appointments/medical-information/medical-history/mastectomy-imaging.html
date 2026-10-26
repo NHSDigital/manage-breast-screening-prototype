@@ -14,7 +14,7 @@
 {% if appointment.medicalHistoryTemp.mastectomyImagingFor == mastectomySide %}
   {% set imagingSide = appointment.medicalHistoryTemp.mastectomyImagingSide %}
 {% else %}
-  {% set imagingSide = "None" if mastectomySide == "Both" else remainingSide %}
+  {% set imagingSide = remainingSide if mastectomySide != "Both" %}
 {% endif %}
 
 {% block pageContent %}
