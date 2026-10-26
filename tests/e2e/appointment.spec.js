@@ -10,6 +10,7 @@ const { pinSettings, appointmentSettings } = require('./helpers/settings')
 const { findTodayAppointment } = require('./helpers/seed-data')
 const {
   clickToOpenModal,
+  openFormModal,
   revealInModal,
   expectModalClosed,
   openSection,
@@ -103,12 +104,52 @@ test.describe('Screening appointment', () => {
     )
     await cancerLocation.evaluate((element) => element.click())
     await expect(cancerLocation).toBeChecked()
+
+    const lumpectomy = historyModal.locator(
+      'input[name="appointment[medicalHistoryTemp][procedures]"][value="Lumpectomy"]'
+    )
+    await lumpectomy.evaluate((element) => element.click())
+    await expect(lumpectomy).toBeChecked()
+
     const saveButton = historyModal.getByRole('button', { name: 'Save' })
     await revealInModal(saveButton)
+    await saveButton.click()
+    await expect(
+      historyModal.getByText('Select which breast for lumpectomy')
+    ).toBeVisible()
+
+    const lumpectomySide = historyModal.locator(
+      'input[name="appointment[medicalHistoryTemp][lumpectomySide]"][value="Right"]'
+    )
+    await revealInModal(lumpectomySide)
+    await lumpectomySide.check()
     await saveButton.click()
     await expectModalClosed(historyModal)
 
     await expect(page.getByText('Cancer location')).toBeVisible()
+    await expect(page.getByText('Lumpectomy').first()).toBeVisible()
+
+    const breastCancerCard = page.locator('.nhsuk-card').filter({
+      has: page.getByRole('heading', {
+        name: 'Breast cancer',
+        exact: true
+      })
+    })
+    await waitForModalsReady(page)
+    await breastCancerCard.getByRole('link', { name: 'Change' }).click()
+    const editHistoryModal = await openFormModal(page)
+    await expect(
+      editHistoryModal.locator(
+        'input[name="appointment[medicalHistoryTemp][procedures]"][value="Lumpectomy"]'
+      )
+    ).toBeChecked()
+
+    const savedLumpectomySide = editHistoryModal.locator(
+      'input[name="appointment[medicalHistoryTemp][lumpectomySide]"][value="Right"]'
+    )
+    await expect(savedLumpectomySide).toBeChecked()
+    await editHistoryModal.getByRole('button', { name: 'Save' }).click()
+    await expectModalClosed(editHistoryModal)
 
     // Symptom
     await openSection(page, 'Symptoms')
@@ -173,5 +214,73 @@ test.describe('Screening appointment', () => {
 
     await expect(page).toHaveURL(new RegExp(`/clinics/${clinic.id}`))
     await expect(page.getByText(`${fullName} has been screened`)).toBeVisible()
+  })
+
+  test('records why no images were needed after bilateral mastectomy', async ({
+    page
+  }) => {
+    const { clinic, appointment } = findTodayAppointment({ index: 2 })
+
+    await pinSettings(page, appointmentSettings)
+    await page.goto(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/start`
+    )
+
+    await expect(
+      page.getByRole('heading', { name: 'Confirm identity' })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Confirm identity' }).first().click()
+    await expect(
+      page.getByRole('heading', { name: 'Review medical information' })
+    ).toBeVisible()
+
+    await openSection(page, 'Medical history')
+    const historyModal = await clickToOpenModal(page, 'Breast cancer')
+
+    const cancerLocation = historyModal.locator(
+      'input[name="appointment[medicalHistoryTemp][cancerLocation]"][value="Right breast"]'
+    )
+    await cancerLocation.evaluate((element) => element.click())
+    const mastectomy = historyModal.locator(
+      'input[name="appointment[medicalHistoryTemp][procedures]"][value="Mastectomy"]'
+    )
+    await mastectomy.evaluate((element) => element.click())
+    const mastectomySide = historyModal.locator(
+      'input[name="appointment[medicalHistoryTemp][mastectomySide]"][value="Both"]'
+    )
+    await revealInModal(mastectomySide)
+    await mastectomySide.check()
+
+    await historyModal.getByRole('button', { name: 'Save' }).click()
+    await expect(
+      historyModal.getByRole('heading', { name: 'Bilateral mastectomy' })
+    ).toBeVisible()
+    await expect(
+      historyModal.getByText('Do you need to take any images?')
+    ).toBeVisible()
+    await expect(
+      historyModal.getByLabel('Yes, both sides')
+    ).toBeVisible()
+    const noImages = historyModal.locator(
+      'input[name="appointment[medicalHistoryTemp][mastectomyImagingSide]"][value="None"]'
+    )
+    await revealInModal(noImages)
+    await noImages.check()
+    await historyModal
+      .getByRole('button', { name: 'Save and continue' })
+      .click()
+    await expectModalClosed(historyModal)
+
+    await page
+      .getByRole('button', { name: 'Complete all and end appointment' })
+      .first()
+      .click()
+    await expect(page).toHaveURL(new RegExp(`/clinics/${clinic.id}`))
+    await page.getByRole('link', { name: /^All/ }).click()
+    await expect(
+      page.locator(`#appointment-row-${appointment.id}`)
+    ).toContainText(
+      'Other reason (No images needed because of bilateral mastectomy)'
+    )
   })
 })

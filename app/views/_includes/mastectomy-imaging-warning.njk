@@ -3,7 +3,7 @@
 {# Tells readers which breasts were imaged after a mastectomy #}
 {% for note in appointment.medicalInformation.medicalHistory | getMastectomyImagingNotes %}
   {% call warningCallout({
-    heading: "Bilateral mastectomy" if note.mastectomySide == "Both" else "Unilateral mastectomy",
+    heading: "Bilateral mastectomy" if note.mastectomySide == "Both" else "Unilateral mastectomy (" + (note.mastectomySide | lower) + ")",
     headingLevel: 2
   }) %}
     {% if note.imagedSide == "Both" %}

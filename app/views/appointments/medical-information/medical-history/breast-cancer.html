@@ -10,7 +10,7 @@
 
 {% block formContent %}
 
-  <h3 class="nhsuk-heading-m">Where was the cancer diagnosed?</h3>
+  <h2 class="nhsuk-heading-m">Where was the cancer diagnosed?</h2>
 
   {% call fieldset({
     legend: {
@@ -28,6 +28,7 @@
           name: "appointment[medicalHistoryTemp][cancerLocation]",
           values: appointment.medicalHistoryTemp.cancerLocation,
           idPrefix: "cancerLocationRightBreast",
+          small: true,
           formGroup: {
             classes: "nhsuk-u-margin-bottom-2"
           },
@@ -44,6 +45,7 @@
           name: "appointment[medicalHistoryTemp][cancerLocation]",
           values: appointment.medicalHistoryTemp.cancerLocation,
           idPrefix: "cancerLocationLeftBreast",
+          small: true,
           formGroup: {
             classes: "nhsuk-u-margin-bottom-2"
           },
@@ -61,6 +63,7 @@
       name: "appointment[medicalHistoryTemp][cancerLocation]",
       values: appointment.medicalHistoryTemp.cancerLocation,
       idPrefix: "cancerLocationNotKnown",
+      small: true,
       items: [
         {
           divider: "or"
@@ -80,12 +83,13 @@
   {% set yearApproximateFieldName = "diagnosisYearIsApproximate" %}
   {% include "_includes/medical-information/medical-history/year.njk" %}
 
-  <h3 class="nhsuk-heading-m">What medical interventions have they had?</h3>
+  <h2 class="nhsuk-heading-m">What medical interventions have they had?</h2>
 
   {{ checkboxes({
     name: "appointment[medicalHistoryTemp][procedures]",
     values: appointment.medicalHistoryTemp.procedures,
     idPrefix: "procedures",
+    small: true,
     fieldset: {
       legend: {
         text: "Procedures",
@@ -114,6 +118,7 @@
     name: "appointment[medicalHistoryTemp][otherSurgery]",
     values: appointment.medicalHistoryTemp.otherSurgery,
     idPrefix: "otherSurgery",
+    small: true,
     fieldset: {
       legend: {
         text: "Other surgery",
@@ -149,6 +154,7 @@
     name: "appointment[medicalHistoryTemp][treatment]",
     values: appointment.medicalHistoryTemp.treatment,
     idPrefix: "treatment",
+    small: true,
     fieldset: {
       legend: {
         text: "Treatment",

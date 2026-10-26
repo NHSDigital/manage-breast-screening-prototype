@@ -328,8 +328,8 @@ All medical history items should include:
 #### Breast Cancer
 
 - `cancerLocation`: array - ['Right breast', 'Left breast', 'Does not know']
-- `proceduresRightBreast`: string - Lumpectomy, Mastectomy types, etc.
-- `proceduresLeftBreast`: string
+- `proceduresRightBreast`: array - Lumpectomy, Mastectomy types, etc.
+- `proceduresLeftBreast`: array
 - `otherSurgeryRightBreast`: array - Lymph node surgery, Reconstruction, etc.
 - `otherSurgeryLeftBreast`: array
 - `treatmentRightBreast`: array - Radiotherapy types
@@ -339,8 +339,8 @@ All medical history items should include:
 
 #### Mastectomy/Lumpectomy
 
-- `proceduresRightBreast`: string - Procedure type
-- `proceduresLeftBreast`: string
+- `proceduresRightBreast`: array - Procedure types
+- `proceduresLeftBreast`: array
 - `otherSurgeryRightBreast`: array - Reconstruction, Symmetrisation
 - `otherSurgeryLeftBreast`: array
 - `mastectomyLumpectomySurgeryReason`: string - Risk reduction or Gender-affirmation (the generator never picks 'Other reason', so no details field is generated)
@@ -653,7 +653,7 @@ const generateMedicalHistory = (options = {}) => {
         breastCancer: [{
           id: 'bc-001',
           cancerLocation: ['Left breast'],
-          proceduresLeftBreast: 'Lumpectomy',
+          proceduresLeftBreast: ['Lumpectomy'],
           year: '2018'
         }]
       }
@@ -703,8 +703,8 @@ const generateMedicalInformation = (options = {}) => {
 
 ```javascript
 {
-  proceduresRightBreast: string | array,
-  proceduresLeftBreast: string | array,
+  proceduresRightBreast: array,
+  proceduresLeftBreast: array,
   // Can have different values/selections for each side
 }
 ```
@@ -1018,7 +1018,7 @@ module.exports = [
         //   breastCancer: [{
         //     id: 'bc-specific',
         //     cancerLocation: ['Left breast'],
-        //     proceduresLeftBreast: 'Lumpectomy',
+        //     proceduresLeftBreast: ['Lumpectomy'],
         //     year: '2018',
         //     systemicTreatments: ['Chemotherapy', 'Hormone therapy']
         //   }]

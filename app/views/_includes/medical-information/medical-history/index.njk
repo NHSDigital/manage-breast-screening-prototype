@@ -239,14 +239,6 @@
         {% set leftBreastContent %}
           {{ breastItemsList(historyItem.proceduresLeftBreast, "No procedures added") }}
         {% endset %}
-        {% if historyItem.mastectomyImagingFor == "Both" %}
-          <p>
-            Bilateral mastectomy
-            {% if historyItem.mastectomyImagingSide != "None" and historyItem.mastectomyImagingDetails %}
-              <br>Details: {{ historyItem.mastectomyImagingDetails }}
-            {% endif %}
-          </p>
-        {% endif %}
         {% if historyItem.mastectomyImagingFor %}
           <p>
             {{ "Bilateral mastectomy" if historyItem.mastectomyImagingFor == "Both" else "Unilateral mastectomy (" + (historyItem.mastectomyImagingFor | lower) + ")" }}

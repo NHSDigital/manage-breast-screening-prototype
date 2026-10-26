@@ -563,6 +563,12 @@ module.exports = (router) => {
         captureSessionEndTime(data, appointmentId, data.currentUser.id)
       }
 
+      data.appointment.appointmentStopped = {
+        stoppedReason: ['Other reason'],
+        otherDetails: 'No images needed because of bilateral mastectomy',
+        needsReschedule: 'no-invite'
+      }
+
       saveTempAppointmentToAppointment(data)
       saveTempParticipantToParticipant(data)
       updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
