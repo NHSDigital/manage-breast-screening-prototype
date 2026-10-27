@@ -58,7 +58,9 @@ const {
   userRequestedPriors
 } = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
-const { getArbitrationBacklogCounts } = require('../lib/utils/reading-case-list')
+const {
+  getArbitrationBacklogCounts
+} = require('../lib/utils/reading-case-list')
 const {
   getHistoricReadingSessions
 } = require('../lib/utils/historic-reading-sessions')
@@ -181,11 +183,10 @@ module.exports = (router) => {
         ? getArbitrationBacklogCounts(data, { view: 'current' }).total
         : null
 
-    // Finished reading sessions the current user has worked in, newest first,
-    // for the reading card preview. Falls back to a single historic stand-in so
-    // the card always shows a recent session and its "See all" link, even on a
-    // fresh prototype where the user hasn't finished one yet.
-    const recentCompletedSessions =
+    // Finished reading sessions the current user has worked in, for the reading
+    // card preview. Merged with the display-only historic sessions below so the
+    // card always has recent sessions, real ones pushing the stand-ins out.
+    const completedReadingSessions =
       layout === 'complex'
         ? Object.values(data.readingSessions || {})
             .map((session) => {
@@ -213,25 +214,11 @@ module.exports = (router) => {
             })
             .filter(Boolean)
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, 3)
         : null
 
-    // Nothing finished in this browser yet - show one display-only historic
-    // session so the card is never empty
-    if (layout === 'complex' && recentCompletedSessions.length === 0) {
-      const historic = getHistoricReadingSessions(data)[0]
-      if (historic) {
-        recentCompletedSessions.push({
-          id: null,
-          createdAt: historic.createdAt,
-          caseCount: historic.progress.effectiveTargetSize
-        })
-      }
-    }
-
-    // Finished arbitration sessions the current user was on, newest first, for
-    // the arbitration card preview. Same fallback as the reading card.
-    const recentCompletedArbitrationSessions =
+    // Finished arbitration sessions the current user was on, for the
+    // arbitration card preview. Merged with historic sessions as above.
+    const completedArbitrationSessions =
       layout === 'complex'
         ? Object.values(data.readingSessions || {})
             .map((session) => {
@@ -255,24 +242,34 @@ module.exports = (router) => {
             })
             .filter(Boolean)
             .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        : null
+
+    // The newest three finished sessions of one kind, real or historic. Historic
+    // sessions have no id, so the dashboard links them nowhere
+    const getRecentCompletedSessions = (realSessions, isOfKind) =>
+      layout === 'complex'
+        ? [
+            ...realSessions,
+            ...getHistoricReadingSessions(data)
+              .filter(isOfKind)
+              .map((historic) => ({
+                id: null,
+                createdAt: historic.createdAt,
+                caseCount: historic.progress.effectiveTargetSize
+              }))
+          ]
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
             .slice(0, 3)
         : null
 
-    if (
-      layout === 'complex' &&
-      recentCompletedArbitrationSessions.length === 0
-    ) {
-      const historic = getHistoricReadingSessions(data).find(
-        (session) => session.type === 'arbitration'
-      )
-      if (historic) {
-        recentCompletedArbitrationSessions.push({
-          id: null,
-          createdAt: historic.createdAt,
-          caseCount: historic.progress.effectiveTargetSize
-        })
-      }
-    }
+    const recentCompletedSessions = getRecentCompletedSessions(
+      completedReadingSessions,
+      (session) => session.type !== 'arbitration'
+    )
+    const recentCompletedArbitrationSessions = getRecentCompletedSessions(
+      completedArbitrationSessions,
+      (session) => session.type === 'arbitration'
+    )
 
     res.render(template, {
       sessionProgressById,

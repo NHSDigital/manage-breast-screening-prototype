@@ -90,28 +90,26 @@
       Read up to {{ defaultSessionSize }} cases ({{ appLink({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
     </p>
 
-    {% if recentCompletedSessions | length %}
-      {% set completedReadingSessionsHtml %}
+    {% set completedReadingSessionsHtml %}
+      {% if recentCompletedSessions | length %}
         <ul class="nhsuk-list nhsuk-u-margin-bottom-2">
           {% for session in recentCompletedSessions %}
             <li>
-              {% if session.id %}
-                <a href="/reading/session/{{ session.id }}">{{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.caseCount }} cases)</a>
-              {% else %}
-                {# Display-only stand-in - no real session to open, so link to history #}
-                <a href="/reading/history/sessions">{{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.caseCount }} cases)</a>
-              {% endif %}
+              {# Historic sessions have no id and nothing to open #}
+              <a href="{{ "/reading/session/" + session.id if session.id else "#" }}">{{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.caseCount }} cases)</a>
             </li>
           {% endfor %}
         </ul>
-        <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history/sessions">See all</a></p>
-      {% endset %}
-      {{ details({
-        summaryText: "Completed reading sessions",
-        html: completedReadingSessionsHtml,
-        classes: "nhsuk-u-margin-bottom-0"
-      }) }}
-    {% endif %}
+      {% else %}
+        <p>No recently completed sessions</p>
+      {% endif %}
+      <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history/sessions">See all</a></p>
+    {% endset %}
+    {{ details({
+      summaryText: "Completed reading sessions",
+      html: completedReadingSessionsHtml,
+      classes: "nhsuk-u-margin-bottom-0"
+    }) }}
   {% endif %}
 
 {% endset %}
@@ -150,28 +148,26 @@
       Arbitrate up to {{ defaultSessionSize }} cases ({{ appLink({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
     </p>
 
-    {% if recentCompletedArbitrationSessions | length %}
-      {% set completedArbitrationSessionsHtml %}
+    {% set completedArbitrationSessionsHtml %}
+      {% if recentCompletedArbitrationSessions | length %}
         <ul class="nhsuk-list nhsuk-u-margin-bottom-2">
           {% for session in recentCompletedArbitrationSessions %}
             <li>
-              {% if session.id %}
-                <a href="/reading/session/{{ session.id }}">{{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.caseCount }} cases)</a>
-              {% else %}
-                {# Display-only stand-in - no real session to open, so link to history #}
-                <a href="/reading/history/sessions">{{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.caseCount }} cases)</a>
-              {% endif %}
+              {# Historic sessions have no id and nothing to open #}
+              <a href="{{ "/reading/session/" + session.id if session.id else "#" }}">{{ session.createdAt | formatDate }}, {{ session.createdAt | formatTime }} ({{ session.caseCount }} cases)</a>
             </li>
           {% endfor %}
         </ul>
-        <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history/sessions">See all</a></p>
-      {% endset %}
-      {{ details({
-        summaryText: "Completed arbitration sessions",
-        html: completedArbitrationSessionsHtml,
-        classes: "nhsuk-u-margin-bottom-0"
-      }) }}
-    {% endif %}
+      {% else %}
+        <p>No recently completed sessions</p>
+      {% endif %}
+      <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history/sessions">See all</a></p>
+    {% endset %}
+    {{ details({
+      summaryText: "Completed arbitration sessions",
+      html: completedArbitrationSessionsHtml,
+      classes: "nhsuk-u-margin-bottom-0"
+    }) }}
   {% endif %}
 
 {% endset %}
@@ -223,6 +219,11 @@
   {{ actionLink({
     text: "All completed cases",
     href: "/reading/cases?view=all&status=concluded",
+    classes: "app-action-link--small nhsuk-u-margin-bottom-0 nhsuk-u-margin-right-5"
+  }) }}
+  {{ actionLink({
+    text: "My reading history",
+    href: "/reading/history/mine",
     classes: "app-action-link--small nhsuk-u-margin-bottom-0"
   }) }}
 </p>
