@@ -59,8 +59,7 @@ const {
 } = require('../lib/utils/prior-mammograms')
 const { camelCase, snakeCase } = require('../lib/utils/strings')
 const {
-  getArbitrationBacklogCounts,
-  getReadingCaseRows
+  getArbitrationBacklogCounts
 } = require('../lib/utils/reading-case-list')
 const {
   getHistoricReadingSessions
@@ -108,6 +107,73 @@ module.exports = (router) => {
       }
     })
 
+    const inProgressReadingSession =
+      layout === 'complex'
+        ? Object.values(data.readingSessions || {})
+            .map((session) => {
+              const progress = sessionProgressById[session.id]
+              const isFinished =
+                session.endedAt || (progress && progress.targetRemaining === 0)
+
+              if (
+                session.type === 'arbitration' ||
+                isFinished ||
+                !progress?.userReadCount
+              ) {
+                return null
+              }
+
+              return {
+                id: session.id,
+                createdAt: session.createdAt,
+                userReadCount: progress.userReadCount,
+                targetSize:
+                  progress.effectiveTargetSize ||
+                  session.targetSize ||
+                  session.appointmentIds.length
+              }
+            })
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] ||
+          null
+        : null
+
+    const inProgressArbitrationSession =
+      layout === 'complex'
+        ? Object.values(data.readingSessions || {})
+            .map((session) => {
+              const progress = sessionProgressById[session.id]
+              const isFinished =
+                session.endedAt || (progress && progress.targetRemaining === 0)
+              const arbitratorIds = session.arbitration?.arbitratorIds || []
+              const userIsOnPanel =
+                arbitratorIds.length === 0 ||
+                arbitratorIds.includes(currentUserId)
+
+              if (
+                session.type !== 'arbitration' ||
+                !progress ||
+                isFinished ||
+                !userIsOnPanel
+              ) {
+                return null
+              }
+
+              return {
+                id: session.id,
+                createdAt: session.createdAt,
+                arbitratedCount: progress.doneCount,
+                targetSize:
+                  progress.effectiveTargetSize ||
+                  session.targetSize ||
+                  session.appointmentIds.length
+              }
+            })
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] ||
+          null
+        : null
+
     // The arbitration backlog, counted the same way the case list and the
     // arbitration setup page count it so the three agree. Only the complex
     // layout shows the card, and the count walks every episode - don't pay
@@ -117,18 +183,135 @@ module.exports = (router) => {
         ? getArbitrationBacklogCounts(data, { view: 'current' }).total
         : null
 
-    // What the reading case list card offers - the same population its
-    // default view shows
-    const readingCaseCount =
+    // Finished reading sessions the current user has worked in, for the reading
+    // card preview. Merged with the display-only historic sessions below so the
+    // card always has recent sessions, real ones pushing the stand-ins out.
+    const completedReadingSessions =
       layout === 'complex'
-        ? getReadingCaseRows(data, { view: 'current' }).length
+        ? Object.values(data.readingSessions || {})
+            .map((session) => {
+              if (session.type === 'arbitration') return null
+
+              const progress = sessionProgressById[session.id]
+              const isFinished =
+                session.endedAt || (progress && progress.targetRemaining === 0)
+              const userHasRead = session.appointmentIds.some((id) => {
+                const appointment = data.appointments.find((a) => a.id === id)
+                return (
+                  appointment &&
+                  userHasReadAppointment(data, appointment, currentUserId)
+                )
+              })
+              if (!isFinished || !userHasRead) return null
+              return {
+                id: session.id,
+                createdAt: session.createdAt,
+                caseCount:
+                  (progress && progress.effectiveTargetSize) ||
+                  session.targetSize ||
+                  session.appointmentIds.length
+              }
+            })
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
         : null
+
+    // Finished arbitration sessions the current user was on, for the
+    // arbitration card preview. Merged with historic sessions as above.
+    const completedArbitrationSessions =
+      layout === 'complex'
+        ? Object.values(data.readingSessions || {})
+            .map((session) => {
+              if (session.type !== 'arbitration') return null
+              const progress = sessionProgressById[session.id]
+              const isFinished =
+                session.endedAt || (progress && progress.targetRemaining === 0)
+              const arbitratorIds = session.arbitration?.arbitratorIds || []
+              const userWasOnPanel =
+                arbitratorIds.length === 0 ||
+                arbitratorIds.includes(currentUserId)
+              if (!isFinished || !userWasOnPanel) return null
+              return {
+                id: session.id,
+                createdAt: session.createdAt,
+                caseCount:
+                  (progress && progress.effectiveTargetSize) ||
+                  session.targetSize ||
+                  session.appointmentIds.length
+              }
+            })
+            .filter(Boolean)
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        : null
+
+    // The newest three finished sessions of one kind, real or historic. Historic
+    // sessions have no id, so the dashboard links them nowhere
+    const getRecentCompletedSessions = (realSessions, isOfKind) =>
+      layout === 'complex'
+        ? [
+            ...realSessions,
+            ...getHistoricReadingSessions(data)
+              .filter(isOfKind)
+              .map((historic) => ({
+                id: null,
+                createdAt: historic.createdAt,
+                caseCount: historic.progress.effectiveTargetSize
+              }))
+          ]
+            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+            .slice(0, 3)
+        : null
+
+    const recentCompletedSessions = getRecentCompletedSessions(
+      completedReadingSessions,
+      (session) => session.type !== 'arbitration'
+    )
+    const recentCompletedArbitrationSessions = getRecentCompletedSessions(
+      completedArbitrationSessions,
+      (session) => session.type === 'arbitration'
+    )
 
     res.render(template, {
       sessionProgressById,
+      inProgressReadingSession,
+      inProgressArbitrationSession,
       arbitrationCount,
-      readingCaseCount
+      recentCompletedSessions,
+      recentCompletedArbitrationSessions
     })
+  })
+
+  router.post('/reading/settings/save', (req, res) => {
+    const validSessionSizes = ['10', '25', '50', '100']
+    const sessionSize = req.body?._readingSessionSize
+    const darkMode = req.body?._readingDarkMode
+    const errors = []
+
+    if (!validSessionSizes.includes(sessionSize)) {
+      errors.push({
+        text: 'Select how many cases to read in a session',
+        name: '_readingSessionSize',
+        href: '#readingSessionSize-10'
+      })
+    }
+
+    if (!['true', 'false'].includes(darkMode)) {
+      errors.push({
+        text: 'Select a background colour',
+        name: '_readingDarkMode',
+        href: '#readingDarkMode-false'
+      })
+    }
+
+    if (errors.length) {
+      errors.forEach((error) => req.flash('error', error))
+      return res.redirect('/reading/settings')
+    }
+
+    req.session.data.settings.darkMode = darkMode
+    req.session.data.settings.reading.defaultSessionSize = sessionSize
+
+    res.redirect(modalBreakout('/reading'))
   })
 
   // Default clinics list to "mine"
