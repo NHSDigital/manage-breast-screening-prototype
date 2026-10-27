@@ -78,6 +78,11 @@ const FILE_META = {
     description:
       'Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings.'
   },
+  'app/lib/utils/mastectomy.js': {
+    label: 'mastectomy.js',
+    description:
+      'Shared bilateral-mastectomy outcome values, validation, and success message.'
+  },
   'app/lib/utils/sided-medical-history.js': {
     label: 'sided-medical-history.js',
     description:
@@ -182,6 +187,7 @@ const UTILS_FILES = [
   'app/lib/utils/prior-mammograms.js',
   'app/lib/utils/issues.js',
   'app/lib/utils/medical-information.js',
+  'app/lib/utils/mastectomy.js',
   'app/lib/utils/sided-medical-history.js',
   'app/lib/utils/annotation-summary.js',
   'app/lib/utils/arrays.js',

@@ -115,7 +115,7 @@ const addMastectomyImagingAnswers = (item) => {
   item.mastectomyImagingFor = mastectomySide
   item.mastectomyImagingSide =
     mastectomySide === 'Both'
-      ? weighted.select({ None: 0.15, Right: 0.2, Left: 0.2, Both: 0.45 })
+      ? weighted.select({ Right: 0.2, Left: 0.2, Both: 0.6 })
       : weighted.select({ [remainingSide]: 0.8, Both: 0.2 })
 }
 
@@ -379,10 +379,11 @@ const generateBreastImplantsItem = (options = {}) => {
  * Generate a single mastectomy/lumpectomy history item
  * @param {object} [options] - Generation options
  * @param {string} [options.addedByUserId] - User who added this information
+ * @param {boolean} [options.bilateralMastectomyWithoutImages] - Generate a bilateral mastectomy with no images required
  * @returns {object} Generated mastectomy/lumpectomy item
  */
 const generateMastectomyLumpectomyItem = (options = {}) => {
-  const { addedByUserId } = options
+  const { addedByUserId, bilateralMastectomyWithoutImages = false } = options
 
   const item = {
     id: generateId(),
@@ -392,9 +393,9 @@ const generateMastectomyLumpectomyItem = (options = {}) => {
   }
 
   // Which breast(s) had surgery
-  const breastChoice = weighted.select(
-    MASTECTOMY_LUMPECTOMY_CONFIG.breastChoice
-  )
+  const breastChoice = bilateralMastectomyWithoutImages
+    ? 'both'
+    : weighted.select(MASTECTOMY_LUMPECTOMY_CONFIG.breastChoice)
 
   const hasRight = breastChoice !== 'left-only'
   const hasLeft = breastChoice !== 'right-only'
@@ -408,16 +409,31 @@ const generateMastectomyLumpectomyItem = (options = {}) => {
       : []
 
   item.proceduresRightBreast = hasRight
-    ? [faker.helpers.arrayElement(MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes)]
+    ? [
+        bilateralMastectomyWithoutImages
+          ? 'Mastectomy'
+          : faker.helpers.arrayElement(
+              MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
+            )
+      ]
     : []
   item.proceduresLeftBreast = hasLeft
-    ? [faker.helpers.arrayElement(MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes)]
+    ? [
+        bilateralMastectomyWithoutImages
+          ? 'Mastectomy'
+          : faker.helpers.arrayElement(
+              MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
+            )
+      ]
     : []
   item.otherSurgeryRightBreast = hasRight ? generateOtherSurgery() : []
   item.otherSurgeryLeftBreast = hasLeft ? generateOtherSurgery() : []
   item.otherProcedures = []
 
   addMastectomyImagingAnswers(item)
+  if (bilateralMastectomyWithoutImages) {
+    item.mastectomyImagingSide = 'None'
+  }
 
   // Year (85% of the time)
   if (Math.random() < 0.85) {

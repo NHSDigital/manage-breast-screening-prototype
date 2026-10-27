@@ -104,6 +104,14 @@ the round found, not the detail of how it got there:
 Why there was no result (did not attend, cancelled, attended but not screened)
 lives on the **appointment**, not the episode - it isn't stored twice.
 
+An appointment ended because of a bilateral mastectomy with no images has
+`appointmentStopped.needsReschedule: 'permanent-exclusion'`,
+`appointmentStopped.stoppedReason: ['Other reason']`, and
+`appointmentStopped.otherDetails: 'Bilateral mastectomy'`. Its appointment
+medical history records a mastectomy on both breasts and
+`mastectomyImagingSide: 'None'`. This outcome means the participant will not be
+invited to future screening episodes; it is not an opt-out request.
+
 ### Mammograms
 
 An episode carries its own record of the images its round produced:

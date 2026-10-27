@@ -1,0 +1,28 @@
+{# app/views/appointments/medical-information/medical-history/bilateral-mastectomy-cannot-proceed.html #}
+
+{% extends parentLayout or 'layout-appointment.html' %}
+
+{% set pageHeading = "This appointment cannot continue" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set formAction = "./bilateral-mastectomy-cannot-proceed-answer" | urlWithReferrer(referrerChain, query.scrollTo) %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullNameReversed }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  <p>Explain to the participant that a mammography is not required due to their bilateral mastectomy.</p>
+
+  <p>They will not be invited to future screening episodes and should consult their GP if they have any concerns.</p>
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Confirm and return to clinic"
+    }) }}
+  </div>
+
+{% endblock pageContent %}

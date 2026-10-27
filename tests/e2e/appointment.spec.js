@@ -219,7 +219,9 @@ test.describe('Screening appointment', () => {
   test('records why no images were needed after bilateral mastectomy', async ({
     page
   }) => {
-    const { clinic, appointment } = findTodayAppointment({ index: 2 })
+    const { clinic, appointment, fullName } = findTodayAppointment({
+      index: 2
+    })
 
     await pinSettings(page, appointmentSettings)
     await page.goto(
@@ -261,9 +263,7 @@ test.describe('Screening appointment', () => {
     await expect(
       historyModal.getByLabel('No, end this appointment')
     ).toBeVisible()
-    await expect(
-      historyModal.getByLabel('Yes, both sides')
-    ).toBeVisible()
+    await expect(historyModal.getByLabel('Yes, both sides')).toBeVisible()
     const noImages = historyModal.locator(
       'input[name="appointment[medicalHistoryTemp][mastectomyImagingSide]"][value="None"]'
     )
@@ -272,23 +272,133 @@ test.describe('Screening appointment', () => {
       .getByRole('button', { name: 'Save and continue' })
       .click()
     await expect(
-      historyModal.getByText('Select whether any images need to be taken')
+      historyModal
+        .locator('.nhsuk-error-message')
+        .filter({ hasText: 'Select whether any images need to be taken' })
     ).toBeVisible()
     await revealInModal(noImages)
     await noImages.check()
     await historyModal
       .getByRole('button', { name: 'Save and continue' })
       .click()
+
+    await expect(
+      historyModal.getByRole('heading', {
+        name: 'This appointment cannot continue'
+      })
+    ).toBeVisible()
+    await expect(historyModal).toContainText(
+      'Explain to the participant that a mammography is not required due to their bilateral mastectomy.'
+    )
+    await expect(historyModal).toContainText(
+      'They will not be invited to future screening episodes and should consult their GP if they have any concerns.'
+    )
+
+    const appointmentPage = await page.request.get(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`
+    )
+    expect(appointmentPage.ok()).toBeTruthy()
+    const appointmentPageHtml = await appointmentPage.text()
+    expect(appointmentPageHtml).toContain('In progress')
+    expect(appointmentPageHtml).not.toContain('Reason for stopping:')
+
+    const medicalInformationPage = await page.request.get(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/review-medical-information`
+    )
+    expect(await medicalInformationPage.text()).toContain('Mastectomy')
+
+    await historyModal
+      .getByRole('button', { name: 'Confirm and return to clinic' })
+      .click()
+
     await expect(page).toHaveURL(new RegExp(`/clinics/${clinic.id}`))
+    await expect(
+      page.getByRole('link', { name: 'View their appointment' })
+    ).toHaveAttribute(
+      'href',
+      `/clinics/${clinic.id}/appointments/${appointment.id}`
+    )
+    await expect(
+      page.locator('.nhsuk-notification-banner__heading')
+    ).toHaveText(
+      `Appointment ended. ${fullName} does not need any images because of their bilateral mastectomy. View their appointment`
+    )
+    const endedAppointmentPage = await page.request.get(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`
+    )
+    expect(await endedAppointmentPage.text()).toContain(
+      'No, not invited to future screening episodes'
+    )
     await page.getByRole('link', { name: /^All/ }).click()
     await expect(
       page.locator(`#appointment-row-${appointment.id}`)
-    ).toContainText(
-      'Other reason (No images needed because of bilateral mastectomy)'
-    )
+    ).toContainText('Reason for stopping: Other reason (Bilateral mastectomy)')
   })
 
-  test('requests consent when breast implants are selected', async ({ page }) => {
+  test('keeps bilateral mastectomy history when the cannot-continue modal is dismissed', async ({
+    page
+  }) => {
+    const { clinic, appointment } = findTodayAppointment({ index: 2 })
+
+    await pinSettings(page, appointmentSettings)
+    await page.goto(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/start`
+    )
+    await page.getByRole('button', { name: 'Confirm identity' }).first().click()
+    await expect(
+      page.getByRole('heading', { name: 'Review medical information' })
+    ).toBeVisible()
+
+    await openSection(page, 'Medical history')
+    const historyModal = await clickToOpenModal(page, 'Breast cancer')
+    await historyModal
+      .locator(
+        'input[name="appointment[medicalHistoryTemp][cancerLocation]"][value="Right breast"]'
+      )
+      .evaluate((element) => element.click())
+    await historyModal
+      .locator(
+        'input[name="appointment[medicalHistoryTemp][procedures]"][value="Mastectomy"]'
+      )
+      .evaluate((element) => element.click())
+    await historyModal
+      .locator(
+        'input[name="appointment[medicalHistoryTemp][mastectomySide]"][value="Both"]'
+      )
+      .evaluate((element) => element.click())
+    await historyModal.getByRole('button', { name: 'Save' }).click()
+
+    const noImages = historyModal.locator(
+      'input[name="appointment[medicalHistoryTemp][mastectomyImagingSide]"][value="None"]'
+    )
+    await noImages.check()
+    await historyModal
+      .getByRole('button', { name: 'Save and continue' })
+      .click()
+    await expect(
+      historyModal.getByRole('heading', {
+        name: 'This appointment cannot continue'
+      })
+    ).toBeVisible()
+
+    await historyModal.getByRole('button', { name: 'Close' }).click()
+    await expect(historyModal.locator('.app-modal__dialog')).toBeHidden()
+
+    const appointmentPage = await page.request.get(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`
+    )
+    expect(await appointmentPage.text()).toContain('In progress')
+    expect(await appointmentPage.text()).not.toContain('Reason for stopping:')
+
+    const medicalInformationPage = await page.request.get(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/review-medical-information`
+    )
+    expect(await medicalInformationPage.text()).toContain('Mastectomy')
+  })
+
+  test('requests consent when breast implants are selected', async ({
+    page
+  }) => {
     const { clinic, appointment } = findTodayAppointment({ index: 3 })
 
     await pinSettings(page, appointmentSettings)
@@ -346,10 +456,7 @@ test.describe('Screening appointment', () => {
     ).toBeVisible()
     await page.getByRole('button', { name: 'Confirm identity' }).first().click()
     await openSection(page, 'Medical history')
-    const reasonModal = await clickToOpenModal(
-      page,
-      'Mastectomy or lumpectomy'
-    )
+    const reasonModal = await clickToOpenModal(page, 'Mastectomy or lumpectomy')
 
     await reasonModal.getByRole('button', { name: 'Continue' }).click()
     await expect(

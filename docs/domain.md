@@ -79,6 +79,7 @@ A participant's visit to a clinic, within a screening episode:
 
 - Links a participant to a clinic appointment slot
 - Tracks status through the visit: scheduled, checked in, in progress, complete. Other outcomes are partially screened, did not attend, attended not screened, cancelled and rescheduled
+- If a bilateral mastectomy means no images are needed, the appointment is attended not screened and the participant is permanently excluded from future screening invitations
 - Records attendance and outcomes
 - Captures medical data during the visit (symptoms, observations, mammogram data)
 - Keeps a status history with timestamps

@@ -1,0 +1,8 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^git --no-pager diff --check && git --no-pager diff -- app/views/appointments/medical-information/medical-history/mastectomy-imaging\\.html && git status --short && git rev-list --count HEAD\\.\\.main$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

@@ -39,6 +39,13 @@ const {
   urlWithReferrer,
   modalBreakout
 } = require('../../lib/utils/referrers')
+const {
+  OTHER_REASON,
+  BILATERAL_MASTECTOMY,
+  PERMANENT_EXCLUSION,
+  isBilateralMastectomyWithoutImages,
+  getBilateralMastectomySuccessMessage
+} = require('../../lib/utils/mastectomy')
 const { captureSessionEndTime } = require('./shared')
 
 // Types whose form answers are stored in a different shape from how they are asked
@@ -228,10 +235,10 @@ module.exports = (router) => {
           ? formTemp.mastectomySide
           : undefined
         const hasMastectomy = ['Right', 'Left', 'Both'].includes(mastectomySide)
+        const medicalHistoryItem = FORM_CONVERTERS[dataKey].toItem(formTemp)
         endWithoutImages =
           hasMastectomy &&
-          mastectomySide === 'Both' &&
-          formTemp.mastectomyImagingSide === 'None'
+          isBilateralMastectomyWithoutImages(medicalHistoryItem)
 
         if (hasMastectomy && formTemp.mastectomyImagingFor !== mastectomySide) {
           return res.redirect(
@@ -243,7 +250,8 @@ module.exports = (router) => {
           )
         }
 
-        const remainingImagingSide = mastectomySide === 'Right' ? 'Left' : 'Right'
+        const remainingImagingSide =
+          mastectomySide === 'Right' ? 'Left' : 'Right'
         const allowedImagingSides =
           mastectomySide === 'Both'
             ? ['None', 'Right', 'Left', 'Both']
@@ -394,27 +402,14 @@ module.exports = (router) => {
       }
 
       if (endWithoutImages) {
-        if (data.appointment?.sessionDetails?.startedAt) {
-          captureSessionEndTime(data, appointmentId, data.currentUser.id)
-        }
-
-        data.appointment.appointmentStopped = {
-          stoppedReason: ['Other reason'],
-          otherDetails: 'No images needed because of bilateral mastectomy',
-          needsReschedule: 'no-invite'
-        }
-
-        const participantName = getFullName(data.participant)
         saveTempAppointmentToAppointment(data)
-        saveTempParticipantToParticipant(data)
-        updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
-
-        req.flash(
-          'success',
-          `Appointment ended. ${participantName} does not need any images because of their bilateral mastectomy`
+        return res.redirect(
+          urlWithReferrer(
+            `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/bilateral-mastectomy-cannot-proceed`,
+            referrerChain,
+            scrollTo
+          )
         )
-
-        return res.redirect(modalBreakout(`/clinics/${clinicId}/`))
       }
 
       let methodVerb = 'added'
@@ -447,6 +442,57 @@ module.exports = (router) => {
         )
         res.redirect(modalBreakout(returnUrl))
       }
+    }
+  )
+
+  router.post(
+    '/clinics/:clinicId/appointments/:appointmentId/medical-information/medical-history/bilateral-mastectomy-cannot-proceed-answer',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const participantName = getFullName(data.participant)
+
+      const medicalHistory =
+        data.appointment?.medicalInformation?.medicalHistory || {}
+      const hasBilateralMastectomyWithoutImages = [
+        'breastCancer',
+        'mastectomyLumpectomy'
+      ].some((type) =>
+        (medicalHistory[type] || []).some(isBilateralMastectomyWithoutImages)
+      )
+
+      if (
+        data.appointment?.status !== 'in_progress' ||
+        !hasBilateralMastectomyWithoutImages
+      ) {
+        req.flash('error', {
+          text: 'Confirm that no images are needed after a bilateral mastectomy before ending this appointment'
+        })
+        return res.redirect(modalBreakout(`/clinics/${clinicId}/`))
+      }
+
+      if (data.appointment?.sessionDetails?.startedAt) {
+        captureSessionEndTime(data, appointmentId, data.currentUser.id)
+      }
+
+      data.appointment.appointmentStopped = {
+        stoppedReason: [OTHER_REASON],
+        otherDetails: BILATERAL_MASTECTOMY,
+        needsReschedule: PERMANENT_EXCLUSION
+      }
+
+      const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
+      saveTempAppointmentToAppointment(data)
+      saveTempParticipantToParticipant(data)
+      updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
+
+      const successMessage = getBilateralMastectomySuccessMessage(
+        participantName,
+        participantAppointmentUrl
+      )
+      req.flash('success', { wrapWithHeading: successMessage })
+
+      res.redirect(modalBreakout(`/clinics/${clinicId}/`))
     }
   )
 

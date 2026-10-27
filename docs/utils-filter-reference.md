@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-10-26 14:34 UTC
+- **Generated:** 2026-10-27 16:17 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -15,37 +15,38 @@
 
 | File | Purpose | Line |
 |---|---|---|
-| `dates.js` | Date formatting and calculation using dayjs | 56 |
-| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 93 |
-| `status.js` | Appointment status checks and display helpers | 128 |
-| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 159 |
-| `appointment-data.js` | Appointment lookups and mutations in session data | 179 |
-| `episodes.js` | Episode lookups and stage changes | 194 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 231 |
-| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 251 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 298 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 354 |
-| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 376 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 402 |
-| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 430 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 451 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 464 |
-| `objects.js` | Object utilities for extracting and flattening values. | 482 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 493 |
-| `random.js` | Seeded random functions for stable prototype data | 503 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 520 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 535 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 545 |
-| `roles-and-permissions.js` | User role checks | 558 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 583 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 599 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 611 |
+| `dates.js` | Date formatting and calculation using dayjs | 57 |
+| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 94 |
+| `status.js` | Appointment status checks and display helpers | 129 |
+| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 160 |
+| `appointment-data.js` | Appointment lookups and mutations in session data | 180 |
+| `episodes.js` | Episode lookups and stage changes | 195 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 232 |
+| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 252 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 299 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 355 |
+| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 377 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 403 |
+| `mastectomy.js` | Shared bilateral-mastectomy outcome values, validation, and success message. | 431 |
+| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 442 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 463 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 476 |
+| `objects.js` | Object utilities for extracting and flattening values. | 494 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 505 |
+| `random.js` | Seeded random functions for stable prototype data | 515 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 532 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 547 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 557 |
+| `roles-and-permissions.js` | User role checks | 570 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 595 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 611 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 623 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 627 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 640 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 652 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 666 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 676 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 639 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 652 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 664 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 678 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 688 |
 
 ---
 
@@ -412,20 +413,31 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 | `getMedicalHistoryKeyFromSlug(slug)` | Get the camelCase data key for a medical history type from its slug | 32 |
 | `isMedicalHistoryItemRemoved(item)` | Check whether a medical history item records something that has since been removed | 43 |
 | `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 63 |
-| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 232 |
-| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 261 |
-| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 283 |
-| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 305 |
-| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 386 |
-| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 400 |
-| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 422 |
-| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 478 |
-| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 497 |
-| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 524 |
-| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 546 |
-| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 560 |
-| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 586 |
-| `getMastectomyImagingNotes(medicalHistory)` | Get the mastectomies where images were taken, with which breasts were imaged | 620 |
+| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 244 |
+| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 273 |
+| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 295 |
+| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 317 |
+| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 398 |
+| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 412 |
+| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 434 |
+| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 490 |
+| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 509 |
+| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 536 |
+| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 558 |
+| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 572 |
+| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 598 |
+| `getMastectomyImagingNotes(medicalHistory)` | Get the mastectomies where images were taken, with which breasts were imaged | 616 |
+
+### mastectomy.js
+
+`app/lib/utils/mastectomy.js`
+
+Shared bilateral-mastectomy outcome values, validation, and success message.
+
+| Function | Description | Line |
+|---|---|---|
+| `isBilateralMastectomyWithoutImages(item)` | Check whether a medical history item records a bilateral mastectomy with no images needed | 7 |
+| `getBilateralMastectomySuccessMessage(participantName, appointmentUrl)` | Build the success message for ending an appointment after bilateral mastectomy | 21 |
 
 ### sided-medical-history.js
 

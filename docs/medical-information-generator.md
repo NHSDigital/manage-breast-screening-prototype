@@ -345,6 +345,13 @@ All medical history items should include:
 - `otherSurgeryLeftBreast`: array
 - `mastectomyLumpectomySurgeryReason`: string - Risk reduction or Gender-affirmation (the generator never picks 'Other reason', so no details field is generated)
 
+Every generated dataset includes an attended-not-screened appointment for a
+bilateral mastectomy where no images are needed. It records the
+permanent-exclusion outcome and uses the
+`bilateralMastectomyWithoutImages` option on
+`generateMastectomyLumpectomyItem` to create the matching history. Ordinary
+generated mastectomy records do not select `None` for the imaging side.
+
 #### Breast Implants/Augmentation
 
 - `proceduresRightBreast`: array - `['Breast implants']` or `['No procedures']`

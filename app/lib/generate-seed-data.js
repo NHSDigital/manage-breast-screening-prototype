@@ -13,6 +13,9 @@ const { generateParticipant } = require('./generators/participant-generator')
 const { generateClinicsForBSU } = require('./generators/clinic-generator')
 const { generateAppointment } = require('./generators/appointment-generator')
 const {
+  generateMastectomyLumpectomyItem
+} = require('./generators/medical-information/medical-history-generator')
+const {
   generateEpisode,
   generateHistoricEpisodes,
   syncEpisodeReadingCases,
@@ -28,6 +31,12 @@ const {
 } = require('./generators/reading-generator')
 const { getSeedDataProfile } = require('./generators/seed-profiles')
 const {
+  OTHER_REASON,
+  BILATERAL_MASTECTOMY,
+  PERMANENT_EXCLUSION,
+  isBilateralMastectomyWithoutImages
+} = require('./utils/mastectomy')
+const {
   buildRead,
   getLatestReadingCase,
   getReadingCaseOutcome
@@ -42,6 +51,61 @@ const users = require('../data/users')
 
 // Hardcoded scenarios for user research
 const testScenarios = require('../data/test-scenarios')
+
+const ensurePermanentExclusionExample = (appointments) => {
+  const alreadyHasExample = appointments.some((appointment) => {
+    const medicalHistory = appointment.medicalInformation?.medicalHistory || {}
+
+    return (
+      appointment.appointmentStopped?.needsReschedule === PERMANENT_EXCLUSION &&
+      ['breastCancer', 'mastectomyLumpectomy'].some((type) =>
+        (medicalHistory[type] || []).some(isBilateralMastectomyWithoutImages)
+      )
+    )
+  })
+
+  if (alreadyHasExample) {
+    return
+  }
+
+  const appointment = appointments.find(
+    (candidate) => candidate.status === 'attended_not_screened'
+  )
+
+  if (!appointment) {
+    throw new Error(
+      'Cannot generate a permanent-exclusion example without an attended-not-screened appointment'
+    )
+  }
+
+  const medicalHistoryItem = generateMastectomyLumpectomyItem({
+    addedByUserId: appointment.sessionDetails?.startedBy,
+    bilateralMastectomyWithoutImages: true
+  })
+
+  if (!isBilateralMastectomyWithoutImages(medicalHistoryItem)) {
+    throw new Error(
+      'Generated permanent exclusion without matching bilateral mastectomy history'
+    )
+  }
+
+  appointment.appointmentStopped = {
+    stoppedReason: [OTHER_REASON],
+    otherDetails: BILATERAL_MASTECTOMY,
+    needsReschedule: PERMANENT_EXCLUSION
+  }
+  appointment.medicalInformation = {
+    ...appointment.medicalInformation,
+    medicalHistory: {
+      ...appointment.medicalInformation?.medicalHistory,
+      mastectomyLumpectomy: [
+        ...(appointment.medicalInformation?.medicalHistory
+          ?.mastectomyLumpectomy || []),
+        medicalHistoryItem
+      ]
+    }
+  }
+}
 
 // Index the age-eligible participants by risk level, so filling a clinic slot
 // is a lookup rather than a scan
@@ -667,6 +731,8 @@ const generateData = async (options = {}) => {
   const allAppointments = [].concat(...allData.map((d) => d.appointments))
   const allEpisodes = [].concat(...allData.map((d) => d.episodes))
   const allNewParticipants = [].concat(...allData.map((d) => d.newParticipants))
+
+  ensurePermanentExclusionExample(allAppointments)
 
   // Combine initial and new participants
   const finalParticipants = [...participants, ...allNewParticipants]

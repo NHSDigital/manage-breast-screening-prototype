@@ -20,7 +20,7 @@
 {% block pageContent %}
 
   {% set detailsHtml %}
-    {{ textarea({
+    {{ input({
       name: "appointment[medicalHistoryTemp][mastectomyImagingDetails]",
       value: appointment.medicalHistoryTemp.mastectomyImagingDetails,
       label: {
@@ -101,7 +101,7 @@
           }
         }
       ]
-    }) }}
+    } | populateErrors) }}
   {% else %}
     {{ radios({
       small: true,
@@ -127,7 +127,7 @@
           }
         }
       ]
-    }) }}
+    } | populateErrors) }}
   {% endif %}
 
   <div class="nhsuk-button-group">
