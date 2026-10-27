@@ -19,6 +19,7 @@ const {
   generateBreastCancerItem,
   generateMastectomyLumpectomyItem
 } = require('../../app/lib/generators/medical-information/medical-history-generator')
+const { summariseMedicalHistoryItem } = require('../../app/lib/utils/medical-information')
 
 const converters = [
   {
@@ -130,4 +131,15 @@ test('generated mastectomies include a matching imaging follow-up answer', () =>
       )
     }
   }
+})
+
+test('mastectomy summaries name the stored procedures', () => {
+  expect(
+    summariseMedicalHistoryItem({
+      medicalHistoryType: 'mastectomyLumpectomy',
+      proceduresRightBreast: ['Mastectomy'],
+      proceduresLeftBreast: ['Lumpectomy'],
+      year: '2020'
+    })
+  ).toBe('Mastectomy and lumpectomy (2020)')
 })

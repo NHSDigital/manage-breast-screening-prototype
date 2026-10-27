@@ -614,22 +614,6 @@ const summariseOtherMedicalInformation = (medicalInformation) => {
 }
 
 /**
- * Check whether a bilateral mastectomy has been recorded with no images needed
- *
- * @param {Object} medicalHistory - Appointment medical history, keyed by type
- * @returns {boolean} Whether any breast cancer or mastectomy item has answered
- * "No" to taking images after a bilateral mastectomy
- */
-const hasBilateralMastectomyWithoutImaging = (medicalHistory) =>
-  ['breastCancer', 'mastectomyLumpectomy'].some((type) =>
-    (medicalHistory?.[type] || []).some(
-      (item) =>
-        item.mastectomyImagingFor === 'Both' &&
-        item.mastectomyImagingSide === 'None'
-    )
-  )
-
-/**
  * Get the mastectomies where images were taken, with which breasts were imaged
  *
  * Bilateral mastectomies answered "No" to taking images are left out.
@@ -655,7 +639,6 @@ const getMastectomyImagingNotes = (medicalHistory) =>
 
 module.exports = {
   getMastectomyImagingNotes,
-  hasBilateralMastectomyWithoutImaging,
   isValidMedicalHistoryType,
   getMedicalHistoryType,
   getMedicalHistoryKeyFromSlug,

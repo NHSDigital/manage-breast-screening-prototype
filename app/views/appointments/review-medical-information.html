@@ -8,10 +8,7 @@
 {% set disableAutoFocus = true %}
 {% set hideBackLink = true %}
 
-{% set noImagingNeeded = appointment.medicalInformation.medicalHistory | hasBilateralMastectomyWithoutImaging %}
-
-{# A bilateral mastectomy with no images needed ends the appointment instead of moving to imaging #}
-{% set formAction = "./end-appointment-no-images" if noImagingNeeded else ("./take-images" | getReturnUrl(referrerChain)) %}
+{% set formAction = "./take-images" | getReturnUrl(referrerChain) %}
 
 {# Display format for medical information sections #}
 {% set displayFormat = "expander" %}
@@ -32,7 +29,7 @@
     value: appointment.workflowStatus['review-breast-features-after-imaging']
   }) }}
 
-  {% set continueButtonText = "Complete all and end appointment" if noImagingNeeded else ("Complete all and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section") %}
+  {% set continueButtonText = "Complete all and continue" if appointment.workflowStatus['review-medical-information'] != 'completed' else "Next section" %}
   {% include "_includes/authorised-mammographer.njk" %}
 
   <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
@@ -40,7 +37,7 @@
   {% include "_includes/medical-information/index.njk" %}
 
   <div class="nhsuk-form-group">
-    {% set continueButtonText = "Complete all and end appointment" if noImagingNeeded else "Complete all and continue" %}
+    {% set continueButtonText = "Complete all and continue" %}
     {% include "_includes/authorised-mammographer.njk" %}
 
     <div class="nhsuk-u-margin-top-6">

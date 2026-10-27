@@ -248,8 +248,8 @@ test.describe('Screening appointment', () => {
     const mastectomySide = historyModal.locator(
       'input[name="appointment[medicalHistoryTemp][mastectomySide]"][value="Both"]'
     )
-    await revealInModal(mastectomySide)
-    await mastectomySide.check()
+    await mastectomySide.evaluate((element) => element.click())
+    await expect(mastectomySide).toBeChecked()
 
     await historyModal.getByRole('button', { name: 'Save' }).click()
     await expect(
@@ -257,6 +257,9 @@ test.describe('Screening appointment', () => {
     ).toBeVisible()
     await expect(
       historyModal.getByText('Do you need to take any images?')
+    ).toBeVisible()
+    await expect(
+      historyModal.getByLabel('No, end this appointment')
     ).toBeVisible()
     await expect(
       historyModal.getByLabel('Yes, both sides')
@@ -275,12 +278,6 @@ test.describe('Screening appointment', () => {
     await noImages.check()
     await historyModal
       .getByRole('button', { name: 'Save and continue' })
-      .click()
-    await expectModalClosed(historyModal)
-
-    await page
-      .getByRole('button', { name: 'Complete all and end appointment' })
-      .first()
       .click()
     await expect(page).toHaveURL(new RegExp(`/clinics/${clinic.id}`))
     await page.getByRole('link', { name: /^All/ }).click()

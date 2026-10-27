@@ -220,6 +220,7 @@ module.exports = (router) => {
       // A mastectomy needs a follow-up on which breasts will be imaged,
       // asked again only if the mastectomy side changes
       const formTemp = data.appointment?.medicalHistoryTemp
+      let endWithoutImages = false
       if (formTemp && FORM_CONVERTERS[dataKey]) {
         const mastectomySide = []
           .concat(formTemp.procedures || [])
@@ -227,6 +228,10 @@ module.exports = (router) => {
           ? formTemp.mastectomySide
           : undefined
         const hasMastectomy = ['Right', 'Left', 'Both'].includes(mastectomySide)
+        endWithoutImages =
+          hasMastectomy &&
+          mastectomySide === 'Both' &&
+          formTemp.mastectomyImagingSide === 'None'
 
         if (hasMastectomy && formTemp.mastectomyImagingFor !== mastectomySide) {
           return res.redirect(
@@ -386,6 +391,30 @@ module.exports = (router) => {
 
         // Clear temp data
         delete data.appointment.medicalHistoryTemp
+      }
+
+      if (endWithoutImages) {
+        if (data.appointment?.sessionDetails?.startedAt) {
+          captureSessionEndTime(data, appointmentId, data.currentUser.id)
+        }
+
+        data.appointment.appointmentStopped = {
+          stoppedReason: ['Other reason'],
+          otherDetails: 'No images needed because of bilateral mastectomy',
+          needsReschedule: 'no-invite'
+        }
+
+        const participantName = getFullName(data.participant)
+        saveTempAppointmentToAppointment(data)
+        saveTempParticipantToParticipant(data)
+        updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
+
+        req.flash(
+          'success',
+          `Appointment ended. ${participantName} does not need any images because of their bilateral mastectomy`
+        )
+
+        return res.redirect(modalBreakout(`/clinics/${clinicId}/`))
       }
 
       let methodVerb = 'added'
