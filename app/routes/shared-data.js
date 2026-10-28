@@ -5,8 +5,14 @@
 
 const sharedData = require('../lib/shared-data')
 
-// Heroku drops a connection that has sent nothing for 55 seconds
+// Heroku drops a connection that has sent nothing for 55 seconds. Pages also
+// watch for this heartbeat, and reconnect if it stops (see live-updates.js).
 const HEARTBEAT_MS = 25 * 1000
+
+// How long browsers wait before reconnecting after the server stops. Long
+// enough for a local restart, because in development the kit's proxy never
+// answers a request it can't pass on, so a reconnect made too soon hangs.
+const RESTART_RETRY_MS = 10 * 1000
 
 // Open event streams. Stopping the server waits for every connection to
 // finish, and these never do by themselves, so they are ended when the
@@ -14,7 +20,9 @@ const HEARTBEAT_MS = 25 * 1000
 // stop) hangs. Browsers reconnect once the server is back.
 const openStreams = new Set()
 const endOpenStreams = () => {
-  for (const stream of openStreams) stream.end()
+  for (const stream of openStreams) {
+    stream.end(`retry: ${RESTART_RETRY_MS}\n\n`)
+  }
   openStreams.clear()
 }
 // The kit stops the server on these (SIGUSR2 is nodemon's restart)
@@ -79,7 +87,7 @@ module.exports = (router) => {
     })
 
     const heartbeat = setInterval(
-      () => res.write(': heartbeat\n\n'),
+      () => res.write('event: heartbeat\ndata: ping\n\n'),
       HEARTBEAT_MS
     )
 

@@ -140,6 +140,12 @@ Each open tab holds one connection to the stream, and browsers allow about six
 connections to one address. With six or more prototype tabs open while sharing,
 pages can stall until a tab is closed. Keep to a few tabs per browser.
 
+Pages reconnect by themselves when the server restarts. Locally, the kit's
+proxy never answers a request it can't pass on to the app, so a reconnect made
+mid-restart would hang and use up a connection. The server asks browsers to
+wait 10 seconds before reconnecting, and a page replaces any connection that
+has gone 40 seconds without a heartbeat.
+
 **Working copies go stale.** A browser's working copy of an appointment
 (`data.appointment`) is taken when it first opens that appointment. The
 appointment context middleware in

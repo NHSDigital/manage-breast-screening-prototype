@@ -138,13 +138,55 @@ const handleNotice = (notice) => {
   timer = window.setTimeout(flush, debounceDelay)
 }
 
-if (window.EventSource) {
-  const source = new window.EventSource('/shared-data/events')
+// The server sends a heartbeat every 25 seconds. Hearing nothing for longer
+// than this means the connection is stuck - in development the kit's proxy
+// leaves a request it can't pass on hanging forever, which uses up one of the
+// few connections a browser allows to one address - so it is replaced.
+const silenceLimit = 40 * 1000
+const watchdogInterval = 5 * 1000
+
+let source = null
+let lastHeard = 0
+
+const hearFromServer = () => {
+  lastHeard = Date.now()
+}
+
+const connect = () => {
+  source = new window.EventSource('/shared-data/events')
+  hearFromServer()
+  source.addEventListener('open', hearFromServer)
+  source.addEventListener('heartbeat', hearFromServer)
   source.addEventListener('message', (event) => {
+    hearFromServer()
     try {
       handleNotice(JSON.parse(event.data))
     } catch (error) {
       console.error('Live updates: could not handle notice', error)
     }
+  })
+}
+
+const disconnect = () => {
+  source?.close()
+  source = null
+}
+
+if (window.EventSource) {
+  connect()
+
+  window.setInterval(() => {
+    // Closed by the server (it stopped sharing) or by leaving the page
+    if (!source || source.readyState === window.EventSource.CLOSED) return
+    if (Date.now() - lastHeard > silenceLimit) {
+      disconnect()
+      connect()
+    }
+  }, watchdogInterval)
+
+  // Free the connection while the page is in the back-forward cache
+  window.addEventListener('pagehide', disconnect)
+  window.addEventListener('pageshow', (event) => {
+    if (event.persisted) connect()
   })
 }
