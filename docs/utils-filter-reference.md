@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-10-27 16:17 UTC
+- **Generated:** 2026-10-28 16:03 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -27,26 +27,26 @@
 | `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 355 |
 | `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 377 |
 | `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 403 |
-| `mastectomy.js` | Shared bilateral-mastectomy outcome values, validation, and success message. | 431 |
-| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 442 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 463 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 476 |
-| `objects.js` | Object utilities for extracting and flattening values. | 494 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 505 |
-| `random.js` | Seeded random functions for stable prototype data | 515 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 532 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 547 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 557 |
-| `roles-and-permissions.js` | User role checks | 570 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 595 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 611 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 623 |
+| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 430 |
+| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 447 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 459 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 472 |
+| `objects.js` | Object utilities for extracting and flattening values. | 490 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 501 |
+| `random.js` | Seeded random functions for stable prototype data | 511 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 528 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 543 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 553 |
+| `roles-and-permissions.js` | User role checks | 566 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 591 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 607 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 619 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 639 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 652 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 664 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 678 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 688 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 635 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 648 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 660 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 674 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 684 |
 
 ---
 
@@ -426,18 +426,23 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 | `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 558 |
 | `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 572 |
 | `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 598 |
-| `getMastectomyImagingNotes(medicalHistory)` | Get the mastectomies where images were taken, with which breasts were imaged | 616 |
 
 ### mastectomy.js
 
 `app/lib/utils/mastectomy.js`
 
-Shared bilateral-mastectomy outcome values, validation, and success message.
+Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome.
 
 | Function | Description | Line |
 |---|---|---|
-| `isBilateralMastectomyWithoutImages(item)` | Check whether a medical history item records a bilateral mastectomy with no images needed | 7 |
-| `getBilateralMastectomySuccessMessage(participantName, appointmentUrl)` | Build the success message for ending an appointment after bilateral mastectomy | 21 |
+| `getMastectomyImagingStep(formData)` | Work out whether a medical history form still needs the mastectomy imaging question | 36 |
+| `tidyMastectomyImagingAnswers(formData)` | Tidy the mastectomy imaging answers on a medical history form before saving | 64 |
+| `getMastectomyHeading(side)` | Get the heading for a mastectomy on one or both sides — e.g. `{{ "Right" \| getMastectomyHeading }}` | 96 |
+| `describeMastectomyImaging(item)` | Describe the imaging recorded for a mastectomy in a medical history item | 109 |
+| `getMastectomyImagingNotes(medicalHistory)` | Describe the mastectomies where images were taken, for readers — e.g. `{% for note in appointment.medicalInformation.medicalHistory \| getMastectomyImagingNotes %}` | 137 |
+| `isBilateralMastectomyWithoutImages(item)` | Check whether a medical history item records a bilateral mastectomy with no images needed | 152 |
+| `hasBilateralMastectomyWithoutImages(medicalHistory)` | Check whether an appointment's medical history has a bilateral mastectomy with no images needed | 166 |
+| `getBilateralMastectomySuccessMessage(participantName, appointmentUrl)` | Build the success message for ending an appointment after bilateral mastectomy | 177 |
 
 ### sided-medical-history.js
 
@@ -447,18 +452,9 @@ Convert medical-history forms with per-procedure side answers to and from the st
 
 | Function | Description | Line |
 |---|---|---|
-| `getBreastCancerMissingSides(formData)` | List the ticked items that have no side chosen | 266 |
-| `getMastectomyLumpectomyMissingSides(formData)` | List the ticked items that have no side chosen | 275 |
-| `getBreastImplantsMissingSides(formData)` | List the ticked items that have no side chosen | 284 |
-| `breastCancerFormToItem(formData)` | Convert breast cancer form answers into the stored per-breast fields | 293 |
-| `breastCancerItemToForm(item)` | Convert a stored breast cancer item into the answers its form pre-fills from | 304 |
-| `mastectomyLumpectomyFormToItem(formData)` | Convert mastectomy or lumpectomy form answers into the stored per-breast fields | 312 |
-| `mastectomyLumpectomyItemToForm(item)` | Convert a stored mastectomy or lumpectomy item into the answers its form pre-fills from | 322 |
-| `getBenignLumpsMissingSides(formData)` | List the ticked items that have no side chosen | 331 |
-| `benignLumpsFormToItem(formData)` | Convert benign lumps form answers into the stored per-breast fields | 340 |
-| `benignLumpsItemToForm(item)` | Convert a stored benign lumps item into the answers its form pre-fills from | 349 |
-| `breastImplantsFormToItem(formData)` | Convert breast implants or augmentation form answers into the stored per-breast fields | 357 |
-| `breastImplantsItemToForm(item)` | Convert a stored breast implants or augmentation item into the answers its form pre-fills from | 366 |
+| `medicalHistoryFormToItem(formData, type)` | Convert medical history form answers into the stored per-breast fields — e.g. `{{ appointment.medicalHistoryTemp \| medicalHistoryFormToItem("breastImplantsAugmentation") }}` | 158 |
+| `medicalHistoryItemToForm(item, type)` | Convert a stored medical history item into the answers its form pre-fills from | 221 |
+| `getMissingMedicalHistorySides(formData, type)` | List the ticked items on a medical history form that have no side chosen | 270 |
 
 ### annotation-summary.js
 

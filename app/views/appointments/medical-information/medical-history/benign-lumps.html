@@ -38,14 +38,14 @@
         value: "Needle biopsy",
         text: "Needle biopsy",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][needleBiopsySide]", "needleBiopsySide", "breast", appointment.medicalHistoryTemp.needleBiopsySide)
+          html: sideRadios("needleBiopsySide", "breast", appointment.medicalHistoryTemp.needleBiopsySide)
         }
       },
       {
         value: "Lump removed",
         text: "Lump removed",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][lumpRemovedSide]", "lumpRemovedSide", "breast", appointment.medicalHistoryTemp.lumpRemovedSide)
+          html: sideRadios("lumpRemovedSide", "breast", appointment.medicalHistoryTemp.lumpRemovedSide)
         }
       },
       {

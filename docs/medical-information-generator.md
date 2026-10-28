@@ -335,7 +335,7 @@ All medical history items should include:
 - `treatmentRightBreast`: array - Radiotherapy types
 - `treatmentLeftBreast`: array
 - `systemicTreatments`: array - Chemotherapy, Hormone therapy, etc.
-- `otherTreatmentDetails`: string (if 'Other treatment' selected)
+- `otherTreatmentDetails`: string (if 'Other, or not known' selected)
 
 #### Mastectomy/Lumpectomy
 
@@ -343,18 +343,17 @@ All medical history items should include:
 - `proceduresLeftBreast`: array
 - `otherSurgeryRightBreast`: array - Reconstruction, Symmetrisation
 - `otherSurgeryLeftBreast`: array
-- `mastectomyLumpectomySurgeryReason`: string - Risk reduction or Gender-affirmation (the generator never picks 'Other reason', so no details field is generated)
+- `mastectomyLumpectomySurgeryReason`: string - Risk reduction or Gender affirmation (the generator never picks 'Other reason', so no details field is generated)
 
-Every generated dataset includes an attended-not-screened appointment for a
-bilateral mastectomy where no images are needed. It records the
-permanent-exclusion outcome and uses the
-`bilateralMastectomyWithoutImages` option on
+Seed generation turns one attended-not-screened appointment into a bilateral
+mastectomy where no images were needed, with the permanent-exclusion outcome.
+It uses the `bilateralMastectomyWithoutImages` option on
 `generateMastectomyLumpectomyItem` to create the matching history. Ordinary
 generated mastectomy records do not select `None` for the imaging side.
 
 #### Breast Implants/Augmentation
 
-- `proceduresRightBreast`: array - `['Breast implants']` or `['No procedures']`
+- `proceduresRightBreast`: array - `['Breast implants']`, or empty
 - `proceduresLeftBreast`: array
 - `breastAugmentationReason`: string - Reconstruction, Cosmetic, etc.
 - `consentGiven`: 'yes'|'no' (required if breast implants selected)
@@ -888,12 +887,7 @@ const BREAST_CANCER_PROCEDURES = {
   'unknown': 0.05
 }
 
-const PROCEDURE_TYPES = [
-  'Lumpectomy',
-  'Mastectomy (tissue remaining)',
-  'Mastectomy (no tissue remaining)',
-  'No procedure'
-]
+const PROCEDURE_TYPES = ['Lumpectomy', 'Mastectomy']
 
 const generateBreastCancerItem = (options = {}) => {
   const { addedByUserId } = options
@@ -915,16 +909,16 @@ const generateBreastCancerItem = (options = {}) => {
   } else if (breastAffected === 'both') {
     item.cancerLocation = ['Right breast', 'Left breast']
   } else {
-    item.cancerLocation = ['Does not know']
+    item.cancerLocation = ['Not known']
   }
 
   // Procedures (if known)
   if (breastAffected !== 'unknown') {
     if (breastAffected === 'right-only' || breastAffected === 'both') {
-      item.proceduresRightBreast = faker.helpers.arrayElement(PROCEDURE_TYPES)
+      item.proceduresRightBreast = [faker.helpers.arrayElement(PROCEDURE_TYPES)]
     }
     if (breastAffected === 'left-only' || breastAffected === 'both') {
-      item.proceduresLeftBreast = faker.helpers.arrayElement(PROCEDURE_TYPES)
+      item.proceduresLeftBreast = [faker.helpers.arrayElement(PROCEDURE_TYPES)]
     }
   }
 

@@ -239,16 +239,15 @@
         {% set leftBreastContent %}
           {{ breastItemsList(historyItem.proceduresLeftBreast, "No procedures added") }}
         {% endset %}
-        {% if historyItem.mastectomyImagingFor %}
+        {% set mastectomyImaging = historyItem | describeMastectomyImaging %}
+        {% if mastectomyImaging %}
           <p>
-            {{ "Bilateral mastectomy" if historyItem.mastectomyImagingFor == "Both" else "Unilateral mastectomy (" + (historyItem.mastectomyImagingFor | lower) + ")" }}
-            {% if historyItem.mastectomyImagingSide == "Both" %}
-              <br>Images taken of both breasts
-            {% elseif historyItem.mastectomyImagingSide == "Right" or historyItem.mastectomyImagingSide == "Left" %}
-              <br>Images taken of the {{ historyItem.mastectomyImagingSide | lower }} breast only
+            {{ mastectomyImaging.heading }}
+            {% if mastectomyImaging.imagedText %}
+              <br>{{ mastectomyImaging.imagedText }}
             {% endif %}
-            {% if historyItem.mastectomyImagingDetails and historyItem.mastectomyImagingSide != "None" %}
-              <br>Details: {{ historyItem.mastectomyImagingDetails }}
+            {% if mastectomyImaging.details %}
+              <br>Details: {{ mastectomyImaging.details }}
             {% endif %}
           </p>
         {% endif %}
@@ -347,7 +346,7 @@
               text: "Other procedures"
             },
             value: {
-              html: (historyItem.otherProcedureDetails or "Other") | escape
+              text: historyItem.otherProcedureDetails or "Other"
             }
           }) }}
         {% endif %}

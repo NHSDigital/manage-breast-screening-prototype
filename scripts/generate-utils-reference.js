@@ -81,7 +81,7 @@ const FILE_META = {
   'app/lib/utils/mastectomy.js': {
     label: 'mastectomy.js',
     description:
-      'Shared bilateral-mastectomy outcome values, validation, and success message.'
+      'Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome.'
   },
   'app/lib/utils/sided-medical-history.js': {
     label: 'sided-medical-history.js',

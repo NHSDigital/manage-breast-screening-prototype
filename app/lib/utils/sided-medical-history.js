@@ -7,7 +7,7 @@
 // Each form field is a list of checkboxes. Its items are stored in one or more
 // per-breast fields, for example proceduresRightBreast, and each item has a
 // side field holding Right, Left or Both.
-const BREAST_CANCER_FORM = {
+const breastCancer = {
   lists: [
     {
       formField: 'procedures',
@@ -57,7 +57,7 @@ const BREAST_CANCER_FORM = {
   }
 }
 
-const MASTECTOMY_LUMPECTOMY_FORM = {
+const mastectomyLumpectomy = {
   lists: [
     {
       formField: 'procedures',
@@ -88,7 +88,7 @@ const MASTECTOMY_LUMPECTOMY_FORM = {
   }
 }
 
-const BENIGN_LUMPS_FORM = {
+const benignLumps = {
   lists: [
     {
       formField: 'procedures',
@@ -112,7 +112,7 @@ const BENIGN_LUMPS_FORM = {
   }
 }
 
-const BREAST_IMPLANTS_FORM = {
+const breastImplantsAugmentation = {
   lists: [
     {
       formField: 'procedures',
@@ -135,6 +135,14 @@ const BREAST_IMPLANTS_FORM = {
   }
 }
 
+// Forms that ask a side for each item, keyed by medical history type
+const SIDED_FORMS = {
+  breastCancer,
+  mastectomyLumpectomy,
+  benignLumps,
+  breastImplantsAugmentation
+}
+
 const toArray = (value) => {
   if (!value) {
     return []
@@ -148,18 +156,26 @@ const getSideFieldNames = (config) =>
   )
 
 /**
- * Convert form answers into the stored per-breast fields
+ * Convert medical history form answers into the stored per-breast fields
  *
- * Forms must be checked with the missing sides helpers first: an item with no
- * side chosen is not recorded against either breast.
+ * Types without a sided form are returned as a plain copy. Check the form with
+ * getMissingMedicalHistorySides first: an item with no side chosen is not
+ * recorded against either breast.
  *
- * @param {object} config - Form definition
  * @param {object} formData - The medicalHistoryTemp object posted by the form
- * @returns {object} Copy of formData with the form-only fields replaced by the
- * per-breast fields and the unsided list
+ * @param {string} type - Medical history type, for example 'breastCancer'
+ * @returns {object} Copy of formData with the checkbox lists and side fields
+ * replaced by per-breast fields (such as proceduresRightBreast) and the unsided list
+ * @example
+ * {{ appointment.medicalHistoryTemp | medicalHistoryFormToItem("breastImplantsAugmentation") }}
  */
-const formToItem = (config, formData = {}) => {
+const medicalHistoryFormToItem = (formData = {}, type) => {
+  const config = SIDED_FORMS[type]
   const item = { ...formData }
+
+  if (!config) {
+    return item
+  }
 
   config.lists.forEach((list) => {
     const selected = toArray(formData[list.formField])
@@ -189,14 +205,12 @@ const formToItem = (config, formData = {}) => {
   })
 
   const { unsided } = config
-  if (unsided) {
-    const selectedUnsided = toArray(formData[unsided.formField])
-    item[unsided.storedField] = unsided.items.filter((name) =>
-      selectedUnsided.includes(name)
-    )
-    if (!item[unsided.storedField].includes(unsided.otherItem)) {
-      delete item[unsided.detailsField]
-    }
+  const selectedUnsided = toArray(formData[unsided.formField])
+  item[unsided.storedField] = unsided.items.filter((name) =>
+    selectedUnsided.includes(name)
+  )
+  if (!item[unsided.storedField].includes(unsided.otherItem)) {
+    delete item[unsided.detailsField]
   }
 
   getSideFieldNames(config).forEach((sideField) => delete item[sideField])
@@ -205,15 +219,22 @@ const formToItem = (config, formData = {}) => {
 }
 
 /**
- * Convert a stored item into the answers the form pre-fills from
+ * Convert a stored medical history item into the answers its form pre-fills from
  *
- * @param {object} config - Form definition
+ * Types without a sided form are returned as a plain copy.
+ *
  * @param {object} item - Stored medical history item
- * @returns {object} Copy of item with the form fields (the checkbox lists and
- * a side field for each sided item) added
+ * @param {string} type - Medical history type, for example 'breastCancer'
+ * @returns {object} Copy of item with the checkbox lists and a side field for
+ * each sided item added
  */
-const itemToForm = (config, item = {}) => {
+const medicalHistoryItemToForm = (item = {}, type) => {
+  const config = SIDED_FORMS[type]
   const formData = { ...item }
+
+  if (!config) {
+    return formData
+  }
 
   config.lists.forEach((list) => {
     const selected = []
@@ -238,18 +259,30 @@ const itemToForm = (config, item = {}) => {
   })
 
   const { unsided } = config
-  if (unsided) {
-    formData[unsided.formField] = [
-      ...toArray(formData[unsided.formField]),
-      ...toArray(item[unsided.storedField])
-    ]
-  }
+  formData[unsided.formField] = [
+    ...toArray(formData[unsided.formField]),
+    ...toArray(item[unsided.storedField])
+  ]
 
   return formData
 }
 
-const getMissingSides = (config, formData = {}) =>
-  config.lists.flatMap((list) => {
+/**
+ * List the ticked items on a medical history form that have no side chosen
+ *
+ * @param {object} formData - The medicalHistoryTemp object posted by the form
+ * @param {string} type - Medical history type, for example 'breastCancer'
+ * @returns {Array<{sideField: string, text: string}>} Side field name and error
+ * message for each, or an empty list for types without a sided form
+ */
+const getMissingMedicalHistorySides = (formData = {}, type) => {
+  const config = SIDED_FORMS[type]
+
+  if (!config) {
+    return []
+  }
+
+  return config.lists.flatMap((list) => {
     const selected = toArray(formData[list.formField])
     return list.groups.flatMap((group) =>
       Object.entries(group.items)
@@ -262,127 +295,10 @@ const getMissingSides = (config, formData = {}) =>
         }))
     )
   })
-
-/**
- * List the ticked items that have no side chosen
- *
- * @param {object} formData - The medicalHistoryTemp object posted by the breast cancer form
- * @returns {Array<{sideField: string, text: string}>} Side field name and error message for each
- */
-const getBreastCancerMissingSides = (formData) =>
-  getMissingSides(BREAST_CANCER_FORM, formData)
-
-/**
- * List the ticked items that have no side chosen
- *
- * @param {object} formData - The medicalHistoryTemp object posted by the mastectomy or lumpectomy form
- * @returns {Array<{sideField: string, text: string}>} Side field name and error message for each
- */
-const getMastectomyLumpectomyMissingSides = (formData) =>
-  getMissingSides(MASTECTOMY_LUMPECTOMY_FORM, formData)
-
-/**
- * List the ticked items that have no side chosen
- *
- * @param {object} formData - The medicalHistoryTemp object posted by the breast implants or augmentation form
- * @returns {Array<{sideField: string, text: string}>} Side field name and error message for each
- */
-const getBreastImplantsMissingSides = (formData) =>
-  getMissingSides(BREAST_IMPLANTS_FORM, formData)
-
-/**
- * Convert breast cancer form answers into the stored per-breast fields
- *
- * @param {object} formData - The medicalHistoryTemp object posted by the form
- * @returns {object} Item with proceduresRightBreast, proceduresLeftBreast,
- * otherSurgeryRightBreast, otherSurgeryLeftBreast, treatmentRightBreast,
- * treatmentLeftBreast and systemicTreatments
- */
-const breastCancerFormToItem = (formData) =>
-  formToItem(BREAST_CANCER_FORM, formData)
-
-/**
- * Convert a stored breast cancer item into the answers its form pre-fills from
- *
- * @param {object} item - Stored breast cancer history item
- * @returns {object} Item with the form fields added
- */
-const breastCancerItemToForm = (item) => itemToForm(BREAST_CANCER_FORM, item)
-
-/**
- * Convert mastectomy or lumpectomy form answers into the stored per-breast fields
- *
- * @param {object} formData - The medicalHistoryTemp object posted by the form
- * @returns {object} Item with proceduresRightBreast, proceduresLeftBreast,
- * otherSurgeryRightBreast, otherSurgeryLeftBreast and otherProcedures
- */
-const mastectomyLumpectomyFormToItem = (formData) =>
-  formToItem(MASTECTOMY_LUMPECTOMY_FORM, formData)
-
-/**
- * Convert a stored mastectomy or lumpectomy item into the answers its form pre-fills from
- *
- * @param {object} item - Stored mastectomy or lumpectomy history item
- * @returns {object} Item with the form fields added
- */
-const mastectomyLumpectomyItemToForm = (item) =>
-  itemToForm(MASTECTOMY_LUMPECTOMY_FORM, item)
-
-/**
- * List the ticked items that have no side chosen
- *
- * @param {object} formData - The medicalHistoryTemp object posted by the benign lumps form
- * @returns {Array<{sideField: string, text: string}>} Side field name and error message for each
- */
-const getBenignLumpsMissingSides = (formData) =>
-  getMissingSides(BENIGN_LUMPS_FORM, formData)
-
-/**
- * Convert benign lumps form answers into the stored per-breast fields
- *
- * @param {object} formData - The medicalHistoryTemp object posted by the form
- * @returns {object} Item with proceduresRightBreast and proceduresLeftBreast
- */
-const benignLumpsFormToItem = (formData) =>
-  formToItem(BENIGN_LUMPS_FORM, formData)
-
-/**
- * Convert a stored benign lumps item into the answers its form pre-fills from
- *
- * @param {object} item - Stored benign lumps history item
- * @returns {object} Item with the form fields added
- */
-const benignLumpsItemToForm = (item) => itemToForm(BENIGN_LUMPS_FORM, item)
-
-/**
- * Convert breast implants or augmentation form answers into the stored per-breast fields
- *
- * @param {object} formData - The medicalHistoryTemp object posted by the form
- * @returns {object} Item with proceduresRightBreast and proceduresLeftBreast
- */
-const breastImplantsFormToItem = (formData) =>
-  formToItem(BREAST_IMPLANTS_FORM, formData)
-
-/**
- * Convert a stored breast implants or augmentation item into the answers its form pre-fills from
- *
- * @param {object} item - Stored breast implants or augmentation history item
- * @returns {object} Item with the form fields added
- */
-const breastImplantsItemToForm = (item) =>
-  itemToForm(BREAST_IMPLANTS_FORM, item)
+}
 
 module.exports = {
-  getBenignLumpsMissingSides,
-  benignLumpsFormToItem,
-  benignLumpsItemToForm,
-  getBreastImplantsMissingSides,
-  breastImplantsFormToItem,
-  breastImplantsItemToForm,
-  getBreastCancerMissingSides,
-  getMastectomyLumpectomyMissingSides,
-  breastCancerFormToItem,
-  breastCancerItemToForm,
-  mastectomyLumpectomyFormToItem,
-  mastectomyLumpectomyItemToForm
+  medicalHistoryFormToItem,
+  medicalHistoryItemToForm,
+  getMissingMedicalHistorySides
 }

@@ -34,7 +34,7 @@ const {
   OTHER_REASON,
   BILATERAL_MASTECTOMY,
   PERMANENT_EXCLUSION,
-  isBilateralMastectomyWithoutImages
+  hasBilateralMastectomyWithoutImages
 } = require('./utils/mastectomy')
 const {
   buildRead,
@@ -52,41 +52,22 @@ const users = require('../data/users')
 // Hardcoded scenarios for user research
 const testScenarios = require('../data/test-scenarios')
 
+// Make sure at least one appointment shows the bilateral mastectomy outcome,
+// where no images were needed and the participant is permanently excluded
 const ensurePermanentExclusionExample = (appointments) => {
-  const alreadyHasExample = appointments.some((appointment) => {
-    const medicalHistory = appointment.medicalInformation?.medicalHistory || {}
-
-    return (
+  const alreadyHasExample = appointments.some(
+    (appointment) =>
       appointment.appointmentStopped?.needsReschedule === PERMANENT_EXCLUSION &&
-      ['breastCancer', 'mastectomyLumpectomy'].some((type) =>
-        (medicalHistory[type] || []).some(isBilateralMastectomyWithoutImages)
+      hasBilateralMastectomyWithoutImages(
+        appointment.medicalInformation?.medicalHistory
       )
-    )
-  })
-
-  if (alreadyHasExample) {
-    return
-  }
-
+  )
   const appointment = appointments.find(
     (candidate) => candidate.status === 'attended_not_screened'
   )
 
-  if (!appointment) {
-    throw new Error(
-      'Cannot generate a permanent-exclusion example without an attended-not-screened appointment'
-    )
-  }
-
-  const medicalHistoryItem = generateMastectomyLumpectomyItem({
-    addedByUserId: appointment.sessionDetails?.startedBy,
-    bilateralMastectomyWithoutImages: true
-  })
-
-  if (!isBilateralMastectomyWithoutImages(medicalHistoryItem)) {
-    throw new Error(
-      'Generated permanent exclusion without matching bilateral mastectomy history'
-    )
+  if (alreadyHasExample || !appointment) {
+    return
   }
 
   appointment.appointmentStopped = {
@@ -94,14 +75,18 @@ const ensurePermanentExclusionExample = (appointments) => {
     otherDetails: BILATERAL_MASTECTOMY,
     needsReschedule: PERMANENT_EXCLUSION
   }
+
+  const medicalHistory = appointment.medicalInformation?.medicalHistory || {}
   appointment.medicalInformation = {
     ...appointment.medicalInformation,
     medicalHistory: {
-      ...appointment.medicalInformation?.medicalHistory,
+      ...medicalHistory,
       mastectomyLumpectomy: [
-        ...(appointment.medicalInformation?.medicalHistory
-          ?.mastectomyLumpectomy || []),
-        medicalHistoryItem
+        ...(medicalHistory.mastectomyLumpectomy || []),
+        generateMastectomyLumpectomyItem({
+          addedByUserId: appointment.sessionDetails?.startedBy,
+          bilateralMastectomyWithoutImages: true
+        })
       ]
     }
   }

@@ -613,32 +613,7 @@ const summariseOtherMedicalInformation = (medicalInformation) => {
     : otherInfo
 }
 
-/**
- * Get the mastectomies where images were taken, with which breasts were imaged
- *
- * Bilateral mastectomies answered "No" to taking images are left out.
- *
- * @param {Object} medicalHistory - Appointment medical history, keyed by type
- * @returns {Array<{mastectomySide: string, imagedSide: string, details: string}>}
- * One entry per mastectomy, with sides as Right, Left or Both
- */
-const getMastectomyImagingNotes = (medicalHistory) =>
-  ['breastCancer', 'mastectomyLumpectomy'].flatMap((type) =>
-    (medicalHistory?.[type] || [])
-      .filter(
-        (item) =>
-          ['Right', 'Left', 'Both'].includes(item.mastectomyImagingFor) &&
-          ['Right', 'Left', 'Both'].includes(item.mastectomyImagingSide)
-      )
-      .map((item) => ({
-        mastectomySide: item.mastectomyImagingFor,
-        imagedSide: item.mastectomyImagingSide,
-        details: item.mastectomyImagingDetails
-      }))
-  )
-
 module.exports = {
-  getMastectomyImagingNotes,
   isValidMedicalHistoryType,
   getMedicalHistoryType,
   getMedicalHistoryKeyFromSlug,

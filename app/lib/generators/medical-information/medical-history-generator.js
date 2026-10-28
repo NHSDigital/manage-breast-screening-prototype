@@ -37,7 +37,7 @@ const MASTECTOMY_LUMPECTOMY_CONFIG = {
   // Surgery reasons (skip 'Other reason')
   surgeryReasons: {
     'Risk reduction': 0.7,
-    'Gender-affirmation': 0.3
+    'Gender affirmation': 0.3
   }
 }
 
@@ -408,24 +408,13 @@ const generateMastectomyLumpectomyItem = (options = {}) => {
         )
       : []
 
-  item.proceduresRightBreast = hasRight
-    ? [
-        bilateralMastectomyWithoutImages
-          ? 'Mastectomy'
-          : faker.helpers.arrayElement(
-              MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
-            )
-      ]
-    : []
-  item.proceduresLeftBreast = hasLeft
-    ? [
-        bilateralMastectomyWithoutImages
-          ? 'Mastectomy'
-          : faker.helpers.arrayElement(
-              MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
-            )
-      ]
-    : []
+  const pickProcedure = () =>
+    bilateralMastectomyWithoutImages
+      ? 'Mastectomy'
+      : faker.helpers.arrayElement(MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes)
+
+  item.proceduresRightBreast = hasRight ? [pickProcedure()] : []
+  item.proceduresLeftBreast = hasLeft ? [pickProcedure()] : []
   item.otherSurgeryRightBreast = hasRight ? generateOtherSurgery() : []
   item.otherSurgeryLeftBreast = hasLeft ? generateOtherSurgery() : []
   item.otherProcedures = []
@@ -594,7 +583,7 @@ const generateBenignLumpsItem = (options = {}) => {
     // 80% chance of having procedures on left
     const leftHasProcedures = Math.random() < 0.8
 
-    // If both randomly became 'No procedures', force at least one to have procedures
+    // If neither breast was picked, force at least one to have procedures
     if (!rightHasProcedures && !leftHasProcedures) {
       // Randomly pick which breast will have procedures
       if (Math.random() < 0.5) {

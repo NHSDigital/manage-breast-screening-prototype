@@ -15,18 +15,9 @@ const {
   updateAppointmentStatus
 } = require('../../lib/utils/appointment-status')
 const {
-  getBreastCancerMissingSides,
-  getBreastImplantsMissingSides,
-  breastImplantsFormToItem,
-  breastImplantsItemToForm,
-  getMastectomyLumpectomyMissingSides,
-  getBenignLumpsMissingSides,
-  benignLumpsFormToItem,
-  benignLumpsItemToForm,
-  breastCancerFormToItem,
-  breastCancerItemToForm,
-  mastectomyLumpectomyFormToItem,
-  mastectomyLumpectomyItemToForm
+  getMissingMedicalHistorySides,
+  medicalHistoryFormToItem,
+  medicalHistoryItemToForm
 } = require('../../lib/utils/sided-medical-history')
 const {
   isValidMedicalHistoryType,
@@ -43,34 +34,13 @@ const {
   OTHER_REASON,
   BILATERAL_MASTECTOMY,
   PERMANENT_EXCLUSION,
+  getMastectomyImagingStep,
+  tidyMastectomyImagingAnswers,
   isBilateralMastectomyWithoutImages,
+  hasBilateralMastectomyWithoutImages,
   getBilateralMastectomySuccessMessage
 } = require('../../lib/utils/mastectomy')
 const { captureSessionEndTime } = require('./shared')
-
-// Types whose form answers are stored in a different shape from how they are asked
-const FORM_CONVERTERS = {
-  breastCancer: {
-    getMissingSides: getBreastCancerMissingSides,
-    toItem: breastCancerFormToItem,
-    toForm: breastCancerItemToForm
-  },
-  benignLumps: {
-    getMissingSides: getBenignLumpsMissingSides,
-    toItem: benignLumpsFormToItem,
-    toForm: benignLumpsItemToForm
-  },
-  breastImplantsAugmentation: {
-    getMissingSides: getBreastImplantsMissingSides,
-    toItem: breastImplantsFormToItem,
-    toForm: breastImplantsItemToForm
-  },
-  mastectomyLumpectomy: {
-    getMissingSides: getMastectomyLumpectomyMissingSides,
-    toItem: mastectomyLumpectomyFormToItem,
-    toForm: mastectomyLumpectomyItemToForm
-  }
-}
 
 // Editing mastectomy or lumpectomy skips the reason question, which is asked first when adding
 const getFormPage = (dataKey, type) =>
@@ -201,110 +171,58 @@ module.exports = (router) => {
       // Convert slug to camelCase key for data storage
       const dataKey = getMedicalHistoryKeyFromSlug(type) || type
 
-      const missingSides = FORM_CONVERTERS[dataKey]
-        ? FORM_CONVERTERS[dataKey].getMissingSides(
-            data.appointment?.medicalHistoryTemp
+      const historyUrl = `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history`
+
+      if (data.appointment?.medicalHistoryTemp) {
+        const formTemp = data.appointment.medicalHistoryTemp
+
+        const missingSides = getMissingMedicalHistorySides(formTemp, dataKey)
+        if (missingSides.length) {
+          missingSides.forEach(({ sideField, text }) =>
+            req.flash('error', {
+              text,
+              name: `appointment[medicalHistoryTemp][${sideField}]`,
+              href: `#${sideField}`
+            })
           )
-        : []
-
-      if (missingSides.length) {
-        missingSides.forEach(({ sideField, text }) =>
-          req.flash('error', {
-            text,
-            name: `appointment[medicalHistoryTemp][${sideField}]`,
-            href: `#${sideField}`
-          })
-        )
-        return res.redirect(
-          urlWithReferrer(
-            `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/${getFormPage(dataKey, type)}`,
-            referrerChain,
-            scrollTo
-          )
-        )
-      }
-
-      // A mastectomy needs a follow-up on which breasts will be imaged,
-      // asked again only if the mastectomy side changes
-      const formTemp = data.appointment?.medicalHistoryTemp
-      let endWithoutImages = false
-      if (formTemp && FORM_CONVERTERS[dataKey]) {
-        const mastectomySide = []
-          .concat(formTemp.procedures || [])
-          .includes('Mastectomy')
-          ? formTemp.mastectomySide
-          : undefined
-        const hasMastectomy = ['Right', 'Left', 'Both'].includes(mastectomySide)
-        const medicalHistoryItem = FORM_CONVERTERS[dataKey].toItem(formTemp)
-        endWithoutImages =
-          hasMastectomy &&
-          isBilateralMastectomyWithoutImages(medicalHistoryItem)
-
-        if (hasMastectomy && formTemp.mastectomyImagingFor !== mastectomySide) {
           return res.redirect(
             urlWithReferrer(
-              `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/mastectomy-imaging`,
+              `${historyUrl}/${getFormPage(dataKey, type)}`,
               referrerChain,
               scrollTo
             )
           )
         }
 
-        const remainingImagingSide =
-          mastectomySide === 'Right' ? 'Left' : 'Right'
-        const allowedImagingSides =
-          mastectomySide === 'Both'
-            ? ['None', 'Right', 'Left', 'Both']
-            : [remainingImagingSide, 'Both']
-
-        if (
-          hasMastectomy &&
-          !allowedImagingSides.includes(formTemp.mastectomyImagingSide)
-        ) {
-          req.flash('error', {
-            text: 'Select whether any images need to be taken',
-            name: 'appointment[medicalHistoryTemp][mastectomyImagingSide]',
-            href: '#mastectomyImagingSide'
-          })
-          return res.redirect(
-            urlWithReferrer(
-              `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/mastectomy-imaging`,
-              referrerChain,
-              scrollTo
-            )
-          )
-        }
-
-        if (mastectomySide === 'Both') {
-          const selectedDetails =
-            formTemp.mastectomyImagingDetailsTemp?.[
-              formTemp.mastectomyImagingSide
-            ]
-          if (selectedDetails) {
-            formTemp.mastectomyImagingDetails = selectedDetails
-          } else {
-            delete formTemp.mastectomyImagingDetails
+        // A mastectomy has a follow-up question on which breasts to image
+        const imagingStep = getMastectomyImagingStep(formTemp)
+        if (imagingStep) {
+          if (imagingStep === 'missing') {
+            req.flash('error', {
+              text: 'Select whether any images need to be taken',
+              name: 'appointment[medicalHistoryTemp][mastectomyImagingSide]',
+              href: '#mastectomyImagingSide'
+            })
           }
-          delete formTemp.mastectomyImagingDetailsTemp
-        } else if (formTemp.mastectomyImagingSide !== 'Both') {
-          delete formTemp.mastectomyImagingDetails
+          return res.redirect(
+            urlWithReferrer(
+              `${historyUrl}/mastectomy-imaging`,
+              referrerChain,
+              scrollTo
+            )
+          )
         }
 
-        if (!hasMastectomy) {
-          delete formTemp.mastectomyImagingFor
-          delete formTemp.mastectomyImagingSide
-          delete formTemp.mastectomyImagingDetails
-        }
+        data.appointment.medicalHistoryTemp =
+          tidyMastectomyImagingAnswers(formTemp)
       }
 
       // Check if consent is needed for breast implants BEFORE processing the data
-      if (
-        type === 'breast-implants-augmentation' ||
-        type === 'breastImplantsAugmentation'
-      ) {
-        const medicalHistoryTemp = data.appointment?.medicalHistoryTemp
-          ? breastImplantsFormToItem(data.appointment.medicalHistoryTemp)
-          : undefined
+      if (dataKey === 'breastImplantsAugmentation') {
+        const medicalHistoryTemp = medicalHistoryFormToItem(
+          data.appointment?.medicalHistoryTemp,
+          dataKey
+        )
         const rightBreastProcedures =
           medicalHistoryTemp?.proceduresRightBreast || []
         const leftBreastProcedures =
@@ -330,9 +248,6 @@ module.exports = (router) => {
         // - AND implants have NOT been removed
         // - AND consent has NOT already been given
         if (hasBreastImplants && !implantsRemoved && !alreadyConsented) {
-          // The consent page and its answer routes read the stored per-breast fields
-          data.appointment.medicalHistoryTemp = medicalHistoryTemp
-
           // Redirect to consent page immediately - we'll save the data after consent
           return res.redirect(
             urlWithReferrer(
@@ -345,6 +260,7 @@ module.exports = (router) => {
       }
 
       let isNewItem
+      let endWithoutImages = false
 
       // Save temp medical history to array
       if (data.appointment?.medicalHistoryTemp) {
@@ -363,9 +279,10 @@ module.exports = (router) => {
           data.appointment.medicalInformation.medicalHistory[dataKey] = []
         }
 
-        const medicalHistoryTemp = FORM_CONVERTERS[dataKey]
-          ? FORM_CONVERTERS[dataKey].toItem(data.appointment.medicalHistoryTemp)
-          : data.appointment.medicalHistoryTemp
+        const medicalHistoryTemp = medicalHistoryFormToItem(
+          data.appointment.medicalHistoryTemp,
+          dataKey
+        )
         isNewItem = !medicalHistoryTemp.id
 
         // Create medical history item
@@ -380,7 +297,8 @@ module.exports = (router) => {
           medicalHistoryItem.addedBy = data.currentUser.id
         }
 
-        // REMOVED: The consent line that was adding consentGiven to all items
+        endWithoutImages =
+          isBilateralMastectomyWithoutImages(medicalHistoryItem)
 
         // Update existing or add new
         const existingIndex =
@@ -405,7 +323,7 @@ module.exports = (router) => {
         saveTempAppointmentToAppointment(data)
         return res.redirect(
           urlWithReferrer(
-            `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/bilateral-mastectomy-cannot-proceed`,
+            `${historyUrl}/bilateral-mastectomy-cannot-proceed`,
             referrerChain,
             scrollTo
           )
@@ -452,18 +370,11 @@ module.exports = (router) => {
       const data = req.session.data
       const participantName = getFullName(data.participant)
 
-      const medicalHistory =
-        data.appointment?.medicalInformation?.medicalHistory || {}
-      const hasBilateralMastectomyWithoutImages = [
-        'breastCancer',
-        'mastectomyLumpectomy'
-      ].some((type) =>
-        (medicalHistory[type] || []).some(isBilateralMastectomyWithoutImages)
-      )
-
       if (
         data.appointment?.status !== 'in_progress' ||
-        !hasBilateralMastectomyWithoutImages
+        !hasBilateralMastectomyWithoutImages(
+          data.appointment?.medicalInformation?.medicalHistory
+        )
       ) {
         req.flash('error', {
           text: 'Confirm that no images are needed after a bilateral mastectomy before ending this appointment'
@@ -526,9 +437,10 @@ module.exports = (router) => {
 
       if (medicalHistoryItem) {
         // Copy to temp for editing
-        data.appointment.medicalHistoryTemp = FORM_CONVERTERS[dataKey]
-          ? FORM_CONVERTERS[dataKey].toForm(medicalHistoryItem)
-          : { ...medicalHistoryItem }
+        data.appointment.medicalHistoryTemp = medicalHistoryItemToForm(
+          medicalHistoryItem,
+          dataKey
+        )
       } else {
         console.log(`Cannot find item ${itemId} in ${dataKey}`)
       }
@@ -682,7 +594,10 @@ module.exports = (router) => {
               []
           }
 
-          const medicalHistoryTemp = data.appointment.medicalHistoryTemp
+          const medicalHistoryTemp = medicalHistoryFormToItem(
+            data.appointment.medicalHistoryTemp,
+            'breastImplantsAugmentation'
+          )
           const isNewItem = !medicalHistoryTemp.id
 
           // Create medical history item
@@ -756,7 +671,10 @@ module.exports = (router) => {
               []
           }
 
-          const medicalHistoryTemp = data.appointment.medicalHistoryTemp
+          const medicalHistoryTemp = medicalHistoryFormToItem(
+            data.appointment.medicalHistoryTemp,
+            'breastImplantsAugmentation'
+          )
           const isNewItem = !medicalHistoryTemp.id
 
           // Create medical history item with partial consent noted

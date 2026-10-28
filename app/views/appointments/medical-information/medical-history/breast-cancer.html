@@ -101,14 +101,14 @@
         value: "Lumpectomy",
         text: "Lumpectomy",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][lumpectomySide]", "lumpectomySide", "breast", appointment.medicalHistoryTemp.lumpectomySide)
+          html: sideRadios("lumpectomySide", "breast", appointment.medicalHistoryTemp.lumpectomySide)
         }
       },
       {
         value: "Mastectomy",
         text: "Mastectomy",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][mastectomySide]", "mastectomySide", "breast", appointment.medicalHistoryTemp.mastectomySide)
+          html: sideRadios("mastectomySide", "breast", appointment.medicalHistoryTemp.mastectomySide)
         }
       }
     ]
@@ -130,21 +130,21 @@
         value: "Lymph node surgery",
         text: "Lymph node surgery",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][lymphNodeSurgerySide]", "lymphNodeSurgerySide", "axilla", appointment.medicalHistoryTemp.lymphNodeSurgerySide)
+          html: sideRadios("lymphNodeSurgerySide", "axilla", appointment.medicalHistoryTemp.lymphNodeSurgerySide)
         }
       },
       {
         value: "Reconstruction",
         text: "Reconstruction",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][reconstructionSide]", "reconstructionSide", "breast", appointment.medicalHistoryTemp.reconstructionSide)
+          html: sideRadios("reconstructionSide", "breast", appointment.medicalHistoryTemp.reconstructionSide)
         }
       },
       {
         value: "Symmetrisation",
         text: "Symmetrisation",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][symmetrisationSide]", "symmetrisationSide", "breast", appointment.medicalHistoryTemp.symmetrisationSide)
+          html: sideRadios("symmetrisationSide", "breast", appointment.medicalHistoryTemp.symmetrisationSide)
         }
       }
     ]
@@ -166,14 +166,14 @@
         value: "Breast radiotherapy",
         text: "Breast radiotherapy",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][breastRadiotherapySide]", "breastRadiotherapySide", "breast", appointment.medicalHistoryTemp.breastRadiotherapySide)
+          html: sideRadios("breastRadiotherapySide", "breast", appointment.medicalHistoryTemp.breastRadiotherapySide)
         }
       },
       {
         value: "Lymph node radiotherapy",
         text: "Lymph node radiotherapy",
         conditional: {
-          html: sideRadios("appointment[medicalHistoryTemp][lymphNodeRadiotherapySide]", "lymphNodeRadiotherapySide", "axilla", appointment.medicalHistoryTemp.lymphNodeRadiotherapySide)
+          html: sideRadios("lymphNodeRadiotherapySide", "axilla", appointment.medicalHistoryTemp.lymphNodeRadiotherapySide)
         }
       },
       {
