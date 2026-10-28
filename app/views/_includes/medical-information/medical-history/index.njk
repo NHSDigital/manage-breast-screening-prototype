@@ -204,7 +204,7 @@
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
 
         {% if historyItem.systemicTreatments %}
-          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Systemic treatments</p>
+          <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">Other treatments</p>
           <ul class="nhsuk-list">
             {% for treatment in historyItem.systemicTreatments %}
               <li>
@@ -239,6 +239,18 @@
         {% set leftBreastContent %}
           {{ breastItemsList(historyItem.proceduresLeftBreast, "No procedures added") }}
         {% endset %}
+        {% set mastectomyImaging = historyItem | describeMastectomyImaging %}
+        {% if mastectomyImaging %}
+          <p>
+            {{ mastectomyImaging.heading }}
+            {% if mastectomyImaging.imagedText %}
+              <br>{{ mastectomyImaging.imagedText }}
+            {% endif %}
+            {% if mastectomyImaging.details %}
+              <br>Details: {{ mastectomyImaging.details }}
+            {% endif %}
+          </p>
+        {% endif %}
         {{ leftRightBreastDisplay(rightBreastContent, leftBreastContent) }}
 
         {# Used by mastectomy lumpectomy only #}
@@ -321,6 +333,20 @@
             },
             value: {
               html: mastectomyLumpectomySurgeryReasonHtml
+            }
+          }) }}
+        {% endif %}
+      {% endset %}
+
+      {# Procedures with no side - mastectomy and lumpectomy #}
+      {% set otherProceduresRow %}
+        {% if historyItem.otherProcedures | length %}
+          {{ summaryListRow({
+            key: {
+              text: "Other procedures"
+            },
+            value: {
+              text: historyItem.otherProcedureDetails or "Other"
             }
           }) }}
         {% endif %}
@@ -528,6 +554,16 @@
           {# Breast implants or augmentation #}
           {% elseif typeData.type == 'breastImplantsAugmentation' %}
             {{ proceduresRow | safe }}
+            {% if historyItem.otherProcedures | length %}
+              {{ summaryListRow({
+                key: {
+                  text: "Other procedures"
+                },
+                value: {
+                  text: historyItem.otherAugmentationDetails or "Other, or not known"
+                }
+              }) }}
+            {% endif %}
             {{ yearRow | safe }}
             {{ removalRow | safe }}
             {{ locationRow | safe }}
@@ -535,10 +571,11 @@
 
           {# Mastectomy or lumpectomy #}
           {% elseif typeData.type == 'mastectomyLumpectomy' %}
+            {{ surgeryReasonRow | safe }}
             {{ proceduresRow | safe }}
             {{ otherSurgeryRow | safe }}
+            {{ otherProceduresRow | safe }}
             {{ yearRow | safe }}
-            {{ surgeryReasonRow | safe }}
             {{ locationRow | safe }}
 
           {# Cysts #}
@@ -549,6 +586,16 @@
           {# Benign lumps #}
           {% elseif typeData.type == 'benignLumps' %}
             {{ proceduresRow | safe }}
+            {% if historyItem.otherProcedures | length %}
+              {{ summaryListRow({
+                key: {
+                  text: "Procedures not known"
+                },
+                value: {
+                  text: historyItem.notKnownDetails or "No details provided"
+                }
+              }) }}
+            {% endif %}
             {{ yearRow | safe }}
             {{ locationRow | safe }}
 

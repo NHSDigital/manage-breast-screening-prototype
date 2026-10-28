@@ -78,6 +78,16 @@ const FILE_META = {
     description:
       'Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings.'
   },
+  'app/lib/utils/mastectomy.js': {
+    label: 'mastectomy.js',
+    description:
+      'Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome.'
+  },
+  'app/lib/utils/sided-medical-history.js': {
+    label: 'sided-medical-history.js',
+    description:
+      'Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides.'
+  },
   'app/lib/utils/annotation-summary.js': {
     label: 'annotation-summary.js',
     description:
@@ -177,6 +187,8 @@ const UTILS_FILES = [
   'app/lib/utils/prior-mammograms.js',
   'app/lib/utils/issues.js',
   'app/lib/utils/medical-information.js',
+  'app/lib/utils/mastectomy.js',
+  'app/lib/utils/sided-medical-history.js',
   'app/lib/utils/annotation-summary.js',
   'app/lib/utils/arrays.js',
   'app/lib/utils/objects.js',

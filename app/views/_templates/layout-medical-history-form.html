@@ -12,7 +12,8 @@
   {% set dynamicPageHeading = "Add details of " + typeDataObject.name | lower %}
 {% endif %}
 
-{% set formAction = "./" ~ typeDataObject.slug ~ "/save" | urlWithReferrer(referrerChain, query.scrollTo) %}
+{# A page can post elsewhere (customFormAction) with its own button text #}
+{% set formAction = customFormAction or ("./" ~ typeDataObject.slug ~ "/save" | urlWithReferrer(referrerChain, query.scrollTo)) %}
 
 {% block pageContent %}
 
@@ -33,7 +34,7 @@
 
   <div class="nhsuk-button-group">
     {{ button({
-      text: "Save",
+      text: submitButtonText or "Save",
       attributes: {
         name: "action",
         value: "save"
@@ -46,7 +47,7 @@
   </div>
 
   {# Only show link if this is a previously saved symptom #}
-  {% if appointment.medicalHistoryTemp.id %}
+  {% if appointment.medicalHistoryTemp.id and not hideDeleteLink %}
     {% set deleteHref %}
       ./{{ typeDataObject.slug }}/delete/{{ appointment.medicalHistoryTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
     {% endset %}

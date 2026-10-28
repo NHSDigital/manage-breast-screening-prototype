@@ -15,6 +15,11 @@ const {
   updateAppointmentStatus
 } = require('../../lib/utils/appointment-status')
 const {
+  getMissingMedicalHistorySides,
+  medicalHistoryFormToItem,
+  medicalHistoryItemToForm
+} = require('../../lib/utils/sided-medical-history')
+const {
   isValidMedicalHistoryType,
   getMedicalHistoryType,
   getMedicalHistoryKeyFromSlug
@@ -25,7 +30,21 @@ const {
   urlWithReferrer,
   modalBreakout
 } = require('../../lib/utils/referrers')
+const {
+  OTHER_REASON,
+  BILATERAL_MASTECTOMY,
+  PERMANENT_EXCLUSION,
+  getMastectomyImagingStep,
+  tidyMastectomyImagingAnswers,
+  isBilateralMastectomyWithoutImages,
+  hasBilateralMastectomyWithoutImages,
+  getBilateralMastectomySuccessMessage
+} = require('../../lib/utils/mastectomy')
 const { captureSessionEndTime } = require('./shared')
+
+// Editing mastectomy or lumpectomy skips the reason question, which is asked first when adding
+const getFormPage = (dataKey, type) =>
+  dataKey === 'mastectomyLumpectomy' ? `${type}-details` : type
 
 module.exports = (router) => {
   // Select medical history type - choose which type to add
@@ -90,6 +109,47 @@ module.exports = (router) => {
     }
   )
 
+  // Mastectomy or lumpectomy: breast cancer has its own form, any other reason
+  // goes on to the procedure questions
+  router.post(
+    '/clinics/:clinicId/appointments/:appointmentId/medical-information/medical-history/mastectomy-lumpectomy-reason-answer',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const reason =
+        req.session.data.appointment?.medicalHistoryTemp
+          ?.mastectomyLumpectomySurgeryReason
+      const historyUrl = `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history`
+
+      if (!reason) {
+        req.flash('error', {
+          text: 'Select why this surgery was done',
+          name: 'appointment[medicalHistoryTemp][mastectomyLumpectomySurgeryReason]',
+          href: '#mastectomyLumpectomySurgeryReason'
+        })
+        return res.redirect(
+          urlWithReferrer(
+            `${historyUrl}/mastectomy-lumpectomy`,
+            req.query.referrerChain,
+            req.query.scrollTo
+          )
+        )
+      }
+
+      const nextPage =
+        reason === 'Breast cancer'
+          ? 'breast-cancer/add'
+          : 'mastectomy-lumpectomy-details'
+
+      res.redirect(
+        urlWithReferrer(
+          `${historyUrl}/${nextPage}`,
+          req.query.referrerChain,
+          req.query.scrollTo
+        )
+      )
+    }
+  )
+
   // Save medical history item - handles both 'save' and 'save and add another'
   router.post(
     '/clinics/:clinicId/appointments/:appointmentId/medical-information/medical-history/:type/save',
@@ -111,12 +171,58 @@ module.exports = (router) => {
       // Convert slug to camelCase key for data storage
       const dataKey = getMedicalHistoryKeyFromSlug(type) || type
 
+      const historyUrl = `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history`
+
+      if (data.appointment?.medicalHistoryTemp) {
+        const formTemp = data.appointment.medicalHistoryTemp
+
+        const missingSides = getMissingMedicalHistorySides(formTemp, dataKey)
+        if (missingSides.length) {
+          missingSides.forEach(({ sideField, text }) =>
+            req.flash('error', {
+              text,
+              name: `appointment[medicalHistoryTemp][${sideField}]`,
+              href: `#${sideField}`
+            })
+          )
+          return res.redirect(
+            urlWithReferrer(
+              `${historyUrl}/${getFormPage(dataKey, type)}`,
+              referrerChain,
+              scrollTo
+            )
+          )
+        }
+
+        // A mastectomy has a follow-up question on which breasts to image
+        const imagingStep = getMastectomyImagingStep(formTemp)
+        if (imagingStep) {
+          if (imagingStep === 'missing') {
+            req.flash('error', {
+              text: 'Select whether any images need to be taken',
+              name: 'appointment[medicalHistoryTemp][mastectomyImagingSide]',
+              href: '#mastectomyImagingSide'
+            })
+          }
+          return res.redirect(
+            urlWithReferrer(
+              `${historyUrl}/mastectomy-imaging`,
+              referrerChain,
+              scrollTo
+            )
+          )
+        }
+
+        data.appointment.medicalHistoryTemp =
+          tidyMastectomyImagingAnswers(formTemp)
+      }
+
       // Check if consent is needed for breast implants BEFORE processing the data
-      if (
-        type === 'breast-implants-augmentation' ||
-        type === 'breastImplantsAugmentation'
-      ) {
-        const medicalHistoryTemp = data.appointment?.medicalHistoryTemp
+      if (dataKey === 'breastImplantsAugmentation') {
+        const medicalHistoryTemp = medicalHistoryFormToItem(
+          data.appointment?.medicalHistoryTemp,
+          dataKey
+        )
         const rightBreastProcedures =
           medicalHistoryTemp?.proceduresRightBreast || []
         const leftBreastProcedures =
@@ -154,6 +260,7 @@ module.exports = (router) => {
       }
 
       let isNewItem
+      let endWithoutImages = false
 
       // Save temp medical history to array
       if (data.appointment?.medicalHistoryTemp) {
@@ -172,7 +279,10 @@ module.exports = (router) => {
           data.appointment.medicalInformation.medicalHistory[dataKey] = []
         }
 
-        const medicalHistoryTemp = data.appointment.medicalHistoryTemp
+        const medicalHistoryTemp = medicalHistoryFormToItem(
+          data.appointment.medicalHistoryTemp,
+          dataKey
+        )
         isNewItem = !medicalHistoryTemp.id
 
         // Create medical history item
@@ -187,7 +297,8 @@ module.exports = (router) => {
           medicalHistoryItem.addedBy = data.currentUser.id
         }
 
-        // REMOVED: The consent line that was adding consentGiven to all items
+        endWithoutImages =
+          isBilateralMastectomyWithoutImages(medicalHistoryItem)
 
         // Update existing or add new
         const existingIndex =
@@ -206,6 +317,17 @@ module.exports = (router) => {
 
         // Clear temp data
         delete data.appointment.medicalHistoryTemp
+      }
+
+      if (endWithoutImages) {
+        saveTempAppointmentToAppointment(data)
+        return res.redirect(
+          urlWithReferrer(
+            `${historyUrl}/bilateral-mastectomy-cannot-proceed`,
+            referrerChain,
+            scrollTo
+          )
+        )
       }
 
       let methodVerb = 'added'
@@ -241,6 +363,50 @@ module.exports = (router) => {
     }
   )
 
+  router.post(
+    '/clinics/:clinicId/appointments/:appointmentId/medical-information/medical-history/bilateral-mastectomy-cannot-proceed-answer',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const participantName = getFullName(data.participant)
+
+      if (
+        data.appointment?.status !== 'in_progress' ||
+        !hasBilateralMastectomyWithoutImages(
+          data.appointment?.medicalInformation?.medicalHistory
+        )
+      ) {
+        req.flash('error', {
+          text: 'Confirm that no images are needed after a bilateral mastectomy before ending this appointment'
+        })
+        return res.redirect(modalBreakout(`/clinics/${clinicId}/`))
+      }
+
+      if (data.appointment?.sessionDetails?.startedAt) {
+        captureSessionEndTime(data, appointmentId, data.currentUser.id)
+      }
+
+      data.appointment.appointmentStopped = {
+        stoppedReason: [OTHER_REASON],
+        otherDetails: BILATERAL_MASTECTOMY,
+        needsReschedule: PERMANENT_EXCLUSION
+      }
+
+      const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
+      saveTempAppointmentToAppointment(data)
+      saveTempParticipantToParticipant(data)
+      updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
+
+      const successMessage = getBilateralMastectomySuccessMessage(
+        participantName,
+        participantAppointmentUrl
+      )
+      req.flash('success', { wrapWithHeading: successMessage })
+
+      res.redirect(modalBreakout(`/clinics/${clinicId}/`))
+    }
+  )
+
   // Edit existing medical history item
   router.get(
     '/clinics/:clinicId/appointments/:appointmentId/medical-information/medical-history/:type/edit/:itemId',
@@ -271,15 +437,19 @@ module.exports = (router) => {
 
       if (medicalHistoryItem) {
         // Copy to temp for editing
-        data.appointment.medicalHistoryTemp = { ...medicalHistoryItem }
+        data.appointment.medicalHistoryTemp = medicalHistoryItemToForm(
+          medicalHistoryItem,
+          dataKey
+        )
       } else {
         console.log(`Cannot find item ${itemId} in ${dataKey}`)
       }
 
-      // Redirect to the form
+      const formPage = getFormPage(dataKey, type)
+
       res.redirect(
         urlWithReferrer(
-          `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/${type}`,
+          `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/medical-history/${formPage}`,
           req.query.referrerChain,
           req.query.scrollTo
         )
@@ -424,7 +594,10 @@ module.exports = (router) => {
               []
           }
 
-          const medicalHistoryTemp = data.appointment.medicalHistoryTemp
+          const medicalHistoryTemp = medicalHistoryFormToItem(
+            data.appointment.medicalHistoryTemp,
+            'breastImplantsAugmentation'
+          )
           const isNewItem = !medicalHistoryTemp.id
 
           // Create medical history item
@@ -498,7 +671,10 @@ module.exports = (router) => {
               []
           }
 
-          const medicalHistoryTemp = data.appointment.medicalHistoryTemp
+          const medicalHistoryTemp = medicalHistoryFormToItem(
+            data.appointment.medicalHistoryTemp,
+            'breastImplantsAugmentation'
+          )
           const isNewItem = !medicalHistoryTemp.id
 
           // Create medical history item with partial consent noted

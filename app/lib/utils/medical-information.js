@@ -119,20 +119,10 @@ const summariseMedicalHistoryItem = (item) => {
         rightProcedures.includes && rightProcedures.includes('Breast implants')
       const hasLeftImplants =
         leftProcedures.includes && leftProcedures.includes('Breast implants')
-      const hasRightAugmentation =
-        rightProcedures.includes &&
-        rightProcedures.includes('Other augmentation')
-      const hasLeftAugmentation =
-        leftProcedures.includes && leftProcedures.includes('Other augmentation')
-      const hasRightNotKnown =
-        rightProcedures.includes && rightProcedures.includes('Not known')
-      const hasLeftNotKnown =
-        leftProcedures.includes && leftProcedures.includes('Not known')
 
       // Build a description that names each procedure with its side(s)
       const implantParts = []
       const augParts = []
-      const notKnownParts = []
 
       if (hasRightImplants && hasLeftImplants) {
         implantParts.push('Breast implants, both breasts')
@@ -142,24 +132,12 @@ const summariseMedicalHistoryItem = (item) => {
         implantParts.push('Breast implants, left breast')
       }
 
-      if (hasRightAugmentation && hasLeftAugmentation) {
-        augParts.push('other augmentation, both breasts')
-      } else if (hasRightAugmentation) {
-        augParts.push('other augmentation, right breast')
-      } else if (hasLeftAugmentation) {
-        augParts.push('other augmentation, left breast')
-      }
-
-      if (hasRightNotKnown && hasLeftNotKnown) {
-        notKnownParts.push('procedure not known, both breasts')
-      } else if (hasRightNotKnown) {
-        notKnownParts.push('procedure not known, right breast')
-      } else if (hasLeftNotKnown) {
-        notKnownParts.push('procedure not known, left breast')
+      if (item.otherProcedures && item.otherProcedures.length) {
+        augParts.push('other, or not known')
       }
 
       // Sort: both breasts first, then right, then left
-      const allProcParts = [...implantParts, ...augParts, ...notKnownParts]
+      const allProcParts = [...implantParts, ...augParts]
       allProcParts.sort((a, b) => {
         const sideOrder = (s) =>
           s.includes('both breasts') ? 0 : s.includes('right breast') ? 1 : 2
@@ -201,14 +179,8 @@ const summariseMedicalHistoryItem = (item) => {
       // Be specific about what procedures were done
       const rightProc = item.proceduresRightBreast
       const leftProc = item.proceduresLeftBreast
-      const hasRightMastectomy =
-        rightProc &&
-        (rightProc.includes('Mastectomy (tissue remaining)') ||
-          rightProc.includes('Mastectomy (no tissue remaining)'))
-      const hasLeftMastectomy =
-        leftProc &&
-        (leftProc.includes('Mastectomy (tissue remaining)') ||
-          leftProc.includes('Mastectomy (no tissue remaining)'))
+      const hasRightMastectomy = rightProc && rightProc.includes('Mastectomy')
+      const hasLeftMastectomy = leftProc && leftProc.includes('Mastectomy')
       const hasRightLumpectomy = rightProc && rightProc.includes('Lumpectomy')
       const hasLeftLumpectomy = leftProc && leftProc.includes('Lumpectomy')
 

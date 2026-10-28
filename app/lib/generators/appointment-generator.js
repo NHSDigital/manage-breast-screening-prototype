@@ -218,7 +218,10 @@ const generateAppointment = ({
   if (appointmentStatus === 'in_progress') {
     const startedAt = screenedAt
       ? onClinicDay(screenedAt)
-      : simulatedDateTime.subtract(faker.number.int({ min: 5, max: 45 }), 'minutes')
+      : simulatedDateTime.subtract(
+          faker.number.int({ min: 5, max: 45 }),
+          'minutes'
+        )
 
     appointmentBase.sessionDetails = {
       startedAt: startedAt.toISOString(),

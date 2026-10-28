@@ -13,26 +13,9 @@
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
   {# Read implant data from temporary medical history (not yet saved) #}
-  {% set hasRightImplant = false %}
-  {% set hasLeftImplant = false %}
-
-  {% if appointment.medicalHistoryTemp %}
-    {% if appointment.medicalHistoryTemp.proceduresRightBreast %}
-      {% for procedure in appointment.medicalHistoryTemp.proceduresRightBreast %}
-        {% if procedure == "Breast implants" %}
-          {% set hasRightImplant = true %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-
-    {% if appointment.medicalHistoryTemp.proceduresLeftBreast %}
-      {% for procedure in appointment.medicalHistoryTemp.proceduresLeftBreast %}
-        {% if procedure == "Breast implants" %}
-          {% set hasLeftImplant = true %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-  {% endif %}
+  {% set implantsItem = appointment.medicalHistoryTemp | medicalHistoryFormToItem("breastImplantsAugmentation") %}
+  {% set hasRightImplant = "Breast implants" in (implantsItem.proceduresRightBreast or []) %}
+  {% set hasLeftImplant = "Breast implants" in (implantsItem.proceduresLeftBreast or []) %}
 
   {# Determine implant configuration #}
   {% set hasBothImplants = hasRightImplant and hasLeftImplant %}
