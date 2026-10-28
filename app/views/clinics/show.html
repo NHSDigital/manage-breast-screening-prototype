@@ -70,8 +70,10 @@
 
 {# Everything that the participant search narrows - the search box, the tabs
    and the list - sits in one live region so JavaScript can update it in place.
-   Without JavaScript the form submits and the page reloads, still filtered. #}
-<div id="clinic-appointments">
+   Without JavaScript the form submits and the page reloads, still filtered.
+   It also refreshes when another browser sharing data changes this clinic
+   (see live-updates.js). #}
+<div id="clinic-appointments" data-live-region data-live-ids="{{ clinicId }}">
 
 {# Participant search - filters this clinic's list by name or NHS number #}
 <div class="nhsuk-grid-row">

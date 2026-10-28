@@ -69,7 +69,12 @@ const pageTemplateUrls = ['/review', '/style-guide/issues']
 const startServer = async () => {
   const server = spawn('node', ['.'], {
     cwd: rootPath,
-    env: { ...process.env, PORT: String(port), PROXY: 'true' },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      PROXY: 'true',
+      SHARED_DATA_MODE: 'off'
+    },
     stdio: ['ignore', 'ignore', 'pipe']
   })
 

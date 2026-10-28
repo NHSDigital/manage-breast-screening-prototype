@@ -51,6 +51,10 @@ class LiveFilters {
 
     this.active = true
 
+    // Other scripts can re-render the region too (live-updates.js), which
+    // drops anything enhance added
+    this.region.addEventListener('fragment:swapped', () => this.enhance())
+
     this.enhance()
   }
 

@@ -13,6 +13,7 @@
 // array rather than a store index.
 
 const dataStore = require('../data-store')
+const { recordChange } = require('../shared-data')
 const generateId = require('./id-generator')
 const { getAppointment } = require('./appointment-data.js')
 const { getClinic } = require('./clinics.js')
@@ -259,7 +260,7 @@ const createIssue = (data, details) => {
 }
 
 /**
- * Record a new or changed issue so it persists for this session, and show it
+ * Record a new or changed issue so it persists across requests, and show it
  * to the rest of this request.
  *
  * The issues array attached to `data` is rebuilt from the shared store every
@@ -270,9 +271,7 @@ const createIssue = (data, details) => {
  * @param {object} issue - Whole replacement issue record
  */
 const recordIssueChange = (data, issue) => {
-  if (data._changes?.issues) {
-    data._changes.issues[issue.id] = issue
-  }
+  recordChange(data, 'issues', issue)
 
   if (Array.isArray(data.issues)) {
     const index = data.issues.findIndex(

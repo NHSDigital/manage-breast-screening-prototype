@@ -67,6 +67,72 @@ changes its `generationId`. Session changes are stamped with the generation
 they were made against, and stale changes are discarded automatically - so a
 profile swap resets everyone's data. This is intentional demo behaviour.
 
+## Sharing changes between browsers
+
+Several browsers can work on the same data, so reception can check someone in
+and the mammography room sees them arrive. [app/lib/shared-data.js](../app/lib/shared-data.js)
+owns it. Normally each session keeps its own `_changes`; when sharing, the
+attach middleware points `data._changes` at a changes object held in server
+memory instead, and keeps it out of the saved session.
+
+There are three modes, server-wide:
+
+- **Off** - each session has its own changes. The default.
+- **On** - every session shares one set of changes.
+- **By room** - sessions in the same named room share changes. A session in no
+  room behaves as Off.
+
+The mode starts from the `SHARED_DATA_MODE` environment variable (`off`, `on`
+or `room`; set it on the Heroku app for user research), and `/settings` can
+change it until the server restarts. Room names are fixed in `sharedData.rooms`
+in [app/config.js](../app/config.js). A browser joins a room from `/settings`,
+or by adding `?room=` and the room name to any address (`?room=research-1`;
+`?room=none` leaves). The room is stored per session in
+`data.settings.sharedData.room`.
+
+What stays per session: the current user, settings, filters and every temp
+working copy (`data.appointment`, `data.participant`, `imageReadingTemp`,
+`issueTemp`).
+
+Shared changes live in memory only. They reset on restart, and on regenerate.
+"Reset data" in the footer clears the shared changes for everyone sharing them
+(the whole server in On mode, the room in By room mode), and brings a browser in
+a room back to the same room.
+
+**Writes must go through the update helpers.** They all record changes with
+`recordChange`, which is also the one place that tells other browsers something
+changed. A write into `data._changes` directly would be shared but nobody would
+hear about it.
+
+**Live updates.** Pages listen on `/shared-data/events` (server-sent events,
+loaded only when the browser is sharing). Each notice names the changed record
+and the ids it links to (`clinicId`, `participantId` and so on), and is not sent
+back to the session that made it. On the page:
+
+- an element with `data-live-region`, an `id`, and `data-live-ids` listing the
+  ids it shows is refreshed in place when one of them changes. The clinic list
+  (`#clinic-appointments` in [clinics/show.html](../app/views/clinics/show.html))
+  is one
+- otherwise, if the page shows the changed clinic, appointment, participant or
+  episode, a banner says the page has been updated, with a link to refresh. It
+  never reloads by itself, so nothing typed is lost
+
+To make another page update live, mark the part that changes as a live region.
+No server change is needed.
+
+Each open tab holds one connection to the stream, and browsers allow about six
+connections to one address. With six or more prototype tabs open while sharing,
+pages can stall until a tab is closed. Keep to a few tabs per browser.
+
+**Working copies go stale.** A browser's working copy of an appointment
+(`data.appointment`) is taken when it first opens that appointment. The
+appointment context middleware in
+[app/routes/appointments/index.js](../app/routes/appointments/index.js) keeps
+its status, status history, session details and screening order in step with
+the saved record, since only the update helpers change those. Anything else
+another browser saves, such as medical information, is not picked up until
+the working copy is taken again. Last save wins.
+
 ## Episodes
 
 An **episode** is one screening round for a participant - the container the

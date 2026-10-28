@@ -9,6 +9,7 @@
 // back, because that means going through the episode.
 
 const dataStore = require('../data-store')
+const { recordChange } = require('../shared-data')
 const { getAppointment } = require('./appointment-data.js')
 const { getClinic } = require('./clinics.js')
 const { formatMonthYear } = require('./dates.js')
@@ -141,7 +142,7 @@ const buildMammogramEntry = (appointment, clinic) => {
 }
 
 /**
- * Record a changed episode so it persists for this session
+ * Record a changed episode so it persists across requests
  *
  * Mirrors recordAppointmentChange: the episodes array attached to `data` is rebuilt
  * from the shared store every request, so only records written into
@@ -151,9 +152,7 @@ const buildMammogramEntry = (appointment, clinic) => {
  * @param {object} episode - Whole replacement episode record
  */
 const recordEpisodeChange = (data, episode) => {
-  if (data._changes?.episodes) {
-    data._changes.episodes[episode.id] = episode
-  }
+  recordChange(data, 'episodes', episode)
 }
 
 /**
@@ -567,7 +566,7 @@ const getEpisodeOutcomeTagColour = (outcome) => {
 }
 
 /**
- * Update an episode, persisting the change for this session.
+ * Update an episode, persisting the change across requests.
  *
  * Build a whole replacement record - never mutate the one you read, it's
  * frozen (see docs/data-conventions.md).

@@ -8,6 +8,7 @@ const {
 } = require('./lib/utils/regenerate-data')
 const { resetCallSequence } = require('./lib/utils/random')
 const dataStore = require('./lib/data-store')
+const sharedData = require('./lib/shared-data')
 
 const router = express.Router()
 
@@ -79,6 +80,11 @@ router.use(async (req, res, next) => {
   }
 })
 
+// Sharing changes between browsers: room links, the live update stream and
+// the mode setting. Before the attach middleware so a room change applies to
+// the collections attached below.
+require('./routes/shared-data')(router)
+
 // Collections served from the shared data store rather than from per-session
 // copies
 const STORE_COLLECTIONS = [
@@ -130,12 +136,26 @@ router.use((req, res, next) => {
   // triggered the swap. Data resetting on swap is expected demo behaviour,
   // and this guarantees a swap can never leave another session overlaying
   // old records onto fresh data.
-  if (
+  //
+  // When sharing is on (see app/lib/shared-data.js), _changes is instead the
+  // changes shared by everyone on the session's channel, and toJSON below
+  // keeps it out of the session.
+  const sharedChanges = sharedData.getSharedChangesForSession(
+    data,
+    req.sessionID
+  )
+  if (sharedChanges) {
+    data._changes = sharedChanges
+  } else if (
     !data._changes ||
+    sharedData.isSharedChanges(data._changes) ||
     data._changes.generationId !== dataStore.state.generationId
   ) {
     data._changes = { generationId: dataStore.state.generationId }
   }
+  // Templates read changes through res.locals.data, a copy the kit made
+  // before this ran
+  res.locals.data._changes = data._changes
 
   for (const name of STORE_COLLECTIONS) {
     // Backfills a bucket for a collection added since this session started
@@ -168,6 +188,9 @@ router.use((req, res, next) => {
         delete copy[name]
       }
       delete copy.generationInfo
+      if (sharedData.isSharedChanges(copy._changes)) {
+        delete copy._changes
+      }
       return copy
     },
     enumerable: false,

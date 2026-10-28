@@ -20,6 +20,17 @@ module.exports = {
     generatedData: path.join(__dirname, 'data/generated')
   },
 
+  // Sharing changes between browsers, for testing with several users at once.
+  // See docs/data-conventions.md.
+  sharedData: {
+    // 'off' (each browser has its own changes), 'on' (everyone shares) or
+    // 'room' (browsers in the same room share). Can be changed from /settings
+    // until the server restarts.
+    mode: (process.env.SHARED_DATA_MODE || 'off').trim().toLowerCase(),
+    // Rooms browsers can join in 'room' mode. Their data resets on restart.
+    rooms: ['Research 1', 'Research 2']
+  },
+
   // Clinic settings
   clinics: {
     // Timings

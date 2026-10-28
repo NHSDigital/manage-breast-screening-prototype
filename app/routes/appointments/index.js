@@ -13,6 +13,13 @@ const {
 const { isAppointmentWorkflow } = require('../../lib/utils/status')
 const { getEpisode } = require('../../lib/utils/episodes')
 
+const APPOINTMENT_LIFECYCLE_FIELDS = [
+  'status',
+  'statusHistory',
+  'sessionDetails',
+  'screeningOrder'
+]
+
 module.exports = (router) => {
   // Set clinics to active in nav for all urls starting with /clinics
   router.use(
@@ -50,6 +57,21 @@ module.exports = (router) => {
         // source record is shared (read-only) data that other sessions see.
         data.appointment = structuredClone(originalAppointmentData.appointment)
       }
+
+      // Status, session details and screening order only change through the
+      // update helpers, never through forms, so the saved record is always
+      // right about them. Keep the working copy in step: with shared data,
+      // another browser may have checked in, started or paused this
+      // appointment since the copy was taken.
+      Object.assign(
+        data.appointment,
+        structuredClone(
+          _.pick(
+            originalAppointmentData.appointment,
+            APPOINTMENT_LIFECYCLE_FIELDS
+          )
+        )
+      )
 
       const participantId = originalAppointmentData.participant.id
       if (!data.participant || data.participant?.id !== participantId) {
