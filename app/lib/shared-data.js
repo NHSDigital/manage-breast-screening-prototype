@@ -21,6 +21,7 @@
 // app/routes/shared-data.js) that something has changed.
 
 const { EventEmitter } = require('events')
+const { isDeepStrictEqual } = require('util')
 const config = require('../config')
 const dataStore = require('./data-store')
 
@@ -176,14 +177,27 @@ const getSharedChangesForSession = (data, sessionId) => {
 const isSharedChanges = (changes) => channelKeyByChanges.has(changes)
 
 // The ids an event is about: the record's own id plus any ids it links to
-// (clinicId, participantId and so on), so a page showing a clinic hears about
-// a change to one of its appointments
+// (clinicId, participantId and so on, or an issue's links), so a page showing
+// a clinic hears about a change to one of its appointments
 const getRelatedIds = (record) => {
   const ids = new Set([record.id])
   for (const [key, value] of Object.entries(record)) {
     if (key.endsWith('Id') && typeof value === 'string') ids.add(value)
   }
+  for (const link of record.links || []) {
+    if (typeof link?.id === 'string') ids.add(link.id)
+  }
   return [...ids]
+}
+
+// The top-level fields that differ between two versions of a record, so a
+// page can refresh just the part showing them. Null when it can't tell.
+const getChangedFields = (previous, record) => {
+  if (!previous || previous === record) return null
+  const keys = new Set([...Object.keys(previous), ...Object.keys(record)])
+  return [...keys].filter(
+    (key) => !isDeepStrictEqual(previous[key], record[key])
+  )
 }
 
 /**
@@ -198,9 +212,14 @@ const getRelatedIds = (record) => {
 const recordChange = (data, collection, record) => {
   const changes = data?._changes?.[collection]
   if (!changes) return
-  changes[record.id] = record
 
   const channelKey = channelKeyByChanges.get(data._changes)
+  const previous = channelKey
+    ? (changes[record.id] ??
+      dataStore.state[`${collection}ById`]?.get(record.id))
+    : null
+
+  changes[record.id] = record
   if (!channelKey) return
 
   events.emit('change', {
@@ -208,6 +227,7 @@ const recordChange = (data, collection, record) => {
     type: 'change',
     collection,
     ids: getRelatedIds(record),
+    fields: getChangedFields(previous, record),
     origin: sessionIdByData.get(data) || null
   })
 }

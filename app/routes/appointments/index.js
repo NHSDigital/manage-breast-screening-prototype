@@ -20,6 +20,25 @@ const APPOINTMENT_LIFECYCLE_FIELDS = [
   'screeningOrder'
 ]
 
+// What a status change moves on the appointment's episode
+const EPISODE_LIFECYCLE_FIELDS = [
+  'stage',
+  'stageHistory',
+  'closedDate',
+  'outcome',
+  'mammograms',
+  'readingCases'
+]
+
+// The fields that parts of appointment pages refresh in place for, when
+// another browser moves the appointment on (see live-updates.js). Episode
+// fields are listed because a status change moves them, so that change alone
+// doesn't show the page updated banner.
+const APPOINTMENT_LIVE_FIELDS = [
+  ...APPOINTMENT_LIFECYCLE_FIELDS.map((field) => `appointments.${field}`),
+  ...EPISODE_LIFECYCLE_FIELDS.map((field) => `episodes.${field}`)
+].join(' ')
+
 module.exports = (router) => {
   // Set clinics to active in nav for all urls starting with /clinics
   router.use(
@@ -144,6 +163,7 @@ module.exports = (router) => {
       res.locals.unit = originalAppointmentData.unit
       res.locals.clinicId = clinicId
       res.locals.appointmentId = appointmentId
+      res.locals.appointmentLiveFields = APPOINTMENT_LIVE_FIELDS
 
       // Ensure latest session data is available to views
       res.locals.data = req.session.data

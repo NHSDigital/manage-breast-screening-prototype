@@ -4,16 +4,21 @@
 // app/lib/shared-data.js). Only loaded when this browser is sharing.
 //
 // Listens to the server's stream of change notices. Each notice lists the ids
-// it is about - the changed record's own id and the ids it links to. Then:
+// it is about - the changed record's own id and the ids it links to - and the
+// record's fields that changed. Then:
 //
 // - a region marked data-live-region whose data-live-ids include one of them
-//   is re-rendered in place, from a fresh copy of the current page
-// - otherwise, if the page itself shows one of those records (the ids on the
-//   banner template, from the layout), a banner says the page has changed,
-//   with a link to refresh. Never an automatic reload, so form input is safe.
+//   is re-rendered in place, from a fresh copy of the current page. A region
+//   can also list the fields it shows in data-live-fields, as
+//   "collection.field" (eg "appointments.status"), and is then only refreshed
+//   when one of those changed
+// - if the page itself shows one of those records (the ids on the banner
+//   template, from the layout), and no refreshed region shows everything that
+//   changed, a banner says the page has changed, with a link to refresh.
+//   Never an automatic reload, so form input is safe.
 //
 // A reset of the shared data affects everything, so it refreshes every region
-// or shows the banner.
+// and shows the banner unless a region showing every field covers it.
 //
 // Without JavaScript nothing here runs, and pages show current data on reload.
 
@@ -27,6 +32,12 @@ const bannerTemplate = document.querySelector('[data-live-updates-banner]')
 
 const getIds = (element) =>
   (element?.dataset.liveIds || '').split(' ').filter(Boolean)
+
+// Null when the region shows every field
+const getFields = (element) =>
+  element.dataset.liveFields
+    ? element.dataset.liveFields.split(' ').filter(Boolean)
+    : null
 
 const pageIds = getIds(bannerTemplate)
 
@@ -85,7 +96,7 @@ const flush = () => {
   pendingBanner = false
 
   if (regions.length) refreshRegions(regions)
-  else if (banner) showBanner()
+  if (banner) showBanner()
 }
 
 const handleNotice = (notice) => {
@@ -94,17 +105,34 @@ const handleNotice = (notice) => {
   const matches = (candidateIds) =>
     isReset || candidateIds.some((id) => ids.includes(id))
 
+  // Null when the server couldn't tell what changed, so treat it as anything
+  const changedFields =
+    !isReset && notice.fields
+      ? notice.fields.map((field) => `${notice.collection}.${field}`)
+      : null
+
   const regions = [...document.querySelectorAll('[data-live-region]')].filter(
-    (region) => matches(getIds(region))
+    (region) => {
+      if (!matches(getIds(region))) return false
+      const fields = getFields(region)
+      return (
+        !fields ||
+        !changedFields ||
+        changedFields.some((field) => fields.includes(field))
+      )
+    }
   )
 
-  if (regions.length) {
-    regions.forEach((region) => pendingRegions.add(region))
-  } else if (matches(pageIds)) {
-    pendingBanner = true
-  } else {
-    return
-  }
+  const shownFields = regions.flatMap((region) => getFields(region) || [])
+  const isCovered =
+    regions.some((region) => !getFields(region)) ||
+    (changedFields !== null &&
+      changedFields.every((field) => shownFields.includes(field)))
+
+  regions.forEach((region) => pendingRegions.add(region))
+  if (!isCovered && matches(pageIds)) pendingBanner = true
+
+  if (!pendingRegions.size && !pendingBanner) return
 
   window.clearTimeout(timer)
   timer = window.setTimeout(flush, debounceDelay)

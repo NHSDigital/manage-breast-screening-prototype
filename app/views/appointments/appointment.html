@@ -283,11 +283,14 @@
     } | handleSummaryListMissingInformation) }}
   {% endset %}
 
-  {% call card({
-    headingHtml: " "
-  }) %}
-    {{ appointmentHtml | safe }}
-  {% endcall %}
+  {# Refreshes in place with the header when the appointment moves on #}
+  <div id="appointment-details" data-live-region data-live-ids="{{ appointmentLiveIds }}" data-live-fields="{{ appointmentLiveFields }}">
+    {% call card({
+      headingHtml: " "
+    }) %}
+      {{ appointmentHtml | safe }}
+    {% endcall %}
+  </div>
 
   {# Last on the page, where it sits on every page that has it #}
   {{ raiseIssueLink("appointment") }}

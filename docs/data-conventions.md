@@ -90,6 +90,10 @@ or by adding `?room=` and the room name to any address (`?room=research-1`;
 `?room=none` leaves). The room is stored per session in
 `data.settings.sharedData.room`.
 
+Starting to share is like a reset for that browser: changes it made on its own
+are dropped, not merged into the shared ones. Leaving a room, or the mode going
+back to Off, starts it afresh too.
+
 What stays per session: the current user, settings, filters and every temp
 working copy (`data.appointment`, `data.participant`, `imageReadingTemp`,
 `issueTemp`).
@@ -106,19 +110,31 @@ hear about it.
 
 **Live updates.** Pages listen on `/shared-data/events` (server-sent events,
 loaded only when the browser is sharing). Each notice names the changed record
-and the ids it links to (`clinicId`, `participantId` and so on), and is not sent
-back to the session that made it. On the page:
+and the ids it links to (`clinicId`, `participantId` and so on, or an issue's
+`links`), plus the record's top-level fields that changed. It is not sent back
+to the session that made it. On the page:
 
 - an element with `data-live-region`, an `id`, and `data-live-ids` listing the
   ids it shows is refreshed in place when one of them changes. The clinic list
   (`#clinic-appointments` in [clinics/show.html](../app/views/clinics/show.html))
   is one
-- otherwise, if the page shows the changed clinic, appointment, participant or
-  episode, a banner says the page has been updated, with a link to refresh. It
-  never reloads by itself, so nothing typed is lost
+- a live region can also list the fields it shows in `data-live-fields`, as
+  `collection.field` (for example `appointments.status`). It then refreshes
+  only when one of those fields changed. The appointment header (with its tabs)
+  and the appointment tab's details card do this with `appointmentLiveFields`
+  (`APPOINTMENT_LIVE_FIELDS` in
+  [app/routes/appointments/index.js](../app/routes/appointments/index.js)), so
+  a check-in, start or pause elsewhere shows straight away. That list also
+  names the episode fields a status change moves, so the change to the episode
+  doesn't show the banner
+- if the page shows the changed clinic, appointment, participant or episode,
+  and no refreshed region shows everything that changed, a banner says the page
+  has been updated, with a link to refresh. It never reloads by itself, so
+  nothing typed is lost
 
 To make another page update live, mark the part that changes as a live region.
-No server change is needed.
+No server change is needed. Keep form inputs out of live regions: a refresh
+resets any input that isn't being typed in.
 
 Each open tab holds one connection to the stream, and browsers allow about six
 connections to one address. With six or more prototype tabs open while sharing,

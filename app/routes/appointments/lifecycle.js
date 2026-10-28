@@ -57,14 +57,21 @@ module.exports = (router) => {
           })
         }
 
-        // Store session details
+        // Store session details. The starter goes in authors too, as
+        // startedBy moves to whoever resumes the appointment
         updateAppointmentData(data, req.params.appointmentId, {
           sessionDetails: {
             startedAt: new Date().toISOString(),
             startedBy: currentUser.id,
             pausedAt: null,
             pausedBy: null,
-            authors: []
+            authors: [
+              {
+                userId: currentUser.id,
+                action: 'started',
+                timestamp: new Date().toISOString()
+              }
+            ]
           }
         })
       }
@@ -142,14 +149,21 @@ module.exports = (router) => {
           }
         ]
 
+        // Start again from the saved records. Pausing saved the work done so
+        // far, possibly by another user, which this session's working copies
+        // won't have
+        delete data.appointment
+        delete data.participant
+
         // Update status to in progress
         updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
 
-        // Update session details - preserve original starter
+        // Whoever resumes is now running the appointment, so startedBy moves
+        // to them. Everyone who has worked on it is in authors.
         updateAppointmentData(data, req.params.appointmentId, {
           sessionDetails: {
             startedAt: existingDetails.startedAt,
-            startedBy: existingDetails.startedBy,
+            startedBy: currentUser.id,
             pausedAt: null,
             pausedBy: null,
             authors: authors
@@ -288,14 +302,17 @@ module.exports = (router) => {
 
           // Get existing session details to track authors
           const existingDetails = appointment.sessionDetails || {}
-          const authors = existingDetails.authors || []
 
-          // Add current user's pause action to authors
-          authors.push({
-            userId: data.currentUser?.id,
-            action: 'paused',
-            timestamp: new Date().toISOString()
-          })
+          // Add pause action to a new authors array - the existing one belongs
+          // to the saved appointment record, so must not be pushed to
+          const authors = [
+            ...(existingDetails.authors || []),
+            {
+              userId: data.currentUser?.id,
+              action: 'paused',
+              timestamp: new Date().toISOString()
+            }
+          ]
 
           // Update status to paused and record pause details
           updateAppointmentStatus(data, appointmentId, 'paused')

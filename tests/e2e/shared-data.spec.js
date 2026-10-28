@@ -10,6 +10,7 @@
 const { test, expect } = require('./helpers/fixtures')
 const { pinSettings } = require('./helpers/settings')
 const { findTodayAppointment } = require('./helpers/seed-data')
+const users = require('../../app/data/users')
 
 const settings = {
   // Check in straight from the row, without the confirm identity modal
@@ -37,7 +38,22 @@ const getTabCount = async (page, label) => {
   return Number(text.replace(/\D/g, ''))
 }
 
+// Sets the server-wide mode to 'room' from this browser, and returns the mode
+// it started in so it can be put back afterwards
+const switchToRoomMode = async (page) => {
+  await page.goto('/settings')
+  const originalModeLabel = await page
+    .locator('p', { hasText: /^\s*Mode:/ })
+    .locator('strong')
+    .innerText()
+  await page.goto('/settings/shared-data?settings[sharedData][mode]=room')
+  return modesByLabel[originalModeLabel.trim()] || 'off'
+}
+
 test.describe('Shared data', () => {
+  // Both tests change the server-wide mode, so they mustn't overlap
+  test.describe.configure({ mode: 'serial' })
+
   test('a check-in in one browser shows live in another in the same room, and nowhere else', async ({
     browser,
     page
@@ -49,16 +65,9 @@ test.describe('Shared data', () => {
       otherPage.locator(`tr[data-fragment-id="${appointment.id}"]`)
     const checkedInUrl = `/clinics/${clinic.id}/checked-in`
 
-    // Reception's browser also sets the server-wide mode, noting the one it
-    // started in so it can be put back afterwards
+    // Reception's browser also sets the server-wide mode
     await pinSettings(page, settings)
-    await page.goto('/settings')
-    const originalModeLabel = await page
-      .locator('p', { hasText: /^\s*Mode:/ })
-      .locator('strong')
-      .innerText()
-    const originalMode = modesByLabel[originalModeLabel.trim()] || 'off'
-    await page.goto('/settings/shared-data?settings[sharedData][mode]=room')
+    const originalMode = await switchToRoomMode(page)
     await page.goto(`/clinics/${clinic.id}/all?room=research-1`)
 
     const mammographyRoom = await openBrowser(browser)
@@ -97,6 +106,116 @@ test.describe('Shared data', () => {
       await mammographyRoom.context.close()
       await otherRoom.context.close()
       await notInRoom.context.close()
+      await page.goto(
+        `/settings/shared-data?settings[sharedData][mode]=${originalMode}`
+      )
+    }
+  })
+
+  test('an appointment page shows status changes from another browser live, and a banner for other changes', async ({
+    browser,
+    page
+  }) => {
+    const { clinic, appointment } = findTodayAppointment({
+      status: 'scheduled',
+      index: 2
+    })
+    const appointmentUrl = `/clinics/${clinic.id}/appointments/${appointment.id}`
+
+    await pinSettings(page, settings)
+    const originalMode = await switchToRoomMode(page)
+    await page.goto(`/clinics/${clinic.id}/all?room=research-2`)
+
+    const mammographyRoom = await openBrowser(browser)
+
+    try {
+      const otherPage = mammographyRoom.page
+      await otherPage.goto(`${appointmentUrl}?room=research-2`)
+      const header = otherPage.locator('#appointment-header')
+      const details = otherPage.locator('#appointment-details')
+      const banner = otherPage.locator('[data-live-updates-shown]')
+      await expect(header.getByText('Scheduled', { exact: true })).toBeVisible()
+
+      // Checking in also moves the episode on, which the header covers too,
+      // so there is nothing left for a banner to announce
+      await page.goto(`/clinics/${clinic.id}/check-in/${appointment.id}`)
+      await expect(
+        header.getByText('Checked in', { exact: true })
+      ).toBeVisible()
+      await expect(
+        details.getByText('Checked in', { exact: true })
+      ).toBeVisible()
+      await expect(banner).toHaveCount(0)
+
+      // A note isn't shown in a live region, so the page says it has changed.
+      // The note saves from reception's working copy of the appointment,
+      // which opening it sets up.
+      await page.goto(appointmentUrl)
+      await page.request.post(`${appointmentUrl}/appointment-note-answer`, {
+        form: {
+          'appointment[appointmentNote]': 'Shared data test note'
+        }
+      })
+      await expect(banner).toBeVisible()
+    } finally {
+      await mammographyRoom.context.close()
+      // Clear the room's changes so a failed run doesn't leave them for the next
+      await page.request.post('/shared-data/reset')
+      await page.goto(
+        `/settings/shared-data?settings[sharedData][mode]=${originalMode}`
+      )
+    }
+  })
+
+  test('another user can resume a paused appointment and takes it over', async ({
+    browser,
+    page
+  }) => {
+    const { clinic, appointment } = findTodayAppointment({
+      status: 'checked_in',
+      index: 2
+    })
+    const appointmentUrl = `/clinics/${clinic.id}/appointments/${appointment.id}`
+    const [firstUser, secondUser] = users.filter((user) =>
+      user.role.includes('clinician')
+    )
+    const shortName = (user) => `${user.firstName.charAt(0)}. ${user.lastName}`
+
+    await pinSettings(page, settings)
+    const originalMode = await switchToRoomMode(page)
+    await page.goto(
+      `/clinics/${clinic.id}/all?room=research-2&currentUserId=${firstUser.id}`
+    )
+
+    const secondRoom = await openBrowser(browser)
+
+    try {
+      const otherPage = secondRoom.page
+      await otherPage.goto(
+        `/clinics/${clinic.id}/all?room=research-2&currentUserId=${secondUser.id}`
+      )
+
+      // The first user starts and then pauses the appointment
+      await page.goto(`${appointmentUrl}/start`)
+      await otherPage.goto(`${appointmentUrl}/appointment`)
+      await expect(
+        otherPage.getByText(`currently being run by ${shortName(firstUser)}`)
+      ).toBeVisible()
+      await page.request.post(`${appointmentUrl}/exit-appointment-answer`, {
+        form: { _exitAction: 'save' }
+      })
+
+      // The second user resumes it, so it opens in the workflow for them, and
+      // the first user sees that they are now running it
+      await otherPage.goto(`${appointmentUrl}/resume`)
+      await expect(otherPage.locator('.app-workflow-container')).toBeVisible()
+      await page.goto(`${appointmentUrl}/appointment`)
+      await expect(
+        page.getByText(`currently being run by ${shortName(secondUser)}`)
+      ).toBeVisible()
+    } finally {
+      await secondRoom.context.close()
+      await page.request.post('/shared-data/reset')
       await page.goto(
         `/settings/shared-data?settings[sharedData][mode]=${originalMode}`
       )

@@ -72,8 +72,10 @@ module.exports = (router) => {
 
     const unsubscribe = sharedData.subscribe(channelKey, (event) => {
       if (event.origin && event.origin === sessionId) return
-      const { type, collection, ids } = event
-      res.write(`data: ${JSON.stringify({ type, collection, ids })}\n\n`)
+      const { type, collection, ids, fields } = event
+      res.write(
+        `data: ${JSON.stringify({ type, collection, ids, fields })}\n\n`
+      )
     })
 
     const heartbeat = setInterval(
