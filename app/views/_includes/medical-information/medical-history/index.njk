@@ -572,11 +572,11 @@
 
           {# Mastectomy or lumpectomy #}
           {% elseif typeData.type == 'mastectomyLumpectomy' %}
+            {{ surgeryReasonRow | safe }}
             {{ proceduresRow | safe }}
             {{ otherSurgeryRow | safe }}
             {{ otherProceduresRow | safe }}
             {{ yearRow | safe }}
-            {{ surgeryReasonRow | safe }}
             {{ locationRow | safe }}
 
           {# Cysts #}
