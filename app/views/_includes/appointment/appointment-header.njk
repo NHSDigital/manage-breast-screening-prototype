@@ -2,8 +2,9 @@
 
 {# Refreshes in place when another browser moves the appointment on (checks in,
    starts, pauses and so on), see APPOINTMENT_LIVE_FIELDS in
-   app/routes/appointments/index.js #}
-<div id="appointment-header" data-live-region data-live-ids="{{ appointmentLiveIds }}" data-live-fields="{{ appointmentLiveFields }}">
+   app/routes/appointments/index.js. The announcement tells screen reader
+   users the new status. #}
+<div id="appointment-header" data-live-region data-live-ids="{{ appointmentLiveIds }}" data-live-fields="{{ appointmentLiveFields }}" data-live-announcement="Appointment status: {{ appointment.status | getStatusText('appointment') }}">
   {# Banner if appointment is paused #}
   {% if appointment | isPaused %}
     {% set pausedBannerHtml %}

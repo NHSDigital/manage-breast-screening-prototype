@@ -39,7 +39,9 @@
   {% endif %}
   {% endset %} #}
 
-  <div class="app-header-with-status">
+  {# Refreshes in place when another browser sharing data closes the clinic
+     (see live-updates.js) #}
+  <div id="clinic-header" class="app-header-with-status" data-live-region data-live-ids="{{ clinicId }}" data-live-fields="clinics.status" data-live-announcement="Clinic status: {{ clinic.status | getStatusText('clinic') or (clinic.status | formatWords | sentenceCase) }}">
     <h1 class="nhsuk-heading-l">
       {# "Screening mixed risk clinic" #}
       <span class="nhsuk-caption-l">{{ unit.name }}</span>

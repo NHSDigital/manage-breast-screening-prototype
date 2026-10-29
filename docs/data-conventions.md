@@ -101,7 +101,10 @@ working copy (`data.appointment`, `data.participant`, `imageReadingTemp`,
 Shared changes live in memory only. They reset on restart, and on regenerate.
 "Reset data" in the footer clears the shared changes for everyone sharing them
 (the whole server in On mode, the room in By room mode), and brings a browser in
-a room back to the same room.
+a room back to the same room. With JavaScript, `main.js` does this without a
+page. Without, the link goes to `/shared-data/reset`, a confirmation page like
+the kit's own, whose form clears the shared changes and then hands on to the
+kit's reset.
 
 **Writes must go through the update helpers.** They all record changes with
 `recordChange`, which is also the one place that tells other browsers something
@@ -126,11 +129,20 @@ to the session that made it. On the page:
   [app/routes/appointments/index.js](../app/routes/appointments/index.js)), so
   a check-in, start or pause elsewhere shows straight away. That list also
   names the episode fields a status change moves, so the change to the episode
-  doesn't show the banner
-- if the page shows the changed clinic, appointment, participant or episode,
-  and no refreshed region shows everything that changed, a banner says the page
-  has been updated, with a link to refresh. It never reloads by itself, so
-  nothing typed is lost
+  doesn't show the banner. The workflow status bar uses the same list plus
+  `issues.status`, so an issue raised elsewhere shows its tag. The clinic
+  header and the clinics list refresh for `clinics.status`, when a clinic is
+  closed
+- if the page shows the changed record, and no refreshed region shows
+  everything that changed, a banner says the page has been updated, with a link
+  to refresh. It never reloads by itself, so nothing typed is lost. The records
+  a page shows are its appointment, participant and episode, or its clinic when
+  it isn't an appointment page, so a change to another appointment in the same
+  clinic doesn't show the banner on an appointment page
+- screen reader users hear what changed, through a status element in the page.
+  A region can give its message in `data-live-announcement`, worded for the new
+  state (the appointment header says “Appointment status: Checked in”).
+  Otherwise the message is generic
 
 To make another page update live, mark the part that changes as a live region.
 No server change is needed. Keep form inputs out of live regions: a refresh

@@ -114,17 +114,49 @@ module.exports = (router) => {
     return res.redirect('/settings')
   })
 
+  // The room to bring a browser back to after its session is reset, if any
+  const getRoomToRejoin = (data) =>
+    sharedData.getMode() === 'room'
+      ? sharedData.getSharingDetails(data).room
+      : null
+
+  // The footer "Reset data" link comes here without JavaScript when sharing.
+  // Like the kit's own reset page, but the form clears the shared changes
+  // too. The return page names the room, so the browser rejoins it.
+  router.get('/shared-data/reset', (req, res) => {
+    const returnUrl = new URL(
+      typeof req.query.returnPage === 'string' &&
+      req.query.returnPage.startsWith('/') &&
+      !req.query.returnPage.startsWith('//')
+        ? req.query.returnPage
+        : '/',
+      'http://localhost'
+    )
+    const room = getRoomToRejoin(req.session.data)
+    if (room) returnUrl.searchParams.set('room', room)
+
+    return res.render('shared-data/reset', {
+      returnPage: `${returnUrl.pathname}${returnUrl.search}`
+    })
+  })
+
   // Resetting data from the footer link clears the shared changes for
-  // everyone sharing them. main.js calls this before the kit's own reset,
-  // which clears this session, and uses the room in the response to bring the
-  // browser back to the same room afterwards.
+  // everyone sharing them, then this session.
+  //
+  // With JavaScript, main.js calls this before the kit's own reset, which
+  // clears this session, and uses the room in the response to bring the
+  // browser back to the same room afterwards. Without, the form on the page
+  // above posts here, and is passed on to the kit's reset with its return
+  // page (307 keeps it a POST, with the same form data).
   router.post('/shared-data/reset', (req, res) => {
     const data = req.session.data
     const channelKey = sharedData.getChannelKey(data)
     if (channelKey) {
       sharedData.resetChannel(channelKey, req.sessionID)
     }
-    const { room } = sharedData.getSharingDetails(data)
-    return res.json({ room: sharedData.getMode() === 'room' ? room : null })
+    if (req.body?.returnPage) {
+      return res.redirect(307, '/prototype-admin/reset-session-data')
+    }
+    return res.json({ room: getRoomToRejoin(data) })
   })
 }

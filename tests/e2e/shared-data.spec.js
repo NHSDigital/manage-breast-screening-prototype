@@ -9,7 +9,7 @@
 
 const { test, expect } = require('./helpers/fixtures')
 const { pinSettings } = require('./helpers/settings')
-const { findTodayAppointment } = require('./helpers/seed-data')
+const { findTodayAppointment, readCollection } = require('./helpers/seed-data')
 const users = require('../../app/data/users')
 
 const settings = {
@@ -121,6 +121,15 @@ test.describe('Shared data', () => {
       index: 2
     })
     const appointmentUrl = `/clinics/${clinic.id}/appointments/${appointment.id}`
+    const otherAppointment = readCollection(
+      'appointments.json',
+      'appointments'
+    ).find(
+      (candidate) =>
+        candidate.clinicId === clinic.id &&
+        candidate.status === 'scheduled' &&
+        candidate.id !== appointment.id
+    )
 
     await pinSettings(page, settings)
     const originalMode = await switchToRoomMode(page)
@@ -134,6 +143,7 @@ test.describe('Shared data', () => {
       const header = otherPage.locator('#appointment-header')
       const details = otherPage.locator('#appointment-details')
       const banner = otherPage.locator('[data-live-updates-shown]')
+      const announcement = otherPage.locator('[data-live-updates-status]')
       await expect(header.getByText('Scheduled', { exact: true })).toBeVisible()
 
       // Checking in also moves the episode on, which the header covers too,
@@ -146,6 +156,17 @@ test.describe('Shared data', () => {
         details.getByText('Checked in', { exact: true })
       ).toBeVisible()
       await expect(banner).toHaveCount(0)
+      await expect(announcement).toHaveText('Appointment status: Checked in')
+
+      // Another appointment in the same clinic changing isn't this page's
+      // business
+      if (otherAppointment) {
+        await page.goto(`/clinics/${clinic.id}/check-in/${otherAppointment.id}`)
+        // Nothing to wait for when nothing should happen, so allow time for
+        // the notice to arrive (notices are handled after 300ms)
+        await otherPage.waitForTimeout(1000)
+        await expect(banner).toHaveCount(0)
+      }
 
       // A note isn't shown in a live region, so the page says it has changed.
       // The note saves from reception's working copy of the appointment,
@@ -157,6 +178,9 @@ test.describe('Shared data', () => {
         }
       })
       await expect(banner).toBeVisible()
+      await expect(announcement).toHaveText(
+        'This page has been updated. Refresh the page to see the changes.'
+      )
     } finally {
       await mammographyRoom.context.close()
       // Clear the room's changes so a failed run doesn't leave them for the next
@@ -215,6 +239,51 @@ test.describe('Shared data', () => {
       ).toBeVisible()
     } finally {
       await secondRoom.context.close()
+      await page.request.post('/shared-data/reset')
+      await page.goto(
+        `/settings/shared-data?settings[sharedData][mode]=${originalMode}`
+      )
+    }
+  })
+
+  test('without JavaScript, resetting data clears the shared changes and stays in the room', async ({
+    browser,
+    page
+  }) => {
+    const { clinic, appointment } = findTodayAppointment({
+      status: 'scheduled',
+      index: 3
+    })
+    const appointmentUrl = `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`
+
+    await pinSettings(page, settings)
+    const originalMode = await switchToRoomMode(page)
+    await page.goto(`/clinics/${clinic.id}/all?room=research-1`)
+
+    const context = await browser.newContext({ javaScriptEnabled: false })
+    const noScriptPage = await context.newPage()
+
+    try {
+      await noScriptPage.goto(`${appointmentUrl}?room=research-1`)
+      await page.goto(`/clinics/${clinic.id}/check-in/${appointment.id}`)
+      await noScriptPage.reload()
+      const header = noScriptPage.locator('#appointment-header')
+      await expect(
+        header.getByText('Checked in', { exact: true })
+      ).toBeVisible()
+
+      await noScriptPage.getByRole('link', { name: 'Reset data' }).click()
+      await noScriptPage.getByRole('button', { name: 'Reset all data' }).click()
+      await noScriptPage.getByRole('link', { name: 'Return' }).click()
+      await expect(noScriptPage).toHaveURL(/\/appointments\//)
+
+      await expect(header.getByText('Scheduled', { exact: true })).toBeVisible()
+      await noScriptPage.goto('/settings')
+      await expect(
+        noScriptPage.getByText('sharing changes with Research 1')
+      ).toBeVisible()
+    } finally {
+      await context.close()
       await page.request.post('/shared-data/reset')
       await page.goto(
         `/settings/shared-data?settings[sharedData][mode]=${originalMode}`

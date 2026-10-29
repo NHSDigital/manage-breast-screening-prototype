@@ -16,6 +16,9 @@
 //   template, from the layout), and no refreshed region shows everything that
 //   changed, a banner says the page has changed, with a link to refresh.
 //   Never an automatic reload, so form input is safe.
+// - either way, screen reader users hear what changed. A region can give its
+//   own message in data-live-announcement, read from the refreshed copy so it
+//   describes the new state. Otherwise the message is generic.
 //
 // A reset of the shared data affects everything, so it refreshes every region
 // and shows the banner unless a region showing every field covers it.
@@ -41,20 +44,37 @@ const getFields = (element) =>
 
 const pageIds = getIds(bannerTemplate)
 
+const statusElement = document.querySelector('[data-live-updates-status]')
+const defaultAnnouncement = 'This page has been updated'
+const bannerAnnouncement =
+  'This page has been updated. Refresh the page to see the changes.'
+
+const announce = (messages) => {
+  if (!statusElement || !messages.length) return
+  // Cleared first so the same message is announced again
+  statusElement.textContent = ''
+  window.setTimeout(() => {
+    statusElement.textContent = [...new Set(messages)].join('. ')
+  }, 100)
+}
+
 let pendingRegions = new Set()
 let pendingBanner = false
 let timer = null
 
+// True if it added the banner
 const showBanner = () => {
   if (!bannerTemplate || document.querySelector('[data-live-updates-shown]')) {
-    return
+    return false
   }
   const main = document.querySelector('#maincontent')
-  if (!main) return
+  if (!main) return false
   main.prepend(bannerTemplate.content.cloneNode(true))
+  announce([bannerAnnouncement])
+  return true
 }
 
-const refreshRegions = async (regions) => {
+const refreshRegions = async (regions, options = {}) => {
   try {
     const response = await window.fetch(window.location.href, {
       headers: { Accept: 'text/html' }
@@ -63,12 +83,16 @@ const refreshRegions = async (regions) => {
 
     const html = await response.text()
     const freshDocument = new DOMParser().parseFromString(html, 'text/html')
+    const announcements = []
 
     for (const region of regions) {
       const freshRegion = region.id
         ? freshDocument.getElementById(region.id)
         : null
       if (!freshRegion) throw new Error('Region missing from the response')
+
+      const announcement = freshRegion.dataset.liveAnnouncement
+      if (announcement) announcements.push(announcement)
 
       // innerHTML keeps the region element and any listeners on it. Ignoring
       // the active value stops a refresh overwriting what is being typed.
@@ -84,6 +108,10 @@ const refreshRegions = async (regions) => {
         })
       )
     }
+
+    if (options.announce) {
+      announce(announcements.length ? announcements : [defaultAnnouncement])
+    }
   } catch {
     showBanner()
   }
@@ -95,8 +123,9 @@ const flush = () => {
   pendingRegions = new Set()
   pendingBanner = false
 
-  if (regions.length) refreshRegions(regions)
-  if (banner) showBanner()
+  // A new banner's announcement covers any regions refreshed with it
+  const isBannerAdded = banner && showBanner()
+  if (regions.length) refreshRegions(regions, { announce: !isBannerAdded })
 }
 
 const handleNotice = (notice) => {

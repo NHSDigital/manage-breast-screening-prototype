@@ -44,7 +44,13 @@
   
   {# Appointment status bar - full width #}
   {% if isAppointmentWorkflow %}
-    {% include "_includes/appointment-status-bar.njk" %}
+    {# Refreshes in place when another browser raises or resolves an issue, or
+       moves the appointment on. If someone else takes over the appointment,
+       the refreshed page has no status bar, so the page updated banner shows
+       instead (see live-updates.js). #}
+    <div id="appointment-status-bar" data-live-region data-live-ids="{{ appointmentLiveIds }}" data-live-fields="{{ appointmentLiveFields }} issues.status">
+      {% include "_includes/appointment-status-bar.njk" %}
+    </div>
   {% endif %}
 {% endblock %}
 
