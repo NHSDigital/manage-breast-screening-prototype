@@ -58,6 +58,16 @@
   <ul class="nhsuk-footer__list">
     <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/">Home</a></li>
     <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/settings">Settings</a></li>
+    {# Shows whether this browser shares data with others, so it's easy to tell
+       during research. Nothing shows when the mode is off. #}
+    {% if sharedData.mode == "on" %}
+      {% set sharedDataStatus = "on" %}
+    {% elseif sharedData.mode == "room" %}
+      {% set sharedDataStatus = sharedData.room or "not in a room" %}
+    {% endif %}
+    {% if sharedDataStatus %}
+      <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/settings#shared-data">Shared data: {{ sharedDataStatus }}</a></li>
+    {% endif %}
     {# When sharing, the reset page also clears the shared changes. With
        JavaScript, main.js does both without a page. #}
     {% set resetDataPath = "/shared-data/reset" if sharedData.isShared else "/prototype-admin/reset" %}

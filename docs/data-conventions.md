@@ -90,6 +90,12 @@ or by adding `?room=` and the room name to any address (`?room=research-1`;
 `?room=none` leaves). The room is stored per session in
 `data.settings.sharedData.room`.
 
+When the mode isn't Off, the footer says how this browser is sharing (“Shared
+data: on”, the room's name, or “not in a room”), linking to the setting.
+
+When the mode isn't Off, the footer says how this browser is sharing (“Shared
+data: on”, the room's name, or “not in a room”), linking to the setting.
+
 Starting to share is like a reset for that browser: changes it made on its own
 are dropped, not merged into the shared ones. Leaving a room, or the mode going
 back to Off, starts it afresh too.

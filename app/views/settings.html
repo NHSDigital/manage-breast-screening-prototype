@@ -88,7 +88,7 @@
     {# Modal forms — open forms in a modal dialog rather than a new page #}
     {{ settingToggle("Modal forms (spike)", "settings[modalForms]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.modalForms, "false") }}
 
-    <h2>Shared data</h2>
+    <h2 id="shared-data">Shared data</h2>
     <p>Share changes between browsers, to test with several users at once. The mode applies to everyone using this prototype until it restarts.</p>
 
     {% set sharedDataModes = [
