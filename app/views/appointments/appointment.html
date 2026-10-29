@@ -230,11 +230,7 @@
             text: "Run by"
           },
           value: {
-            html: (appointment.sessionDetails.endedBy | getUsername({ format: "reversed" })) + 
-                  ((" and " + ((appointment.sessionDetails.authors | last).userId | getUsername({ format: "reversed" }))) 
-                   if appointment.sessionDetails.authors and appointment.sessionDetails.authors.length > 0 
-                   and (appointment.sessionDetails.authors | last).userId != appointment.sessionDetails.endedBy
-                   else "")
+            html: appointment | getAppointmentRunByNames({ format: "reversed" }) | formatList
           },
           actions: {
             items: []
@@ -245,7 +241,7 @@
             text: "Authorised mammographer"
           },
           value: {
-            html: (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (appointment.sessionDetails.endedBy | getUsername({ format: "reversed" })) or (appointment.sessionDetails.startedBy | getUsername({ format: "reversed" }))
+            html: (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (appointment | getScreenedByName({ format: "reversed" }))
           },
           actions: {
             items: []

@@ -102,14 +102,15 @@
 
     {# Appointment status and view appointment link #}
     <td class="nhsuk-table__cell app-clinic-appointments-table__appointment-column">
-      {# Screened by - the mammographer who ran the appointment. Attended not
+      {# Screened by - whoever is running the appointment, or once it has ended,
+         whoever took the images (see getScreenedByName). Attended not
          screened is left out as no screening happened. The screening order
          badge is only shown once screening is complete, so the In progress tab
          shows the name alone; on the Complete and All tabs this moves to the
          Time completed column with the badge. #}
       {% if columns.screenedBy and not columns.completed and appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
         <p class="nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-2">
-          {{ appointment.sessionDetails.startedBy | getUsername({
+          {{ appointment | getScreenedByName({
             format: 'short',
             identifyCurrentUser: true
           }) }}
@@ -139,15 +140,15 @@
 
       {% elseif (appointment | isInProgressNotPaused) and not columns.screenedBy %}
         <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
-          appointment.sessionDetails.startedBy | getUsername({
+          appointment | getAppointmentRunnerId | getUsername({
           format: 'short',
           identifyCurrentUser: true
           }) }}</span>
 
       {% elseif (appointment | isFinal) and not columns.screenedBy %}
         {% if appointment.sessionDetails.startedBy %}
-          <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ appointment.sessionDetails.startedBy
-            | getUsername({
+          <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ appointment
+            | getScreenedByName({
             format: 'short',
             identifyCurrentUser: true
             }) }}</span>
@@ -203,7 +204,7 @@
                 <span class="nhsuk-u-visually-hidden">Screened {{ appointment.screeningOrder | getOrdinalNumber }}</span>
               </span>
             {% endif %}
-            <span class="nhsuk-u-font-size-16">{{ appointment.sessionDetails.startedBy | getUsername({
+            <span class="nhsuk-u-font-size-16">{{ appointment | getScreenedByName({
               format: 'short',
               identifyCurrentUser: true
             }) }}</span>

@@ -20,10 +20,10 @@
   {% endif %}
 
   {# Banner if appointment is in progress (not paused) by someone else #}
-  {% if (appointment | isInProgressNotPaused) and not appointment | startedByCurrentUser %}
+  {% if (appointment | isInProgressNotPaused) and not appointment | isRunByCurrentUser %}
     {% set notificationBannerHtml %}
       <p class="nhsuk-notification-banner__heading">
-        This appointment is currently being run by {{ appointment.sessionDetails.startedBy | getUsername({
+        This appointment is currently being run by {{ appointment | getAppointmentRunnerId | getUsername({
           format: 'short',
           identifyCurrentUser: true
         }) }}.
@@ -119,7 +119,7 @@
   </p>
 
   {% if currentUser | isClinician %}
-    {% if appointment | isPaused or (appointment | isInProgress and appointment | startedByCurrentUser) %}
+    {% if appointment | isPaused or (appointment | isInProgress and appointment | isRunByCurrentUser) %}
       <div class="nhsuk-button-group">
         {{ button({
           text: "Resume appointment",

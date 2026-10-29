@@ -21,6 +21,7 @@ const { participantMatchesQuery } = require('../lib/utils/search')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
 const { getAppointment, updateAppointmentData } = require('../lib/utils/appointment-data')
 const { pluralise } = require('../lib/utils/strings')
+const { getAppointmentRunByIds } = require('../lib/utils/roles-and-permissions')
 
 /**
  * Get clinic and its related data from id
@@ -515,13 +516,15 @@ module.exports = (router) => {
 
     // Keep mammographer options available on every tab and while participant
     // search or the special-appointment filter narrows the rows. Sorted by
-    // first name.
+    // first name. An appointment matches everyone who ran it and whoever was
+    // nominated to take its images.
+    const getAppointmentMammographerIds = (appointment) =>
+      [
+        ...getAppointmentRunByIds(appointment),
+        appointment.authorisedMammographerId
+      ].filter(Boolean)
     const mammographerIds = [
-      ...new Set(
-        clinicData.appointments
-          .map((appointment) => appointment.sessionDetails?.startedBy)
-          .filter(Boolean)
-      )
+      ...new Set(clinicData.appointments.flatMap(getAppointmentMammographerIds))
     ]
     const mammographers = mammographerIds
       .map((userId) => req.session.data.users.find((user) => user.id === userId))
@@ -535,7 +538,9 @@ module.exports = (router) => {
     let matchedAppointments = baseAppointments
     if (selectedMammographers.length) {
       matchedAppointments = matchedAppointments.filter((appointment) =>
-        selectedMammographers.includes(appointment.sessionDetails?.startedBy)
+        getAppointmentMammographerIds(appointment).some((userId) =>
+          selectedMammographers.includes(userId)
+        )
       )
     }
 

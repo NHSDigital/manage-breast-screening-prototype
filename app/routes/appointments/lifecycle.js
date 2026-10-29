@@ -57,8 +57,8 @@ module.exports = (router) => {
           })
         }
 
-        // Store session details. The starter goes in authors too, as
-        // startedBy moves to whoever resumes the appointment
+        // Store session details. The start goes in authors too, so authors
+        // holds the full record of who ran it (see getAppointmentRunnerId)
         updateAppointmentData(data, req.params.appointmentId, {
           sessionDetails: {
             startedAt: new Date().toISOString(),
@@ -158,12 +158,12 @@ module.exports = (router) => {
         // Update status to in progress
         updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
 
-        // Whoever resumes is now running the appointment, so startedBy moves
-        // to them. Everyone who has worked on it is in authors.
+        // startedBy keeps whoever first started it. The resume in authors
+        // makes this user the one running it (see getAppointmentRunnerId).
         updateAppointmentData(data, req.params.appointmentId, {
           sessionDetails: {
             startedAt: existingDetails.startedAt,
-            startedBy: currentUser.id,
+            startedBy: existingDetails.startedBy,
             pausedAt: null,
             pausedBy: null,
             authors: authors
