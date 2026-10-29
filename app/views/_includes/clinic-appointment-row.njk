@@ -57,10 +57,19 @@
           label: "NHS number"
         }) }}
       </p>
-      {% if (data | getEpisode(appointment.episodeId)).isFirstScreening %}
+      {% if appointment | isFirstScreeningAppointment(data) %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
           {{ tag({
-          text: "New",
+          text: "First screening",
+          colour: "blue",
+          classes: "app-nowrap"
+          })}}
+        </p>
+      {% endif %}
+      {% if appointment | isLastScreeningAppointment(data) %}
+        <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
+          {{ tag({
+          text: "Last screening",
           colour: "blue",
           classes: "app-nowrap"
           })}}

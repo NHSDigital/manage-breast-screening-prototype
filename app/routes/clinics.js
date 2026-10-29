@@ -17,6 +17,10 @@ const {
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
+const {
+  isFirstScreeningAppointment,
+  isLastScreeningAppointment
+} = require('../lib/utils/episodes')
 const { participantMatchesQuery } = require('../lib/utils/search')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
 const {
@@ -559,8 +563,17 @@ module.exports = (router) => {
     const filterSpecialAppointment = []
       .concat(req.query.specialAppointment || [])
       .includes('yes')
-    // Appointments after the free-text search and special-appointment filter,
-    // but before the mammographer filter.
+    // "First screening" - participants attending for the first time
+    const filterFirstScreening = []
+      .concat(req.query.firstScreening || [])
+      .includes('yes')
+    // "Last screening" - participants whose next routine invitation would fall
+    // after their 71st birthday
+    const filterLastScreening = []
+      .concat(req.query.lastScreening || [])
+      .includes('yes')
+    // Appointments after the free-text search and the special-appointment and
+    // first-screening filters, but before the mammographer filter.
     let baseAppointments = clinicData.appointments
     if (search) {
       baseAppointments = baseAppointments.filter((appointment) =>
@@ -572,10 +585,20 @@ module.exports = (router) => {
         isSpecialAppointment(appointment)
       )
     }
+    if (filterFirstScreening) {
+      baseAppointments = baseAppointments.filter((appointment) =>
+        isFirstScreeningAppointment(appointment, req.session.data)
+      )
+    }
+
+    if (filterLastScreening) {
+      baseAppointments = baseAppointments.filter((appointment) =>
+        isLastScreeningAppointment(appointment, req.session.data)
+      )
+    }
 
     // Keep mammographer options available on every tab and while participant
-    // search or the special-appointment filter narrows the rows. Sorted by
-    // first name.
+    // search or the other filters narrow the rows. Sorted by first name.
     const mammographerIds = [
       ...new Set(
         clinicData.appointments
@@ -694,6 +717,8 @@ module.exports = (router) => {
       filteredAppointments,
       search,
       specialAppointment: filterSpecialAppointment,
+      firstScreening: filterFirstScreening,
+      lastScreening: filterLastScreening,
       mammographers,
       selectedMammographers,
       sort,
