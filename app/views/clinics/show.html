@@ -23,7 +23,7 @@
   {{ filteredAppointments | log("Filtered appointments")}}
   {# {% set appointments = data.appointments | getClinicAppointments(clinicId) %} #}
   {% set appointments = matchedAppointments %}
-  {% set hasActiveFilters = search or specialAppointment or firstScreening or selectedMammographers | length %}
+  {% set hasActiveFilters = search or specialAppointment or firstScreening or lastScreening or selectedMammographers | length %}
   {% set mammographerItems = [] %}
   {% for mammographer in mammographers %}
     {% set mammographerItems = mammographerItems | push({
@@ -111,8 +111,15 @@
               id: "filter-first-screening",
               name: "firstScreening",
               value: "yes",
-              text: "New",
+              text: "First screening",
               checked: true if firstScreening
+            },
+            {
+              id: "filter-last-screening",
+              name: "lastScreening",
+              value: "yes",
+              text: "Last screening",
+              checked: true if lastScreening
             }
           ]
         }) }}
@@ -193,6 +200,9 @@
 {% if firstScreening %}
   {% set filterParams = filterParams | push("firstScreening=yes") %}
 {% endif %}
+{% if lastScreening %}
+  {% set filterParams = filterParams | push("lastScreening=yes") %}
+{% endif %}
 {% for mammographerId in selectedMammographers %}
   {% set filterParams = filterParams | push("mammographer=" + (mammographerId | urlencode)) %}
 {% endfor %}
@@ -231,7 +241,7 @@
 {% endif %}
 
 {% if filteredAppointments.length === 0 %}
-  {% if search and (specialAppointment or firstScreening or selectedMammographers | length) %}
+  {% if search and (specialAppointment or firstScreening or lastScreening or selectedMammographers | length) %}
     <p>No participants in this clinic match “{{ search }}” and the selected filters.</p>
   {% elseif search %}
     <p>No participants in this clinic match “{{ search }}”.</p>

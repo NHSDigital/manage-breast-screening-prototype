@@ -355,6 +355,28 @@ const generateClinicsForDay = (
       youngestFirst.slice(0, firstTimeCount).forEach((episode) => {
         episode.isFirstScreening = true
       })
+
+      // Routine invitations stop at the 71st birthday, so a participant is on
+      // their last screening when the next one, 3 years on, would fall on or
+      // after it. Flag one or two of the oldest who qualify.
+      const isLastScreening = (episode) =>
+        !dayjs(clinic.date)
+          .add(3, 'year')
+          .isBefore(
+            dayjs(
+              participants.find((p) => p.id === episode.participantId)
+                .demographicInformation.dateOfBirth
+            ).add(71, 'year'),
+            'day'
+          )
+      const lastScreeningCount = Math.random() < 0.5 ? 1 : 2
+      clinicEpisodes
+        .filter((episode) => !episode.isFirstScreening)
+        .filter(isLastScreening)
+        .slice(0, lastScreeningCount)
+        .forEach((episode) => {
+          episode.isLastScreening = true
+        })
     }
 
     // Assign the order of screening for this clinic: a single 1 to N sequence

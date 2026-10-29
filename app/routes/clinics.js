@@ -17,7 +17,10 @@ const {
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
-const { isFirstScreeningAppointment } = require('../lib/utils/episodes')
+const {
+  isFirstScreeningAppointment,
+  isLastScreeningAppointment
+} = require('../lib/utils/episodes')
 const { participantMatchesQuery } = require('../lib/utils/search')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
 const {
@@ -560,9 +563,14 @@ module.exports = (router) => {
     const filterSpecialAppointment = []
       .concat(req.query.specialAppointment || [])
       .includes('yes')
-    // "New" - participants on their first screening
+    // "First screening" - participants attending for the first time
     const filterFirstScreening = []
       .concat(req.query.firstScreening || [])
+      .includes('yes')
+    // "Last screening" - participants whose next routine invitation would fall
+    // after their 71st birthday
+    const filterLastScreening = []
+      .concat(req.query.lastScreening || [])
       .includes('yes')
     // Appointments after the free-text search and the special-appointment and
     // first-screening filters, but before the mammographer filter.
@@ -580,6 +588,12 @@ module.exports = (router) => {
     if (filterFirstScreening) {
       baseAppointments = baseAppointments.filter((appointment) =>
         isFirstScreeningAppointment(appointment, req.session.data)
+      )
+    }
+
+    if (filterLastScreening) {
+      baseAppointments = baseAppointments.filter((appointment) =>
+        isLastScreeningAppointment(appointment, req.session.data)
       )
     }
 
@@ -704,6 +718,7 @@ module.exports = (router) => {
       search,
       specialAppointment: filterSpecialAppointment,
       firstScreening: filterFirstScreening,
+      lastScreening: filterLastScreening,
       mammographers,
       selectedMammographers,
       sort,
