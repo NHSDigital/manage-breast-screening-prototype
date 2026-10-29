@@ -39,6 +39,10 @@ async function regenerateData(req, options = {}) {
   // (Required lazily to avoid loading the store before generation at boot.)
   require('../data-store').reload()
 
+  // Shared changes were made against the old data too, so clear them and
+  // tell every browser listening for live updates
+  require('../shared-data').resetAllChannels(req.sessionID)
+
   // Clear the require cache for session data defaults so they re-evaluate
   delete require.cache[require.resolve(sessionDataPath)]
 

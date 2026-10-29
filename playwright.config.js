@@ -51,8 +51,10 @@ module.exports = defineConfig({
 
   webServer: {
     // PROXY=true makes the kit skip its nodemon/browsersync watch wrapper, so
-    // this is a single plain Express process that Playwright can start and kill
-    command: `PORT=${port} PROXY=true node .`,
+    // this is a single plain Express process that Playwright can start and kill.
+    // Sharing is pinned off so parallel tests keep their own changes; the
+    // shared data spec switches it to By room itself.
+    command: `PORT=${port} PROXY=true SHARED_DATA_MODE=off node .`,
     url: baseURL,
 
     // Always start a fresh server. Without the watch wrapper the app loads its

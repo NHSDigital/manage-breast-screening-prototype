@@ -17,6 +17,10 @@
 {# Set referrerChain to current URL for change links #}
 {% set referrerChain = referrerChain or currentUrl %}
 
+{# Ids of the records that parts of appointment pages refresh in place for,
+   along with appointmentLiveFields from the appointment middleware #}
+{% set appointmentLiveIds = [appointment.id, episode.id] | select | join(" ") %}
+
 {# Tab view mode is the appointment's record view, so it carries the case
    breadcrumb; the back link stays fixed to the clinic (the workflow
    container). Workflow and form modes keep their minimal chrome. #}
@@ -40,7 +44,13 @@
   
   {# Appointment status bar - full width #}
   {% if isAppointmentWorkflow %}
-    {% include "_includes/appointment-status-bar.njk" %}
+    {# Refreshes in place when another browser raises or resolves an issue, or
+       moves the appointment on. If someone else takes over the appointment,
+       the refreshed page has no status bar, so the page updated banner shows
+       instead (see live-updates.js). #}
+    <div id="appointment-status-bar" data-live-region data-live-ids="{{ appointmentLiveIds }}" data-live-fields="{{ appointmentLiveFields }} issues.status">
+      {% include "_includes/appointment-status-bar.njk" %}
+    </div>
   {% endif %}
 {% endblock %}
 

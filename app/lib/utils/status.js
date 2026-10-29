@@ -2,6 +2,7 @@
 
 const dayjs = require('dayjs')
 const config = require('../../config')
+const { getAppointmentRunnerId } = require('./roles-and-permissions')
 
 /**
  * Define status groups for easier checking
@@ -152,10 +153,10 @@ const isAppointmentWorkflow = function (appointment, currentUser) {
   // Get currentUser from context if not provided
   currentUser = currentUser || this?.ctx?.data?.currentUser
 
-  const startedBy = appointment?.sessionDetails?.startedBy
-  if (!currentUser || !startedBy) {
+  const runnerId = getAppointmentRunnerId(appointment)
+  if (!currentUser || !runnerId) {
     console.log(
-      `User or appointment not found: currentuser: ${currentUser?.id || currentUser}, startedBy: ${startedBy}`
+      `User or appointment not found: currentuser: ${currentUser?.id || currentUser}, runner: ${runnerId}`
     )
     return false
   }
@@ -165,10 +166,10 @@ const isAppointmentWorkflow = function (appointment, currentUser) {
     typeof currentUser === 'string' ? currentUser : currentUser.id
   if (!currentUserId) return false
 
-  // Check if appointment is in progress (not paused) and started by current user
+  // Check if appointment is in progress (not paused) and run by current user
   const appointmentInProgressNotPaused = isInProgressNotPaused(appointment)
 
-  return appointmentInProgressNotPaused && startedBy === currentUserId
+  return appointmentInProgressNotPaused && runnerId === currentUserId
 }
 
 /**

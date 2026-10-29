@@ -4,6 +4,7 @@ const dayjs = require('dayjs')
 
 const config = require('../../config')
 const dataStore = require('../data-store')
+const { recordChange } = require('../shared-data')
 
 /**
  * Get a clinic by ID
@@ -244,9 +245,7 @@ const updateClinic = (data, clinicId, updates) => {
   // shared data store on every request; see middleware in app/routes.js)
   const updatedClinic = { ...data.clinics[clinicIndex], ...updates }
   data.clinics[clinicIndex] = updatedClinic
-  if (data._changes?.clinics) {
-    data._changes.clinics[clinicId] = updatedClinic
-  }
+  recordChange(data, 'clinics', updatedClinic)
   return updatedClinic
 }
 

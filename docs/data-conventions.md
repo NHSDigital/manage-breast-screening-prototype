@@ -67,6 +67,141 @@ changes its `generationId`. Session changes are stamped with the generation
 they were made against, and stale changes are discarded automatically - so a
 profile swap resets everyone's data. This is intentional demo behaviour.
 
+## Sharing changes between browsers
+
+Several browsers can work on the same data, so reception can check someone in
+and the mammography room sees them arrive. [app/lib/shared-data.js](../app/lib/shared-data.js)
+owns it. Normally each session keeps its own `_changes`; when sharing, the
+attach middleware points `data._changes` at a changes object held in server
+memory instead, and keeps it out of the saved session.
+
+There are three modes, server-wide:
+
+- **Browsers that join** (`off`) - a session shares only once it has joined,
+  with “Start shared data” on the index or “This browser: Sharing” in
+  `/settings`, which set `data.settings.sharedData.joined`. Sessions that joined share one set of
+  changes; the rest keep their own. The default, so nobody's data changes
+  under them unless they ask.
+- **Every browser** (`on`) - every session shares one set of changes, the same
+  set joined browsers use.
+- **By room** (`room`) - sessions in the same named room share changes. A
+  session in no room keeps its own.
+
+The mode starts from the `SHARED_DATA_MODE` environment variable (`off`, `on`
+or `room`; set it on the Heroku app for user research), and `/settings` can
+change it until the server restarts. Room names are fixed in `sharedData.rooms`
+in [app/config.js](../app/config.js). A browser joins a room from `/settings`,
+or by adding `?room=` and the room name to any address (`?room=research-1`;
+`?room=none` leaves). The room is stored per session in
+`data.settings.sharedData.room`.
+
+When this browser is sharing, or the mode is By room, the footer says so
+(“Shared data: on”, the room's name, or “not in a room”), linking to the
+setting.
+
+Starting to share is like a reset for that browser: changes it made on its own
+are dropped, not merged into the shared ones. Leaving a room, stopping
+sharing, or the mode changing so it no longer shares, starts it afresh too.
+
+Change `data.settings.sharedData` with `setSharedDataSetting`, which copies
+rather than writing in place: a new session's `settings` is the session
+defaults' own object, so a write on its first request would change the
+defaults for every session after.
+
+What stays per session: the current user, settings, filters and every temp
+working copy (`data.appointment`, `data.participant`, `imageReadingTemp`,
+`issueTemp`).
+
+The current user, the room and whether the browser has joined are also kept
+in a long-lived cookie
+([app/lib/middleware/remembered-sign-in.js](../app/lib/middleware/remembered-sign-in.js)),
+so a browser keeps them through a server restart or a data reset. Nothing else
+in the session is kept.
+
+Every browser starts signed in as the same user, so two browsers sharing data
+are easily the same person. The server notes which user each sharing browser is
+signed in as (`recordPresence`), and the choose user page tags users signed in
+on other browsers on the same channel. Choosing one of them shows a warning
+first, with the option to continue anyway. Each tag is a live region: joining,
+switching user, leaving and resetting send a notice for `users.signedIn`, so it
+updates in place. A browser counts until 30 minutes after its last request,
+kept fresh by the live update heartbeat while a page is open, and is forgotten
+straight away when it resets its data. Like the shared changes, this is in
+memory only.
+
+“Start shared data” on the index joins this browser (when the mode is Browsers
+that join) and goes to the choose user page, so the person starting picks who
+they are. “Stop sharing” on the index, or “Not sharing” in `/settings`, leaves.
+
+Shared changes live in memory only. They reset on restart, and on regenerate.
+"Reset data" in the footer clears the shared changes for everyone sharing them
+(the whole server in On mode, the room in By room mode), and brings a browser in
+a room back to the same room. With JavaScript, `main.js` does this without a
+page. Without, the link goes to `/shared-data/reset`, a confirmation page like
+the kit's own, whose form clears the shared changes and then hands on to the
+kit's reset.
+
+**Writes must go through the update helpers.** They all record changes with
+`recordChange`, which is also the one place that tells other browsers something
+changed. A write into `data._changes` directly would be shared but nobody would
+hear about it.
+
+**Live updates.** Pages listen on `/shared-data/events` (server-sent events,
+loaded only when the browser is sharing). Each notice names the changed record
+and the ids it links to (`clinicId`, `participantId` and so on, or an issue's
+`links`), plus the record's top-level fields that changed. It is not sent back
+to the session that made it. On the page:
+
+- an element with `data-live-region`, an `id`, and `data-live-ids` listing the
+  ids it shows is refreshed in place when one of them changes. The clinic list
+  (`#clinic-appointments` in [clinics/show.html](../app/views/clinics/show.html))
+  is one
+- a live region can also list the fields it shows in `data-live-fields`, as
+  `collection.field` (for example `appointments.status`). It then refreshes
+  only when one of those fields changed. The appointment header (with its tabs)
+  and the appointment tab's details card do this with `appointmentLiveFields`
+  (`APPOINTMENT_LIVE_FIELDS` in
+  [app/routes/appointments/index.js](../app/routes/appointments/index.js)), so
+  a check-in, start or pause elsewhere shows straight away. That list also
+  names the episode fields a status change moves, so the change to the episode
+  doesn't show the banner. The workflow status bar uses the same list plus
+  `issues.status`, so an issue raised elsewhere shows its tag. The clinic
+  header and the clinics list refresh for `clinics.status`, when a clinic is
+  closed
+- if the page shows the changed record, and no refreshed region shows
+  everything that changed, a banner says the page has been updated, with a link
+  to refresh. It never reloads by itself, so nothing typed is lost. The records
+  a page shows are its appointment, participant and episode, or its clinic when
+  it isn't an appointment page, so a change to another appointment in the same
+  clinic doesn't show the banner on an appointment page
+- screen reader users hear what changed, through a status element in the page.
+  A region can give its message in `data-live-announcement`, worded for the new
+  state (the appointment header says “Appointment status: Checked in”).
+  Otherwise the message is generic
+
+To make another page update live, mark the part that changes as a live region.
+No server change is needed. Keep form inputs out of live regions: a refresh
+resets any input that isn't being typed in.
+
+Each open tab holds one connection to the stream, and browsers allow about six
+connections to one address. With six or more prototype tabs open while sharing,
+pages can stall until a tab is closed. Keep to a few tabs per browser.
+
+Pages reconnect by themselves when the server restarts. Locally, the kit's
+proxy never answers a request it can't pass on to the app, so a reconnect made
+mid-restart would hang and use up a connection. The server asks browsers to
+wait 10 seconds before reconnecting, and a page replaces any connection that
+has gone 40 seconds without a heartbeat.
+
+**Working copies go stale.** A browser's working copy of an appointment
+(`data.appointment`) is taken when it first opens that appointment. The
+appointment context middleware in
+[app/routes/appointments/index.js](../app/routes/appointments/index.js) keeps
+its status, status history, session details and screening order in step with
+the saved record, since only the update helpers change those. Anything else
+another browser saves, such as medical information, is not picked up until
+the working copy is taken again. Last save wins.
+
 ## Episodes
 
 An **episode** is one screening round for a participant - the container the

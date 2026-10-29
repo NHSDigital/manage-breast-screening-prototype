@@ -35,6 +35,7 @@ const sweepSettings = {
 // regenerate the seed data mid-run.
 const skippedPaths = [
   { pattern: /\/check-in\//, reason: 'checks a participant in' },
+  { pattern: /^\/shared-data\/start$/, reason: 'turns shared data on' },
   { pattern: /\/start$/, reason: 'starts an appointment' },
   { pattern: /\/resume$/, reason: 'resumes an appointment' },
   { pattern: /\/undo-check-in$/, reason: 'reverses a check-in' },
@@ -69,7 +70,12 @@ const pageTemplateUrls = ['/review', '/style-guide/issues']
 const startServer = async () => {
   const server = spawn('node', ['.'], {
     cwd: rootPath,
-    env: { ...process.env, PORT: String(port), PROXY: 'true' },
+    env: {
+      ...process.env,
+      PORT: String(port),
+      PROXY: 'true',
+      SHARED_DATA_MODE: 'off'
+    },
     stdio: ['ignore', 'ignore', 'pipe']
   })
 

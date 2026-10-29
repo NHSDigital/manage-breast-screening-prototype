@@ -29,6 +29,28 @@ const NOT_SCREENED_REASONS = [
   'Recent breast surgery'
 ]
 
+// Session details in the shape the appointment workflow records them (see
+// app/routes/appointments/lifecycle.js): the start, also recorded in authors,
+// and for an appointment that has ended, when and by whom. The same
+// mammographer runs it throughout.
+const buildSessionDetails = ({ startedAt, startedBy, endedAt = null }) => ({
+  startedAt: startedAt.toISOString(),
+  startedBy,
+  pausedAt: null,
+  pausedBy: null,
+  authors: [
+    {
+      userId: startedBy,
+      action: 'started',
+      timestamp: startedAt.toISOString()
+    }
+  ],
+  ...(endedAt && {
+    endedAt: endedAt.toISOString(),
+    endedBy: startedBy
+  })
+})
+
 const determineAppointmentStatus = (
   slotDateTime,
   currentDateTime,
@@ -223,10 +245,10 @@ const generateAppointment = ({
           'minutes'
         )
 
-    appointmentBase.sessionDetails = {
-      startedAt: startedAt.toISOString(),
+    appointmentBase.sessionDetails = buildSessionDetails({
+      startedAt,
       startedBy: pickMammographerId()
-    }
+    })
 
     // Add workflow status from participant config if provided
     if (participant.config?.workflowStatus) {
@@ -304,11 +326,11 @@ const generateAppointment = ({
       }
 
       // Add session details for completed appointments
-      appointment.sessionDetails = {
-        startedAt: actualStartTime.toISOString(),
+      appointment.sessionDetails = buildSessionDetails({
+        startedAt: actualStartTime,
         startedBy: pickMammographerId(),
-        endedAt: actualEndTime.toISOString()
-      }
+        endedAt: actualEndTime
+      })
 
       // Add mammogram images for completed appointments
       appointment.mammogramData = generateMammogramImages({
@@ -418,11 +440,11 @@ const generateAppointment = ({
         'minute'
       )
 
-      appointment.sessionDetails = {
-        startedAt: actualStartTime.toISOString(),
+      appointment.sessionDetails = buildSessionDetails({
+        startedAt: actualStartTime,
         startedBy: pickMammographerId(),
-        endedAt: actualEndTime.toISOString()
-      }
+        endedAt: actualEndTime
+      })
 
       // Stopping an appointment in the appointment flow requires reasons, so
       // seeded attended-not-screened appointments always have them

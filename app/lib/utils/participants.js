@@ -3,6 +3,7 @@
 const { safe: nunjucksSafe } = require('nunjucks/src/filters')
 const riskLevels = require('../../data/risk-levels.js')
 const dataStore = require('../data-store')
+const { recordChange } = require('../shared-data')
 
 /**
  * Get a participant by ID
@@ -178,9 +179,7 @@ const updateParticipant = (data, participantId, updatedParticipant) => {
   // in data._changes (persistence - the attached array is rebuilt from the
   // shared data store on every request; see middleware in app/routes.js)
   data.participants[participantIndex] = updatedParticipant
-  if (data._changes?.participants) {
-    data._changes.participants[participantId] = updatedParticipant
-  }
+  recordChange(data, 'participants', updatedParticipant)
   return updatedParticipant
 }
 
