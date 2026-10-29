@@ -110,6 +110,8 @@ The region must contain the form, and should wrap the results too — that way o
 
 The "Apply filters" button is hidden while the script is running, and the active view tab's text is announced in a visually hidden `role="status"` region. If a fetch fails the page falls back to a normal submission or navigation, and with JavaScript off none of this runs: the form is a plain GET and everything above behaves exactly as documented.
 
+A live update never opens or closes a `<details>` element in the region: it keeps whatever state the user left it in, and the server's `open` attribute only applies on a full page load. The clinic page relies on this to keep its "Filter appointments" expander open after "Clear filters". When a clicked link removes itself, such as "Clear filters" or a selected-filter pill, focus moves to the first field of the filter form.
+
 ## Search
 
 `app/lib/utils/search.js` holds the shared matching so every search box in the service behaves the same: `participantMatchesQuery(participant, query)` matches name orderings (including "SURNAME, Firstname", the form the tables present) and NHS number. A page with extra fields to search — the participant index also matches postcode and SX number — layers those on top of it.

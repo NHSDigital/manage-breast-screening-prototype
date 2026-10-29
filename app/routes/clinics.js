@@ -17,6 +17,7 @@ const {
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
 const { getParticipant } = require('../lib/utils/participants')
+const { isFirstScreeningAppointment } = require('../lib/utils/episodes')
 const { participantMatchesQuery } = require('../lib/utils/search')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
 const {
@@ -559,8 +560,12 @@ module.exports = (router) => {
     const filterSpecialAppointment = []
       .concat(req.query.specialAppointment || [])
       .includes('yes')
-    // Appointments after the free-text search and special-appointment filter,
-    // but before the mammographer filter.
+    // "New" - participants on their first screening
+    const filterFirstScreening = []
+      .concat(req.query.firstScreening || [])
+      .includes('yes')
+    // Appointments after the free-text search and the special-appointment and
+    // first-screening filters, but before the mammographer filter.
     let baseAppointments = clinicData.appointments
     if (search) {
       baseAppointments = baseAppointments.filter((appointment) =>
@@ -572,10 +577,14 @@ module.exports = (router) => {
         isSpecialAppointment(appointment)
       )
     }
+    if (filterFirstScreening) {
+      baseAppointments = baseAppointments.filter((appointment) =>
+        isFirstScreeningAppointment(appointment, req.session.data)
+      )
+    }
 
     // Keep mammographer options available on every tab and while participant
-    // search or the special-appointment filter narrows the rows. Sorted by
-    // first name.
+    // search or the other filters narrow the rows. Sorted by first name.
     const mammographerIds = [
       ...new Set(
         clinicData.appointments
@@ -694,6 +703,7 @@ module.exports = (router) => {
       filteredAppointments,
       search,
       specialAppointment: filterSpecialAppointment,
+      firstScreening: filterFirstScreening,
       mammographers,
       selectedMammographers,
       sort,

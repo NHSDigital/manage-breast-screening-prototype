@@ -178,6 +178,17 @@ const getEpisode = (data, episodeId) => {
 }
 
 /**
+ * Whether an appointment is the participant's first screening - shown as the
+ * "New" tag and filter on the clinic list
+ *
+ * @param {object} appointment - Appointment with an episodeId
+ * @param {object} data - Session data
+ * @returns {boolean} True if the appointment's episode is a first screening
+ */
+const isFirstScreeningAppointment = (appointment, data) =>
+  Boolean(getEpisode(data, appointment?.episodeId)?.isFirstScreening)
+
+/**
  * Get all of a participant's episodes, oldest first
  *
  * @param {object} data - Session data
@@ -759,6 +770,7 @@ module.exports = {
   appointmentProducedImages,
   buildMammogramEntry,
   getEpisode,
+  isFirstScreeningAppointment,
   getEpisodesForParticipant,
   getCurrentEpisode,
   getEpisodeAppointments,

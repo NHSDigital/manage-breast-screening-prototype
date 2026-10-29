@@ -23,6 +23,7 @@
   {{ filteredAppointments | log("Filtered appointments")}}
   {# {% set appointments = data.appointments | getClinicAppointments(clinicId) %} #}
   {% set appointments = matchedAppointments %}
+  {% set hasActiveFilters = search or specialAppointment or firstScreening or selectedMammographers | length %}
   {% set mammographerItems = [] %}
   {% for mammographer in mammographers %}
     {% set mammographerItems = mammographerItems | push({
@@ -78,6 +79,8 @@
   <div class="nhsuk-grid-column-one-half">
     {% set findParticipantHtml %}
       <form method="get" action="{{ currentUrl }}" data-live-filters="#clinic-appointments">
+        {# Filtering keeps the column sort the user chose #}
+        <input type="hidden" name="sort" value="{{ sort }}">
         {{ searchInput({
           id: "participant-search",
           name: "search",
@@ -91,12 +94,25 @@
           idPrefix: "filter-special-appointment",
           name: "specialAppointment",
           small: true,
+          fieldset: {
+            legend: {
+              text: "Appointment type",
+              classes: "nhsuk-u-visually-hidden"
+            }
+          },
           formGroup: { classes: "nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-0" },
           items: [
             {
               value: "yes",
               text: "Special appointments",
               checked: true if specialAppointment
+            },
+            {
+              id: "filter-first-screening",
+              name: "firstScreening",
+              value: "yes",
+              text: "New",
+              checked: true if firstScreening
             }
           ]
         }) }}
@@ -118,14 +134,26 @@
             items: mammographerItems
           }) }}
         {% endif %}
+        {# Clearing keeps the tab and the sort - it's the search and filters
+           being cleared, not which list is on screen #}
+        {% if hasActiveFilters %}
+          {{ button({
+            text: "Clear filters",
+            href: currentUrl | buildFilterUrl({}, { sort: sort }),
+            variant: "secondary",
+            small: true,
+            classes: "nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-0"
+          }) }}
+        {% endif %}
       </form>
     {% endset %}
-    {# Open when a search or filter is active so a live update doesn't collapse it #}
+    {# Open on a full page load while a search or filter is active. Live
+       updates leave the open state to the user (live-filters.js) #}
     {{ details({
       summaryText: "Filter appointments",
       html: findParticipantHtml,
       classes: "nhsuk-expander",
-      open: true if (search or specialAppointment or selectedMammographers | length)
+      open: true if hasActiveFilters
     }) }}
   </div>
 </div>
@@ -161,6 +189,9 @@
 {% endif %}
 {% if specialAppointment %}
   {% set filterParams = filterParams | push("specialAppointment=yes") %}
+{% endif %}
+{% if firstScreening %}
+  {% set filterParams = filterParams | push("firstScreening=yes") %}
 {% endif %}
 {% for mammographerId in selectedMammographers %}
   {% set filterParams = filterParams | push("mammographer=" + (mammographerId | urlencode)) %}
@@ -200,11 +231,11 @@
 {% endif %}
 
 {% if filteredAppointments.length === 0 %}
-  {% if search and (specialAppointment or selectedMammographers | length) %}
+  {% if search and (specialAppointment or firstScreening or selectedMammographers | length) %}
     <p>No participants in this clinic match “{{ search }}” and the selected filters.</p>
   {% elseif search %}
     <p>No participants in this clinic match “{{ search }}”.</p>
-  {% elseif specialAppointment or selectedMammographers | length %}
+  {% elseif hasActiveFilters %}
     <p>No participants in this clinic match the selected filters.</p>
   {% else %}
     <p>{{ noAppointmentsMessage }}</p>

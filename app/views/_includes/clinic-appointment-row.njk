@@ -57,7 +57,7 @@
           label: "NHS number"
         }) }}
       </p>
-      {% if (data | getEpisode(appointment.episodeId)).isFirstScreening %}
+      {% if appointment | isFirstScreeningAppointment(data) %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
           {{ tag({
           text: "New",
