@@ -7,10 +7,12 @@
 // When sharing is on, the attach middleware in app/routes.js points
 // `data._changes` at a changes object held here instead, one per channel:
 //
-// - mode 'off': no sharing, every session has its own changes
+// - mode 'off': a session shares only once it has joined (the start button
+//   on the index), and then shares the 'everyone' channel with the others
+//   that joined. The rest keep their own changes.
 // - mode 'on': every session shares the 'everyone' channel
 // - mode 'room': sessions in a named room share that room's channel; a
-//   session not in a room behaves as 'off'
+//   session not in a room keeps its own changes
 //
 // The mode is server-wide. It starts from config (set by the SHARED_DATA_MODE
 // environment variable) and can be changed from /settings until the server
@@ -107,8 +109,34 @@ const findRoom = (value) => {
 }
 
 /**
- * Get the channel a session shares changes on, from the current mode and
- * the session's room
+ * Change one of a session's shared data settings (`room` or `joined`).
+ * Copies the settings objects rather than changing them in place, because a
+ * new session's settings are the session defaults' own object, so writing
+ * into it would change the defaults for every session after.
+ *
+ * @param {object} data - Session data
+ * @param {string} key - Setting name
+ * @param {string} value - New value
+ */
+const setSharedDataSetting = (data, key, value) => {
+  data.settings = {
+    ...data.settings,
+    sharedData: { ...data.settings?.sharedData, [key]: value }
+  }
+}
+
+/**
+ * Whether a session has joined sharing with the start button, which counts
+ * when the mode is 'off'
+ *
+ * @param {object} data - Session data
+ * @returns {boolean} True if joined
+ */
+const isJoined = (data) => data?.settings?.sharedData?.joined === 'true'
+
+/**
+ * Get the channel a session shares changes on, from the current mode, and
+ * the session's room or whether it has joined
  *
  * @param {object} data - Session data
  * @returns {string | null} Channel key, or null when the session isn't sharing
@@ -119,7 +147,7 @@ const getChannelKey = (data) => {
     const room = findRoom(data?.settings?.sharedData?.room)
     return room ? `room:${room}` : null
   }
-  return null
+  return isJoined(data) ? EVERYONE_CHANNEL : null
 }
 
 /**
@@ -127,7 +155,8 @@ const getChannelKey = (data) => {
  * the layout to decide whether to listen for live updates
  *
  * @param {object} data - Session data
- * @returns {object} { mode, rooms, room, channel, isShared }
+ * @returns {object} { mode, defaultMode, rooms, room, isJoined, channel,
+ *   isShared }
  */
 const getSharingDetails = (data) => {
   const channel = getChannelKey(data)
@@ -136,6 +165,7 @@ const getSharingDetails = (data) => {
     defaultMode: config.sharedData.mode,
     rooms,
     room: findRoom(data?.settings?.sharedData?.room),
+    isJoined: isJoined(data),
     channel,
     isShared: Boolean(channel)
   }
@@ -262,6 +292,32 @@ const resetAllChannels = (origin = null) => {
   events.emit('change', { channel: ALL_CHANNELS, type: 'reset', origin })
 }
 
+// Tell everyone on a channel that who is signed in as a user has changed, so
+// the choose user page can update
+const emitPresenceChange = (sessionId, { channel, userId }) => {
+  events.emit('change', {
+    channel,
+    type: 'change',
+    collection: 'users',
+    ids: [userId],
+    fields: ['signedIn'],
+    origin: sessionId
+  })
+}
+
+/**
+ * Stop counting a session as signed in, for when it is about to be reset
+ * (the kit's reset gives the browser a new session id)
+ *
+ * @param {string} sessionId - The session's id
+ */
+const forgetPresence = (sessionId) => {
+  const previous = presenceBySession.get(sessionId)
+  if (!previous) return
+  presenceBySession.delete(sessionId)
+  emitPresenceChange(sessionId, previous)
+}
+
 /**
  * Note which user a session is signed in as, and on which channel. A session
  * that isn't sharing is forgotten.
@@ -273,11 +329,26 @@ const recordPresence = (sessionId, data) => {
   if (!sessionId) return
   const channel = getChannelKey(data)
   const userId = data?.currentUser?.id
+  const previous = presenceBySession.get(sessionId)
+  const isPreviousCurrent =
+    previous && Date.now() - previous.lastSeen <= PRESENCE_TIMEOUT_MS
+
   if (!channel || !userId) {
-    presenceBySession.delete(sessionId)
+    forgetPresence(sessionId)
     return
   }
+
   presenceBySession.set(sessionId, { channel, userId, lastSeen: Date.now() })
+
+  if (
+    isPreviousCurrent &&
+    previous.channel === channel &&
+    previous.userId === userId
+  ) {
+    return
+  }
+  if (isPreviousCurrent) emitPresenceChange(sessionId, previous)
+  emitPresenceChange(sessionId, { channel, userId })
 }
 
 /**
@@ -289,14 +360,6 @@ const touchPresence = (sessionId) => {
   const presence = presenceBySession.get(sessionId)
   if (presence) presence.lastSeen = Date.now()
 }
-
-/**
- * Stop counting a session as signed in, for when it is about to be reset
- * (the kit's reset gives the browser a new session id)
- *
- * @param {string} sessionId - The session's id
- */
-const forgetPresence = (sessionId) => presenceBySession.delete(sessionId)
 
 /**
  * Count the other browsers signed in as each user on the same channel as
@@ -347,6 +410,8 @@ module.exports = {
   setMode,
   getRooms,
   findRoom,
+  setSharedDataSetting,
+  isJoined,
   getChannelKey,
   getSharingDetails,
   getSharedChangesForSession,

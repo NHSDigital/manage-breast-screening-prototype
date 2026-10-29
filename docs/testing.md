@@ -106,11 +106,12 @@ started.
 on the shared read-only store, so tests running in parallel do not tread on each
 other and no test needs to clean up after itself.
 
-Both test servers start with sharing Off (`SHARED_DATA_MODE=off`), whatever
-the shell sets, because shared changes would let parallel tests tread on each
-other. The shared data journey (`shared-data.spec.js`) switches the server to
-By room itself: sessions outside a room keep their own changes, so the other
-specs are unaffected.
+Both test servers start with sharing set to Browsers that join
+(`SHARED_DATA_MODE=off`), whatever the shell sets, because shared changes would
+let parallel tests tread on each other. No other spec joins, so their sessions
+keep their own changes. The shared data journey (`shared-data.spec.js`) joins
+browsers itself, or switches the server to By room: sessions outside a room
+keep their own changes, so the other specs are unaffected.
 
 **Debugging a failure.** Playwright keeps a trace for failed tests:
 

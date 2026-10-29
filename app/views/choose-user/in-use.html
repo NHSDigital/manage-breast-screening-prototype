@@ -1,0 +1,36 @@
+{# app/views/choose-user/in-use.html #}
+{% extends 'layout-app.html' %}
+
+{% set userName = user.firstName + " " + user.lastName %}
+{% set pageHeading = userName + (" is signed in on another browser" if signedInElsewhereCount == 1 else " is signed in on " + signedInElsewhereCount + " other browsers") %}
+
+{% block beforeContent %}
+  {{ backLink({
+    href: "/choose-user" | urlWithReferrer(referrerChain),
+    text: "Back"
+  }) }}
+{% endblock %}
+
+{% set useMinimalNav = true %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    {{ pageHeading }}
+  </h1>
+
+  <p>Changes you make will look like they were made by the same person.</p>
+
+  <form method="post" action="{{ "/choose-user/answer" | urlWithReferrer(referrerChain) }}" novalidate>
+    <input type="hidden" name="_userId" value="{{ user.id }}">
+    <input type="hidden" name="_isConfirmed" value="true">
+
+    <div class="nhsuk-button-group">
+      {{ button({
+        text: "Continue as " + userName
+      }) }}
+      <a class="nhsuk-link" href="{{ "/choose-user" | urlWithReferrer(referrerChain) }}">Choose another user</a>
+    </div>
+  </form>
+
+{% endblock %}

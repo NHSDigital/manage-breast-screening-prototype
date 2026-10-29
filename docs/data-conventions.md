@@ -77,10 +77,15 @@ memory instead, and keeps it out of the saved session.
 
 There are three modes, server-wide:
 
-- **Off** - each session has its own changes. The default.
-- **On** - every session shares one set of changes.
-- **By room** - sessions in the same named room share changes. A session in no
-  room behaves as Off.
+- **Browsers that join** (`off`) - a session shares only once it has joined,
+  with “Start shared data” on the index or “This browser: Sharing” in
+  `/settings`, which set `data.settings.sharedData.joined`. Sessions that joined share one set of
+  changes; the rest keep their own. The default, so nobody's data changes
+  under them unless they ask.
+- **Every browser** (`on`) - every session shares one set of changes, the same
+  set joined browsers use.
+- **By room** (`room`) - sessions in the same named room share changes. A
+  session in no room keeps its own.
 
 The mode starts from the `SHARED_DATA_MODE` environment variable (`off`, `on`
 or `room`; set it on the Heroku app for user research), and `/settings` can
@@ -90,24 +95,43 @@ or by adding `?room=` and the room name to any address (`?room=research-1`;
 `?room=none` leaves). The room is stored per session in
 `data.settings.sharedData.room`.
 
-When the mode isn't Off, the footer says how this browser is sharing (“Shared
-data: on”, the room's name, or “not in a room”), linking to the setting.
+When this browser is sharing, or the mode is By room, the footer says so
+(“Shared data: on”, the room's name, or “not in a room”), linking to the
+setting.
 
 Starting to share is like a reset for that browser: changes it made on its own
-are dropped, not merged into the shared ones. Leaving a room, or the mode going
-back to Off, starts it afresh too.
+are dropped, not merged into the shared ones. Leaving a room, stopping
+sharing, or the mode changing so it no longer shares, starts it afresh too.
+
+Change `data.settings.sharedData` with `setSharedDataSetting`, which copies
+rather than writing in place: a new session's `settings` is the session
+defaults' own object, so a write on its first request would change the
+defaults for every session after.
 
 What stays per session: the current user, settings, filters and every temp
 working copy (`data.appointment`, `data.participant`, `imageReadingTemp`,
 `issueTemp`).
 
+The current user, the room and whether the browser has joined are also kept
+in a long-lived cookie
+([app/lib/middleware/remembered-sign-in.js](../app/lib/middleware/remembered-sign-in.js)),
+so a browser keeps them through a server restart or a data reset. Nothing else
+in the session is kept.
+
 Every browser starts signed in as the same user, so two browsers sharing data
 are easily the same person. The server notes which user each sharing browser is
 signed in as (`recordPresence`), and the choose user page tags users signed in
-on other browsers on the same channel. A browser counts until 30 minutes after
-its last request, kept fresh by the live update heartbeat while a page is open,
-and is forgotten straight away when it resets its data. Like the shared
-changes, this is in memory only.
+on other browsers on the same channel. Choosing one of them shows a warning
+first, with the option to continue anyway. Each tag is a live region: joining,
+switching user, leaving and resetting send a notice for `users.signedIn`, so it
+updates in place. A browser counts until 30 minutes after its last request,
+kept fresh by the live update heartbeat while a page is open, and is forgotten
+straight away when it resets its data. Like the shared changes, this is in
+memory only.
+
+“Start shared data” on the index joins this browser (when the mode is Browsers
+that join) and goes to the choose user page, so the person starting picks who
+they are. “Stop sharing” on the index, or “Not sharing” in `/settings`, leaves.
 
 Shared changes live in memory only. They reset on restart, and on regenerate.
 "Reset data" in the footer clears the shared changes for everyone sharing them

@@ -25,8 +25,8 @@ const openBrowser = async (browser) => {
 }
 
 const modesByLabel = {
-  'Off': 'off',
-  'On': 'on',
+  'Browsers that join': 'off',
+  'Every browser': 'on',
   'By room': 'room'
 }
 
@@ -246,7 +246,7 @@ test.describe('Shared data', () => {
     }
   })
 
-  test('the choose user page shows who is signed in on other browsers in the same room', async ({
+  test('the choose user page shows who is signed in on other browsers in the same room, and warns before choosing them', async ({
     browser,
     page
   }) => {
@@ -256,8 +256,9 @@ test.describe('Shared data', () => {
       users.find((user) => user.lastName === 'Thompson'),
       users.find((user) => user.lastName === 'Lowen')
     ]
+    const fullName = (user) => `${user.firstName} ${user.lastName}`
     const userRow = (user) =>
-      page.locator('li', { hasText: `${user.firstName} ${user.lastName}` })
+      page.locator('.nhsuk-radios__item', { hasText: fullName(user) })
 
     await pinSettings(page, settings)
     const originalMode = await switchToRoomMode(page)
@@ -279,11 +280,80 @@ test.describe('Shared data', () => {
         /Signed in on (another browser|\d+ other browsers)/
       )
       await expect(userRow(userInOtherRoom)).not.toContainText('Signed in')
+
+      // Choosing a user signed in elsewhere asks first
+      await page.getByLabel(fullName(userInSameRoom)).check()
+      await page.getByRole('button', { name: 'Continue' }).click()
+      await expect(page.getByRole('heading', { level: 1 })).toContainText(
+        `${fullName(userInSameRoom)} is signed in on`
+      )
+      await page
+        .getByRole('button', {
+          name: `Continue as ${fullName(userInSameRoom)}`
+        })
+        .click()
+      await expect(page).toHaveURL(/\/dashboard/)
+      await expect(page.locator('.nhsuk-header__account')).toContainText(
+        `${userInSameRoom.lastName.toUpperCase()}, ${userInSameRoom.firstName}`
+      )
     } finally {
       await sameRoom.context.close()
       await otherRoom.context.close()
       await page.goto(
         `/settings/shared-data?settings[sharedData][mode]=${originalMode}`
+      )
+    }
+  })
+
+  test('when the mode is Browsers that join, only browsers that start shared data share it', async ({
+    browser,
+    page
+  }) => {
+    const joiningUser = users.find((user) => user.lastName === 'Bennett')
+    const joiningUserRow = (otherPage) =>
+      otherPage.locator('.nhsuk-radios__item', {
+        hasText: `${joiningUser.firstName} ${joiningUser.lastName}`
+      })
+    const footerStatus = (otherPage) =>
+      otherPage.locator('footer', { hasText: 'Shared data: on' })
+
+    await pinSettings(page, settings)
+    await page.goto('/settings')
+    const originalModeLabel = await page
+      .locator('p', { hasText: /^\s*Mode:/ })
+      .locator('strong')
+      .innerText()
+    await page.goto('/settings/shared-data?settings[sharedData][mode]=off')
+
+    const joining = await openBrowser(browser)
+    const notJoining = await openBrowser(browser)
+
+    try {
+      await page.goto('/')
+      await page.getByRole('button', { name: 'Start shared data' }).click()
+      await expect(page).toHaveURL(/\/choose-user/)
+      await expect(footerStatus(page)).toBeVisible()
+
+      await joining.page.goto('/shared-data/start')
+      await joining.page.goto(`/dashboard?currentUserId=${joiningUser.id}`)
+      await notJoining.page.goto('/dashboard')
+      await expect(footerStatus(notJoining.page)).toHaveCount(0)
+
+      await page.goto('/choose-user')
+      await expect(joiningUserRow(page)).toContainText('Signed in on')
+      await notJoining.page.goto('/choose-user')
+      await expect(joiningUserRow(notJoining.page)).not.toContainText(
+        'Signed in on'
+      )
+
+      await page.goto('/')
+      await page.getByRole('button', { name: 'Stop sharing' }).click()
+      await expect(footerStatus(page)).toHaveCount(0)
+    } finally {
+      await joining.context.close()
+      await notJoining.context.close()
+      await page.goto(
+        `/settings/shared-data?settings[sharedData][mode]=${modesByLabel[originalModeLabel.trim()] || 'off'}`
       )
     }
   })

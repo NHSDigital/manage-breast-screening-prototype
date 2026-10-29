@@ -89,16 +89,16 @@
     {{ settingToggle("Modal forms (spike)", "settings[modalForms]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.modalForms, "false") }}
 
     <h2 id="shared-data">Shared data</h2>
-    <p>Share changes between browsers, to test with several users at once. The mode applies to everyone using this prototype until it restarts.</p>
+    <p>Share changes between browsers, to test with several users at once. The mode applies to everyone using this prototype until it restarts. With “Browsers that join”, each browser chooses whether it shares.</p>
 
     {% set sharedDataModes = [
       {
         value: "off",
-        label: "Off"
+        label: "Browsers that join"
       },
       {
         value: "on",
-        label: "On"
+        label: "Every browser"
       },
       {
         value: "room",
@@ -106,8 +106,8 @@
       }
     ] %}
     {% set sharedDataModeLabels = {
-      off: "Off",
-      on: "On",
+      off: "Browsers that join",
+      on: "Every browser",
       room: "By room"
     } %}
     <p>
@@ -150,16 +150,20 @@
       <p class="nhsuk-hint">To join a room from a link, add <code>?room=</code> and the room name to any address, for example <code>/clinics?room={{ sharedData.rooms[0] | lower | replace(" ", "-") }}</code>.</p>
     {% endif %}
 
-    <p>
-      This browser:
-      {% if sharedData.mode == "on" %}
-        <strong>sharing changes with everyone</strong>
-      {% elseif sharedData.isShared %}
-        <strong>sharing changes with {{ sharedData.room }}</strong>
-      {% else %}
-        <strong>not sharing changes</strong>
-      {% endif %}
-    </p>
+    {% if sharedData.mode == "off" %}
+      {{ settingToggle("This browser", "settings[sharedData][joined]", [{value: "true", label: "Sharing"}, {value: "", label: "Not sharing"}], "true" if sharedData.isJoined else "", "") }}
+    {% else %}
+      <p>
+        This browser:
+        {% if sharedData.mode == "on" %}
+          <strong>sharing changes with everyone</strong>
+        {% elseif sharedData.isShared %}
+          <strong>sharing changes with {{ sharedData.room }}</strong>
+        {% else %}
+          <strong>not sharing changes</strong>
+        {% endif %}
+      </p>
+    {% endif %}
 
     <h2>Appointment</h2>
     {# Confirm identity on check-in #}

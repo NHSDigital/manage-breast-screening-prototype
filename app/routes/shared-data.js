@@ -4,6 +4,7 @@
 // and docs/data-conventions.md.
 
 const sharedData = require('../lib/shared-data')
+const { getReturnUrl } = require('../lib/utils/referrers')
 
 // Heroku drops a connection that has sent nothing for 55 seconds. Pages also
 // watch for this heartbeat, and reconnect if it stops (see live-updates.js).
@@ -41,9 +42,11 @@ module.exports = (router) => {
 
     const data = req.session.data
     delete data.room
-    data.settings = data.settings || {}
-    data.settings.sharedData = data.settings.sharedData || {}
-    data.settings.sharedData.room = sharedData.findRoom(req.query.room) || ''
+    sharedData.setSharedDataSetting(
+      data,
+      'room',
+      sharedData.findRoom(req.query.room) || ''
+    )
 
     const url = new URL(req.originalUrl, 'http://localhost')
     url.searchParams.delete('room')
@@ -120,6 +123,31 @@ module.exports = (router) => {
     return res.redirect('/settings')
   })
 
+  // The start button on the index. When the mode is Off, it joins this
+  // browser alone to sharing; other browsers are unaffected until they join
+  // too. Then it asks who this browser is. In By room mode, a browser not in
+  // a room picks one in /settings first.
+  router.get('/shared-data/start', (req, res) => {
+    const data = req.session.data
+    if (sharedData.getMode() === 'off') {
+      sharedData.setSharedDataSetting(data, 'joined', 'true')
+    }
+    if (!sharedData.getChannelKey(data)) {
+      return res.redirect('/settings#shared-data')
+    }
+    return res.redirect('/choose-user')
+  })
+
+  // Leave sharing joined with the start button. Like leaving a room, the
+  // browser starts afresh with its own changes.
+  router.get('/shared-data/stop', (req, res) => {
+    sharedData.setSharedDataSetting(req.session.data, 'joined', '')
+    sharedData.forgetPresence(req.sessionID)
+    return res.redirect(
+      getReturnUrl('/settings#shared-data', req.query.referrerChain)
+    )
+  })
+
   // The room to bring a browser back to after its session is reset, if any
   const getRoomToRejoin = (data) =>
     sharedData.getMode() === 'room'
@@ -132,8 +160,8 @@ module.exports = (router) => {
   router.get('/shared-data/reset', (req, res) => {
     const returnUrl = new URL(
       typeof req.query.returnPage === 'string' &&
-      req.query.returnPage.startsWith('/') &&
-      !req.query.returnPage.startsWith('//')
+        req.query.returnPage.startsWith('/') &&
+        !req.query.returnPage.startsWith('//')
         ? req.query.returnPage
         : '/',
       'http://localhost'

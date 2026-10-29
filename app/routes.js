@@ -9,6 +9,10 @@ const {
 const { resetCallSequence } = require('./lib/utils/random')
 const dataStore = require('./lib/data-store')
 const sharedData = require('./lib/shared-data')
+const {
+  restoreRememberedSignIn,
+  rememberSignIn
+} = require('./lib/middleware/remembered-sign-in')
 
 const router = express.Router()
 
@@ -79,6 +83,10 @@ router.use(async (req, res, next) => {
     next(err)
   }
 })
+
+// Bring back the user and room this browser had before a restart or reset.
+// Before the shared data routes, so a ?room= link still wins.
+router.use(restoreRememberedSignIn)
 
 // Sharing changes between browsers: room links, the live update stream and
 // the mode setting. Before the attach middleware so a room change applies to
@@ -248,6 +256,9 @@ router.use((req, res, next) => {
   next()
 })
 
+// Keep the user and room in a cookie, so they survive a restart or reset
+router.use(rememberSignIn)
+
 // Clear query string from URL if clearQuery is present
 // This is useful for removing query parameters after processing them
 router.use((req, res, next) => {
@@ -297,6 +308,7 @@ router.post(
 )
 
 require('./routes/settings')(router)
+require('./routes/users')(router)
 
 // Modal fragment middleware — threads the _modal param through redirect chains
 // and form submissions so any page can render as a modal fragment without

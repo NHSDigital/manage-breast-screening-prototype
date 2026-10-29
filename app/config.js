@@ -23,7 +23,8 @@ module.exports = {
   // Sharing changes between browsers, for testing with several users at once.
   // See docs/data-conventions.md.
   sharedData: {
-    // 'off' (each browser has its own changes), 'on' (everyone shares) or
+    // 'off' (Browsers that join: a browser shares only once it starts shared
+    // data, the rest keep their own changes), 'on' (every browser shares) or
     // 'room' (browsers in the same room share). Can be changed from /settings
     // until the server restarts.
     mode: (process.env.SHARED_DATA_MODE || 'off').trim().toLowerCase(),
