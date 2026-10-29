@@ -49,6 +49,14 @@ const channelKeyByChanges = new WeakMap()
 // entries go when the request does.
 const sessionIdByData = new WeakMap()
 
+// How long a browser counts as signed in after its last request, or its last
+// live update heartbeat while a page is open
+const PRESENCE_TIMEOUT_MS = 30 * 60 * 1000
+
+// Session id -> { channel, userId, lastSeen }, for the browsers sharing data,
+// so the choose user page can show who is signed in elsewhere
+const presenceBySession = new Map()
+
 const events = new EventEmitter()
 // Every open page holds a listener, so the default warning limit of 10 is
 // too low
@@ -255,6 +263,68 @@ const resetAllChannels = (origin = null) => {
 }
 
 /**
+ * Note which user a session is signed in as, and on which channel. A session
+ * that isn't sharing is forgotten.
+ *
+ * @param {string} sessionId - The session's id
+ * @param {object} data - Session data
+ */
+const recordPresence = (sessionId, data) => {
+  if (!sessionId) return
+  const channel = getChannelKey(data)
+  const userId = data?.currentUser?.id
+  if (!channel || !userId) {
+    presenceBySession.delete(sessionId)
+    return
+  }
+  presenceBySession.set(sessionId, { channel, userId, lastSeen: Date.now() })
+}
+
+/**
+ * Keep a session counted as signed in, for a page that is open but idle
+ *
+ * @param {string} sessionId - The session's id
+ */
+const touchPresence = (sessionId) => {
+  const presence = presenceBySession.get(sessionId)
+  if (presence) presence.lastSeen = Date.now()
+}
+
+/**
+ * Stop counting a session as signed in, for when it is about to be reset
+ * (the kit's reset gives the browser a new session id)
+ *
+ * @param {string} sessionId - The session's id
+ */
+const forgetPresence = (sessionId) => presenceBySession.delete(sessionId)
+
+/**
+ * Count the other browsers signed in as each user on the same channel as
+ * this session
+ *
+ * @param {object} data - Session data
+ * @param {string} sessionId - The session's id, left out of the counts
+ * @returns {object} User id -> number of other browsers signed in as them.
+ *   Empty when the session isn't sharing.
+ */
+const getUsersSignedInElsewhere = (data, sessionId) => {
+  const counts = {}
+  const channel = getChannelKey(data)
+  if (!channel) return counts
+
+  const now = Date.now()
+  for (const [otherSessionId, presence] of presenceBySession) {
+    if (now - presence.lastSeen > PRESENCE_TIMEOUT_MS) {
+      presenceBySession.delete(otherSessionId)
+      continue
+    }
+    if (otherSessionId === sessionId || presence.channel !== channel) continue
+    counts[presence.userId] = (counts[presence.userId] || 0) + 1
+  }
+  return counts
+}
+
+/**
  * Listen for changes on a channel
  *
  * @param {string} channelKey - Channel key
@@ -284,5 +354,9 @@ module.exports = {
   recordChange,
   resetChannel,
   resetAllChannels,
+  recordPresence,
+  touchPresence,
+  forgetPresence,
+  getUsersSignedInElsewhere,
   subscribe
 }

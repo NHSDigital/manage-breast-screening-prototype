@@ -240,6 +240,14 @@ router.use((req, res, next) => {
   next()
 })
 
+// Note who this browser is signed in as when sharing data, so the choose user
+// page can show who is signed in elsewhere. After the user swap above, so a
+// change of user counts straight away.
+router.use((req, res, next) => {
+  sharedData.recordPresence(req.sessionID, req.session.data)
+  next()
+})
+
 // Clear query string from URL if clearQuery is present
 // This is useful for removing query parameters after processing them
 router.use((req, res, next) => {

@@ -246,6 +246,48 @@ test.describe('Shared data', () => {
     }
   })
 
+  test('the choose user page shows who is signed in on other browsers in the same room', async ({
+    browser,
+    page
+  }) => {
+    // Users the other tests don't sign in as, so their sessions don't count
+    const [userHere, userInSameRoom, userInOtherRoom] = [
+      users.find((user) => user.lastName === 'Sharma'),
+      users.find((user) => user.lastName === 'Thompson'),
+      users.find((user) => user.lastName === 'Lowen')
+    ]
+    const userRow = (user) =>
+      page.locator('li', { hasText: `${user.firstName} ${user.lastName}` })
+
+    await pinSettings(page, settings)
+    const originalMode = await switchToRoomMode(page)
+    await page.goto(`/dashboard?room=research-1&currentUserId=${userHere.id}`)
+
+    const sameRoom = await openBrowser(browser)
+    const otherRoom = await openBrowser(browser)
+
+    try {
+      await sameRoom.page.goto(
+        `/dashboard?room=research-1&currentUserId=${userInSameRoom.id}`
+      )
+      await otherRoom.page.goto(
+        `/dashboard?room=research-2&currentUserId=${userInOtherRoom.id}`
+      )
+
+      await page.goto('/choose-user')
+      await expect(userRow(userInSameRoom)).toContainText(
+        /Signed in on (another browser|\d+ other browsers)/
+      )
+      await expect(userRow(userInOtherRoom)).not.toContainText('Signed in')
+    } finally {
+      await sameRoom.context.close()
+      await otherRoom.context.close()
+      await page.goto(
+        `/settings/shared-data?settings[sharedData][mode]=${originalMode}`
+      )
+    }
+  })
+
   test('without JavaScript, resetting data clears the shared changes and stays in the room', async ({
     browser,
     page

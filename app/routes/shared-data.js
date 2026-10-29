@@ -52,7 +52,13 @@ module.exports = (router) => {
 
   // How this session is sharing, for /settings and the layout
   router.use((req, res, next) => {
-    res.locals.sharedData = sharedData.getSharingDetails(req.session.data)
+    res.locals.sharedData = {
+      ...sharedData.getSharingDetails(req.session.data),
+      usersSignedInElsewhere: sharedData.getUsersSignedInElsewhere(
+        req.session.data,
+        req.sessionID
+      )
+    }
     next()
   })
 
@@ -86,10 +92,10 @@ module.exports = (router) => {
       )
     })
 
-    const heartbeat = setInterval(
-      () => res.write('event: heartbeat\ndata: ping\n\n'),
-      HEARTBEAT_MS
-    )
+    const heartbeat = setInterval(() => {
+      res.write('event: heartbeat\ndata: ping\n\n')
+      sharedData.touchPresence(sessionId)
+    }, HEARTBEAT_MS)
 
     openStreams.add(res)
 
@@ -154,6 +160,7 @@ module.exports = (router) => {
     if (channelKey) {
       sharedData.resetChannel(channelKey, req.sessionID)
     }
+    sharedData.forgetPresence(req.sessionID)
     if (req.body?.returnPage) {
       return res.redirect(307, '/prototype-admin/reset-session-data')
     }

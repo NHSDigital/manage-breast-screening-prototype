@@ -27,6 +27,13 @@
           {% if user.id == data.currentUser.id %}
             {{ "Signed in" | toTag }}
           {% endif %}
+          {% set signedInElsewhereCount = sharedData.usersSignedInElsewhere[user.id] %}
+          {% if signedInElsewhereCount %}
+            {{ "signed_in_elsewhere" | toTag({
+              text: "Signed in on another browser" if signedInElsewhereCount == 1 else "Signed in on " + signedInElsewhereCount + " other browsers",
+              colour: "grey"
+            }) }}
+          {% endif %}
           <br>
           {% for role in user.role %}
             {{ role | sentenceCase -}}

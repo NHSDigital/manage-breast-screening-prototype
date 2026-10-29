@@ -93,9 +93,6 @@ or by adding `?room=` and the room name to any address (`?room=research-1`;
 When the mode isn't Off, the footer says how this browser is sharing (“Shared
 data: on”, the room's name, or “not in a room”), linking to the setting.
 
-When the mode isn't Off, the footer says how this browser is sharing (“Shared
-data: on”, the room's name, or “not in a room”), linking to the setting.
-
 Starting to share is like a reset for that browser: changes it made on its own
 are dropped, not merged into the shared ones. Leaving a room, or the mode going
 back to Off, starts it afresh too.
@@ -103,6 +100,14 @@ back to Off, starts it afresh too.
 What stays per session: the current user, settings, filters and every temp
 working copy (`data.appointment`, `data.participant`, `imageReadingTemp`,
 `issueTemp`).
+
+Every browser starts signed in as the same user, so two browsers sharing data
+are easily the same person. The server notes which user each sharing browser is
+signed in as (`recordPresence`), and the choose user page tags users signed in
+on other browsers on the same channel. A browser counts until 30 minutes after
+its last request, kept fresh by the live update heartbeat while a page is open,
+and is forgotten straight away when it resets its data. Like the shared
+changes, this is in memory only.
 
 Shared changes live in memory only. They reset on restart, and on regenerate.
 "Reset data" in the footer clears the shared changes for everyone sharing them
