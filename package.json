@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node .",
+    "prepare": "git config core.hooksPath .githooks || exit 0",
     "generate": "node scripts/generate-data.js",
     "heroku-postbuild": "npm run generate",
     "build:static-error-page": "node scripts/build-static-error-page.js",

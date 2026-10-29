@@ -1,0 +1,14 @@
+#!/bin/sh
+# .githooks/commit-msg
+# Strips "Co-authored-by: Copilot" trailers that AI tools add to commit messages,
+# along with any blank lines left trailing at the end of the message.
+# Enabled by `npm install`, which runs the "prepare" script in package.json.
+
+message_file="$1"
+temp_file="$message_file.tmp"
+
+awk '
+  tolower($0) ~ /^co-authored-by:[[:space:]]*copilot/ { next }
+  /^[[:space:]]*$/ { blank_lines = blank_lines $0 "\n"; next }
+  { printf "%s", blank_lines; blank_lines = ""; print }
+' "$message_file" > "$temp_file" && mv "$temp_file" "$message_file"
