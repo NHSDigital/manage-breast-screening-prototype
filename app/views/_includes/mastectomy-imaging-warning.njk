@@ -1,0 +1,14 @@
+{# app/views/_includes/mastectomy-imaging-warning.njk #}
+
+{# Tells readers which breasts were imaged after a mastectomy #}
+{% for note in appointment.medicalInformation.medicalHistory | getMastectomyImagingNotes %}
+  {% call warningCallout({
+    heading: note.heading,
+    headingLevel: 2
+  }) %}
+    <p>{{ note.imagedText }}</p>
+    {% if note.details %}
+      <p>Details: {{ note.details }}</p>
+    {% endif %}
+  {% endcall %}
+{% endfor %}

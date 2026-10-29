@@ -5,96 +5,58 @@
 {% set pageHeading = "Add details of benign lumps" %}
 {% set medicalHistoryType = "benignLumps" %}
 
+{% from "_includes/medical-information/medical-history/side-radios.njk" import sideRadios %}
+
 {% block formContent %}
 
-  {% set proceduresQuestionText %}
-    What benign lump procedures has {{ participant.demographicInformation.firstName or "the participant" }} had
-  {%- endset %}
+  {% set notKnownDetailsHtml %}
+    {{ input({
+      name: "appointment[medicalHistoryTemp][notKnownDetails]",
+      value: appointment.medicalHistoryTemp.notKnownDetails,
+      id: "not-known-details",
+      label: {
+        text: "Provide details",
+        size: "s"
+      }
+    }) }}
+  {% endset %}
 
-  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
-  <h2 aria-hidden="true">{{ proceduresQuestionText }}?</h2>
-
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-one-half">
-      {{ checkboxes({
-        small: true,
-        name: "appointment[medicalHistoryTemp][proceduresRightBreast]",
-        values: appointment.medicalHistoryTemp.proceduresRightBreast,
-        idPrefix: "proceduresRightBreast",
-
-        fieldset: {
-          legend: {
-            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
-            size: "s",
-            isPageHeading: false
-          }
-        },
-        items: [
-          {
-            value: "Needle biopsy",
-            text: "Needle biopsy"
-          },
-          {
-            value: "Lump removed",
-            text: "Lump removed"
-          },
-          {
-            value: "No procedures",
-            text: "No procedures",
-            exclusive: true
-          },
-          {
-            divider: "or"
-          },
-          {
-            value: "Not known",
-            text: "Not known",
-            exclusive: true
-          }
-        ]
-      }) }}
-    </div>
-
-    <div class="nhsuk-grid-column-one-half">
-      {{ checkboxes({
-        small: true,
-        name: "appointment[medicalHistoryTemp][proceduresLeftBreast]",
-        values: appointment.medicalHistoryTemp.proceduresLeftBreast,
-        idPrefix: "proceduresLeftBreast",
-        classes: "app-checkboxes--exclusive-divider",
-        fieldset: {
-          legend: {
-            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
-            size: "s",
-            isPageHeading: false
-          }
-        },
-        items: [
-          {
-            value: "Needle biopsy",
-            text: "Needle biopsy"
-          },
-          {
-            value: "Lump removed",
-            text: "Lump removed"
-          },
-          {
-            value: "No procedures",
-            text: "No procedures",
-            exclusive: true
-          },
-          {
-            divider: "or"
-          },
-          {
-            value: "Not known",
-            text: "Not known",
-            exclusive: true
-          }
-        ]
-      }) }}
-    </div>
-  </div>
+  {{ checkboxes({
+    small: true,
+    name: "appointment[medicalHistoryTemp][procedures]",
+    values: appointment.medicalHistoryTemp.procedures,
+    idPrefix: "procedures",
+    fieldset: {
+      legend: {
+        text: "What benign lump procedures has " ~ (participant.demographicInformation.firstName or "the participant") ~ " had?",
+        size: "m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "Needle biopsy",
+        text: "Needle biopsy",
+        conditional: {
+          html: sideRadios("needleBiopsySide", "breast", appointment.medicalHistoryTemp.needleBiopsySide)
+        }
+      },
+      {
+        value: "Lump removed",
+        text: "Lump removed",
+        conditional: {
+          html: sideRadios("lumpRemovedSide", "breast", appointment.medicalHistoryTemp.lumpRemovedSide)
+        }
+      },
+      {
+        value: "Not known",
+        text: "Not known",
+        conditional: {
+          html: notKnownDetailsHtml
+        }
+      }
+    ]
+  }) }}
 
   {% include "_includes/medical-information/medical-history/year.njk" %}
 

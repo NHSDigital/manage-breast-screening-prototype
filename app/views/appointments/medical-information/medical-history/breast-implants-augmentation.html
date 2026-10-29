@@ -2,95 +2,54 @@
 
 {% extends 'layout-medical-history-form.html' %}
 
+{% from "_includes/medical-information/medical-history/side-radios.njk" import sideRadios %}
+
 {% set pageHeading = "Add details of breast implants or augmentation" %}
 {% set medicalHistoryType = "breastImplantsAugmentation" %}
 
 {% block formContent %}
 
-  {% set proceduresQuestionText %}
-    What procedures has {{ participant.demographicInformation.firstName or "the participant" }} had
-  {%- endset %}
+  {% set otherDetailsHtml %}
+    {{ input({
+      name: "appointment[medicalHistoryTemp][otherAugmentationDetails]",
+      value: appointment.medicalHistoryTemp.otherAugmentationDetails,
+      id: "other-augmentation-details",
+      label: {
+        text: "Provide details",
+        size: "s"
+      }
+    }) }}
+  {% endset %}
 
-  {# H2 hidden from AT as it's included in the fieldset legend of each set of checkboxes #}
-  <h2 aria-hidden="true">{{ proceduresQuestionText }}?</h2>
-
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-one-half">
-      {{ checkboxes({
-        small: true,
-        name: "appointment[medicalHistoryTemp][proceduresRightBreast]",
-        values: appointment.medicalHistoryTemp.proceduresRightBreast,
-        idPrefix: "proceduresRightBreast",
-        fieldset: {
-          legend: {
-            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Right breast",
-            size: "s",
-            isPageHeading: false
-          }
-        },
-        items: [
-          {
-            value: "Breast implants",
-            text: "Breast implants (silicone or saline)"
-          },
-          {
-            value: "Other augmentation",
-            text: "Other augmentation"
-          },
-          {
-            value: "Not known",
-            text: "Not known"
-          },
-          {
-            divider: "or"
-          },
-          {
-            value: "No procedures",
-            text: "No procedures",
-            exclusive: true
-          }
-        ]
-      }) }}
-    </div>
-
-    <div class="nhsuk-grid-column-one-half">
-      {{ checkboxes({
-        small: true,
-        name: "appointment[medicalHistoryTemp][proceduresLeftBreast]",
-        values: appointment.medicalHistoryTemp.proceduresLeftBreast,
-        idPrefix: "proceduresLeftBreast",
-        fieldset: {
-          legend: {
-            html: ((proceduresQuestionText + " in their") | asVisuallyHiddenText) ~ " Left breast",
-            size: "s",
-            isPageHeading: false
-          }
-        },
-        items: [
-          {
-            value: "Breast implants",
-            text: "Breast implants (silicone or saline)"
-          },
-          {
-            value: "Other augmentation",
-            text: "Other augmentation"
-          },
-          {
-            value: "Not known",
-            text: "Not known"
-          },
-          {
-            divider: "or"
-          },
-          {
-            value: "No procedures",
-            text: "No procedures",
-            exclusive: true
-          }
-        ]
-      }) }}
-    </div>
-  </div>
+  {{ checkboxes({
+    small: true,
+    name: "appointment[medicalHistoryTemp][procedures]",
+    values: appointment.medicalHistoryTemp.procedures,
+    idPrefix: "procedures",
+    fieldset: {
+      legend: {
+        text: "What procedures has " ~ (participant.demographicInformation.firstName or "the participant") ~ " had?",
+        size: "m",
+        isPageHeading: false
+      }
+    },
+    items: [
+      {
+        value: "Breast implants",
+        text: "Breast implants (silicone or saline)",
+        conditional: {
+          html: sideRadios("breastImplantsSide", "breast", appointment.medicalHistoryTemp.breastImplantsSide)
+        }
+      },
+      {
+        value: "Other, or not known",
+        text: "Other, or not known",
+        conditional: {
+          html: otherDetailsHtml
+        }
+      }
+    ]
+  }) }}
 
   {% include "_includes/medical-information/medical-history/year.njk" %}
 

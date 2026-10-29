@@ -71,6 +71,7 @@
         <strong>Reschedule requested:</strong>
         {%- if appointment.appointmentStopped.needsReschedule === "yes" %} Yes
         {%- elseif appointment.appointmentStopped.needsReschedule === "no-invite" %} No
+        {%- elseif appointment.appointmentStopped.needsReschedule === "permanent-exclusion" %} No, not invited to future screening episodes
         {%- elseif appointment.appointmentStopped.needsReschedule === "no-opt-out" %} No, opting out
           {%- if appointment.appointmentStopped.optOutDetails %} ({{ appointment.appointmentStopped.optOutDetails }})
           {%- endif -%}

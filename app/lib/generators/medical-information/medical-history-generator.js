@@ -30,18 +30,14 @@ const MASTECTOMY_LUMPECTOMY_CONFIG = {
     'left-only': 0.4,
     'both': 0.2
   },
-  // Procedure types (same as breast cancer but for prophylactic/elective surgery)
-  procedureTypes: [
-    'Lumpectomy',
-    'Mastectomy (tissue remaining)',
-    'Mastectomy (no tissue remaining)'
-  ],
+  // Procedure types (checkboxes)
+  procedureTypes: ['Lumpectomy', 'Mastectomy'],
   // Other surgery options
   otherSurgeryOptions: ['Reconstruction', 'Symmetrisation'],
   // Surgery reasons (skip 'Other reason')
   surgeryReasons: {
     'Risk reduction': 0.7,
-    'Gender-affirmation': 0.3
+    'Gender affirmation': 0.3
   }
 }
 
@@ -86,13 +82,8 @@ const BREAST_CANCER_CONFIG = {
     'both': 0.2,
     'unknown': 0.1
   },
-  // Procedure types (radio options)
-  procedureTypes: [
-    'Lumpectomy',
-    'Mastectomy (tissue remaining)',
-    'Mastectomy (no tissue remaining)',
-    'No procedure'
-  ],
+  // Procedure types (checkboxes)
+  procedureTypes: ['Lumpectomy', 'Mastectomy'],
   // Other surgery options (checkboxes)
   otherSurgeryOptions: [
     'Lymph node surgery',
@@ -103,6 +94,29 @@ const BREAST_CANCER_CONFIG = {
   treatmentOptions: ['Breast radiotherapy', 'Lymph node radiotherapy'],
   // Systemic treatment options
   systemicTreatmentOptions: ['Chemotherapy', 'Hormone therapy']
+}
+
+const addMastectomyImagingAnswers = (item) => {
+  const mastectomyOnRight = item.proceduresRightBreast?.includes('Mastectomy')
+  const mastectomyOnLeft = item.proceduresLeftBreast?.includes('Mastectomy')
+
+  if (!mastectomyOnRight && !mastectomyOnLeft) {
+    return
+  }
+
+  const mastectomySide =
+    mastectomyOnRight && mastectomyOnLeft
+      ? 'Both'
+      : mastectomyOnRight
+        ? 'Right'
+        : 'Left'
+  const remainingSide = mastectomySide === 'Right' ? 'Left' : 'Right'
+
+  item.mastectomyImagingFor = mastectomySide
+  item.mastectomyImagingSide =
+    mastectomySide === 'Both'
+      ? weighted.select({ Right: 0.2, Left: 0.2, Both: 0.6 })
+      : weighted.select({ [remainingSide]: 0.8, Both: 0.2 })
 }
 
 /**
@@ -132,7 +146,7 @@ const generateBreastCancerItem = (options = {}) => {
   } else if (breastAffected === 'both') {
     item.cancerLocation = ['Right breast', 'Left breast']
   } else {
-    item.cancerLocation = ['Does not know']
+    item.cancerLocation = ['Not known']
   }
 
   // Year (90% of the time)
@@ -141,19 +155,19 @@ const generateBreastCancerItem = (options = {}) => {
   }
 
   // Procedures - always generate based on which breast is affected
-  // Remove 'No procedure' from options - if they have cancer history, at least one breast had a procedure
-  const actualProcedureTypes = BREAST_CANCER_CONFIG.procedureTypes.filter(
-    (type) => type !== 'No procedure'
-  )
+  const actualProcedureTypes = BREAST_CANCER_CONFIG.procedureTypes
 
   // Even if cancer location is unknown, procedures might still be recorded
   if (breastAffected === 'right-only' || breastAffected === 'both') {
-    item.proceduresRightBreast =
+    item.proceduresRightBreast = [
       faker.helpers.arrayElement(actualProcedureTypes)
+    ]
   }
 
   if (breastAffected === 'left-only' || breastAffected === 'both') {
-    item.proceduresLeftBreast = faker.helpers.arrayElement(actualProcedureTypes)
+    item.proceduresLeftBreast = [
+      faker.helpers.arrayElement(actualProcedureTypes)
+    ]
   }
 
   // If cancer location is unknown, still might have procedures recorded
@@ -166,19 +180,23 @@ const generateBreastCancerItem = (options = {}) => {
     })
 
     if (unknownBreastChoice === 'right' || unknownBreastChoice === 'both') {
-      item.proceduresRightBreast =
+      item.proceduresRightBreast = [
         faker.helpers.arrayElement(actualProcedureTypes)
+      ]
     }
 
     if (unknownBreastChoice === 'left' || unknownBreastChoice === 'both') {
-      item.proceduresLeftBreast =
+      item.proceduresLeftBreast = [
         faker.helpers.arrayElement(actualProcedureTypes)
+      ]
     }
   }
 
+  addMastectomyImagingAnswers(item)
+
   // Other surgery - generate if we have a procedure field for that breast
   if (item.proceduresRightBreast) {
-    // 80% chance of having other surgery (not 'No surgery')
+    // 80% chance of having other surgery
     if (Math.random() < 0.8) {
       const numberOfOptions = weighted.select({ 1: 0.6, 2: 0.3, 3: 0.1 })
       item.otherSurgeryRightBreast = faker.helpers.arrayElements(
@@ -186,12 +204,12 @@ const generateBreastCancerItem = (options = {}) => {
         numberOfOptions
       )
     } else {
-      item.otherSurgeryRightBreast = ['No surgery']
+      item.otherSurgeryRightBreast = []
     }
   }
 
   if (item.proceduresLeftBreast) {
-    // 80% chance of having other surgery (not 'No surgery')
+    // 80% chance of having other surgery
     if (Math.random() < 0.8) {
       const numberOfOptions = weighted.select({ 1: 0.6, 2: 0.3, 3: 0.1 })
       item.otherSurgeryLeftBreast = faker.helpers.arrayElements(
@@ -199,13 +217,13 @@ const generateBreastCancerItem = (options = {}) => {
         numberOfOptions
       )
     } else {
-      item.otherSurgeryLeftBreast = ['No surgery']
+      item.otherSurgeryLeftBreast = []
     }
   }
 
   // Radiotherapy treatment - generate if we have a procedure field for that breast
   if (item.proceduresRightBreast) {
-    // 75% chance of having radiotherapy (not 'No radiotherapy')
+    // 75% chance of having radiotherapy
     if (Math.random() < 0.75) {
       const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
       item.treatmentRightBreast = faker.helpers.arrayElements(
@@ -213,12 +231,12 @@ const generateBreastCancerItem = (options = {}) => {
         numberOfOptions
       )
     } else {
-      item.treatmentRightBreast = ['No radiotherapy']
+      item.treatmentRightBreast = []
     }
   }
 
   if (item.proceduresLeftBreast) {
-    // 75% chance of having radiotherapy (not 'No radiotherapy')
+    // 75% chance of having radiotherapy
     if (Math.random() < 0.75) {
       const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
       item.treatmentLeftBreast = faker.helpers.arrayElements(
@@ -226,7 +244,7 @@ const generateBreastCancerItem = (options = {}) => {
         numberOfOptions
       )
     } else {
-      item.treatmentLeftBreast = ['No radiotherapy']
+      item.treatmentLeftBreast = []
     }
   }
 
@@ -238,9 +256,9 @@ const generateBreastCancerItem = (options = {}) => {
       numberOfTreatments
     )
 
-    // 20% chance of "Other treatment" too
+    // 20% chance of "Other, or not known" too
     if (Math.random() < 0.2) {
-      item.systemicTreatments.push('Other treatment')
+      item.systemicTreatments.push('Other, or not known')
       item.otherTreatmentDetails = faker.helpers.arrayElement([
         'Immunotherapy',
         'Targeted therapy',
@@ -315,17 +333,10 @@ const generateBreastImplantsItem = (options = {}) => {
   // Which breast(s) have implants
   const breastChoice = weighted.select(BREAST_IMPLANTS_CONFIG.breastChoice)
 
-  if (breastChoice === 'right-only') {
-    item.proceduresRightBreast = ['Breast implants']
-    item.proceduresLeftBreast = ['No procedures']
-  } else if (breastChoice === 'left-only') {
-    item.proceduresLeftBreast = ['Breast implants']
-    item.proceduresRightBreast = ['No procedures']
-  } // both
-  else {
-    item.proceduresRightBreast = ['Breast implants']
-    item.proceduresLeftBreast = ['Breast implants']
-  }
+  item.proceduresRightBreast =
+    breastChoice === 'left-only' ? [] : ['Breast implants']
+  item.proceduresLeftBreast =
+    breastChoice === 'right-only' ? [] : ['Breast implants']
 
   // Consent is required for breast implants - always set to 'yes' for generated data
   item.consentGiven = 'yes'
@@ -368,10 +379,11 @@ const generateBreastImplantsItem = (options = {}) => {
  * Generate a single mastectomy/lumpectomy history item
  * @param {object} [options] - Generation options
  * @param {string} [options.addedByUserId] - User who added this information
+ * @param {boolean} [options.bilateralMastectomyWithoutImages] - Generate a bilateral mastectomy with no images required
  * @returns {object} Generated mastectomy/lumpectomy item
  */
 const generateMastectomyLumpectomyItem = (options = {}) => {
-  const { addedByUserId } = options
+  const { addedByUserId, bilateralMastectomyWithoutImages = false } = options
 
   const item = {
     id: generateId(),
@@ -381,59 +393,35 @@ const generateMastectomyLumpectomyItem = (options = {}) => {
   }
 
   // Which breast(s) had surgery
-  const breastChoice = weighted.select(
-    MASTECTOMY_LUMPECTOMY_CONFIG.breastChoice
-  )
+  const breastChoice = bilateralMastectomyWithoutImages
+    ? 'both'
+    : weighted.select(MASTECTOMY_LUMPECTOMY_CONFIG.breastChoice)
 
-  if (breastChoice === 'right-only') {
-    item.proceduresRightBreast = faker.helpers.arrayElement(
-      MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
-    )
-    item.proceduresLeftBreast = 'No procedures'
-  } else if (breastChoice === 'left-only') {
-    item.proceduresLeftBreast = faker.helpers.arrayElement(
-      MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
-    )
-    item.proceduresRightBreast = 'No procedures'
-  } // both
-  else {
-    item.proceduresRightBreast = faker.helpers.arrayElement(
-      MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
-    )
-    item.proceduresLeftBreast = faker.helpers.arrayElement(
-      MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes
-    )
-  }
+  const hasRight = breastChoice !== 'left-only'
+  const hasLeft = breastChoice !== 'right-only'
 
-  // Other surgery (70% chance)
-  if (
-    item.proceduresRightBreast &&
-    item.proceduresRightBreast !== 'No procedures'
-  ) {
-    if (Math.random() < 0.7) {
-      const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
-      item.otherSurgeryRightBreast = faker.helpers.arrayElements(
-        MASTECTOMY_LUMPECTOMY_CONFIG.otherSurgeryOptions,
-        numberOfOptions
-      )
-    } else {
-      item.otherSurgeryRightBreast = ['No surgery']
-    }
-  }
+  const generateOtherSurgery = () =>
+    Math.random() < 0.7
+      ? faker.helpers.arrayElements(
+          MASTECTOMY_LUMPECTOMY_CONFIG.otherSurgeryOptions,
+          weighted.select({ 1: 0.7, 2: 0.3 })
+        )
+      : []
 
-  if (
-    item.proceduresLeftBreast &&
-    item.proceduresLeftBreast !== 'No procedures'
-  ) {
-    if (Math.random() < 0.7) {
-      const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
-      item.otherSurgeryLeftBreast = faker.helpers.arrayElements(
-        MASTECTOMY_LUMPECTOMY_CONFIG.otherSurgeryOptions,
-        numberOfOptions
-      )
-    } else {
-      item.otherSurgeryLeftBreast = ['No surgery']
-    }
+  const pickProcedure = () =>
+    bilateralMastectomyWithoutImages
+      ? 'Mastectomy'
+      : faker.helpers.arrayElement(MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes)
+
+  item.proceduresRightBreast = hasRight ? [pickProcedure()] : []
+  item.proceduresLeftBreast = hasLeft ? [pickProcedure()] : []
+  item.otherSurgeryRightBreast = hasRight ? generateOtherSurgery() : []
+  item.otherSurgeryLeftBreast = hasLeft ? generateOtherSurgery() : []
+  item.otherProcedures = []
+
+  addMastectomyImagingAnswers(item)
+  if (bilateralMastectomyWithoutImages) {
+    item.mastectomyImagingSide = 'None'
   }
 
   // Year (85% of the time)
@@ -578,7 +566,7 @@ const generateBenignLumpsItem = (options = {}) => {
       BENIGN_LUMPS_CONFIG.procedureOptions,
       numberOfOptions
     )
-    item.proceduresLeftBreast = ['No procedures']
+    item.proceduresLeftBreast = []
   } else if (breastChoice === 'left-only') {
     // Always have procedures on left breast if this is left-only
     const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
@@ -586,7 +574,7 @@ const generateBenignLumpsItem = (options = {}) => {
       BENIGN_LUMPS_CONFIG.procedureOptions,
       numberOfOptions
     )
-    item.proceduresRightBreast = ['No procedures']
+    item.proceduresRightBreast = []
   } // both
   else {
     // At least one breast must have actual procedures
@@ -595,7 +583,7 @@ const generateBenignLumpsItem = (options = {}) => {
     // 80% chance of having procedures on left
     const leftHasProcedures = Math.random() < 0.8
 
-    // If both randomly became 'No procedures', force at least one to have procedures
+    // If neither breast was picked, force at least one to have procedures
     if (!rightHasProcedures && !leftHasProcedures) {
       // Randomly pick which breast will have procedures
       if (Math.random() < 0.5) {
@@ -604,14 +592,14 @@ const generateBenignLumpsItem = (options = {}) => {
           BENIGN_LUMPS_CONFIG.procedureOptions,
           numberOfOptions
         )
-        item.proceduresLeftBreast = ['No procedures']
+        item.proceduresLeftBreast = []
       } else {
         const numberOfOptions = weighted.select({ 1: 0.7, 2: 0.3 })
         item.proceduresLeftBreast = faker.helpers.arrayElements(
           BENIGN_LUMPS_CONFIG.procedureOptions,
           numberOfOptions
         )
-        item.proceduresRightBreast = ['No procedures']
+        item.proceduresRightBreast = []
       }
     } else {
       // Generate normally based on the random checks
@@ -622,7 +610,7 @@ const generateBenignLumpsItem = (options = {}) => {
           numberOfOptions
         )
       } else {
-        item.proceduresRightBreast = ['No procedures']
+        item.proceduresRightBreast = []
       }
 
       if (leftHasProcedures) {
@@ -632,7 +620,7 @@ const generateBenignLumpsItem = (options = {}) => {
           numberOfOptions
         )
       } else {
-        item.proceduresLeftBreast = ['No procedures']
+        item.proceduresLeftBreast = []
       }
     }
   }

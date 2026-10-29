@@ -1,0 +1,119 @@
+{# app/views/appointments/medical-information/medical-history/mastectomy-imaging.html #}
+
+{% extends parentLayout or 'layout-appointment.html' %}
+
+{% set mastectomySide = appointment.medicalHistoryTemp.mastectomySide %}
+{% set remainingSide = "Left" if mastectomySide == "Right" else "Right" %}
+{% set pageHeading = mastectomySide | getMastectomyHeading %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{# Posts back to the save route, which now finds the follow-up answered #}
+{% set historyTypeSlug = (data.medicalHistoryTypes | where("type", appointment.medicalHistoryTemp.medicalHistoryType) | first).slug %}
+{% set formAction = ("./" ~ historyTypeSlug ~ "/save") | urlWithReferrer(referrerChain, query.scrollTo) %}
+
+{# Pre-select the default answer unless this side has already been answered #}
+{% if appointment.medicalHistoryTemp.mastectomyImagingFor == mastectomySide %}
+  {% set imagingSide = appointment.medicalHistoryTemp.mastectomyImagingSide %}
+{% else %}
+  {% set imagingSide = remainingSide if mastectomySide != "Both" %}
+{% endif %}
+
+{# Each option that takes images has its own details box, as hidden conditionals still submit. The save route keeps the one for the chosen option #}
+{% macro imagingDetails(option) %}
+  {{ input({
+    name: "appointment[medicalHistoryTemp][mastectomyImagingDetailsTemp][" + option + "]",
+    id: "mastectomyImagingDetails" + option,
+    value: appointment.medicalHistoryTemp.mastectomyImagingDetails if imagingSide == option,
+    label: {
+      text: "Provide details",
+      size: "s"
+    }
+  }) }}
+{% endmacro %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">
+      {{ participant | getFullNameReversed }}
+    </span>
+    {{ pageHeading }}
+  </h1>
+
+  {% if mastectomySide == "Both" %}
+    <p>As both breasts have been removed, this participant does not require mammography.</p>
+    <p>You can still take images if there is breast tissue remaining on either side.</p>
+  {% else %}
+    <p>Images are only required for the {{ remainingSide | lower }} breast unless there is breast tissue remaining on the {{ mastectomySide | lower }} side.</p>
+  {% endif %}
+
+  {{ appHiddenInput({
+    name: "appointment[medicalHistoryTemp][mastectomyImagingFor]",
+    value: mastectomySide
+  }) }}
+
+  {% if mastectomySide == "Both" %}
+    {% set imagingLegend = "Do you need to take any images?" %}
+    {% set imagingItems = [
+      {
+        value: "None",
+        text: "No, end this appointment"
+      },
+      {
+        value: "Right",
+        text: "Yes, right side only",
+        conditional: {
+          html: imagingDetails("Right")
+        }
+      },
+      {
+        value: "Left",
+        text: "Yes, left side only",
+        conditional: {
+          html: imagingDetails("Left")
+        }
+      },
+      {
+        value: "Both",
+        text: "Yes, both sides",
+        conditional: {
+          html: imagingDetails("Both")
+        }
+      }
+    ] %}
+  {% else %}
+    {% set imagingLegend = "Which side will you be taking images of?" %}
+    {% set imagingItems = [
+      {
+        value: remainingSide,
+        text: remainingSide + " only"
+      },
+      {
+        value: "Both",
+        text: "Both",
+        conditional: {
+          html: imagingDetails("Both")
+        }
+      }
+    ] %}
+  {% endif %}
+
+  {{ radios({
+    small: true,
+    name: "appointment[medicalHistoryTemp][mastectomyImagingSide]",
+    value: imagingSide,
+    idPrefix: "mastectomyImagingSide",
+    fieldset: {
+      legend: {
+        text: imagingLegend,
+        size: "m"
+      }
+    },
+    items: imagingItems
+  } | populateErrors) }}
+
+  {{ button({
+    text: "Save and continue"
+  }) }}
+
+{% endblock pageContent %}

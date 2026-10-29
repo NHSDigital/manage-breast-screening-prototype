@@ -23,6 +23,11 @@ const {
   urlWithReferrer,
   modalBreakout
 } = require('../../lib/utils/referrers')
+const {
+  OTHER_REASON,
+  PERMANENT_EXCLUSION,
+  getBilateralMastectomySuccessMessage
+} = require('../../lib/utils/mastectomy')
 const { captureSessionEndTime } = require('./shared')
 
 module.exports = (router) => {
@@ -498,7 +503,7 @@ module.exports = (router) => {
       // Checkboxes post an empty array when none are ticked
       const hasNoReason = !notScreenedReason?.length
       const hasOtherReasonButNoDetails =
-        notScreenedReason?.includes('Other reason') && !otherDetails
+        notScreenedReason?.includes(OTHER_REASON) && !otherDetails
 
       if (hasNoReason || !needsReschedule || hasOtherReasonButNoDetails) {
         if (hasNoReason) {
@@ -558,6 +563,11 @@ module.exports = (router) => {
         } else if (needsReschedule === 'no-opt-out') {
           successMessage = `
     Appointment cancelled. An opt out request has been submitted for ${participantName}. <a href="${participantAppointmentUrl}" class="app-nowrap">View their appointment</a>`
+        } else if (needsReschedule === PERMANENT_EXCLUSION) {
+          successMessage = getBilateralMastectomySuccessMessage(
+            participantName,
+            participantAppointmentUrl
+          )
         }
 
         req.flash('success', { wrapWithHeading: successMessage })
