@@ -240,7 +240,7 @@
             classes: "app-nowrap js-start-appointment-link" + (" app-display-none" if appointment.status == 'scheduled')
           }) }}
 
-        {% elseif appointment | isPaused or appointment | isInProgress %}
+        {% elseif appointment | isPaused or (appointment | isInProgress and appointment | isRunByCurrentUser) %}
           {{ button({
             html: "Resume appointment" ~ ((" for " + (participant | getShortName)) | asVisuallyHiddenText),
             href: appointmentBaseUrl + "/resume",
