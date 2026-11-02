@@ -82,6 +82,7 @@
           <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
           {% if viewStates[view.label].state == "notExpected" %}
             {% set notExpectedReason = expectedViews.shortReason %}
+            {% set notExpectedText = "Not imaged" %}
             {% include "_includes/images/not-expected-thumbnail.njk" %}
           {% else %}
             <div class="app-mammogram-thumbnail__missing">

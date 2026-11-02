@@ -277,7 +277,7 @@
         // A view that wasn't expected says so, rather than "No image"
         const isNotExpected = V2.notExpectedViews.includes(viewKey)
         const placeholderHtml = isNotExpected
-          ? 'Not expected' + (V2.notExpectedReason ? '<span class="app-ann-v2__no-image-reason">' + V2.notExpectedReason + '</span>' : '')
+          ? 'Not imaged' + (V2.notExpectedReason ? '<span class="app-ann-v2__no-image-reason">' + V2.notExpectedReason + '</span>' : '')
           : 'No image'
         html += '<div class="app-ann-v2__image-panel app-ann-v2__image-panel--no-image' + (isNotExpected ? ' app-ann-v2__image-panel--not-expected' : '') + ' app-ann-v2__image-panel--' + activeSide + '" data-view="' + viewKey + '">' +
           '<span class="app-ann-v2__view-label">' + VIEW_LABELS[viewKey] + '</span>' +
