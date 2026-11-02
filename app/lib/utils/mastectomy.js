@@ -188,6 +188,8 @@ const getBilateralMastectomySuccessMessage = (
   `Appointment ended. ${participantName} does not need any images because of their bilateral mastectomy. <a href="${appointmentUrl}" class="app-nowrap">View their appointment</a>`
 
 module.exports = {
+  MASTECTOMY_HISTORY_TYPES,
+  getMastectomyImagingOptions,
   OTHER_REASON,
   BILATERAL_MASTECTOMY,
   PERMANENT_EXCLUSION,

@@ -144,6 +144,8 @@ When no context requires hard filtering, sets are selected using weighted random
 
 If a mammogram view is missing from `appointment.mammogramData.views`, the viewer shows "No image" placeholder for that panel. The image selection system filters paths to only include views present in the appointment's mammogram data.
 
+A view that wasn't expected (for example after a mastectomy, see `getExpectedViews` in [data-conventions.md](data-conventions.md#expected-views)) is left blank instead: a real PACS knows nothing of medical history, so it wouldn't explain why. `pacs-viewer-meta.njk` passes these in a `mammogram-not-expected` meta tag (`['rcc', 'rmlo']`), sent to the viewer as `notExpected`. Set selection also avoids sets with an abnormal or technical finding on a breast with no images (`notImagedSides` in the context).
+
 ### Composite Sets
 
 Sets can reference other sets or the image library to create composites:

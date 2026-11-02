@@ -21,6 +21,7 @@ Run breast screening in England (Rubie) is a new NHS service for clinical and cl
 - Clinics run with short appointment slots, often double-booked. Slots can be longer for some participants.
 - A typical target is about 60 bookings expecting 40 attendances.
 - Commonly four x-rays (views) are taken, two per breast: craniocaudal (CC) and mediolateral oblique (MLO), so LCC, LMLO, RCC and RMLO. Extra views may be taken if the participant has large breasts or there is a technical problem.
+- Not every appointment expects all four. After a mastectomy on one side, usually only the other breast is imaged, and a technical recall retakes just the views readers asked for. These are the appointment's expected views. A view that was never expected is "not expected", not missing, and doesn't make the mammography incomplete. The mammographer can still take an image that wasn't expected.
 
 ### Image reading
 
@@ -80,6 +81,7 @@ A participant's visit to a clinic, within a screening episode:
 - Links a participant to a clinic appointment slot
 - Tracks status through the visit: scheduled, checked in, in progress, complete. Other outcomes are partially screened, did not attend, attended not screened, cancelled and rescheduled
 - If a bilateral mastectomy means no images are needed, the appointment is attended not screened and the participant is permanently excluded from future screening invitations
+- Partially screened means an expected view has no images. Views that weren't expected, such as after a mastectomy, don't count
 - Records attendance and outcomes
 - Captures medical data during the visit (symptoms, observations, mammogram data)
 - Keeps a status history with timestamps

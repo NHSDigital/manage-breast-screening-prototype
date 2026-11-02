@@ -539,6 +539,20 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     color: $app-dark-mode-text-colour;
   }
 
+  .app-mammogram-thumbnail__missing-reason {
+    color: $app-dark-mode-text-colour;
+  }
+
+  .app-not-expected-views {
+    background-color: $app-dark-mode-surface;
+    border-color: $app-dark-mode-text-colour-secondary;
+  }
+
+  .app-not-expected-views__text,
+  .app-not-expected-views__reason {
+    color: $app-dark-mode-text-colour-secondary;
+  }
+
   // Image container borders — light grey so visible against dark backgrounds
   .app-ann-v2__image-panel,
   .app-ann-v2__tab-thumb {

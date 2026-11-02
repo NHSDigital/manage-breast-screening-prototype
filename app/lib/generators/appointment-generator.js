@@ -17,6 +17,10 @@ const {
 const { generateAppointmentNote } = require('./appointment-note-generator')
 const { generatePreviousMammograms } = require('./previous-mammogram-generator')
 const { getImageSetForAppointment } = require('../utils/mammogram-images')
+const {
+  getExpectedViews,
+  hasMissingExpectedViews
+} = require('../utils/expected-views')
 const users = require('../../data/users')
 const screeningRooms = require('../../data/screening-rooms')
 
@@ -332,12 +336,29 @@ const generateAppointment = ({
         endedAt: actualEndTime
       })
 
+      // Generate medical information (symptoms, medical history, etc.)
+      // All attributed to the user who ran the appointment. Done before
+      // images, as a mastectomy changes which views are expected
+      const medicalInformation = generateMedicalInformation({
+        addedByUserId: appointment.sessionDetails.startedBy,
+        config: participant.config,
+        ...(seedDataProfile?.medicalInformation || {}),
+        // Allow config to override probabilities for test scenarios
+        ...(participant.config?.medicalInformation || {})
+      })
+
+      // Store medical information if any was generated
+      if (Object.keys(medicalInformation).length > 0) {
+        appointment.medicalInformation = medicalInformation
+      }
+
       // Add mammogram images for completed appointments
       appointment.mammogramData = generateMammogramImages({
         startTime: actualStartTime,
         accessionNumber: appointmentBase.accessionNumber,
         isSeedData: true,
         config: participant.config,
+        expectedViews: getExpectedViews(appointment).views,
         scenarioWeights: seedDataProfile?.mammogram?.scenarioWeights,
         imperfectChanceForTechnicalOrIncomplete:
           seedDataProfile?.mammogram?.imperfectChanceForTechnicalOrIncomplete,
@@ -346,10 +367,9 @@ const generateAppointment = ({
       })
 
       // Sync appointment status with mammogram completeness
-      // If mammogram is incomplete, status should be partially_screened
+      // If an expected view is missing, status should be partially_screened
       // If mammogram is complete but status was partially_screened, change to complete
-      const isIncomplete =
-        !appointment.mammogramData.metadata.standardViewsCompleted
+      const isIncomplete = hasMissingExpectedViews(appointment)
       if (isIncomplete && appointment.status !== 'partially_screened') {
         appointment.status = 'partially_screened'
       } else if (!isIncomplete && appointment.status === 'partially_screened') {
@@ -378,21 +398,6 @@ const generateAppointment = ({
       if (previousMammograms) {
         appointment.previousMammograms = previousMammograms
       }
-
-      // Generate medical information (symptoms, medical history, etc.)
-      // All attributed to the user who ran the appointment
-      const medicalInformation = generateMedicalInformation({
-        addedByUserId: appointment.sessionDetails.startedBy,
-        config: participant.config,
-        ...(seedDataProfile?.medicalInformation || {}),
-        // Allow config to override probabilities for test scenarios
-        ...(participant.config?.medicalInformation || {})
-      })
-
-      // Store medical information if any was generated
-      if (Object.keys(medicalInformation).length > 0) {
-        appointment.medicalInformation = medicalInformation
-      }
     }
 
     // Generate medical information for in-progress appointments too
@@ -418,6 +423,7 @@ const generateAppointment = ({
           accessionNumber: appointment.accessionNumber,
           isSeedData: true,
           config: participant.config,
+          expectedViews: getExpectedViews(appointment).views,
           scenarioWeights: seedDataProfile?.mammogram?.scenarioWeights,
           imperfectChanceForTechnicalOrIncomplete:
             seedDataProfile?.mammogram?.imperfectChanceForTechnicalOrIncomplete,

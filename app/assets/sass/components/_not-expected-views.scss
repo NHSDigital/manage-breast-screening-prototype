@@ -1,0 +1,27 @@
+// app/assets/sass/components/_not-expected-views.scss
+@use "sass:color";
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// Stands in for a breast's image counts when no images are expected of it,
+// for example after a mastectomy. Matches the not expected thumbnail
+// placeholder so it reads as intentional, not missing
+.app-not-expected-views {
+  @include nhsuk-responsive-margin(3, "bottom");
+  padding: nhsuk-spacing(4) nhsuk-spacing(3);
+  border: 2px dashed nhsuk-colour("grey-2");
+  background-color: nhsuk-colour("grey-4");
+  background-color: color.scale(nhsuk-colour("grey-4"), $alpha: -50%);
+  text-align: center;
+}
+
+.app-not-expected-views__text {
+  @include nhsuk-font(19);
+  margin: 0;
+  color: $nhsuk-secondary-text-colour;
+}
+
+.app-not-expected-views__reason {
+  @include nhsuk-font(19);
+  margin: 0;
+  color: $nhsuk-secondary-text-colour;
+}

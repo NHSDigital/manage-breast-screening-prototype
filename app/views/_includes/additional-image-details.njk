@@ -11,6 +11,7 @@
   Parameters:
   - namePrefix: string - prefix for form field names (e.g., "appointment[mammogramData]" or "appointment[mammogramDataTemp]")
   - mammogramSource: object - object containing the mammogram data with values
+  - appointment: from the page context, for the expected views
 #}
 
 {% set reasonHtml %}
@@ -127,6 +128,8 @@
   ]
 }) }}
 
+{% set expectedViews = appointment | getExpectedViews %}
+
 {{ checkboxes({
   small: true,
   idPrefix: "isIncompleteMammography",
@@ -136,6 +139,9 @@
     {
       value: "yes",
       text: "Not all mammograms taken",
+      hint: {
+        text: "Expected images: " + expectedViews.viewsText
+      } if not expectedViews.isStandardSet,
       conditional: {
         html: reasonHtml
       }

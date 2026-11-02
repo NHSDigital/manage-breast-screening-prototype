@@ -3,6 +3,10 @@
 const { faker } = require('@faker-js/faker')
 const weighted = require('weighted')
 const generateId = require('../../utils/id-generator')
+const {
+  MASTECTOMY_HISTORY_TYPES,
+  getMastectomyImagingOptions
+} = require('../../utils/mastectomy')
 
 // Configuration for implanted medical device generation
 const IMPLANTED_DEVICE_CONFIG = {
@@ -928,6 +932,51 @@ const generateMedicalHistory = (options = {}) => {
       }
     })
   }
+
+  return keepMastectomyImagingConsistent(history)
+}
+
+/**
+ * Stop mastectomy items disagreeing about which breasts to image
+ *
+ * Breast cancer and mastectomy items are generated independently, so one
+ * could say to image only the left breast and another only the right, which
+ * leaves no breast to image. The first mastectomy decides. A later one takes
+ * the same answer if its form allows it, otherwise its mastectomy becomes a
+ * lumpectomy.
+ *
+ * @param {object} history - Generated medical history, keyed by type
+ * @returns {object} The same history, made consistent
+ */
+const keepMastectomyImagingConsistent = (history) => {
+  const items = MASTECTOMY_HISTORY_TYPES.flatMap((type) => history[type] || [])
+  const firstImagingSide = items.find(
+    (item) => item.mastectomyImagingSide
+  )?.mastectomyImagingSide
+
+  items
+    .filter((item) => item.mastectomyImagingSide)
+    .forEach((item) => {
+      if (item.mastectomyImagingSide === firstImagingSide) return
+
+      if (
+        getMastectomyImagingOptions(item.mastectomyImagingFor).includes(
+          firstImagingSide
+        )
+      ) {
+        item.mastectomyImagingSide = firstImagingSide
+        return
+      }
+
+      const toLumpectomy = (procedures = []) =>
+        procedures.map((procedure) =>
+          procedure === 'Mastectomy' ? 'Lumpectomy' : procedure
+        )
+      item.proceduresRightBreast = toLumpectomy(item.proceduresRightBreast)
+      item.proceduresLeftBreast = toLumpectomy(item.proceduresLeftBreast)
+      delete item.mastectomyImagingFor
+      delete item.mastectomyImagingSide
+    })
 
   return history
 }

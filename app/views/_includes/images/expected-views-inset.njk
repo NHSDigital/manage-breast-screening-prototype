@@ -1,0 +1,14 @@
+{# app/views/_includes/images/expected-views-inset.njk #}
+{#
+  Inset saying which images are expected, when it isn't a standard set.
+  For example "Left breast only. Right mastectomy."
+
+  Uses `appointment` from the page context.
+#}
+
+{% set expectedViews = appointment | getExpectedViews %}
+{% if not expectedViews.isStandardSet %}
+  {{ insetText({
+    text: expectedViews.description
+  }) }}
+{% endif %}
