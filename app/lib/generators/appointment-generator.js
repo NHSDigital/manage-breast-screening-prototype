@@ -211,6 +211,16 @@ const generateAppointment = ({
     appointmentBase.specialAppointment = specialAppointment
   }
 
+  // A cancelled appointment records when it was cancelled and by whom
+  if (appointmentStatus === 'cancelled') {
+    appointmentBase.sessionDetails = {
+      endedAt: slotDateTime
+        .subtract(faker.number.int({ min: 15, max: 120 }), 'minute')
+        .toISOString(),
+      endedBy: pickMammographerId()
+    }
+  }
+
   // For in-progress appointments, add session details. Started a few minutes
   // before the simulated "now" so they sit on the clinic's timeline, after the
   // morning's completed appointments - an in-progress participant is the one
@@ -234,10 +244,46 @@ const generateAppointment = ({
     }
   }
 
+  // For paused appointments, add session details with start and pause information.
+  // Paused by a different user than started, and paused a few minutes after starting.
+  if (appointmentStatus === 'paused') {
+    const startedAt = screenedAt
+      ? onClinicDay(screenedAt)
+      : simulatedDateTime.subtract(
+          faker.number.int({ min: 20, max: 60 }),
+          'minutes'
+        )
+    const startedByUser = pickMammographerId()
+
+    // Pick a different user to pause
+    const pausedByUser = (() => {
+      const allClinicians = users.filter((user) =>
+        user.role.includes('clinician')
+      )
+      const otherClinicians = allClinicians.filter(
+        (u) => u.id !== startedByUser
+      )
+      return otherClinicians.length > 0
+        ? faker.helpers.arrayElement(otherClinicians).id
+        : startedByUser
+    })()
+
+    appointmentBase.sessionDetails = {
+      startedAt: startedAt.toISOString(),
+      startedBy: startedByUser,
+      pausedAt: startedAt
+        .add(faker.number.int({ min: 10, max: 30 }), 'minutes')
+        .toISOString(),
+      pausedBy: pausedByUser,
+      authors: []
+    }
+  }
+
   if (
     !isPast &&
     !forceInProgress &&
     forceStatus !== 'in_progress' &&
+    forceStatus !== 'paused' &&
     appointmentStatus !== 'checked_in'
   ) {
     // Generate appointment note for scheduled appointments (5% probability)

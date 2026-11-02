@@ -111,14 +111,14 @@
               id: "filter-first-screening",
               name: "firstScreening",
               value: "yes",
-              text: "First screening",
+              text: "New to screening",
               checked: true if firstScreening
             },
             {
               id: "filter-last-screening",
               name: "lastScreening",
               value: "yes",
-              text: "Last screening",
+              text: "Final screening invite",
               checked: true if lastScreening
             }
           ]
@@ -255,7 +255,7 @@
      column; In progress, Complete and All break out the mammographer and
      screening order; Complete drops the Actions column as every row is final #}
   {% set columns = status | getClinicTableColumns %}
-  <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped nhsuk-table--sortable app-clinic-appointments-table{{ " app-clinic-appointments-table--with-checked-in" if columns.checkedIn }}{{ " app-clinic-appointments-table--with-screened-by" if columns.screenedBy }}{{ " app-clinic-appointments-table--with-completed" if columns.completed }}{{ " app-clinic-appointments-table--no-actions" if not columns.actions }}">
+  <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped nhsuk-table--sortable app-clinic-appointments-table{{ " app-clinic-appointments-table--with-checked-in" if columns.checkedIn }}{{ " app-clinic-appointments-table--with-screened-by" if columns.screenedBy }}{{ " app-clinic-appointments-table--with-started-at" if columns.startedAt }}{{ " app-clinic-appointments-table--with-completed" if columns.completed }}{{ " app-clinic-appointments-table--no-actions" if not columns.actions }}">
     <caption class="nhsuk-table__caption nhsuk-u-visually-hidden">Appointments. Column headers with links are sortable.</caption>
     <thead class="nhsuk-table__head">
       <tr class="nhsuk-table__row">
@@ -290,6 +290,9 @@
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__details-column">Participant</th>
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__dob-column">Date of birth</th>
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__appointment-column">Status</th>
+          {% if columns.startedAt %}
+            <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__started-at-column">Started at</th>
+          {% endif %}
           {% if columns.completed %}
             {% set completedDirection = "ascending" if sort == "completed-ascending" else ("descending" if sort == "completed-descending" else none) %}
             {% set completedNext = ("descending" if completedDirection == "ascending" else "ascending") if completedDirection else "ascending" %}
@@ -325,4 +328,5 @@
 
 {% block pageScripts %}
   <script type="module" src="/assets/javascript/waiting-time.js"></script>
+  <script type="module" src="/assets/javascript/started-time.js"></script>
 {% endblock %}

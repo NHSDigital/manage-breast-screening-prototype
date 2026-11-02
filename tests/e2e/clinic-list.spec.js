@@ -344,22 +344,22 @@ test.describe('Clinic appointment list', () => {
     ).toBeVisible()
   })
 
-  test('filters to participants tagged First screening', async ({ page }) => {
+  test('filters to participants tagged New', async ({ page }) => {
     const { clinic, newCount } = findClinicWithNewAndReturningParticipants()
     const rows = page.locator('tbody tr.appointment-row')
 
     await page.goto(`/clinics/${clinic.id}/all?firstScreening=yes`)
 
-    await expect(page.locator('#filter-first-screening')).toBeChecked()
+    await expect(page.getByLabel('New to screening')).toBeChecked()
     await expect(rows).toHaveCount(newCount)
     await expect(
       rows.filter({
-        has: page.locator('.nhsuk-tag', { hasText: /^\s*First screening\s*$/ })
+        has: page.locator('.nhsuk-tag', { hasText: /^\s*New\s*$/ })
       })
     ).toHaveCount(newCount)
   })
 
-  test('filters to participants tagged Last screening', async ({ page }) => {
+  test('filters to participants tagged Final', async ({ page }) => {
     const appointments = readCollection('appointments.json', 'appointments')
     const episodes = readCollection('episodes.json', 'episodes')
     const lastEpisodeIds = new Set(
@@ -379,11 +379,11 @@ test.describe('Clinic appointment list', () => {
 
     await page.goto(`/clinics/${clinicId}/all?lastScreening=yes`)
 
-    await expect(page.locator('#filter-last-screening')).toBeChecked()
+    await expect(page.getByLabel('Final screening invite')).toBeChecked()
     await expect(rows).toHaveCount(lastCount)
     await expect(
       rows.filter({
-        has: page.locator('.nhsuk-tag', { hasText: /^\s*Last screening\s*$/ })
+        has: page.locator('.nhsuk-tag', { hasText: /^\s*Final\s*$/ })
       })
     ).toHaveCount(lastCount)
   })

@@ -179,7 +179,7 @@ const getEpisode = (data, episodeId) => {
 
 /**
  * Whether an appointment is the participant's first screening - shown as the
- * "First screening" tag and filter on the clinic list
+ * "New" tag and "New to screening" filter on the clinic list
  *
  * @param {object} appointment - Appointment with an episodeId
  * @param {object} data - Session data
@@ -190,7 +190,7 @@ const isFirstScreeningAppointment = (appointment, data) =>
 
 /**
  * Whether an appointment is the participant's last routine screening - shown as
- * the "Last screening" tag and filter on the clinic list
+ * the "Final" tag and "Final screening invite" filter on the clinic list
  *
  * @param {object} appointment - Appointment with an episodeId
  * @param {object} data - Session data

@@ -18,6 +18,34 @@ const {
   advanceEpisodeForAppointmentStatus
 } = require('./episodes')
 const { getSimulatedNow } = require('./status')
+const { getClinicAppointments } = require('./clinics')
+
+/**
+ * Take an appointment out of its clinic's order of screening, for one that
+ * ended without screening. Later appointments move up so the numbers stay
+ * in step with the screened participants.
+ *
+ * @param {object} data - Session data
+ * @param {object} appointment - The appointment leaving the order
+ */
+const removeFromScreeningOrder = (data, appointment) => {
+  const removedOrder = appointment.screeningOrder
+  if (typeof removedOrder !== 'number') return
+
+  updateAppointmentData(data, appointment.id, { screeningOrder: null })
+
+  getClinicAppointments(data.appointments, appointment.clinicId)
+    .filter(
+      (other) =>
+        typeof other.screeningOrder === 'number' &&
+        other.screeningOrder > removedOrder
+    )
+    .forEach((other) => {
+      updateAppointmentData(data, other.id, {
+        screeningOrder: other.screeningOrder - 1
+      })
+    })
+}
 
 /**
  * Update appointment status and add to history
@@ -50,6 +78,10 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
     ]
   })
   if (!updatedAppointment) return null
+
+  if (newStatus === 'attended_not_screened') {
+    removeFromScreeningOrder(data, baseAppointment)
+  }
 
   // Keep the appointment's episode in step, and record on the episode that
   // images were taken (or weren't after all, on an undo). A new set of images

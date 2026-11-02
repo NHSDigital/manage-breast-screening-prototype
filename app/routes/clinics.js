@@ -653,17 +653,9 @@ module.exports = (router) => {
     }
     let sort = allowedSorts.includes(req.query.sort) ? req.query.sort : ''
 
-    // Each tab's default sort, reset to whenever a tab is opened without an
-    // explicit sort: Remaining and All by Time ascending, Checked in by
-    // check-in time ascending so the longest wait is first, and In progress and
-    // Complete by the order of screening ascending. All stays in chronological
-    // Time order because it mixes screened and unscreened participants.
-    if (!sort && (filter === 'remaining' || filter === 'all')) {
+    // Every tab opens sorted by scheduled Time ascending unless a sort is chosen
+    if (!sort) {
       sort = 'time-ascending'
-    } else if (!sort && filter === 'checked-in') {
-      sort = 'checkedIn-ascending'
-    } else if (!sort && (filter === 'in-progress' || filter === 'complete')) {
-      sort = 'screeningOrder-ascending'
     }
 
     const sortDescending = sort.endsWith('descending')
@@ -676,15 +668,6 @@ module.exports = (router) => {
         if (!bCheckIn) return -1
         const diff = new Date(aCheckIn) - new Date(bCheckIn)
         return sortDescending ? -diff : diff
-      })
-    } else if (sort.startsWith('screeningOrder')) {
-      filteredAppointments = [...filteredAppointments].sort((a, b) => {
-        const aOrder = a.screeningOrder
-        const bOrder = b.screeningOrder
-        if (aOrder == null && bOrder == null) return 0
-        if (aOrder == null) return 1
-        if (bOrder == null) return -1
-        return sortDescending ? bOrder - aOrder : aOrder - bOrder
       })
     } else if (sort.startsWith('completed')) {
       const getCompletedTime = (appointment) =>

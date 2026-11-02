@@ -558,6 +558,35 @@ const formatWaitingTime = (totalMinutes) => {
   return `${totalMinutes} min${totalMinutes === 1 ? '' : 's'}`
 }
 
+/**
+ * Calculate how many minutes ago screening started.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {number | null} Minutes since screening started, or null
+ */
+const getStartedMinutes = (appointment) => {
+  const startedAt = appointment.sessionDetails?.startedAt
+  if (!startedAt) return null
+
+  return Math.max(0, dayjs().diff(dayjs(startedAt), 'minute'))
+}
+
+/**
+ * A real-time anchor for the started time figure: now minus the minutes since
+ * screening started. The clinic page's client script counts up from this, so
+ * the "N minutes ago" ticks over while the page stays open. Anchored to real
+ * now (not the simulated clinic time) precisely so it advances.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {string | null} ISO timestamp to count up from, or null
+ */
+const getStartedSince = (appointment) => {
+  const minutes = getStartedMinutes(appointment)
+  if (minutes === null) return null
+
+  return dayjs().subtract(minutes, 'minute').toISOString()
+}
+
 module.exports = {
   hasNotStarted,
   isCompleted,
@@ -579,6 +608,8 @@ module.exports = {
   getCheckInTime,
   getWaitingMinutes,
   getWaitingSince,
+  getStartedMinutes,
+  getStartedSince,
   getSimulatedNow,
   formatWaitingTime,
   // Export groups and display vocabularies for testing/reference

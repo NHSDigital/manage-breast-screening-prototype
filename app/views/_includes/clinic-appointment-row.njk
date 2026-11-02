@@ -60,7 +60,7 @@
       {% if appointment | isFirstScreeningAppointment(data) %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
           {{ tag({
-          text: "First screening",
+          text: "New",
           colour: "blue",
           classes: "app-nowrap"
           })}}
@@ -69,7 +69,7 @@
       {% if appointment | isLastScreeningAppointment(data) %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
           {{ tag({
-          text: "Last screening",
+          text: "Final",
           colour: "blue",
           classes: "app-nowrap"
           })}}
@@ -111,12 +111,12 @@
 
     {# Appointment status and view appointment link #}
     <td class="nhsuk-table__cell app-clinic-appointments-table__appointment-column">
-      {# Screened by - the mammographer who ran the appointment. Attended not
-         screened is left out as no screening happened. The screening order
-         badge is only shown once screening is complete, so the In progress tab
-         shows the name alone; on the Complete and All tabs this moves to the
-         Time completed column with the badge. #}
-      {% if columns.screenedBy and not columns.completed and appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
+      {# Screened by - the mammographer who ran the appointment. The screening
+         order badge is only shown once screening is complete, so the In
+         progress tab shows the name alone; on the Complete and All tabs this
+         moves to the Time completed column, with the badge for screened
+         appointments. #}
+      {% if columns.screenedBy and not columns.completed and appointment.sessionDetails.startedBy %}
         <p class="nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-2">
           {{ appointment.sessionDetails.startedBy | getUsername({
             format: 'short',
@@ -193,6 +193,16 @@
       </td>
     {% endif %}
 
+    {# Started at - when screening started with the operator who started it,
+       shown on the In progress tab. Start time, time elapsed and name are stacked. #}
+    {% if columns.startedAt %}
+      {% set startedTime = appointment.sessionDetails.startedAt %}
+      {% set startedBy = appointment.sessionDetails.startedBy %}
+      <td class="nhsuk-table__cell app-clinic-appointments-table__started-at-column">
+        {% if startedTime %}<span class="app-clinic-appointments-table__started-time">{{ startedTime | formatTimeString }}</span><span class="nhsuk-u-secondary-text-colour nhsuk-body-s js-started-time" data-started-since="{{ appointment | getStartedSince }}">{{ appointment | getStartedMinutes }} mins ago</span>{% if startedBy %}<span class="nhsuk-u-secondary-text-colour nhsuk-body-s">({{ startedBy | getUsername({ format: 'short' }) }})</span>{% endif %}{% endif %}
+      </td>
+    {% endif %}
+
     {# Time completed - when the appointment ended, for screened (including
        partially screened) and attended not screened; blank otherwise. The
        mammographer and screening order badge sit on the same line after the
@@ -200,19 +210,22 @@
        The time is a fixed-width block so the badge and name line up across
        rows however wide each time string is. #}
     {% if columns.completed %}
-      {% set completedTime = appointment.sessionDetails.endedAt if (appointment.status in ['complete', 'partially_screened', 'attended_not_screened']) and appointment.sessionDetails.endedAt %}
-      {% set completedScreener = appointment.sessionDetails.startedBy and appointment.status in ['complete', 'partially_screened'] %}
+      {% set completedTime = appointment.sessionDetails.endedAt if (appointment.status in ['complete', 'partially_screened', 'attended_not_screened', 'cancelled']) and appointment.sessionDetails.endedAt %}
+      {# Cancelled appointments that were never started only have who ended them #}
+      {% set completedBy = appointment.sessionDetails.startedBy or appointment.sessionDetails.endedBy %}
+      {% set completedScreener = completedBy and appointment.status in ['complete', 'partially_screened', 'attended_not_screened', 'cancelled'] %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
         {% if completedTime or completedScreener %}
           <span class="app-clinic-appointments-table__completed-time">{% if completedTime %}{{ completedTime | formatTimeString }}{% endif %}</span>
           {% if completedScreener %}
-            {% if appointment.screeningOrder %}
+            {# No badge for attended not screened - screening never completed #}
+            {% if appointment.screeningOrder and appointment.status != 'attended_not_screened' %}
               <span class="nhsapp-badge nhsapp-badge--small app-nowrap nhsuk-u-margin-right-1">
                 <span aria-hidden="true">{{ appointment.screeningOrder }}</span>
                 <span class="nhsuk-u-visually-hidden">Screened {{ appointment.screeningOrder | getOrdinalNumber }}</span>
               </span>
             {% endif %}
-            <span class="nhsuk-u-font-size-16">{{ appointment.sessionDetails.startedBy | getUsername({
+            <span class="nhsuk-u-font-size-16">{{ completedBy | getUsername({
               format: 'short',
               identifyCurrentUser: true
             }) }}</span>
@@ -248,7 +261,17 @@
             classes: "app-nowrap js-start-appointment-link" + (" app-display-none" if appointment.status == 'scheduled')
           }) }}
 
-        {% elseif appointment | isPaused or appointment | isInProgress %}
+        {% elseif appointment | isPaused %}
+          {% set pausedBy = appointment.sessionDetails.pausedBy %}
+          {% set isCurrentUserPausedBy = pausedBy === currentUser.id %}
+          {% set buttonText = "Resume appointment" if isCurrentUserPausedBy else "Claim appointment" %}
+          {{ button({
+            html: buttonText ~ ((" for " + (participant | getShortName)) | asVisuallyHiddenText),
+            href: appointmentBaseUrl + "/resume",
+            variant: "secondary",
+            small: true
+          }) }}
+        {% elseif appointment | isInProgress %}
           {{ button({
             html: "Resume appointment" ~ ((" for " + (participant | getShortName)) | asVisuallyHiddenText),
             href: appointmentBaseUrl + "/resume",
