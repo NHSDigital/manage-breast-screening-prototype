@@ -54,7 +54,7 @@
   }) }}
 
   {{ button({
-    text: "Update opinion"
+    text: "Update outcome" if isArbitration else "Update opinion"
   } | openInModal) }}
 
 {% else %}
