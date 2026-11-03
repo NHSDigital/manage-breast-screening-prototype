@@ -182,7 +182,16 @@ module.exports = (router) => {
       notesForReader: mammogramData.notesForReader,
       viewsRightBreast: [],
       viewsLeftBreast: []
-    } // Convert views back to checkbox/input format
+    }
+
+    // A view with no saved images was not taken, so reopens as zero
+    for (const breastKey of ['viewsRightBreast', 'viewsLeftBreast']) {
+      for (const viewShort of ['CC', 'MLO', 'CCID', 'MLOID']) {
+        formData[`${breastKey}${viewShort}Count`] = '0'
+      }
+    }
+
+    // Convert views back to checkbox/input format
     for (const [viewKey, viewData] of Object.entries(mammogramData.views)) {
       const breastKey =
         viewData.side === 'right' ? 'viewsRightBreast' : 'viewsLeftBreast'
