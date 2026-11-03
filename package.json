@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node .",
+    "prepare": "git config core.hooksPath .githooks || exit 0",
     "generate": "node scripts/generate-data.js",
     "heroku-postbuild": "npm run generate",
     "build:static-error-page": "node scripts/build-static-error-page.js",
@@ -26,7 +27,7 @@
     "lodash": "^4.18.1",
     "markdown-it": "^15.0.3",
     "nhsuk-frontend": "^10.6.1",
-    "nhsuk-prototype-kit": "^8.3.0",
+    "nhsuk-prototype-kit": "^8.5.2",
     "pluralize": "^8.0.0",
     "weighted": "^1.0.0"
   },
@@ -36,11 +37,11 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.63.0",
+    "@playwright/test": "^1.64.1",
     "cssnano": "^9.0.5",
     "eslint": "^10.13.0",
     "globals": "^17.13.0",
-    "postcss": "^8.5.31",
+    "postcss": "^8.5.32",
     "prettier": "^3.9.10",
     "purgecss": "^8.0.0"
   }

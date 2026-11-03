@@ -8,6 +8,11 @@ const {
 } = require('./lib/utils/regenerate-data')
 const { resetCallSequence } = require('./lib/utils/random')
 const dataStore = require('./lib/data-store')
+const sharedData = require('./lib/shared-data')
+const {
+  restoreRememberedSignIn,
+  rememberSignIn
+} = require('./lib/middleware/remembered-sign-in')
 
 const router = express.Router()
 
@@ -79,6 +84,15 @@ router.use(async (req, res, next) => {
   }
 })
 
+// Bring back the user and room this browser had before a restart or reset.
+// Before the shared data routes, so a ?room= link still wins.
+router.use(restoreRememberedSignIn)
+
+// Sharing changes between browsers: room links, the live update stream and
+// the mode setting. Before the attach middleware so a room change applies to
+// the collections attached below.
+require('./routes/shared-data')(router)
+
 // Collections served from the shared data store rather than from per-session
 // copies
 const STORE_COLLECTIONS = [
@@ -130,12 +144,26 @@ router.use((req, res, next) => {
   // triggered the swap. Data resetting on swap is expected demo behaviour,
   // and this guarantees a swap can never leave another session overlaying
   // old records onto fresh data.
-  if (
+  //
+  // When sharing is on (see app/lib/shared-data.js), _changes is instead the
+  // changes shared by everyone on the session's channel, and toJSON below
+  // keeps it out of the session.
+  const sharedChanges = sharedData.getSharedChangesForSession(
+    data,
+    req.sessionID
+  )
+  if (sharedChanges) {
+    data._changes = sharedChanges
+  } else if (
     !data._changes ||
+    sharedData.isSharedChanges(data._changes) ||
     data._changes.generationId !== dataStore.state.generationId
   ) {
     data._changes = { generationId: dataStore.state.generationId }
   }
+  // Templates read changes through res.locals.data, a copy the kit made
+  // before this ran
+  res.locals.data._changes = data._changes
 
   for (const name of STORE_COLLECTIONS) {
     // Backfills a bucket for a collection added since this session started
@@ -168,6 +196,9 @@ router.use((req, res, next) => {
         delete copy[name]
       }
       delete copy.generationInfo
+      if (sharedData.isSharedChanges(copy._changes)) {
+        delete copy._changes
+      }
       return copy
     },
     enumerable: false,
@@ -216,6 +247,17 @@ router.use((req, res, next) => {
 
   next()
 })
+
+// Note who this browser is signed in as when sharing data, so the choose user
+// page can show who is signed in elsewhere. After the user swap above, so a
+// change of user counts straight away.
+router.use((req, res, next) => {
+  sharedData.recordPresence(req.sessionID, req.session.data)
+  next()
+})
+
+// Keep the user and room in a cookie, so they survive a restart or reset
+router.use(rememberSignIn)
 
 // Clear query string from URL if clearQuery is present
 // This is useful for removing query parameters after processing them
@@ -266,6 +308,7 @@ router.post(
 )
 
 require('./routes/settings')(router)
+require('./routes/users')(router)
 
 // Modal fragment middleware — threads the _modal param through redirect chains
 // and form submissions so any page can render as a modal fragment without

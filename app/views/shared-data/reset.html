@@ -1,0 +1,27 @@
+{# app/views/shared-data/reset.html #}
+{# The footer "Reset data" link's page without JavaScript, when this browser
+   shares data with others. See app/routes/shared-data.js. #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Reset data" %}
+
+{% set back = {
+  href: returnPage,
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+<h1>{{ pageHeading }}</h1>
+
+<p>This will reset the shared data for everyone sharing it, and the data entered in this session.</p>
+
+<form action="/shared-data/reset" method="post" novalidate>
+  <input type="hidden" name="returnPage" value="{{ returnPage }}">
+  {{ button({
+    text: "Reset all data"
+  }) }}
+</form>
+
+{% endblock %}

@@ -174,6 +174,20 @@ const isArray = (value) => {
   return Array.isArray(value)
 }
 
+/**
+ * Join items into a list for a sentence, with "and" before the last
+ *
+ * @param {Array<string>} items - Items to join
+ * @returns {string} The list, or '' when there are no items
+ * @example
+ * formatList(['Jane', 'Priya', 'Agatha']) // 'Jane, Priya and Agatha'
+ */
+const formatList = (items) => {
+  const present = (items || []).filter(Boolean)
+  if (present.length <= 1) return present.join('')
+  return `${present.slice(0, -1).join(', ')} and ${present.at(-1)}`
+}
+
 module.exports = {
   push,
   includes,
@@ -183,5 +197,6 @@ module.exports = {
   where,
   removeWhere,
   map,
-  isArray
+  isArray,
+  formatList
 }

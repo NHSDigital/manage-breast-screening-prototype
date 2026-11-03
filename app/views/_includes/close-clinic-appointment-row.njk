@@ -26,7 +26,7 @@
     <td class="nhsuk-table__cell">
       {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
       {% if appointment | isInProgress and appointment.sessionDetails.startedBy %}
-        <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0">with {{ appointment.sessionDetails.startedBy | getUsername({
+        <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0">with {{ appointment | getAppointmentRunnerId | getUsername({
           format: "short",
           identifyCurrentUser: true
         }) }}</span>

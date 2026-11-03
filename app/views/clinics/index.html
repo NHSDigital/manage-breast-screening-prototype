@@ -24,6 +24,14 @@
   <span class="nhsuk-caption-l">{{ currentBSU.name }}</span>
   <h1>{{pageHeading}}</h1>
 
+  {# The tabs and the list refresh in place when another browser sharing data
+     closes a clinic (see live-updates.js) #}
+  {% set clinicIds = [] %}
+  {% for clinic in clinics %}
+    {% set clinicIds = clinicIds | push(clinic.id) %}
+  {% endfor %}
+  <div id="clinics-list" data-live-region data-live-ids="{{ clinicIds | join(' ') }}" data-live-fields="clinics.status">
+
   {% set secondaryNavItems = [] %}
 
   {% for item in [
@@ -129,4 +137,6 @@
     }) }}
 
   {% endif %}
+
+  </div>
 {% endblock %}

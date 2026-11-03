@@ -20,6 +20,26 @@
   href: "/dashboard"
 }) }}
 
+<h2>Shared data</h2>
+
+{% if sharedData.isShared %}
+  <p>This browser is sharing data with other browsers. <a href="/choose-user">Choose a user</a> nobody else is signed in as.</p>
+  {% if sharedData.mode == "off" %}
+    {{ button({
+      text: "Stop sharing",
+      href: "/shared-data/stop" | urlWithReferrer("/"),
+      classes: "nhsuk-button--secondary"
+    }) }}
+  {% endif %}
+{% else %}
+  <p>Let several browsers work on the same data, for example reception and a mammography room. Each browser needs to start shared data.</p>
+  {{ button({
+    text: "Start shared data",
+    href: "/shared-data/start",
+    classes: "nhsuk-button--secondary"
+  }) }}
+{% endif %}
+
 {% call insetText() %}
   <p>
     <a href="/style-guide">Style guide</a> — custom components and CSS utilities.

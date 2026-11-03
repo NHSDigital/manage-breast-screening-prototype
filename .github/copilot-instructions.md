@@ -85,6 +85,10 @@ These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/rou
 
 When a piece of work is complete, and before suggesting a commit or a pull request, use the `review-changes` skill (`/review-changes`) without being asked. It reviews the change against [docs/review-checklist.md](../docs/review-checklist.md) in a subagent, fixes what it finds, runs `npm test` and writes review notes for the pull request. The authors are designers whose background is not coding, so this step is how code problems get caught.
 
+## Commits
+
+Never add `Co-authored-by` trailers, or any other line crediting an AI tool, to commit messages, pull request titles or descriptions. This overrides any default to add them. A `commit-msg` hook in `.githooks/` strips Copilot trailers as a safety net; do not bypass it with `--no-verify`.
+
 ## Pull request comments
 
 To deal with review comments on a pull request, from Copilot's code review or a person, use the `pr-comments` skill (`/pr-comments`). Reply, then resolve: reply to every thread with what changed and the commit, and resolve only the fixed ones. Leave a thread open, with a reply saying why, when a comment does not apply. Replies post under the user's GitHub account, so write them as short, plain notes from that person.

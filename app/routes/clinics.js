@@ -28,6 +28,7 @@ const {
   updateAppointmentData
 } = require('../lib/utils/appointment-data')
 const { pluralise } = require('../lib/utils/strings')
+const { getAppointmentRunByIds } = require('../lib/utils/roles-and-permissions')
 const { OTHER_REASON } = require('../lib/utils/mastectomy')
 
 /**
@@ -598,13 +599,16 @@ module.exports = (router) => {
     }
 
     // Keep mammographer options available on every tab and while participant
-    // search or the other filters narrow the rows. Sorted by first name.
+    // search or the other filters narrow the rows. Sorted by first name. An
+    // appointment matches everyone who ran it and whoever was nominated to
+    // take its images.
+    const getAppointmentMammographerIds = (appointment) =>
+      [
+        ...getAppointmentRunByIds(appointment),
+        appointment.authorisedMammographerId
+      ].filter(Boolean)
     const mammographerIds = [
-      ...new Set(
-        clinicData.appointments
-          .map((appointment) => appointment.sessionDetails?.startedBy)
-          .filter(Boolean)
-      )
+      ...new Set(clinicData.appointments.flatMap(getAppointmentMammographerIds))
     ]
     const mammographers = mammographerIds
       .map((userId) =>
@@ -620,7 +624,9 @@ module.exports = (router) => {
     let matchedAppointments = baseAppointments
     if (selectedMammographers.length) {
       matchedAppointments = matchedAppointments.filter((appointment) =>
-        selectedMammographers.includes(appointment.sessionDetails?.startedBy)
+        getAppointmentMammographerIds(appointment).some((userId) =>
+          selectedMammographers.includes(userId)
+        )
       )
     }
 

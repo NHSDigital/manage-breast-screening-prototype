@@ -309,7 +309,21 @@ function setupResetSessionLink() {
     e.preventDefault()
 
     try {
-      const returnPage = `${window.location.pathname}${window.location.search}`
+      // Clear shared changes for everyone sharing this browser's data. In a
+      // room, the reply names it so the browser can rejoin after the reset.
+      let room = null
+      const sharedResponse = await fetch('/shared-data/reset', {
+        method: 'POST'
+      })
+      if (sharedResponse.ok) {
+        ;({ room } = await sharedResponse.json())
+      }
+
+      const returnUrl = new URL(window.location.href)
+      if (room) {
+        returnUrl.searchParams.set('room', room)
+      }
+      const returnPage = `${returnUrl.pathname}${returnUrl.search}`
       const response = await fetch('/prototype-admin/reset-session-data', {
         method: 'POST',
         headers: {
@@ -328,8 +342,8 @@ function setupResetSessionLink() {
         throw new Error('Failed to clear data')
       }
 
-      // Refresh the page to reflect the cleared data
-      window.location.reload()
+      // Load the page again to reflect the cleared data
+      window.location.href = returnPage
     } catch (error) {
       console.error('Error clearing data:', error)
 

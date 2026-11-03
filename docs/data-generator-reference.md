@@ -617,6 +617,8 @@ const appointmentsWithReadingData = generateReadingData(
 
 ### In appointment-generator.js
 
+Started appointments (in progress, completed and attended not screened) get `sessionDetails` from `buildSessionDetails`, in the shape the appointment workflow writes: `startedAt` and `startedBy`, empty `pausedAt` and `pausedBy`, an `authors` list holding the start, and for appointments that have ended, `endedAt` and `endedBy`. The same mammographer runs a seeded appointment throughout. Who is running an appointment, and who screened it, are read from these by `getAppointmentRunnerId` and `getScreenedByName`.
+
 Medical information is generated for completed appointments (and again, similarly, for today's in-progress appointment):
 
 ```javascript

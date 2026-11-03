@@ -2,9 +2,10 @@
 const { getParticipant } = require('./participants.js')
 const { getClinic } = require('./clinics.js')
 const dataStore = require('../data-store')
+const { recordChange } = require('../shared-data')
 
 /**
- * Record a changed appointment so it persists for this session
+ * Record a changed appointment so it persists across requests
  *
  * The appointments array attached to `data` is rebuilt from the shared data store
  * on every request; only records in data._changes survive across requests
@@ -15,9 +16,7 @@ const dataStore = require('../data-store')
  * @param {object} appointment - Whole replacement appointment record
  */
 const recordAppointmentChange = (data, appointment) => {
-  if (data._changes?.appointments) {
-    data._changes.appointments[appointment.id] = appointment
-  }
+  recordChange(data, 'appointments', appointment)
 }
 
 /**

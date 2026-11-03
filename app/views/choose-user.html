@@ -14,38 +14,98 @@
 
 {% block pageContent %}
 
+  {# Users are grouped by their main role. A clinician with administrative
+  access is listed as clinical staff, with the extra role in the hint. #}
+  {% set clinicalItems = [] %}
+  {% set administrativeItems = [] %}
+
+  {% for user in data.users %}
+    {% set groupRole = "clinician" if "clinician" in user.role else "administrative" %}
+    {% set signedInElsewhereCount = sharedData.usersSignedInElsewhere[user.id] %}
+
+    {# The status is live while sharing, so it shows who signs in elsewhere.
+    It holds no inputs, so refreshing it can't change the selection. #}
+    {% set labelHtml %}
+      {{ user.firstName }} {{ user.lastName }}
+      {% if user.id == data.currentUser.id %}
+        {{ "Signed in" | toTag }}
+      {% endif %}
+      <span id="user-status-{{ user.id }}" data-live-region data-live-ids="{{ user.id }}" data-live-fields="users.signedIn" data-live-announcement="Signed in users updated">
+        {% if signedInElsewhereCount %}
+          {{ "signed_in_elsewhere" | toTag({
+            text: "Signed in on another browser" if signedInElsewhereCount == 1 else "Signed in on " + signedInElsewhereCount + " other browsers",
+            colour: "grey"
+          }) }}
+        {% endif %}
+      </span>
+    {% endset %}
+
+    {% set hintParts = [] %}
+    {% for role in user.role %}
+      {% if role != groupRole %}
+        {% set hintParts = hintParts | push("Also " + role) %}
+      {% endif %}
+    {% endfor %}
+    {% for permission in user.permissions %}
+      {% set hintParts = hintParts | push(permission | kebabCase | formatWords("-") | sentenceCase) %}
+    {% endfor %}
+
+    {% set item = {
+      value: user.id,
+      html: labelHtml,
+      hint: {
+        text: hintParts | join(". ")
+      } if hintParts | length else none,
+      checked: user.id == data.currentUser.id
+    } %}
+
+    {% if groupRole == "clinician" %}
+      {% set clinicalItems = clinicalItems | push(item) %}
+    {% else %}
+      {% set administrativeItems = administrativeItems | push(item) %}
+    {% endif %}
+  {% endfor %}
+
   <h1 class="nhsuk-heading-l">
     {{ pageHeading }}
   </h1>
 
-  {% for user in data.users %}
-    <ul class="nhsuk-list">
-      <li>
-        <p>
-          <a href="{{ referrerChain or "./dashboard" }}?currentUserId={{ user.id }}&clearQuery=true">{{ user.firstName }} {{ user.lastName }}</a>
+  {% if sharedData.isShared %}
+    <p>Data is shared with other browsers. Choose a user nobody else is signed in as, so you can tell your changes apart.</p>
+  {% endif %}
 
-          {% if user.id == data.currentUser.id %}
-            {{ "Signed in" | toTag }}
-          {% endif %}
-          <br>
-          {% for role in user.role %}
-            {{ role | sentenceCase -}}
-            {% if not loop.last %}, {% endif %}
-          {% endfor %}
-          {% if user.permissions | length %}
-            <br>
-            <span class="nhsuk-u-secondary-text-colour">Permissions:
-            {% for permission in user.permissions %}
-              {{ permission | kebabCase | formatWords("-") | sentenceCase -}}
-              {% if not loop.last %}, {% endif %}
-            {% endfor %}
-            </span>
-          {% endif %}
-        </p>
+  <form method="post" action="{{ "/choose-user/answer" | urlWithReferrer(referrerChain) }}" novalidate>
 
-      </li>
-    </ul>
+    {{ radios({
+      small: true,
+      name: "_userId",
+      idPrefix: "clinical-user",
+      fieldset: {
+        legend: {
+          text: "Clinical staff",
+          size: "s"
+        }
+      },
+      items: clinicalItems
+    }) }}
 
-  {% endfor %}
+    {{ radios({
+      small: true,
+      name: "_userId",
+      idPrefix: "administrative-user",
+      fieldset: {
+        legend: {
+          text: "Administrative staff",
+          size: "s"
+        }
+      },
+      items: administrativeItems
+    }) }}
+
+    {{ button({
+      text: "Continue"
+    }) }}
+
+  </form>
 
 {% endblock %}

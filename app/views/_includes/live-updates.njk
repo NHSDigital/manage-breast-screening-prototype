@@ -1,0 +1,41 @@
+{# app/views/_includes/live-updates.njk #}
+{#
+  Live updates when this browser shares data with others (see
+  app/lib/shared-data.js and live-updates.js). Nothing renders when it isn't.
+
+  The template holds the banner shown when the page changes and has no live
+  region to refresh. Its data-live-ids are the records this page shows, from
+  the locals the dynamic routes set, so changes to other records are ignored.
+  Appointment pages leave out the clinic, so changes to other appointments in
+  the same clinic don't count.
+
+  The status element announces changes to screen reader users. It is in the
+  page from the start, as some screen readers miss a status element added
+  later.
+#}
+
+{% if sharedData.isShared %}
+  {% set livePageRecords = [appointment, participant, episode] if appointment else [clinic, participant, episode] %}
+  {% set livePageIds = [] %}
+  {% for record in livePageRecords %}
+    {% if record.id %}
+      {% set livePageIds = livePageIds | push(record.id) %}
+    {% endif %}
+  {% endfor %}
+
+  <template data-live-updates-banner data-live-ids="{{ livePageIds | join(' ') }}">
+    {% set bannerHtml %}
+      <p class="nhsuk-u-margin-bottom-0"><a href="" class="nhsuk-notification-banner__link">Refresh the page</a> to see the changes.</p>
+    {% endset %}
+    {{ notificationBanner({
+      titleText: "This page has been updated",
+      titleId: "live-updates-banner-title",
+      html: bannerHtml,
+      attributes: {
+        "data-live-updates-shown": ""
+      }
+    }) }}
+  </template>
+  <div class="nhsuk-u-visually-hidden" role="status" data-live-updates-status></div>
+  <script type="module" src="/assets/javascript/live-updates.js"></script>
+{% endif %}

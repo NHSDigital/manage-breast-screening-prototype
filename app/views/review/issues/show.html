@@ -265,7 +265,7 @@
         {% endif %}
       {% endset %}
 
-      {% set mammographerName = (imagesAppointment | getAuthorisedMammographerName({ identifyCurrentUser: true })) or (imagesAppointment.sessionDetails.endedBy | getUsername({ identifyCurrentUser: true }) if imagesAppointment.sessionDetails.endedBy) %}
+      {% set mammographerName = imagesAppointment | getScreenedByName({ identifyCurrentUser: true }) %}
 
       {% set imageCountHtml %}
         {{ imagesSummary.imageCount }} {{ "image" | pluralise(imagesSummary.imageCount) }}
