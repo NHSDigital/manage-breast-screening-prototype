@@ -8,6 +8,7 @@ const { findTodayAppointment, readCollection } = require('./helpers/seed-data')
 const { waitForModalsReady, expectModalClosed } = require('./helpers/modals')
 const dayjs = require('dayjs')
 const users = require('../../app/data/users')
+const riskLevels = require('../../app/data/risk-levels')
 
 const findTodayStandardAppointment = () => {
   const today = dayjs().format('YYYY-MM-DD')
@@ -357,6 +358,64 @@ test.describe('Clinic appointment list', () => {
         has: page.locator('.nhsuk-tag', { hasText: /^\s*New\s*$/ })
       })
     ).toHaveCount(newCount)
+    await expect(
+      rows.locator('.nhsuk-tag--green', { hasText: /^\s*New\s*$/ })
+    ).toHaveCount(newCount)
+  })
+
+  test('seeds an age-eligible final invite in every screening clinic', async () => {
+    const clinics = readCollection('clinics.json', 'clinics')
+    const appointments = readCollection('appointments.json', 'appointments')
+    const episodes = readCollection('episodes.json', 'episodes')
+    const participants = readCollection('participants.json', 'participants')
+    const lastEpisodeIds = new Set(
+      episodes
+        .filter((episode) => episode.isLastScreening)
+        .map((episode) => episode.id)
+    )
+    const screeningClinics = clinics.filter(
+      (clinic) => clinic.clinicType === 'screening'
+    )
+
+    for (const clinic of screeningClinics) {
+      const finalInvite = appointments.find(
+        (appointment) =>
+          appointment.clinicId === clinic.id &&
+          lastEpisodeIds.has(appointment.episodeId)
+      )
+      expect(
+        finalInvite,
+        `Clinic ${clinic.id} has a final screening invite`
+      ).toBeDefined()
+
+      const participant = participants.find(
+        (candidate) => candidate.id === finalInvite.participantId
+      )
+      const age = dayjs(clinic.date).diff(
+        dayjs(participant.demographicInformation.dateOfBirth),
+        'year'
+      )
+      expect(
+        age,
+        `Clinic ${clinic.id} invitee is screening-age eligible`
+      ).toBeGreaterThanOrEqual(riskLevels.routine.ageRange.lower)
+      expect(
+        age,
+        `Clinic ${clinic.id} invitee is screening-age eligible`
+      ).toBeLessThanOrEqual(riskLevels.routine.ageRange.upper)
+      expect(
+        dayjs(clinic.date)
+          .add(3, 'year')
+          .isBefore(
+            dayjs(participant.demographicInformation.dateOfBirth).add(
+              riskLevels.routine.ageRange.upper + 1,
+              'year'
+            ),
+            'day'
+          ),
+        `Clinic ${clinic.id} invitee qualifies by age`
+      ).toBe(false)
+    }
   })
 
   test('filters to participants tagged Final', async ({ page }) => {
@@ -385,6 +444,9 @@ test.describe('Clinic appointment list', () => {
       rows.filter({
         has: page.locator('.nhsuk-tag', { hasText: /^\s*Final\s*$/ })
       })
+    ).toHaveCount(lastCount)
+    await expect(
+      rows.locator('.nhsuk-tag--red', { hasText: /^\s*Final\s*$/ })
     ).toHaveCount(lastCount)
   })
 

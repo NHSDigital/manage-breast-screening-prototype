@@ -267,9 +267,26 @@ const generateClinicsForDay = (
   // Handle regular clinic slot allocation for all clinics
   newClinics.forEach((clinic) => {
     const episodesBefore = episodes.length
+    const availableFinalInviteSlots =
+      clinic.clinicType === 'screening'
+        ? clinic.slots.filter((slot) => {
+            const bookedCount = appointments.filter(
+              (appointment) => appointment.slotId === slot.id
+            ).length
+            return bookedCount < slot.capacity
+          })
+        : []
+    const reserveCandidates =
+      availableFinalInviteSlots.length > 1
+        ? availableFinalInviteSlots.slice(1)
+        : availableFinalInviteSlots
+    const reservedFinalInviteSlot = reserveCandidates.length
+      ? reserveCandidates[Math.floor(Math.random() * reserveCandidates.length)]
+      : null
 
     const remainingSlots = clinic.slots
       .filter(() => Math.random() < config.generation.bookingProbability)
+      .filter((slot) => slot.id !== reservedFinalInviteSlot?.id)
       .filter((slot) => !appointments.some((e) => e.slotId === slot.id))
 
     remainingSlots.forEach((slot) => {
@@ -340,7 +357,7 @@ const generateClinicsForDay = (
     // start of the screening age range; generateHistoricEpisodesForParticipants
     // then gives them no past rounds, so the flag stays true.
     const clinicEpisodes = episodes.slice(episodesBefore)
-    if (clinic.clinicType === 'screening' && clinicEpisodes.length > 0) {
+    if (clinic.clinicType === 'screening') {
       const youngestFirst = [...clinicEpisodes].sort((a, b) => {
         const dobA = participants.find((p) => p.id === a.participantId)
           ?.demographicInformation.dateOfBirth
@@ -358,25 +375,71 @@ const generateClinicsForDay = (
 
       // Routine invitations stop at the 71st birthday, so a participant is on
       // their last screening when the next one, 3 years on, would fall on or
-      // after it. Flag one or two of the oldest who qualify.
-      const isLastScreening = (episode) =>
-        !dayjs(clinic.date)
-          .add(3, 'year')
-          .isBefore(
-            dayjs(
-              participants.find((p) => p.id === episode.participantId)
-                .demographicInformation.dateOfBirth
-            ).add(71, 'year'),
-            'day'
-          )
-      const lastScreeningCount = Math.random() < 0.5 ? 1 : 2
-      clinicEpisodes
+      // after it. They must also be within the routine age range today.
+      const isLastScreening = (episode) => {
+        const dateOfBirth = participants.find(
+          (participant) => participant.id === episode.participantId
+        ).demographicInformation.dateOfBirth
+        const age = dayjs(clinic.date).diff(dayjs(dateOfBirth), 'year')
+
+        return (
+          age >= riskLevels.routine.ageRange.lower &&
+          age <= riskLevels.routine.ageRange.upper &&
+          !dayjs(clinic.date)
+            .add(3, 'year')
+            .isBefore(
+              dayjs(dateOfBirth).add(
+                riskLevels.routine.ageRange.upper + 1,
+                'year'
+              ),
+              'day'
+            )
+        )
+      }
+      const lastScreeningEpisode = clinicEpisodes
         .filter((episode) => !episode.isFirstScreening)
         .filter(isLastScreening)
-        .slice(0, lastScreeningCount)
-        .forEach((episode) => {
-          episode.isLastScreening = true
+        .at(0)
+
+      if (lastScreeningEpisode) {
+        lastScreeningEpisode.isLastScreening = true
+      } else {
+        if (!reservedFinalInviteSlot) {
+          throw new Error(
+            `Cannot create a final screening invite for clinic ${clinic.id}: no appointment capacity was available to reserve.`
+          )
+        }
+
+        const finalInviteParticipant = generateParticipant({
+          ethnicities,
+          breastScreeningUnits: [unit],
+          riskLevel: 'routine',
+          overrides: {
+            demographicInformation: {
+              dateOfBirth: dayjs(clinic.date).subtract(69, 'year').toISOString()
+            }
+          }
         })
+
+        const finalInviteAppointment = addAppointmentToNewEpisode(
+          finalInviteParticipant,
+          {
+            slot: reservedFinalInviteSlot,
+            participant: finalInviteParticipant,
+            clinic,
+            outcomeWeights: config.screening.outcomes[clinic.clinicType],
+            mammographers: mammographersByClinic.get(clinic.id),
+            seedDataProfile
+          }
+        )
+        const finalInviteEpisode = episodes.find(
+          (episode) => episode.id === finalInviteAppointment.episodeId
+        )
+
+        finalInviteEpisode.isLastScreening = true
+        participants.push(finalInviteParticipant)
+        usedParticipantsInPeriod.add(finalInviteParticipant.id)
+      }
     }
 
     // Assign the order of screening for this clinic: a single 1 to N sequence
