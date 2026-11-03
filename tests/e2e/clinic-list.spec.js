@@ -392,7 +392,7 @@ test.describe('Clinic appointment list', () => {
     page
   }) => {
     const clinic = findTodayClinicWithMammographerAndRemainingAppointments()
-    const clearButton = page.getByRole('button', { name: 'Clear filters' })
+    const clearButton = page.locator('a:has-text("Clear filters")')
     const filterPanel = page.locator('details', {
       hasText: 'Filter appointments'
     })
@@ -409,6 +409,7 @@ test.describe('Clinic appointment list', () => {
     await expect(page).toHaveURL(/search=NoMatchClinicListTest/)
     await expect(page).toHaveURL(/sort=time-descending/)
 
+    await expect(clearButton).toBeVisible()
     await clearButton.click()
 
     await expect(page).toHaveURL(

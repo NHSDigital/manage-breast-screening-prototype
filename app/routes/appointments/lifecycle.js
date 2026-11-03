@@ -150,8 +150,8 @@ module.exports = (router) => {
         // Update status to in progress
         updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
 
-        // Update session details - preserve original starter
-        updateAppointmentData(data, req.params.appointmentId, {
+        // Assign screening order if not already assigned
+        const updates = {
           sessionDetails: {
             startedAt: existingDetails.startedAt,
             startedBy: existingDetails.startedBy,
@@ -159,7 +159,14 @@ module.exports = (router) => {
             pausedBy: null,
             authors: authors
           }
-        })
+        }
+
+        if (!appointment.screeningOrder) {
+          updates.screeningOrder = getNextScreeningOrder(data, req.params.clinicId)
+        }
+
+        // Update session details - preserve original starter
+        updateAppointmentData(data, req.params.appointmentId, updates)
       }
 
       // Determine redirect destination

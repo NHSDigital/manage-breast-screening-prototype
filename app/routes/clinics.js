@@ -671,7 +671,7 @@ module.exports = (router) => {
       })
     } else if (sort.startsWith('completed')) {
       const getCompletedTime = (appointment) =>
-        ['complete', 'partially_screened', 'attended_not_screened'].includes(
+        ['complete', 'partially_screened', 'attended_not_screened', 'cancelled'].includes(
           appointment.status
         )
           ? appointment.sessionDetails?.endedAt

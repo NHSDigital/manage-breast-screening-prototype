@@ -79,7 +79,7 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
   })
   if (!updatedAppointment) return null
 
-  if (newStatus === 'attended_not_screened') {
+  if (newStatus === 'attended_not_screened' || newStatus === 'cancelled') {
     removeFromScreeningOrder(data, baseAppointment)
   }
 

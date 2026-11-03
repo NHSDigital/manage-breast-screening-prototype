@@ -568,7 +568,7 @@ const getStartedMinutes = (appointment) => {
   const startedAt = appointment.sessionDetails?.startedAt
   if (!startedAt) return null
 
-  return Math.max(0, dayjs().diff(dayjs(startedAt), 'minute'))
+  return Math.max(0, getSimulatedNow().diff(dayjs(startedAt), 'minute'))
 }
 
 /**
