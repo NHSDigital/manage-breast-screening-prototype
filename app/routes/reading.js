@@ -2541,11 +2541,9 @@ module.exports = (router) => {
       // has no opinion to give
       if (opinion === 'recall_for_assessment') {
         const appointment = data.appointments.find(
-          (e) => e.id === appointmentId
+          (item) => item.id === appointmentId
         )
         const readableSides = getReadableSides(appointment?.mammogramData)
-        const rightAssessment = formData?.right?.breastAssessment
-        const leftAssessment = formData?.left?.breastAssessment
         const errors = []
 
         for (const side of readableSides) {
@@ -2586,13 +2584,9 @@ module.exports = (router) => {
         }
 
         // Validate annotations match breast assessment
-        const rightAnnotations = formData?.right?.annotations || []
-        const leftAnnotations = formData?.left?.annotations || []
-
-        for (const side of ['right', 'left']) {
-          const assessment = side === 'right' ? rightAssessment : leftAssessment
-          const annotations =
-            side === 'right' ? rightAnnotations : leftAnnotations
+        for (const side of readableSides) {
+          const assessment = formData?.[side]?.breastAssessment
+          const annotations = formData?.[side]?.annotations || []
           const sideLabel = side
 
           if (!assessment) continue

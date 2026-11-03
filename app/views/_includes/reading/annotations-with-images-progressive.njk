@@ -59,10 +59,9 @@
 
             {# A breast with no images has nothing to annotate #}
             {% if not (breastSide in readableSides) %}
-              <div class="app-not-expected-views">
-                <p class="app-not-expected-views__text">Not imaged</p>
-                <p class="app-not-expected-views__reason">{{ expectedViews.reasonText }}</p>
-              </div>
+              {% set notExpectedViewsText = "Not imaged" %}
+              {% set notExpectedViewsReason = expectedViews.reasonText %}
+              {% include "_includes/images/not-expected-views.njk" %}
             {% elseif sideHasAnnotations %}
               {# Full interactive UI with images and sidebar #}
               <div class="app-ann-v2">

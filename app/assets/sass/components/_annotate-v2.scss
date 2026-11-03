@@ -1,6 +1,6 @@
 // app/assets/sass/components/_annotate-v2.scss
-@use "sass:color";
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
+@use "not-expected-views" as *;
 
 // 3-column image annotation tool (v2 prototype)
 
@@ -162,10 +162,9 @@ body.app-annotate-v2 {
   justify-content: center;
 }
 
-// No image was expected, for example after a mastectomy. Matches .app-not-expected-views
+// No image was expected, for example after a mastectomy
 .app-ann-v2__tab-thumb--not-expected {
-  border: 2px dashed nhsuk-colour("grey-2");
-  background-color: color.scale(nhsuk-colour("grey-4"), $alpha: -50%);
+  @include app-image-placeholder;
 }
 
 // ─── Tab panel: bordered white box containing images + sidebar ────────────────
@@ -321,10 +320,9 @@ body.app-annotate-v2 {
   padding: nhsuk-spacing(2);
 }
 
-// A view that wasn't expected, for example after a mastectomy. Matches .app-not-expected-views
+// A view that wasn't expected, for example after a mastectomy
 .app-ann-v2__image-panel--not-expected {
-  border: 2px dashed nhsuk-colour("grey-2");
-  background-color: color.scale(nhsuk-colour("grey-4"), $alpha: -50%);
+  @include app-image-placeholder;
 }
 
 .app-ann-v2__image-panel--not-expected .app-ann-v2__no-image {

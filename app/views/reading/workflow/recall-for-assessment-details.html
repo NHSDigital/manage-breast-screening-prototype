@@ -27,12 +27,10 @@
   {% set breastDetailsHtml %}
 
     {% if not params.isImaged %}
-      <div class="app-not-expected-views nhsuk-u-margin-bottom-0">
-        <p class="app-not-expected-views__text">Not imaged</p>
-        {% if params.notImagedReason %}
-          <p class="app-not-expected-views__reason">{{ params.notImagedReason }}</p>
-        {% endif %}
-      </div>
+      {% set notExpectedViewsText = "Not imaged" %}
+      {% set notExpectedViewsReason = params.notImagedReason %}
+      {% set notExpectedViewsClasses = "nhsuk-u-margin-bottom-0" %}
+      {% include "_includes/images/not-expected-views.njk" %}
     {% else %}
 
       {{ radios({

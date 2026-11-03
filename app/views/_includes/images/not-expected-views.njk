@@ -1,0 +1,17 @@
+{# app/views/_includes/images/not-expected-views.njk #}
+{#
+  Stands in for a breast's images or inputs when it has none, for example
+  after a mastectomy.
+
+  Set before including:
+  - notExpectedViewsText: the main text, such as "Not imaged"
+  - notExpectedViewsReason: reason, such as "Right mastectomy" (optional)
+  - notExpectedViewsClasses: extra classes (optional)
+#}
+
+<div class="app-not-expected-views {{- " " + notExpectedViewsClasses if notExpectedViewsClasses }}">
+  <p class="app-not-expected-views__text">{{ notExpectedViewsText }}</p>
+  {% if notExpectedViewsReason %}
+    <p class="app-not-expected-views__reason">{{ notExpectedViewsReason }}</p>
+  {% endif %}
+</div>

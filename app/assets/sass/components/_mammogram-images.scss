@@ -1,7 +1,6 @@
 // app/assets/sass/components/_mammogram-images.scss
-@use "sass:color";
-
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
+@use "not-expected-views" as *;
 
 // Styles for mammogram image display - used across images, reading, and other views
 
@@ -187,24 +186,24 @@
 }
 
 // Placeholder for a view with no image: before it has loaded in, where a
-// standard view wasn't taken, or where it wasn't expected. Matches
-// .app-not-expected-views. Sits in an image wrapper with the --placeholder
-// modifier, so the wrapper's black background and border don't show
+// standard view wasn't taken, or where it wasn't expected. Sits in an image
+// wrapper with the --placeholder modifier, so the wrapper's black background
+// and border don't show
 .app-mammogram-thumbnail__missing {
+  @include app-image-placeholder;
   width: 100%;
   height: 100%;
-  border: 2px dashed nhsuk-colour("grey-2");
-  background-color: color.scale(nhsuk-colour("grey-4"), $alpha: -50%);
   display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
 }
 
-.app-mammogram-thumbnail__missing-text {
+.app-mammogram-thumbnail__missing-text,
+.app-mammogram-thumbnail__missing-reason {
   // TODO: should we be doing something better for font sizing here?
   font-size: 16px;
-  color: nhsuk-colour("grey-2");
+  color: $nhsuk-secondary-text-colour;
 }
 
 // A view the appointment wasn't expected to produce, for example after a
@@ -213,12 +212,6 @@
   flex-direction: column;
   padding: nhsuk-spacing(2);
   text-align: center;
-}
-
-// Same size and colour as the placeholder text above it
-.app-mammogram-thumbnail__missing-reason {
-  font-size: 16px;
-  color: nhsuk-colour("grey-2");
 }
 
 // Spinner shown briefly while an image loads during streaming

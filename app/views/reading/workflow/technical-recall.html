@@ -154,10 +154,9 @@
             items: rightCheckboxItems
           }) }}
         {% else %}
-          <div class="app-not-expected-views">
-            <p class="app-not-expected-views__text">Not imaged</p>
-            <p class="app-not-expected-views__reason">{{ expectedViews.reasonText }}</p>
-          </div>
+          {% set notExpectedViewsText = "Not imaged" %}
+          {% set notExpectedViewsReason = expectedViews.reasonText %}
+          {% include "_includes/images/not-expected-views.njk" %}
         {% endif %}
       </div>
       <div class="nhsuk-grid-column-one-half">
@@ -171,10 +170,9 @@
             items: leftCheckboxItems
           }) }}
         {% else %}
-          <div class="app-not-expected-views">
-            <p class="app-not-expected-views__text">Not imaged</p>
-            <p class="app-not-expected-views__reason">{{ expectedViews.reasonText }}</p>
-          </div>
+          {% set notExpectedViewsText = "Not imaged" %}
+          {% set notExpectedViewsReason = expectedViews.reasonText %}
+          {% include "_includes/images/not-expected-views.njk" %}
         {% endif %}
       </div>
     </div>

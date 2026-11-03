@@ -2,15 +2,19 @@
 @use "sass:color";
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
+// Shared look for anything standing in for images that aren't there: thumbnail
+// placeholders, annotate panels and this block
+@mixin app-image-placeholder {
+  border: 2px dashed nhsuk-colour("grey-2");
+  background-color: color.scale(nhsuk-colour("grey-4"), $alpha: -50%);
+}
+
 // Stands in for a breast's image counts when no images are expected of it,
-// for example after a mastectomy. Matches the not expected thumbnail
-// placeholder so it reads as intentional, not missing
+// for example after a mastectomy
 .app-not-expected-views {
   @include nhsuk-responsive-margin(3, "bottom");
+  @include app-image-placeholder;
   padding: nhsuk-spacing(4) nhsuk-spacing(3);
-  border: 2px dashed nhsuk-colour("grey-2");
-  background-color: nhsuk-colour("grey-4");
-  background-color: color.scale(nhsuk-colour("grey-4"), $alpha: -50%);
   text-align: center;
 }
 

@@ -535,12 +535,9 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     border-color: $app-dark-mode-text-colour-secondary;
   }
 
-  .app-mammogram-thumbnail__missing-text {
-    color: $app-dark-mode-text-colour;
-  }
-
+  .app-mammogram-thumbnail__missing-text,
   .app-mammogram-thumbnail__missing-reason {
-    color: $app-dark-mode-text-colour;
+    color: $app-dark-mode-text-colour-secondary;
   }
 
   .app-not-expected-views {
