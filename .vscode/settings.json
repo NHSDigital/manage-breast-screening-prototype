@@ -1,8 +1,1 @@
-{
-    "chat.tools.terminal.autoApprove": {
-        "/^gh api graphql -f query='query\\(\\$owner: String!, \\$repo: String!, \\$number: Int!\\) \\{ repository\\(owner: \\$owner, name: \\$repo\\) \\{ pullRequest\\(number: \\$number\\) \\{ reviewThreads\\(first: 100\\) \\{ nodes \\{ id isResolved path comments\\(first: 20\\) \\{ nodes \\{ databaseId author \\{ login \\} body \\} \\} \\} \\} \\} \\} \\}' -f owner=NHSDigital -f repo=manage-breast-screening-prototype -F number=495 --jq '\\.data\\.repository\\.pullRequest\\.reviewThreads\\.nodes\\[\\] \\| select\\(\\.isResolved == false\\)'$/": {
-            "approve": true,
-            "matchCommandLine": true
-        }
-    }
-}
+{}

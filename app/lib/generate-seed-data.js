@@ -463,7 +463,7 @@ const generateClinicsForDay = (
 
     // For today's clinics, create one paused appointment per clinic for demo purposes.
     // This shows how the "Claim appointment" feature works when an appointment
-    // is paused by a different mammographer.
+    // is paused by a different mammographer. Reserve capacity for this appointment.
     if (
       isToday &&
       clinic.clinicType === 'screening' &&
@@ -471,66 +471,72 @@ const generateClinicsForDay = (
     ) {
       // Find an unused slot for the paused appointment
       const usedSlotIds = new Set(appointments.map((a) => a.slotId))
-      const unusedSlot = clinic.slots.find((slot) => !usedSlotIds.has(slot.id))
+      const availableSlots = clinic.slots.filter((slot) => !usedSlotIds.has(slot.id))
 
-      if (unusedSlot) {
-        // Get or create a participant for the paused appointment
-        const availableRiskLevels = clinic.riskLevels
-        const selectedRiskLevel = weighted.select(
-          Object.fromEntries(
-            availableRiskLevels.map((level) => [
-              level,
-              riskLevels[level].weight
-            ])
-          )
-        )
-
-        let pausedParticipant = indices.riskLevelIndex[selectedRiskLevel].find(
-          (participant) =>
-            !usedParticipantsInPeriod.has(participant.id) &&
-            !testScenarioParticipantIds.has(participant.id)
-        )
-
-        if (!pausedParticipant) {
-          pausedParticipant = generateParticipant({
-            ethnicities,
-            breastScreeningUnits: [unit],
-            riskLevel: selectedRiskLevel
-          })
-          participants.push(pausedParticipant)
-        }
-
-        // Create episode for paused appointment
-        const pausedEpisode = generateEpisode({
-          participant: pausedParticipant,
-          type: getCurrentRiskLevel(
-            pausedParticipant,
-            dayjs(clinic.date).toDate()
-          ),
-          appointmentDate: unusedSlot.dateTime
-        })
-
-        // Create the paused appointment
-        const pausedAppointment = generateAppointment({
-          slot: unusedSlot,
-          participant: pausedParticipant,
-          clinic,
-          episodeId: pausedEpisode.id,
-          outcomeWeights: config.screening.outcomes[clinic.clinicType],
-          forceStatus: 'paused',
-          mammographers: mammographersByClinic.get(clinic.id),
-          seedDataProfile
-        })
-
-        pausedEpisode.appointmentIds.push(pausedAppointment.id)
-        episodes.push(pausedEpisode)
-        appointments.push(pausedAppointment)
-        usedParticipantsInPeriod.add(pausedParticipant.id)
-
-        console.log(
-          `Created paused appointment for participant ${pausedParticipant.demographicInformation.firstName} ${pausedParticipant.demographicInformation.lastName}`
+      if (!availableSlots.length) {
+        throw new Error(
+          `Cannot create a paused appointment for clinic ${clinic.id}: no appointment capacity was available to reserve.`
         )
       }
+
+      const unusedSlot = availableSlots[Math.floor(Math.random() * availableSlots.length)]
+
+      // Get or create a participant for the paused appointment
+      const availableRiskLevels = clinic.riskLevels
+      const selectedRiskLevel = weighted.select(
+        Object.fromEntries(
+          availableRiskLevels.map((level) => [
+            level,
+            riskLevels[level].weight
+          ])
+        )
+      )
+
+      let pausedParticipant = indices.riskLevelIndex[selectedRiskLevel].find(
+        (participant) =>
+          !usedParticipantsInPeriod.has(participant.id) &&
+          !testScenarioParticipantIds.has(participant.id)
+      )
+
+      if (!pausedParticipant) {
+        pausedParticipant = generateParticipant({
+          ethnicities,
+          breastScreeningUnits: [unit],
+          riskLevel: selectedRiskLevel
+        })
+        participants.push(pausedParticipant)
+      }
+
+      // Create episode for paused appointment
+      const pausedEpisode = generateEpisode({
+        participant: pausedParticipant,
+        type: getCurrentRiskLevel(
+          pausedParticipant,
+          dayjs(clinic.date).toDate()
+        ),
+        appointmentDate: unusedSlot.dateTime
+      })
+
+      // Create the paused appointment
+      const pausedAppointment = generateAppointment({
+        slot: unusedSlot,
+        participant: pausedParticipant,
+        clinic,
+        episodeId: pausedEpisode.id,
+        outcomeWeights: config.screening.outcomes[clinic.clinicType],
+        forceStatus: 'paused',
+        mammographers: mammographersByClinic.get(clinic.id),
+        seedDataProfile
+      })
+
+      pausedEpisode.appointmentIds.push(pausedAppointment.id)
+      episodes.push(pausedEpisode)
+      appointments.push(pausedAppointment)
+      usedParticipantsInPeriod.add(pausedParticipant.id)
+
+      console.log(
+        `Created paused appointment for participant ${pausedParticipant.demographicInformation.firstName} ${pausedParticipant.demographicInformation.lastName}`
+      )
     }
 
     clinics.push(clinic)

@@ -15,7 +15,7 @@ const update = () => {
       0,
       Math.floor((Date.now() - Date.parse(since)) / 60000)
     )
-    element.textContent = `${minutes} mins ago`
+    element.textContent = `${minutes} min${minutes === 1 ? '' : 's'} ago`
   })
 }
 
