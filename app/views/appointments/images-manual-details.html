@@ -140,6 +140,12 @@
             {% endfor %}
           </fieldset>
         {% else %}
+          <h3 class="nhsuk-heading-xs">{{ breast.label }} breast</h3>
+          {% set notExpectedViewsText = "No images expected" %}
+          {% set notExpectedViewsReason = expectedViews.reasonText %}
+          {% include "_includes/images/not-expected-views.njk" %}
+
+          {# Hidden while the design is reconsidered: counters for a breast no images were expected of
           {% set breastInputs = inputs | where("side", breast.side) | where("group", "notExpectedBreast") %}
           {% set hasBreastData = false %}
           {% for input in breastInputs %}
@@ -147,11 +153,6 @@
               {% set hasBreastData = true %}
             {% endif %}
           {% endfor %}
-
-          <h3 class="nhsuk-heading-xs">{{ breast.label }} breast</h3>
-          {% set notExpectedViewsText = "No images expected" %}
-          {% set notExpectedViewsReason = expectedViews.reasonText %}
-          {% include "_includes/images/not-expected-views.njk" %}
 
           {% call details({
             summaryText: "Add images for this breast",
@@ -166,6 +167,7 @@
               {% endfor %}
             </fieldset>
           {% endcall %}
+          #}
         {% endif %}
       </div>
     {% endfor %}
@@ -190,6 +192,11 @@
                   {{ input.html | safe }}
                 {% endfor %}
               </fieldset>
+            {% elseif not breast.isExpected %}
+              <h3 class="nhsuk-heading-xs">{{ breast.label }} breast</h3>
+              {% set notExpectedViewsText = "No images expected" %}
+              {% set notExpectedViewsReason = expectedViews.reasonText %}
+              {% include "_includes/images/not-expected-views.njk" %}
             {% endif %}
           </div>
         {% endfor %}
