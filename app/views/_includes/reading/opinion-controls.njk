@@ -6,13 +6,16 @@
 {# Opinion labels with their keyboard shortcut #}
 {% set normalLabelHtml %}Normal <span class="app-shortcut-hint">(N)</span>{% endset %}
 {% set normalWithDetailsLabelHtml %}Normal, and add details <span class="app-shortcut-hint">(N)</span>{% endset %}
+{% set addDetailsLabelHtml %}Normal, but add details <span class="app-shortcut-hint">(D)</span>{% endset %}
 {% set technicalRecallLabelHtml %}Technical recall <span class="app-shortcut-hint">(T)</span>{% endset %}
 {% set recallForAssessmentLabelHtml %}Recall for assessment <span class="app-shortcut-hint">(R)</span>{% endset %}
 
 {% set questionText = "What is the outcome for this case?" if isArbitration else "What is your opinion of these images?" %}
 
 {% if hasExistingOpinion %}
-  {# Show radios when updating an existing or in-progress opinion #}
+  {# Show radios when updating an existing or in-progress opinion.
+     With symptoms, plain normal is not offered - normal needs details,
+     so both N and D select it, matching the first-visit buttons #}
   {{ radios({
     small: true,
     name: "imageReadingTemp[opinion]",
@@ -29,11 +32,12 @@
         html: normalLabelHtml,
         checked: currentOpinion == 'normal' and not existingRead.normalDetails,
         attributes: { "data-shortcut-radio": "n" }
-      },
+      } if not hasSymptoms,
       {
         value: "normal_with_details",
-        text: "Normal, but add details",
-        checked: (currentOpinion == 'normal' and existingRead.normalDetails) or currentOpinion == 'normal_with_details'
+        html: normalWithDetailsLabelHtml if hasSymptoms else addDetailsLabelHtml,
+        checked: (currentOpinion == 'normal' and (existingRead.normalDetails or hasSymptoms)) or currentOpinion == 'normal_with_details',
+        attributes: { "data-shortcut-radio": "n d" if hasSymptoms else "d" }
       },
       {
         value: "technical_recall",
@@ -45,7 +49,7 @@
         html: recallForAssessmentLabelHtml,
         attributes: { "data-shortcut-radio": "r" }
       }
-    ],
+    ] | removeEmpty,
     value: currentOpinion
   }) }}
 
@@ -63,7 +67,7 @@
         value: "normal_with_details",
         name: "imageReadingTemp[opinion]",
         classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-        attributes: { "data-shortcut": "n" }
+        attributes: { "data-shortcut": "n d" }
       } | openInModal) }}
     {% else %}
       {{ button({
@@ -77,8 +81,8 @@
         {# Raw button element intentional — app-button-link styles it as a link,
           which doesn't work with the NHS button macro (adds conflicting styles).
           data-modal-submit added manually for modal support. #}
-        <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
-          Normal, but add details
+        <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link" data-shortcut="d"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
+          {{ addDetailsLabelHtml | safe }}
         </button>
       </p>
     {% endif %}
@@ -110,7 +114,7 @@
           html: normalWithDetailsLabelHtml,
           value: "normal_with_details",
           name: "imageReadingTemp[opinion]",
-          attributes: { "data-shortcut": "n" }
+          attributes: { "data-shortcut": "n d" }
         } | openInModal) }}
       {% else %}
         {{ button({
@@ -125,8 +129,8 @@
           {# Raw button element intentional — app-button-link styles it as a link,
             which doesn't work with the NHS button macro (adds conflicting styles).
             data-modal-submit added manually for modal support. #}
-          <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
-            Normal, but add details
+          <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link" data-shortcut="d"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
+            {{ addDetailsLabelHtml | safe }}
           </button>
         </p>
       {% endif %}

@@ -1133,7 +1133,7 @@
      * Allows radiologists to trigger opinion shortcuts from PACS viewer
      */
     const setupShortcutForwarding = () => {
-      const forwardKeys = ["n", "t", "r"]
+      const forwardKeys = ["n", "d", "t", "r"]
       
       document.addEventListener("keydown", (e) => {
         // Don't forward with modifier keys
@@ -1141,7 +1141,7 @@
         
         const key = e.key.toLowerCase()
         
-        // Forward N/T/R shortcuts to reading page (works even when zoomed)
+        // Forward N/D/T/R shortcuts to reading page (works even when zoomed)
         if (forwardKeys.includes(key) && channel) {
           channel.postMessage({
             type: "shortcut",
