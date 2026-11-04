@@ -31,7 +31,7 @@
 {% if allowEdits %}
   <h4>Add symptoms</h4>
 
-  <div class="nhsuk-button-group app-button-group--small">
+  <div class="nhsuk-button-group nhsuk-button-group--small">
     {% for symptomType in data.symptomTypes %}
 
       {% set addUrl = (contextUrl + "/medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo) %}

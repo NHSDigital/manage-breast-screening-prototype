@@ -54,7 +54,7 @@
           {{ appLink({
             text: "End session",
             href: "/reading/session/" + session.id + "/end",
-            classes: "nhsuk-link--no-visited-state nhsuk-button-group__item"
+            classes: "nhsuk-link--no-visited-state"
           } | openInModal) }}
         {% endif %}
       </div>
@@ -81,7 +81,7 @@
               classes: "nhsuk-u-margin-bottom-0"
             }) }}
           {% endif %}
-          <a href="/reading" class="nhsuk-link nhsuk-link--reverse nhsuk-button-group__item">Return to reading dashboard</a>
+          <a href="/reading" class="nhsuk-link nhsuk-link--reverse">Return to reading dashboard</a>
         </div>
       {% endset %}
 

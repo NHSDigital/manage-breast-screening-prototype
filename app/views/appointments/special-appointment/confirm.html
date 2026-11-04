@@ -42,12 +42,11 @@
       {% include "summary-lists/special-appointment/special-appointment.njk" %}
   {% endif %}
 
-  {{ button({
-    text: "Confirm"
-  }) }}
-
-  <p>
-    <a href="{{ appointmentUrl }}">Cancel and return to participant</a>
-  </p>
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Confirm"
+    }) }}
+    <a href="{{ appointmentUrl }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel and return to participant</a>
+  </div>
 
 {% endblock %}

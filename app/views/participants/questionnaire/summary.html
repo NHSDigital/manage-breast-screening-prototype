@@ -29,15 +29,12 @@
 
       {% include "summary-lists/questionnaire.njk" %}
 
-      {{ button({
-        text: "Confirm and submit"
-      }) }}
-
-      <p>
-        <a href="/clinics/{{clinicId}}/participants/{{participantId}}/questionnaire/health-status">
-          Back and make changes
-        </a>
-      </p>
+      <div class="nhsuk-button-group">
+        {{ button({
+          text: "Confirm and submit"
+        }) }}
+        <a href="/clinics/{{ clinicId }}/participants/{{ participantId }}/questionnaire/health-status" class="nhsuk-link nhsuk-link--no-visited-state">Back and make changes</a>
+      </div>
 
     </form>
   </div>

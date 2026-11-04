@@ -41,22 +41,12 @@
       }
     }) }}
 
-    
-
-
+    {# Only show link if this is a previously saved item #}
+    {% if appointment.medicalHistoryTemp.id and not hideDeleteLink %}
+      {% set deleteHref = ("./" + typeDataObject.slug + "/delete/" + appointment.medicalHistoryTemp.id) | urlWithReferrer(referrerChain, query.scrollTo) %}
+      <a href="{{ deleteHref }}" class="nhsuk-link nhsuk-link--no-visited-state app-link--warning">Delete this item</a>
+    {% endif %}
   </div>
-
-  {# Only show link if this is a previously saved symptom #}
-  {% if appointment.medicalHistoryTemp.id and not hideDeleteLink %}
-    {% set deleteHref %}
-      ./{{ typeDataObject.slug }}/delete/{{ appointment.medicalHistoryTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
-    {% endset %}
-    <p class="nhsuk-u-margin-top-4">
-      <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
-        Delete this item
-      </a>
-    </p>
-  {% endif %}
 
   {# {% include "screening-cannot-proceed-link.njk" %} #}
 

@@ -655,19 +655,13 @@
 
     {# Button menu disabled for now until we have a prod component #}
     {# {% include "add-symptom-button-menu.njk" %} #}
-  </div>
 
-  {# Only show link if this is a previously saved symptom #}
-  {% if appointment.symptomTemp.id %}
-    {% set deleteHref %}
-      ./delete/{{ appointment.symptomTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
-    {% endset %}
-    <p class="nhsuk-u-margin-top-4">
-      <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
-        Delete this symptom
-      </a>
-    </p>
-  {% endif %}
+    {# Only show link if this is a previously saved symptom #}
+    {% if appointment.symptomTemp.id %}
+      {% set deleteHref = ("./delete/" + appointment.symptomTemp.id) | urlWithReferrer(referrerChain, query.scrollTo) %}
+      <a href="{{ deleteHref }}" class="nhsuk-link nhsuk-link--no-visited-state app-link--warning">Delete this symptom</a>
+    {% endif %}
+  </div>
   {# {% include "screening-cannot-proceed-link.njk" %} #}
 
 {% endblock %}
