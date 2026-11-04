@@ -448,13 +448,22 @@ const generateClinicsForDay = (
     const screenedAppointments = appointments
       .filter((appointment) => appointment.clinicId === clinic.id)
       .filter(
-        (appointment) => isInProgress(appointment) || isCompleted(appointment)
+        (appointment) =>
+          isInProgress(appointment) ||
+          isCompleted(appointment) ||
+          appointment.status === 'attended_not_screened'
       )
       .sort((a, b) => {
         const aStart =
-          a.timing?.actualStartTime || a.sessionDetails?.startedAt || 0
+          a.timing?.actualStartTime ||
+          a.sessionDetails?.startedAt ||
+          a.sessionDetails?.endedAt ||
+          0
         const bStart =
-          b.timing?.actualStartTime || b.sessionDetails?.startedAt || 0
+          b.timing?.actualStartTime ||
+          b.sessionDetails?.startedAt ||
+          b.sessionDetails?.endedAt ||
+          0
         return new Date(aStart) - new Date(bStart)
       })
     screenedAppointments.forEach((appointment, index) => {

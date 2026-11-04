@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-03 14:47 UTC
+- **Generated:** 2026-11-04 12:46 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -146,18 +146,18 @@ Appointment status checks and display helpers. Use these instead of comparing st
 | `getStatusTagColour(status, [vocabulary])` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete', 'appointment') // 'green'` | 339 |
 | `getStatusText(status, [vocabulary])` | Map a status key to its display text — e.g. `getStatusText('complete', 'appointment') // 'Screened'` | 353 |
 | `describeReadingCaseStatus(status)` | The display facts for a reading case's status, composed from the facts | 379 |
-| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category | 406 |
-| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 438 |
-| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 448 |
-| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 461 |
-| `hasStoppedDetails(appointment)` | Check if an attended-not-screened appointment has its reasons recorded | 475 |
-| `getCheckInTime(appointment)` | The timestamp an appointment was checked in, taken from its status history. | 485 |
-| `getSimulatedNow()` | The prototype's simulated "now" (config.clinics.simulatedTime on today's | 501 |
-| `getWaitingMinutes(appointment)` | How long a checked-in participant has been waiting, measured against the | 518 |
-| `getWaitingSince(appointment)` | A real-time anchor for the waiting figure: now minus the minutes already | 533 |
-| `formatWaitingTime(totalMinutes)` | Format a waiting duration as whole minutes, e.g. "1 min", "75 mins". | 549 |
-| `getStartedMinutes(appointment)` | Calculate how many minutes ago screening started. | 562 |
-| `getStartedSince(appointment)` | A real-time anchor for the started time figure: now minus the minutes since | 575 |
+| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category; Remaining includes in-progress and paused appointments | 406 |
+| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 437 |
+| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 447 |
+| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 460 |
+| `hasStoppedDetails(appointment)` | Check if an attended-not-screened appointment has its reasons recorded | 474 |
+| `getCheckInTime(appointment)` | The timestamp an appointment was checked in, taken from its status history. | 484 |
+| `getSimulatedNow()` | The prototype's simulated "now" (config.clinics.simulatedTime on today's | 500 |
+| `getWaitingMinutes(appointment)` | How long a checked-in participant has been waiting, measured against the | 517 |
+| `getWaitingSince(appointment)` | A real-time anchor for the waiting figure: now minus the minutes already | 532 |
+| `formatWaitingTime(totalMinutes)` | Format a waiting duration as whole minutes, e.g. "1 min", "75 mins". | 548 |
+| `getStartedMinutes(appointment)` | Calculate how many minutes ago screening started. | 561 |
+| `getStartedSince(appointment)` | A real-time anchor for the started time figure: now minus the minutes since | 574 |
 
 ### participants.js
 

@@ -111,21 +111,6 @@
 
     {# Appointment status and view appointment link #}
     <td class="nhsuk-table__cell app-clinic-appointments-table__appointment-column">
-      {# Screened by - whoever is running the appointment, or once it has ended,
-         whoever took the images (see getScreenedByName). Attended not
-         screened is left out as no screening happened. The screening order
-         badge is only shown once screening is complete, so the In progress tab
-         shows the name alone; on the Complete and All tabs this moves to the
-         Time completed column with the badge. #}
-      {% if columns.screenedBy and not columns.completed and appointment.sessionDetails.startedBy and appointment.status != 'attended_not_screened' %}
-        <p class="nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-2">
-          {{ appointment | getScreenedByName({
-            format: 'short',
-            identifyCurrentUser: true
-          }) }}
-        </p>
-      {% endif %}
-
       {{ appointment.status | toTag({ id: statusTagId, vocabulary: "appointment" }) }}
 
       {% if appointment.status == 'attended_not_screened' and appointment | hasStoppedDetails %}
@@ -147,7 +132,7 @@
           </p>
         {% endif %}
 
-      {% elseif (appointment | isInProgressNotPaused) and not columns.screenedBy %}
+      {% elseif (appointment | isInProgressNotPaused) and not columns.startedAt %}
         <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
           appointment | getAppointmentRunnerId | getUsername({
           format: 'short',
@@ -206,7 +191,7 @@
     {% endif %}
 
     {# Time completed - when the appointment ended, for screened (including
-       partially screened) and attended not screened; blank otherwise. The
+       partially screened), attended not screened and cancelled; blank otherwise. The
        mammographer and screening order badge sit on the same line after the
        time on the Complete and All tabs, moved here from the Status column.
        The time is a fixed-width block so the badge and name line up across
@@ -216,18 +201,19 @@
       {# For cancelled appointments that were started, prefer endedBy (who cancelled);
          for cancelled that never started, use endedBy; otherwise use startedBy #}
       {% set completedBy = (appointment.status == 'cancelled' and appointment.sessionDetails.endedBy) or appointment.sessionDetails.startedBy or appointment.sessionDetails.endedBy %}
-      {% set completedScreener = completedBy and appointment.status in ['complete', 'partially_screened', 'attended_not_screened', 'cancelled'] %}
+      {% set isCompletedStatus = appointment.status in ['complete', 'partially_screened', 'attended_not_screened', 'cancelled'] %}
+      {% set completedScreener = completedBy and isCompletedStatus %}
+      {% set completedOrder = appointment.screeningOrder if isCompletedStatus %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
-        {% if completedTime or completedScreener %}
+        {% if completedTime or completedScreener or completedOrder %}
           <span class="app-clinic-appointments-table__completed-time">{% if completedTime %}{{ completedTime | formatTimeString }}{% endif %}</span>
+          {% if completedOrder %}
+            <span class="nhsapp-badge nhsapp-badge--small app-nowrap nhsuk-u-margin-right-1">
+              <span aria-hidden="true">{{ completedOrder }}</span>
+              <span class="nhsuk-u-visually-hidden">{{ completedOrder | getOrdinalNumber }} in order</span>
+            </span>
+          {% endif %}
           {% if completedScreener %}
-            {# No badge for attended not screened or cancelled - screening never completed #}
-            {% if appointment.screeningOrder and appointment.status not in ['attended_not_screened', 'cancelled'] %}
-              <span class="nhsapp-badge nhsapp-badge--small app-nowrap nhsuk-u-margin-right-1">
-                <span aria-hidden="true">{{ appointment.screeningOrder }}</span>
-                <span class="nhsuk-u-visually-hidden">Screened {{ appointment.screeningOrder | getOrdinalNumber }}</span>
-              </span>
-            {% endif %}
             <span class="nhsuk-u-font-size-16">{{ appointment | getScreenedByName({
               format: 'short',
               identifyCurrentUser: true

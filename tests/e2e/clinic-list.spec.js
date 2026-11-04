@@ -7,6 +7,9 @@ const { appointmentSettings, pinSettings } = require('./helpers/settings')
 const { findTodayAppointment, readCollection } = require('./helpers/seed-data')
 const { waitForModalsReady, expectModalClosed } = require('./helpers/modals')
 const dayjs = require('dayjs')
+const {
+  getAppointmentRunnerId
+} = require('../../app/lib/utils/roles-and-permissions')
 const users = require('../../app/data/users')
 const riskLevels = require('../../app/data/risk-levels')
 
@@ -135,18 +138,50 @@ const findClinicWithNewAndReturningParticipants = () => {
 }
 
 test.describe('Clinic appointment list', () => {
-  test('does not show completed screening details for an in-progress appointment on the All tab', async ({
+  test('shows in-progress and paused appointments on the Remaining tab', async ({
+    page
+  }) => {
+    for (const status of ['in_progress', 'paused']) {
+      const { clinic, appointment } = findTodayAppointment({ status })
+      const row = page.locator(`tr[data-fragment-id="${appointment.id}"]`)
+      const remainingTab = page
+        .getByRole('navigation', { name: 'Secondary menu' })
+        .getByRole('link', { name: /Remaining/ })
+
+      await page.goto(`/clinics/${clinic.id}`)
+
+      await expect(row).toBeVisible()
+      await expect(
+        remainingTab.locator('strong.app-secondary-navigation__current')
+      ).toBeVisible()
+      await expect(remainingTab).toContainText(
+        `(${await page.locator('tbody tr[data-fragment-id]').count()})`
+      )
+
+      await page.goto(`/clinics/${clinic.id}/in-progress`)
+
+      await expect(row).toBeVisible()
+    }
+  })
+
+  test('shows who is running an in-progress appointment on the All tab', async ({
     page
   }) => {
     const { clinic, appointment } = findTodayAppointment({
       status: 'in_progress'
     })
-    const mammographer = users.find(
+    const runner = users.find(
+      (user) => user.id === getAppointmentRunnerId(appointment)
+    )
+    const starter = users.find(
       (user) => user.id === appointment.sessionDetails.startedBy
     )
     const row = page.locator(`tr[data-fragment-id="${appointment.id}"]`)
     const statusColumn = row.locator(
       '.app-clinic-appointments-table__appointment-column'
+    )
+    const startedAtColumn = row.locator(
+      '.app-clinic-appointments-table__started-at-column'
     )
     const completedColumn = row.locator(
       '.app-clinic-appointments-table__completed-column'
@@ -155,11 +190,20 @@ test.describe('Clinic appointment list', () => {
     await page.goto(`/clinics/${clinic.id}/all`)
 
     await expect(row).toBeVisible()
-    await expect(statusColumn).not.toContainText(
-      `${mammographer.firstName.charAt(0)}. ${mammographer.lastName}`
+    await expect(statusColumn).toContainText(
+      `with ${runner.firstName.charAt(0)}. ${runner.lastName}`
     )
     await expect(completedColumn).toBeEmpty()
     await expect(completedColumn.locator('.nhsapp-badge')).toHaveCount(0)
+
+    await page.goto(`/clinics/${clinic.id}/in-progress`)
+
+    await expect(statusColumn).not.toContainText(
+      `${starter.firstName.charAt(0)}. ${starter.lastName}`
+    )
+    await expect(startedAtColumn).toContainText(
+      `${starter.firstName.charAt(0)}. ${starter.lastName}`
+    )
   })
 
   test('keeps mammographer options visible on every tab', async ({ page }) => {

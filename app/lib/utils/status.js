@@ -404,10 +404,10 @@ const describeReadingCaseStatus = (status) => {
 }
 
 /**
- * Filter appointments by status category
+ * Filter appointments by status category; Remaining includes in-progress and paused appointments
  *
  * @param {Array} appointments - Appointments to filter
- * @param {string} filter - Category: 'scheduled', 'checked-in', 'in-progress', 'complete', or 'remaining'
+ * @param {string} filter - Category: 'scheduled', 'checked-in', 'in-progress', 'complete', or 'remaining' (scheduled, checked-in, in-progress and paused appointments)
  * @returns {Array} Filtered appointments
  */
 const filterAppointmentsByStatus = (appointments, filter) => {
@@ -421,15 +421,14 @@ const filterAppointmentsByStatus = (appointments, filter) => {
         (appointment) => appointment.status === 'checked_in'
       )
     case 'in-progress':
-      return appointments.filter(
-        (appointment) =>
-          appointment.status === 'in_progress' ||
-          appointment.status === 'paused'
-      )
+      return appointments.filter((appointment) => isInProgress(appointment))
     case 'complete':
       return appointments.filter((appointment) => isFinal(appointment))
     case 'remaining':
-      return appointments.filter((appointment) => hasNotStarted(appointment))
+      return appointments.filter(
+        (appointment) =>
+          hasNotStarted(appointment) || isInProgress(appointment)
+      )
     default:
       return appointments
   }
