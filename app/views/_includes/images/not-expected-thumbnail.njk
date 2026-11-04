@@ -5,14 +5,10 @@
   of the "No image" placeholder.
 
   Set before including:
-  - notExpectedReason: short reason, such as "Mastectomy" (optional)
-  - notExpectedText: the main text (optional, default "Not expected"). Reading
+  - notExpectedText: the text (optional, default "Not expected"). Reading
     uses "Not imaged", as by then the images are the record
 #}
 
 <div class="app-mammogram-thumbnail__missing app-mammogram-thumbnail__missing--not-expected" data-not-expected>
   <span class="app-mammogram-thumbnail__missing-text">{{ notExpectedText or "Not expected" }}</span>
-  {% if notExpectedReason %}
-    <span class="app-mammogram-thumbnail__missing-reason">{{ notExpectedReason }}</span>
-  {% endif %}
 </div>

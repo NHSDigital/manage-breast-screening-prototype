@@ -60,7 +60,6 @@
             {# A breast with no images has nothing to annotate #}
             {% if not (breastSide in readableSides) %}
               {% set notExpectedViewsText = "Not imaged" %}
-              {% set notExpectedViewsReason = expectedViews.reasonText %}
               {% include "_includes/images/not-expected-views.njk" %}
             {% elseif sideHasAnnotations %}
               {# Full interactive UI with images and sidebar #}

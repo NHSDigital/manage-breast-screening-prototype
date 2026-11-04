@@ -26,6 +26,8 @@
     {{ pageHeading }}
   </h1>
 
+  {% include "_includes/images/expected-views-inset.njk" %}
+
   {# Standard views - order matches config setting #}
   {% if data.settings.mammogramViewOrder == 'mlo-first' %}
     {% set views = ['RMLO', 'LMLO', 'RCC', 'LCC'] %}
@@ -155,7 +157,6 @@
           }) }}
         {% else %}
           {% set notExpectedViewsText = "Not imaged" %}
-          {% set notExpectedViewsReason = expectedViews.reasonText %}
           {% include "_includes/images/not-expected-views.njk" %}
         {% endif %}
       </div>
@@ -171,7 +172,6 @@
           }) }}
         {% else %}
           {% set notExpectedViewsText = "Not imaged" %}
-          {% set notExpectedViewsReason = expectedViews.reasonText %}
           {% include "_includes/images/not-expected-views.njk" %}
         {% endif %}
       </div>

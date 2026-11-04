@@ -7,14 +7,14 @@
 
 {% if not expectedViews.isStandardSet %}
   {% call warningCallout({
-    heading: expectedViews.summary,
+    heading: expectedViews.heading,
     headingLevel: 2
   }) %}
-    <p>{{ expectedViews.reasonText }}.</p>
+    <p>{{ expectedViews.summary }}</p>
     {% for note in mastectomyNotes %}
-      {% if note.details %}
-        <p>Details: {{ note.details }}</p>
-      {% endif %}
+      {% for details in note.detailsList %}
+        <p>Details: {{ details }}</p>
+      {% endfor %}
     {% endfor %}
   {% endcall %}
 {% else %}
@@ -24,9 +24,9 @@
       headingLevel: 2
     }) %}
       <p>{{ note.imagedText }}</p>
-      {% if note.details %}
-        <p>Details: {{ note.details }}</p>
-      {% endif %}
+      {% for details in note.detailsList %}
+        <p>Details: {{ details }}</p>
+      {% endfor %}
     {% endcall %}
   {% endfor %}
 {% endif %}

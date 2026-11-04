@@ -28,7 +28,6 @@
 
     {% if not params.isImaged %}
       {% set notExpectedViewsText = "Not imaged" %}
-      {% set notExpectedViewsReason = params.notImagedReason %}
       {% set notExpectedViewsClasses = "nhsuk-u-margin-bottom-0" %}
       {% include "_includes/images/not-expected-views.njk" %}
     {% else %}
@@ -243,7 +242,6 @@
         {{ breastDetails({
           side: breastSide,
           isImaged: breastSide in readableSides,
-          notImagedReason: expectedViews.reasonText,
           annotationsHtml: sideAnnotationsHtml if isInlineAnnotationsMode,
           annotationsButtonHtml: sideAnnotationsButtonHtml if isInlineAnnotationsMode,
           annotationError: _sideAnnotationsError if isInlineAnnotationsMode,

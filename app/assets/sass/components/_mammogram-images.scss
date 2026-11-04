@@ -199,15 +199,14 @@
   box-sizing: border-box;
 }
 
-.app-mammogram-thumbnail__missing-text,
-.app-mammogram-thumbnail__missing-reason {
+.app-mammogram-thumbnail__missing-text {
   // TODO: should we be doing something better for font sizing here?
   font-size: 16px;
   color: $nhsuk-secondary-text-colour;
 }
 
 // A view the appointment wasn't expected to produce, for example after a
-// mastectomy. Has a second line for the reason
+// mastectomy
 .app-mammogram-thumbnail__missing--not-expected {
   flex-direction: column;
   padding: nhsuk-spacing(2);

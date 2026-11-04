@@ -535,8 +535,7 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     border-color: $app-dark-mode-text-colour-secondary;
   }
 
-  .app-mammogram-thumbnail__missing-text,
-  .app-mammogram-thumbnail__missing-reason {
+  .app-mammogram-thumbnail__missing-text {
     color: $app-dark-mode-text-colour-secondary;
   }
 
@@ -545,8 +544,7 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     border-color: $app-dark-mode-text-colour-secondary;
   }
 
-  .app-not-expected-views__text,
-  .app-not-expected-views__reason {
+  .app-not-expected-views__text {
     color: $app-dark-mode-text-colour-secondary;
   }
 

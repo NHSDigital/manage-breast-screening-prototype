@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-02 15:12 UTC
+- **Generated:** 2026-11-04 12:30 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -442,9 +442,9 @@ Mastectomy imaging follow-up question, its display text, and the bilateral maste
 | `getMastectomyHeading(side)` | Get the heading for a mastectomy on one or both sides — e.g. `{{ "Right" \| getMastectomyHeading }}` | 96 |
 | `describeMastectomyImaging(item)` | Describe the imaging recorded for a mastectomy in a medical history item | 109 |
 | `getMastectomyImagingNotes(medicalHistory)` | Describe the mastectomies where images were taken, for readers — e.g. `{% for note in appointment.medicalInformation.medicalHistory \| getMastectomyImagingNotes %}` | 137 |
-| `isBilateralMastectomyWithoutImages(item)` | Check whether a medical history item records a bilateral mastectomy with no images needed | 152 |
-| `hasBilateralMastectomyWithoutImages(medicalHistory)` | Check whether an appointment's medical history has a bilateral mastectomy with no images needed | 166 |
-| `getBilateralMastectomySuccessMessage(participantName, appointmentUrl)` | Build the success message for ending an appointment after bilateral mastectomy | 177 |
+| `isBilateralMastectomyWithoutImages(item)` | Check whether a medical history item records a bilateral mastectomy with no images needed | 173 |
+| `hasBilateralMastectomyWithoutImages(medicalHistory)` | Check whether an appointment's medical history has a bilateral mastectomy with no images needed | 187 |
+| `getBilateralMastectomySuccessMessage(participantName, appointmentUrl)` | Build the success message for ending an appointment after bilateral mastectomy | 198 |
 
 ### expected-views.js
 
@@ -454,15 +454,15 @@ Which mammogram views an appointment is expected to produce (after a mastectomy 
 
 | Function | Description | Line |
 |---|---|---|
-| `describeViewCode(code)` | Describe a mammogram view code in words — e.g. `{{ "RMLO" \| describeViewCode }}` | 23 |
-| `getExpectedViews(appointment)` | Work out which mammogram views an appointment is expected to produce, and why — e.g. `{% set expectedViews = appointment \| getExpectedViews %}` | 75 |
-| `getTakenViews(mammogramData)` | Get the codes of the views taken in a set of mammogram data | 147 |
-| `getExpectedViewStates(appointment, [mammogramData])` | Compare the views taken with the views expected, for each of the 4 standard views — e.g. `{% set viewStates = appointment \| getExpectedViewStates %}` | 159 |
-| `getNotExpectedViews(appointment)` | Get the views that weren't expected and weren't taken — e.g. `{{ appointment \| getNotExpectedViews \| map("lower") \| dump }}` | 192 |
-| `hasMissingExpectedViews(appointment, [mammogramData])` | Check whether any expected view has no images | 207 |
-| `getImagedSides(mammogramData)` | Get the breasts that have at least one standard view taken — e.g. `{% set imagedSides = appointment.mammogramData \| getImagedSides %}` | 221 |
-| `getReadableSides(mammogramData)` | Get the breasts a reader can give an opinion on and annotate — e.g. `{% set readableSides = appointment.mammogramData \| getReadableSides %}` | 237 |
-| `hasIncompleteMammography(appointment)` | Check whether an appointment's mammography was incomplete — e.g. `{% if appointment \| hasIncompleteMammography %}Incomplete mammography{% endif %}` | 253 |
+| `describeViewCode(code)` | Describe a mammogram view code in words — e.g. `{{ "RMLO" \| describeViewCode }}` | 26 |
+| `getExpectedViews(appointment)` | Work out which mammogram views an appointment is expected to produce, and why — e.g. `{% set expectedViews = appointment \| getExpectedViews %}` | 86 |
+| `getTakenViews(mammogramData)` | Get the codes of the views taken in a set of mammogram data | 171 |
+| `getExpectedViewStates(appointment, [mammogramData])` | Compare the views taken with the views expected, for each of the 4 standard views — e.g. `{% set viewStates = appointment \| getExpectedViewStates %}` | 183 |
+| `getNotExpectedViews(appointment)` | Get the views that weren't expected and weren't taken — e.g. `{{ appointment \| getNotExpectedViews \| map("lower") \| dump }}` | 216 |
+| `hasMissingExpectedViews(appointment, [mammogramData])` | Check whether any expected view has no images | 231 |
+| `getImagedSides(mammogramData)` | Get the breasts that have at least one standard view taken — e.g. `{% set imagedSides = appointment.mammogramData \| getImagedSides %}` | 245 |
+| `getReadableSides(mammogramData)` | Get the breasts a reader can give an opinion on and annotate — e.g. `{% set readableSides = appointment.mammogramData \| getReadableSides %}` | 261 |
+| `hasIncompleteMammography(appointment)` | Check whether an appointment's mammography was incomplete — e.g. `{% if appointment \| hasIncompleteMammography %}Incomplete mammography{% endif %}` | 277 |
 
 ### sided-medical-history.js
 

@@ -87,7 +87,6 @@
         <div class="app-mammogram-thumbnail__image-wrapper app-mammogram-thumbnail__image-wrapper--placeholder{{ ' app-mammogram-thumbnail__image-wrapper--' + thumbnailSize if thumbnailSize }}">
           <span class="app-mammogram-thumbnail__label">{{ viewItem.viewShortWithSide }}</span>
           {% if viewItem.isNotExpected %}
-            {% set notExpectedReason = viewItem.notExpectedReason %}
             {% include "_includes/images/not-expected-thumbnail.njk" %}
           {% else %}
             <div class="app-mammogram-thumbnail__missing">

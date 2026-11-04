@@ -28,7 +28,6 @@
     V2.appointmentId = "{{ appointmentId }}"
     V2.viewOrder = "{{ data.settings.mammogramViewOrder or 'cc-first' }}"
     V2.notExpectedViews = {{ notExpectedViews | dump | safe }}
-    V2.notExpectedReason = {{ expectedViews.shortReason | dump | safe }}
     V2.readableSides = {{ readableSides | dump | safe }}
   </script>
 
@@ -279,7 +278,7 @@
         // A view that wasn't expected says so, rather than "No image"
         const isNotExpected = V2.notExpectedViews.includes(viewKey)
         const placeholderHtml = isNotExpected
-          ? 'Not imaged' + (V2.notExpectedReason ? '<span class="app-ann-v2__no-image-reason">' + V2.notExpectedReason + '</span>' : '')
+          ? 'Not imaged'
           : 'No image'
         html += '<div class="app-ann-v2__image-panel app-ann-v2__image-panel--no-image' + (isNotExpected ? ' app-ann-v2__image-panel--not-expected' : '') + ' app-ann-v2__image-panel--' + activeSide + '" data-view="' + viewKey + '">' +
           '<span class="app-ann-v2__view-label">' + VIEW_LABELS[viewKey] + '</span>' +

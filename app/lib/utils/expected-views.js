@@ -2,7 +2,10 @@
 
 const { formatList } = require('./arrays')
 const { isMedicalHistoryItemRemoved } = require('./medical-information')
-const { MASTECTOMY_HISTORY_TYPES } = require('./mastectomy')
+const {
+  MASTECTOMY_HISTORY_TYPES,
+  getMastectomyHeading
+} = require('./mastectomy')
 
 // The 4 views in a standard set, using the viewShortWithSide codes
 const STANDARD_VIEW_CODES = ['RCC', 'RMLO', 'LCC', 'LMLO']
@@ -35,7 +38,7 @@ const describeViewCode = (code) =>
  * Summarise a list of expected views for an inset or hint
  *
  * @param {Array<string>} views - View codes
- * @returns {string} For example 'Left breast only' or 'Right MLO only'
+ * @returns {string} For example 'Left breast images only' or 'Right MLO images only'
  */
 const summariseViews = (views) => {
   if (views.length === STANDARD_VIEW_CODES.length) return 'Both breasts'
@@ -47,19 +50,27 @@ const summariseViews = (views) => {
       views.length === sideViews.length &&
       sideViews.every((code) => views.includes(code))
     ) {
-      return `${side === 'right' ? 'Right' : 'Left'} breast only`
+      return `${side === 'right' ? 'Right' : 'Left'} breast images only`
     }
   }
 
   const text = formatList(views.map(describeViewCode))
-  return `${text.charAt(0).toUpperCase()}${text.slice(1)} only`
+  return `${capitalise(text)} images only`
 }
 
+const capitalise = (text) => `${text.charAt(0).toUpperCase()}${text.slice(1)}`
+
+// Heading for a reason, focused on the procedure
+const describeReasonHeading = (reason) =>
+  reason.type === 'technicalRecall'
+    ? 'Technical recall'
+    : getMastectomyHeading(capitalise(reason.side))
+
 const describeReason = (reason) => {
-  if (reason.type === 'technicalRecall') return 'Technical recall'
+  if (reason.type === 'technicalRecall') return 'technical recall'
   return reason.side === 'both'
-    ? 'Bilateral mastectomy'
-    : `${reason.side === 'right' ? 'Right' : 'Left'} mastectomy`
+    ? 'bilateral mastectomy'
+    : `${reason.side} breast mastectomy`
 }
 
 // Mastectomy items that record which breasts to image, ignoring any removed
@@ -85,13 +96,12 @@ const getMastectomyImagingItems = (medicalHistory) =>
  * view that isn't expected.
  *
  * @param {object} appointment - The appointment (or its working copy)
- * @returns {{views: Array<string>, isStandardSet: boolean, reasons: Array<object>, summary: string, viewsText: string, reasonText: string, description: string, shortReason: string}}
+ * @returns {{views: Array<string>, isStandardSet: boolean, reasons: Array<object>, summary: string, heading: string, viewsText: string, reasonText: string, description: string, shortReason: string}}
  * `views` are codes in standard order. `reasons` are `{ type: 'mastectomy', side }`
- * or `{ type: 'technicalRecall' }`. `summary` is for example 'Left breast only',
- * `viewsText` 'left CC and left MLO', `reasonText` 'Right mastectomy',
- * `description` 'Left breast only. Right mastectomy.' and `shortReason`
- * 'Mastectomy' (for placeholders). Text fields are '' for a
- * standard set.
+ * or `{ type: 'technicalRecall' }`. `summary` is for example 'Left breast images only',
+ * `viewsText` 'LCC and LMLO', `heading` 'Unilateral mastectomy (right)', `reasonText` 'right breast mastectomy',
+ * `description` 'Left breast images only (right breast mastectomy)' and
+ * `shortReason` 'Mastectomy'. Text fields are '' for a standard set.
  * @example
  * {% set expectedViews = appointment | getExpectedViews %}
  * {% if not expectedViews.isStandardSet %}{{ expectedViews.summary }}{% endif %}
@@ -123,18 +133,32 @@ const getExpectedViews = (appointment) => {
   }
 
   const isStandardSet = views.length === STANDARD_VIEW_CODES.length
-  const reasonTexts = [...new Set(reasons.map(describeReason))]
+  // A bilateral mastectomy covers any one-sided mastectomy
+  const hasBilateralMastectomy = reasons.some(
+    (reason) => reason.type === 'mastectomy' && reason.side === 'both'
+  )
+  const reasonsToDescribe = reasons.filter(
+    (reason) =>
+      !hasBilateralMastectomy ||
+      reason.type !== 'mastectomy' ||
+      reason.side === 'both'
+  )
+  const reasonTexts = [...new Set(reasonsToDescribe.map(describeReason))]
+  const reasonHeadings = [
+    ...new Set(reasonsToDescribe.map(describeReasonHeading))
+  ]
 
   return {
     views,
     isStandardSet,
     reasons,
     summary: isStandardSet ? '' : summariseViews(views),
-    viewsText: isStandardSet ? '' : formatList(views.map(describeViewCode)),
-    reasonText: isStandardSet ? '' : reasonTexts.join('. '),
+    viewsText: isStandardSet ? '' : formatList(views),
+    heading: isStandardSet ? '' : formatList(reasonHeadings),
+    reasonText: isStandardSet ? '' : formatList(reasonTexts),
     description: isStandardSet
       ? ''
-      : `${summariseViews(views)}. ${reasonTexts.join('. ')}.`,
+      : `${summariseViews(views)} (${formatList(reasonTexts)})`,
     shortReason:
       isStandardSet || !reasons.length
         ? ''

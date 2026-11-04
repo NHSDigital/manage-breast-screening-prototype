@@ -142,7 +142,6 @@
         {% else %}
           <h3 class="nhsuk-heading-xs">{{ breast.label }} breast</h3>
           {% set notExpectedViewsText = "No images expected" %}
-          {% set notExpectedViewsReason = expectedViews.reasonText %}
           {% include "_includes/images/not-expected-views.njk" %}
 
           {# Hidden while the design is reconsidered: counters for a breast no images were expected of
@@ -195,7 +194,6 @@
             {% elseif not breast.isExpected %}
               <h3 class="nhsuk-heading-xs">{{ breast.label }} breast</h3>
               {% set notExpectedViewsText = "No images expected" %}
-              {% set notExpectedViewsReason = expectedViews.reasonText %}
               {% include "_includes/images/not-expected-views.njk" %}
             {% endif %}
           </div>
