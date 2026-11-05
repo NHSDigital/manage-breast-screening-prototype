@@ -11,6 +11,7 @@ const {
   getImageSetForAppointment
 } = require('../utils/mammogram-images')
 const generateId = require('../utils/id-generator')
+const { getImagedSides, getTakenViews } = require('../utils/expected-views')
 
 // Default alignment probability - how often reads match the image set's tag
 // This can be overridden by seed data profile settings
@@ -173,6 +174,53 @@ const generateSingleRead = (
     const { left, right } = generateAbnormalData(appointment, set)
     read.left = left
     read.right = right
+  }
+
+  return limitReadToImagedBreasts(read, appointment)
+}
+
+/**
+ * Keep a generated read to the breasts and views that were imaged, as a
+ * reader can't give an opinion on a breast with no images, for example after
+ * a mastectomy
+ */
+const limitReadToImagedBreasts = (read, appointment) => {
+  const imagedSides = getImagedSides(appointment.mammogramData)
+  if (imagedSides.length === 0 || imagedSides.length === 2) return read
+
+  for (const side of ['left', 'right']) {
+    if (!imagedSides.includes(side)) delete read[side]
+  }
+
+  if (read.technicalRecall?.views) {
+    const takenViews = getTakenViews(appointment.mammogramData)
+    const views = Object.fromEntries(
+      Object.entries(read.technicalRecall.views).filter(([code]) =>
+        takenViews.includes(code)
+      )
+    )
+    if (Object.keys(views).length === 0) {
+      views[faker.helpers.arrayElement(takenViews)] = {
+        reason: faker.helpers.arrayElement(TECHNICAL_RECALL_REASONS),
+        additionalDetails: ''
+      }
+    }
+    read.technicalRecall = { ...read.technicalRecall, views }
+  }
+
+  // A recall for assessment needs an abnormal breast among those imaged
+  if (read.opinion === 'recall_for_assessment') {
+    const imagedSide = imagedSides[0]
+    if (read[imagedSide]?.breastAssessment !== 'abnormal') {
+      read[imagedSide] = {
+        ...read[imagedSide],
+        breastAssessment: 'abnormal',
+        annotations: [
+          ...(read[imagedSide]?.annotations || []),
+          generatePlaceholderAnnotation(imagedSide, null)
+        ]
+      }
+    }
   }
 
   return read

@@ -4,6 +4,8 @@
 
 {% set mammogramImageSource = data.config.reading.mammogramImageSource or "diagrams" %}
 {% set mammogramImages = getImagesForAppointment(appointmentId, mammogramImageSource, { appointment: appointment }) %}
+{% set expectedViews = appointment | getExpectedViews %}
+{% set viewStates = appointment | getExpectedViewStates %}
 
 {# View order from config - determines if CC or MLO comes first #}
 {# Right breast views on left, left breast views on right #}
@@ -75,12 +77,17 @@
           {% endfor %}
         {% endif %}
       {% else %}
-        {# Missing image placeholder #}
-        <div class="app-mammogram-thumbnail__image-wrapper">
+        {# Missing or not expected placeholder #}
+        <div class="app-mammogram-thumbnail__image-wrapper app-mammogram-thumbnail__image-wrapper--placeholder">
           <span class="app-mammogram-thumbnail__label">{{ view.label }}</span>
-          <div class="app-mammogram-thumbnail__missing">
-            <span class="app-mammogram-thumbnail__missing-text">No image</span>
-          </div>
+          {% if viewStates[view.label].state == "notExpected" %}
+            {% set notExpectedText = "Not imaged" %}
+            {% include "_includes/images/not-expected-thumbnail.njk" %}
+          {% else %}
+            <div class="app-mammogram-thumbnail__missing">
+              <span class="app-mammogram-thumbnail__missing-text">No image</span>
+            </div>
+          {% endif %}
         </div>
       {% endif %}
     </div>

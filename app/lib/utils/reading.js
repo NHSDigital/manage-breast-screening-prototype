@@ -15,6 +15,7 @@ const { eligibleForReading, getStatusTagColour } = require('./status')
 const { isWithinDayRange } = require('./dates')
 const { awaitingPriors, userRequestedPriors } = require('./prior-mammograms')
 const { hasOpenIssue, getOpenIssuePeriods } = require('./issues')
+const { hasIncompleteMammography } = require('./expected-views')
 const {
   getReadingCase,
   getReadingCaseById,
@@ -1327,8 +1328,7 @@ const isComplexCase = (appointment) => {
     appointment?.mammogramData?.metadata?.hasAdditionalImages
   const isImperfect =
     appointment?.mammogramData?.isImperfectButBestPossible?.includes?.('yes')
-  const isIncomplete =
-    appointment?.mammogramData?.isIncompleteMammography?.includes?.('yes')
+  const isIncomplete = hasIncompleteMammography(appointment)
   const hasImplants =
     appointment?.medicalInformation?.medicalHistory?.breastImplantsAugmentation
       ?.length > 0

@@ -29,6 +29,7 @@ const {
   getBilateralMastectomySuccessMessage
 } = require('../../lib/utils/mastectomy')
 const { captureSessionEndTime } = require('./shared')
+const { hasMissingExpectedViews } = require('../../lib/utils/expected-views')
 
 module.exports = (router) => {
   // Main route for starting a new appointment
@@ -597,9 +598,8 @@ module.exports = (router) => {
         }
       })
 
-      // Determine status based on mammogram completeness (check before saving clears data.appointment)
-      const isIncompleteMammography =
-        data.appointment?.mammogramData?.isIncompleteMammography === 'yes'
+      // Partially screened only when an expected view has no images (check before saving clears data.appointment)
+      const hasMissingViews = hasMissingExpectedViews(data.appointment)
 
       saveTempAppointmentToAppointment(data)
       saveTempParticipantToParticipant(data)
@@ -607,7 +607,7 @@ module.exports = (router) => {
       updateAppointmentStatus(
         data,
         appointmentId,
-        isIncompleteMammography ? 'partially_screened' : 'complete'
+        hasMissingViews ? 'partially_screened' : 'complete'
       )
 
       const successMessage = `
