@@ -29,9 +29,7 @@
           size: "s"
         }
       },
-      hint: {
-        text: "Select all that apply"
-      },
+      hint: "Select all that apply",
       values: dataSource["repeatReasons-" + viewItem.code],
       items: repeatReasonItems
     }) }}
@@ -70,12 +68,8 @@
     {{ input({
       id: "repeatCount-" + viewItem.code,
       name: namePrefix + "[repeatCount-" + viewItem.code + "]",
-      label: {
-        text: "How many were repeats?"
-      },
-      hint: {
-        text: "Out of " + extraImageCount + " extra images"
-      },
+      label: "How many were repeats?",
+      hint: "Out of " + extraImageCount + " extra images",
       classes: "nhsuk-input--width-3",
       value: dataSource["repeatCount-" + viewItem.code],
       inputmode: "numeric"
@@ -98,9 +92,7 @@
           size: "s"
         }
       },
-      hint: {
-        text: "Select all that apply"
-      },
+      hint: "Select all that apply",
       values: dataSource["repeatReasons-" + viewItem.code],
       items: repeatReasonItems
     }) }}
@@ -117,9 +109,7 @@
           size: "s"
         }
       },
-      hint: {
-        text: "Select all that apply"
-      },
+      hint: "Select all that apply",
       values: dataSource["repeatReasons-" + viewItem.code],
       items: repeatReasonItems
     }) }}

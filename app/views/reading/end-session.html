@@ -68,7 +68,7 @@
         {
           value: "no",
           text: "Wait for " + ("them" if unfinalisedReadCount > 1 else "it") + " to automatically finalise",
-          hint: { text: leaveHint | trim },
+          hint: leaveHint | trim,
           checked: data.endSessionTemp.finalise == "no"
         }
       ]

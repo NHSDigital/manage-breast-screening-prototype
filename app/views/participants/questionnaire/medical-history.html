@@ -37,9 +37,7 @@
               size: "s"
             }
           },
-          hint: {
-            text: "For example, 15 3 2020"
-          },
+          hint: "For example, 15 3 2020",
           items: [
             {
               name: "day",
@@ -57,18 +55,14 @@
         }) }}
 
         {{ input({
-          label: {
-            text: "What was the diagnosis?"
-          },
+          label: "What was the diagnosis?",
           classes: "nhsuk-input--width-20",
           id: "diagnosis",
           name: "questionnaire[diagnosis]"
         }) }}
 
         {{ input({
-          label: {
-            text: "Where was the cancer located?"
-          },
+          label: "Where was the cancer located?",
           classes: "nhsuk-input--width-20",
           id: "position",
           name: "questionnaire[position]"
@@ -104,9 +98,7 @@
         }) }}
 
         {{ input({
-          label: {
-            text: "Which hospital provided your treatment?"
-          },
+          label: "Which hospital provided your treatment?",
           classes: "nhsuk-input--width-20",
           id: "treatmentHospital",
           name: "questionnaire[treatmentHospital]"
@@ -167,9 +159,7 @@
         {{ textarea({
           name: "questionnaire[familyHistoryDetails]",
           id: "familyHistoryDetails",
-          label: {
-            text: "Please tell us about your family history of breast cancer"
-          }
+          label: "Please tell us about your family history of breast cancer"
         }) }}
       {% endset -%}
 
@@ -209,9 +199,7 @@
               size: "s"
             }
           },
-          hint: {
-            text: "For example, 15 3 2020"
-          },
+          hint: "For example, 15 3 2020",
           items: [
             {
               name: "day",
@@ -229,9 +217,7 @@
         }) }}
 
         {{ input({
-          label: {
-            text: "Where was it located?"
-          },
+          label: "Where was it located?",
           classes: "nhsuk-input--width-20",
           id: "benignLumpPosition",
           name: "questionnaire[benignLumpPosition]"
@@ -262,9 +248,7 @@
         {{ textarea({
           name: "questionnaire[benignLumpOutcome]",
           id: "benignLumpOutcome",
-          label: {
-            text: "What was the outcome/pathology?"
-          }
+          label: "What was the outcome/pathology?"
         }) }}
       {% endset -%}
 
@@ -277,9 +261,7 @@
             size: "s"
           }
         },
-        hint: {
-          text: "Select all that apply"
-        },
+        hint: "Select all that apply",
         items: [
           {
             value: "benign_lump",

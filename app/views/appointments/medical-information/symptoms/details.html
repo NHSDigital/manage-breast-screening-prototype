@@ -186,9 +186,7 @@
                     html: input({
                       id: "rightBreastDescription",
                       name: "appointment[symptomTemp][rightBreastDescription]",
-                      label: {
-                        text: "Describe the specific area (optional)"
-                      },
+                      label: "Describe the specific area (optional)",
                       value: appointment.symptomTemp.rightBreastDescription
                     })
                   }
@@ -213,9 +211,7 @@
                     html: input({
                       id: "leftBreastDescription",
                       name: "appointment[symptomTemp][leftBreastDescription]",
-                      label: {
-                        text: "Describe the specific area (optional)"
-                      },
+                      label: "Describe the specific area (optional)",
                       value: appointment.symptomTemp.leftBreastDescription
                     })
                   }
@@ -241,12 +237,8 @@
                 html: input({
                   id: "otherLocationDescription",
                   name: "appointment[symptomTemp][otherLocationDescription]",
-                  label: {
-                    text: "Describe the specific area"
-                  },
-                  hint: {
-                    text: "For example, the left armpit"
-                  },
+                  label: "Describe the specific area",
+                  hint: "For example, the left armpit",
                   value: appointment.symptomTemp.otherLocationDescription,
                   classes: "nhsuk-u-width-two-thirds"
                 } | populateErrors)
@@ -319,9 +311,7 @@
             html: input({
               id: "nippleChangeDescription",
               name: "appointment[symptomTemp][nippleChangeDescription]",
-              label: {
-                text: "Provide details"
-              },
+              label: "Provide details",
               value: appointment.symptomTemp.nippleChangeDescription,
               classes: "nhsuk-u-width-two-thirds"
             } | populateErrors)
@@ -368,9 +358,7 @@
             html: input({
               id: "skinChangeDescription",
               name: "appointment[symptomTemp][skinChangeDescription]",
-              label: {
-                text: "Describe the change"
-              },
+              label: "Describe the change",
               value: appointment.symptomTemp.skinChangeDescription,
               classes: "nhsuk-u-width-two-thirds"
             } | populateErrors)
@@ -391,9 +379,7 @@
             classes: "nhsuk-u-visually-hidden"
           }
         },
-        hint: {
-          text: "For example, 3 2025"
-        },
+        hint: "For example, 3 2025",
         items: [
           {
             name: "month",
@@ -417,9 +403,7 @@
           text: "Enter an approximate date",
           classes: "nhsuk-u-visually-hidden"
         },
-        hint: {
-          text: "For example, 9 months ago"
-        },
+        hint: "For example, 9 months ago",
         classes: "nhsuk-u-width-two-thirds",
         value: appointment.symptomTemp.approximateDateStarted
       }) }}
@@ -491,12 +475,8 @@
       {{ input({
         id: "approximateDateStopped",
         name: "appointment[symptomTemp][approximateDateStopped]",
-        label: {
-          text: "Approximate date symptom stopped"
-        },
-        hint: {
-          text: "For example, " ~ (now() | remove(1, "months") | formatDate("MMMM YYYY"))
-        },
+        label: "Approximate date symptom stopped",
+        hint: "For example, " ~ (now() | remove(1, "months") | formatDate("MMMM YYYY")),
         value: appointment.symptomTemp.approximateDateStopped,
         classes: "nhsuk-u-width-two-thirds"
       } | populateErrors) }}
@@ -506,12 +486,8 @@
     {{ textarea({
       id: "investigatedDescription",
       name: "appointment[symptomTemp][investigatedDescription]",
-      label: {
-        text: "Provide details"
-      },
-      hint: {
-        text: "Include where, when and the outcome"
-      },
+      label: "Provide details",
+      hint: "Include where, when and the outcome",
       value: appointment.symptomTemp.investigatedDescription
     } | populateErrors) }}
   {% endset %}
@@ -599,9 +575,7 @@
             size: "m"
           }
         },
-        hint: {
-          text: isSignificantHint
-        },
+        hint: isSignificantHint,
         items: [
           {
             value: "yes",

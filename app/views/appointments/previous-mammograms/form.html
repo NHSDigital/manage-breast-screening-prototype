@@ -41,9 +41,7 @@
     {{ select({
       id: "bsu",
       name: "appointment[previousMammogramTemp][bsu]",
-      label: {
-        text: "Select a unit"
-      },
+      label: "Select a unit",
       items: selectItems,
       value: appointment.previousMammogramTemp.bsu
     }) }}
@@ -60,9 +58,7 @@
         _classes: "nhsuk-label--s"
       },
       value: appointment.previousMammogramTemp.otherUk,
-      hint: {
-        text: "Include the clinic or hospital name, or any location details"
-      }
+      hint: "Include the clinic or hospital name, or any location details"
     }) }}
 
   {% endset %}
@@ -76,9 +72,7 @@
         text: "Location",
         _classes: "nhsuk-label--s"
       },
-      hint: {
-        text: "Include the clinic or hospital name, or any location details"
-      },
+      hint: "Include the clinic or hospital name, or any location details",
       value: appointment.previousMammogramTemp.otherNonUk
     }) }}
 
@@ -141,9 +135,7 @@
           classes: "nhsuk-u-visually-hidden"
         }
       },
-      hint: {
-        text: "For example, 15 3 2025"
-      },
+      hint: "For example, 15 3 2025",
       value: appointment.previousMammogramTemp.dateTaken,
       items: [
         {
@@ -169,12 +161,8 @@
     {{ input({
       id: "approximateDateMoreThan",
       name: "appointment[previousMammogramTemp][approximateDate]",
-      label: {
-        text: "Approximate date"
-      },
-      hint: {
-        text: "For example, " + (now() | remove(1, 'year') | formatDate('MMMM YYYY'))
-      },
+      label: "Approximate date",
+      hint: "For example, " + (now() | remove(1, 'year') | formatDate('MMMM YYYY')),
       classes: "nhsuk-u-width-two-thirds",
       value: appointment.previousMammogramTemp.approximateDate
     }) }}
@@ -186,12 +174,8 @@
     {{ input({
       id: "approximateDateLessThan",
       name: "appointment[previousMammogramTemp][approximateDate]",
-      label: {
-        text: "Approximate date"
-      },
-      hint: {
-        text: "For example, " + (now() | remove(3, 'months') | formatDate('MMMM YYYY'))
-      },
+      label: "Approximate date",
+      hint: "For example, " + (now() | remove(3, 'months') | formatDate('MMMM YYYY')),
       classes: "nhsuk-u-width-two-thirds",
       value: appointment.previousMammogramTemp.approximateDate
     }) }}
@@ -242,9 +226,7 @@
     {{ input({
       id: "sameNameInput",
       name: "appointment[previousMammogramTemp][previousName]",
-      label: {
-        text: "Enter the previously used name"
-      },
+      label: "Enter the previously used name",
       value: appointment.previousMammogramTemp.previousName,
       classes: "nhsuk-u-width-two-thirds"
     }) }}
@@ -287,9 +269,7 @@
       size: "m"
     },
     value: appointment.previousMammogramTemp.otherDetails,
-    hint: {
-      text: "For example, the reason for the mammogram, the participant's previous address, and the outcome of the assessment"
-    }
+    hint: "For example, the reason for the mammogram, the participant's previous address, and the outcome of the assessment"
   }) }}
 
   <div class="nhsuk-button-group">

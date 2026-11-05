@@ -39,22 +39,16 @@
       {
         value: "invite-next-routine",
         text: "Yes, invite to next routine appointment",
-        hint: {
-          text: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
-        }
+        hint: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
       },
       {
         value: "opt-out",
         text: "No, request opt out",
-        hint: {
-          text: "They will receive information explaining their options"
-        },
+        hint: "They will receive information explaining their options",
         conditional: {
           html: input({
             name: "appointment[cannotProceed][optOutDetails]",
-            label: {
-              text: "Provide details"
-            },
+            label: "Provide details",
             value: appointment.cannotProceed.optOutDetails
           })
         }

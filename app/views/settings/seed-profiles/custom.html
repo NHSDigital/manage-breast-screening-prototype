@@ -24,12 +24,8 @@
       type: "number",
       value: field.value | round(3),
       classes: "nhsuk-input--width-5",
-      label: {
-        text: field.label
-      },
-      hint: {
-        text: field.hint
-      } if field.hint,
+      label: field.label,
+      hint: field.hint if field.hint,
       suffix: {
         text: "%"
       },
@@ -58,12 +54,8 @@
       type: "number",
       value: formProfile.reading.backlogLimit,
       classes: "nhsuk-input--width-5",
-      label: {
-        text: "Backlog limit"
-      },
-      hint: {
-        text: "Maximum number of cases left unread. Leave blank for no limit (default behaviour)"
-      },
+      label: "Backlog limit",
+      hint: "Maximum number of cases left unread. Leave blank for no limit (default behaviour)",
       attributes: {
         "min": "0",
         "step": "1",

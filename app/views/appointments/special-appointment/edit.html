@@ -29,9 +29,7 @@
           size: "m"
         }
       },
-      hint: {
-        text: "Select all that apply. When describing support required, include any special requests made by the participant or their carer."
-      },
+      hint: "Select all that apply. When describing support required, include any special requests made by the participant or their carer.",
       values: appointment.specialAppointment.supportTypes,
       items: [
         {
@@ -40,9 +38,7 @@
           conditional: {
             html: textarea({
               name: "appointment[specialAppointment][implantDetails]",
-              label: {
-                text: "Describe support required (optional)"
-              },
+              label: "Describe support required (optional)",
               value: appointment.specialAppointment.implantDetails,
               lines: 3
             })
@@ -51,15 +47,11 @@
         {
           value: "Implanted medical devices",
           text: "Implanted medical devices",
-          hint: {
-            text: "For example, a pacemaker"
-          },
+          hint: "For example, a pacemaker",
           conditional: {
             html: textarea({
               name: "appointment[specialAppointment][implantedMedicalDevicesDetails]",
-              label: {
-                text: "Describe support required (optional)"
-              },
+              label: "Describe support required (optional)",
               value: appointment.specialAppointment.implantedMedicalDevicesDetails,
               lines: 3
             })
@@ -71,9 +63,7 @@
           conditional: {
             html: textarea({
               name: "appointment[specialAppointment][visionDetails]",
-              label: {
-                text: "Describe support required (optional)"
-              },
+              label: "Describe support required (optional)",
               value: appointment.specialAppointment.visionDetails,
               lines: 3
             })
@@ -85,9 +75,7 @@
           conditional: {
             html: textarea({
               name: "appointment[specialAppointment][hearingDetails]",
-              label: {
-                text: "Describe support required (optional)"
-              },
+              label: "Describe support required (optional)",
               value: appointment.specialAppointment.hearingDetails,
               lines: 3
             })
@@ -96,15 +84,11 @@
         {
           value: "Physical restriction",
           text: "Physical restriction",
-          hint: {
-            text: "For example, mobility or dexterity"
-          },
+          hint: "For example, mobility or dexterity",
           conditional: {
             html: textarea({
               name: "appointment[specialAppointment][physicalRestrictionDetails]",
-              label: {
-                text: "Describe support required (optional)"
-              },
+              label: "Describe support required (optional)",
               value: appointment.specialAppointment.physicalRestrictionDetails,
               lines: 3
             })
@@ -113,15 +97,11 @@
         {
           value: "Social, emotional, and mental health",
           text: "Social, emotional, and mental health",
-          hint: {
-            text: "For example, neurodiversity or agoraphobia"
-          },
+          hint: "For example, neurodiversity or agoraphobia",
           conditional: {
             html: textarea({
               name: "appointment[specialAppointment][socialEmotionalMentalHealthDetails]",
-              label: {
-                text: "Describe support required (optional)"
-              },
+              label: "Describe support required (optional)",
               value: appointment.specialAppointment.socialEmotionalMentalHealthDetails,
               lines: 3
             })
@@ -133,9 +113,7 @@
           conditional: {
             html: textarea({
               name: "appointment[specialAppointment][languageDetails]",
-              label: {
-                text: "Describe support required (optional)"
-              },
+              label: "Describe support required (optional)",
               value: appointment.specialAppointment.languageDetails,
               lines: 3
             })
@@ -147,9 +125,7 @@
           conditional: {
             html: textarea({
               name: "appointment[specialAppointment][genderIdentityDetails]",
-              label: {
-                text: "Describe support required (optional)"
-              },
+              label: "Describe support required (optional)",
               value: appointment.specialAppointment.genderIdentityDetails,
               lines: 3
             })
@@ -161,9 +137,7 @@
           conditional: {
             html: textarea({
               name: "appointment[specialAppointment][otherDetails]",
-              label: {
-                text: "Describe support required"
-              },
+              label: "Describe support required",
               value: appointment.specialAppointment.otherDetails,
               lines: 3
             })

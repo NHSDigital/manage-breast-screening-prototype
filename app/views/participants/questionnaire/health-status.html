@@ -28,9 +28,7 @@
         {{ textarea({
           name: "questionnaire[mobilityYes]",
           id: "mobilityYes",
-          label: {
-            text: "Can you provide more detail?"
-          },
+          label: "Can you provide more detail?",
           _hint: {
             text: "Do not include personal or financial information, for example, your National Insurance number or credit card details."
           }
@@ -48,9 +46,7 @@
             isPageHeading: "false"
           }
         },
-        hint: {
-          text: "We only need to know about things that may affect your visit"
-        },
+        hint: "We only need to know about things that may affect your visit",
         items: [
           {
             value: "yes",
@@ -139,9 +135,7 @@
       {# HRT question #}
       {% set hrtYesHtml %}
         {{ input({
-          label: {
-            text: "What type of HRT are you taking?"
-          },
+          label: "What type of HRT are you taking?",
           id: "hrtType",
           name: "questionnaire[hrtType]"
         }) }}

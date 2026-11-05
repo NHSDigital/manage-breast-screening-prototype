@@ -78,9 +78,7 @@
         id: "technicalRecall-" + viewCode + "-reason",
         name: "imageReadingTemp[technicalRecall][views][" + viewCode + "][reason]",
         value: viewData.reason,
-        label: {
-          text: "Reason for recall"
-        },
+        label: "Reason for recall",
         items: selectItems
       } | populateErrors) }}
 
@@ -89,9 +87,7 @@
           id: "technicalRecall-" + viewCode + "-additionalDetails",
           name: "imageReadingTemp[technicalRecall][views][" + viewCode + "][additionalDetails]",
           value: viewData.additionalDetails,
-          label: {
-            text: "Additional details (optional)"
-          }
+          label: "Additional details (optional)"
         }) }}
       {% endcall %}
     {% endset %}

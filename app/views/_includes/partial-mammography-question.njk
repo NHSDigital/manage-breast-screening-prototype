@@ -40,9 +40,7 @@
   {{ select({
     id: "partialMammographyReasonSelect",
     name: namePrefix + "[partialMammographyReasonSelect]",
-    label: {
-      text: "Reason"
-    },
+    label: "Reason",
     value: mammogramSource.partialMammographyReasonSelect,
     items: selectItems
   }) }}
@@ -52,12 +50,8 @@
       name: namePrefix + "[partialMammographyReasonComment]",
       value: mammogramSource.partialMammographyReasonComment,
       id: "partialMammographyReasonComment",
-      label: {
-        text: "Follow-up appointment information"
-      },
-      hint: {
-        text: "Provide information to help arrange the appointment and complete the mammogram"
-      },
+      label: "Follow-up appointment information",
+      hint: "Provide information to help arrange the appointment and complete the mammogram",
       rows: 3
     }) }}
   {% endset %}

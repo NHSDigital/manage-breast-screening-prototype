@@ -38,9 +38,7 @@
         {
           value: "yes",
           text: "Exclude cases I have read",
-          hint: {
-            text: ownReadsCount ~ " " ~ ("case" | pluralise(ownReadsCount)) ~ " will not be included in this session"
-          } if ownReadsCount else undefined,
+          hint: ownReadsCount ~ " " ~ ("case" | pluralise(ownReadsCount)) ~ " will not be included in this session" if ownReadsCount else undefined,
           checked: true
         }
       ]

@@ -47,9 +47,7 @@
       id: "authorisedMammographerOtherName",
       name: "appointment[authorisedMammographerTemp][otherName]",
       value: appointment.authorisedMammographerTemp.otherName or appointment.authorisedMammographerOtherName,
-      label: {
-        text: "Enter the mammographer's full name"
-      },
+      label: "Enter the mammographer's full name",
       autocomplete: "off"
     } | populateErrors) }}
   {% endset %}
@@ -81,9 +79,7 @@
     name: "appointment[authorisedMammographerTemp][userId]",
     value: selectedAuthorisedMammographer,
     fieldset: {
-      legend: {
-        text: legendText
-      }
+      legend: legendText
     },
     items: authorisedMammographerItems
   } | populateErrors) }}
