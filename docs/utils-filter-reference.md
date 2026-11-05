@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-04 12:46 UTC
+- **Generated:** 2026-11-05 15:37 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -18,35 +18,35 @@
 | `dates.js` | Date formatting and calculation using dayjs | 57 |
 | `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 94 |
 | `status.js` | Appointment status checks and display helpers | 129 |
-| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 162 |
-| `appointment-data.js` | Appointment lookups and mutations in session data | 182 |
-| `episodes.js` | Episode lookups and stage changes | 197 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 236 |
-| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 256 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 303 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 359 |
-| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 381 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 407 |
-| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 434 |
-| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 451 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 463 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 476 |
-| `objects.js` | Object utilities for extracting and flattening values. | 495 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 506 |
-| `random.js` | Seeded random functions for stable prototype data | 516 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 533 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 548 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 558 |
-| `roles-and-permissions.js` | User role checks | 571 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 600 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 616 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 628 |
+| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 165 |
+| `appointment-data.js` | Appointment lookups and mutations in session data | 185 |
+| `episodes.js` | Episode lookups and stage changes | 200 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 239 |
+| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 259 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 306 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 362 |
+| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 384 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 410 |
+| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 437 |
+| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 454 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 466 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 479 |
+| `objects.js` | Object utilities for extracting and flattening values. | 498 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 509 |
+| `random.js` | Seeded random functions for stable prototype data | 519 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 536 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 551 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 561 |
+| `roles-and-permissions.js` | User role checks | 574 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 603 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 619 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 631 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 644 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 657 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 669 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 683 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 693 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 647 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 660 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 672 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 686 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 696 |
 
 ---
 
@@ -147,17 +147,20 @@ Appointment status checks and display helpers. Use these instead of comparing st
 | `getStatusText(status, [vocabulary])` | Map a status key to its display text — e.g. `getStatusText('complete', 'appointment') // 'Screened'` | 353 |
 | `describeReadingCaseStatus(status)` | The display facts for a reading case's status, composed from the facts | 379 |
 | `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category; Remaining includes in-progress and paused appointments | 406 |
-| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 437 |
-| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 447 |
-| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 460 |
-| `hasStoppedDetails(appointment)` | Check if an attended-not-screened appointment has its reasons recorded | 474 |
-| `getCheckInTime(appointment)` | The timestamp an appointment was checked in, taken from its status history. | 484 |
-| `getSimulatedNow()` | The prototype's simulated "now" (config.clinics.simulatedTime on today's | 500 |
-| `getWaitingMinutes(appointment)` | How long a checked-in participant has been waiting, measured against the | 517 |
-| `getWaitingSince(appointment)` | A real-time anchor for the waiting figure: now minus the minutes already | 532 |
-| `formatWaitingTime(totalMinutes)` | Format a waiting duration as whole minutes, e.g. "1 min", "75 mins". | 548 |
-| `getStartedMinutes(appointment)` | Calculate how many minutes ago screening started. | 561 |
-| `getStartedSince(appointment)` | A real-time anchor for the started time figure: now minus the minutes since | 574 |
+| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 436 |
+| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 446 |
+| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 459 |
+| `hasStoppedDetails(appointment)` | Check if an attended-not-screened appointment has its reasons recorded | 473 |
+| `getStatusTime(appointment, status)` | When an appointment last moved to a status, taken from its status history. — e.g. `{{ appointment \| getStatusTime('cancelled') \| formatTimeString }}` | 483 |
+| `getCheckInTime(appointment)` | The timestamp an appointment was checked in, taken from its status history. | 500 |
+| `wasAttended(appointment)` | Whether an appointment that has ended was attended: screened, attended not | 508 |
+| `getCompletedTime(appointment)` | When an appointment reached its outcome, for the clinic list's Time | 534 |
+| `getSimulatedNow()` | The prototype's simulated "now" (config.clinics.simulatedTime on today's | 554 |
+| `getMinutesSince(timestamp)` | Whole minutes from a timestamp to the prototype's simulated "now" — e.g. `{{ appointment.sessionDetails.startedAt \| getMinutesSince \| formatWaitingTime }} ago` | 571 |
+| `getElapsedSince(timestamp)` | A real-time anchor for an elapsed time: real now minus the minutes since the | 587 |
+| `getWaitingMinutes(appointment)` | How long a checked-in participant has been waiting, in whole minutes | 603 |
+| `getWaitingSince(appointment)` | A real-time anchor for the waiting figure (see getElapsedSince). | 613 |
+| `formatWaitingTime(totalMinutes)` | Format an elapsed time, such as a wait or time since screening started, as | 622 |
 
 ### participants.js
 
@@ -205,33 +208,33 @@ Episode lookups and stage changes. An episode is one screening round - the conta
 | `appointmentProducedImages(appointment)` | Whether an appointment's status means mammograms were taken. | 99 |
 | `buildMammogramEntry(appointment, [clinic])` | Build the episode's summary record of one set of mammograms. | 116 |
 | `getEpisode(data, episodeId)` | Get an episode by ID | 158 |
-| `isFirstScreeningAppointment(appointment, data)` | Whether an appointment is the participant's first screening - shown as the | 179 |
-| `isLastScreeningAppointment(appointment, data)` | Whether an appointment is the participant's last routine screening - shown as | 190 |
-| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 201 |
-| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 231 |
-| `getEpisodeAppointments(data, episode)` | Get an episode's appointments, oldest first | 247 |
-| `getReadingCase(data, appointment)` | Get the reading case covering an appointment's images. | 262 |
-| `getReadingCaseById(data, caseId)` | Find a reading case by its own id, with the episode that holds it. | 282 |
-| `getEpisodeReadingCases(episode)` | Get an episode's reading cases, oldest first | 317 |
-| `getEpisodeReadingCase(episode)` | Get the case that says where an episode's reading has got to - its latest. | 327 |
-| `getEpisodeReadingOutcome(episode, [settings], [issuePeriods])` | Get an episode's reading outcome, from its latest case. | 337 |
-| `updateReadingCase(data, episodeId, updatedCase)` | Save a changed reading case back to its episode. | 360 |
-| `syncReadingCasesForAppointment(data, appointment)` | Keep an episode's reading cases in step with one of its appointments. | 386 |
-| `isEpisodeClosed(episode)` | Whether an episode has closed | 425 |
-| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 435 |
-| `getEpisodeMammogramDate(episode)` | When this round's mammograms were taken, from the episode's own record. | 446 |
-| `getLastMammogram(data, participantId)` | The participant's last mammogram on record, before today. | 461 |
-| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 508 |
-| `getEpisodeLabel(episode)` | Human name for an episode. Episodes are named by date, not number - | 534 |
-| `getEpisodeStageText(stage)` | Display text for an episode's stage | 550 |
-| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 560 |
-| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 570 |
-| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 580 |
-| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change across requests. | 590 |
-| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 623 |
-| `syncEpisodeMammogramsForAppointment(data, appointment)` | Keep an episode's mammograms record in step with one of its appointments. | 672 |
-| `advanceEpisodeForAppointmentStatus(data, appointment)` | Move an appointment's episode to wherever the appointment's status leaves it. | 714 |
-| `advanceEpisodeForReadingOutcome(data, appointment, readingOutcome)` | Move an appointment's episode to wherever its reading outcome leaves it. | 748 |
+| `isFirstScreening(appointment, data)` | Whether an appointment's episode is the participant's first screening - | 179 |
+| `isLastScreening(appointment, data)` | Whether an appointment's episode is the participant's last routine | 190 |
+| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 202 |
+| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 232 |
+| `getEpisodeAppointments(data, episode)` | Get an episode's appointments, oldest first | 248 |
+| `getReadingCase(data, appointment)` | Get the reading case covering an appointment's images. | 263 |
+| `getReadingCaseById(data, caseId)` | Find a reading case by its own id, with the episode that holds it. | 283 |
+| `getEpisodeReadingCases(episode)` | Get an episode's reading cases, oldest first | 318 |
+| `getEpisodeReadingCase(episode)` | Get the case that says where an episode's reading has got to - its latest. | 328 |
+| `getEpisodeReadingOutcome(episode, [settings], [issuePeriods])` | Get an episode's reading outcome, from its latest case. | 338 |
+| `updateReadingCase(data, episodeId, updatedCase)` | Save a changed reading case back to its episode. | 361 |
+| `syncReadingCasesForAppointment(data, appointment)` | Keep an episode's reading cases in step with one of its appointments. | 387 |
+| `isEpisodeClosed(episode)` | Whether an episode has closed | 426 |
+| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 436 |
+| `getEpisodeMammogramDate(episode)` | When this round's mammograms were taken, from the episode's own record. | 447 |
+| `getLastMammogram(data, participantId)` | The participant's last mammogram on record, before today. | 462 |
+| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 509 |
+| `getEpisodeLabel(episode)` | Human name for an episode. Episodes are named by date, not number - | 535 |
+| `getEpisodeStageText(stage)` | Display text for an episode's stage | 551 |
+| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 561 |
+| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 571 |
+| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 581 |
+| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change across requests. | 591 |
+| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 624 |
+| `syncEpisodeMammogramsForAppointment(data, appointment)` | Keep an episode's mammograms record in step with one of its appointments. | 673 |
+| `advanceEpisodeForAppointmentStatus(data, appointment)` | Move an appointment's episode to wherever the appointment's status leaves it. | 715 |
+| `advanceEpisodeForReadingOutcome(data, appointment, readingOutcome)` | Move an appointment's episode to wherever its reading outcome leaves it. | 749 |
 
 ### clinics.js
 

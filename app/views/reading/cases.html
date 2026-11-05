@@ -46,22 +46,7 @@
     {# Custom top margin to push column down to line up with start of search card (minus feature outdent) #}
     <div class="nhsuk-grid-column-two-thirds nhsuk-u-margin-top-4">
 
-      {% if isFiltered %}
-        <div class="app-selected-filters">
-          <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Selected filters</h2>
-          <ul class="app-selected-filters__list">
-            {% for item in selectedFilters %}
-              <li class="app-selected-filters__item">
-                <a href="{{ item.href }}" class="app-selected-filters__tag">
-                  <span class="nhsuk-u-visually-hidden">Remove this filter:</span>
-                  {{ item.label }}
-                  <span aria-hidden="true">✕</span>
-                </a>
-              </li>
-            {% endfor %}
-          </ul>
-        </div>
-      {% endif %}
+      {% include "_includes/selected-filters.njk" %}
 
       {# The views split the population; their counts carry the current search
          and filters #}

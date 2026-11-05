@@ -99,7 +99,8 @@ const getClinicAppointments = (appointments, clinicId) => {
 
 /**
  * The next order-of-screening number for a clinic: one more than the highest
- * already assigned, or 1 if none. Numbers are never reused or renumbered.
+ * already assigned, or 1 if none. Numbers are never reused, so a removed or
+ * changed appointment leaves a gap rather than renumbering the rest.
  *
  * @param {object} data - Session data
  * @param {string} clinicId - Clinic ID

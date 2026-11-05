@@ -29,6 +29,16 @@ const NOT_SCREENED_REASONS = [
   'Recent breast surgery'
 ]
 
+// Some of the reasons the cancel form offers
+// (app/views/appointments/cancel-or-reschedule-appointment/details.html)
+const CANCELLATION_REASONS = [
+  'Unable to attend',
+  'Moving outside England',
+  'Recent mammogram',
+  'Medical reasons',
+  'Has a symptomatic appointment'
+]
+
 // Session details in the shape the appointment workflow records them (see
 // app/routes/appointments/lifecycle.js): the start, also recorded in authors,
 // and for an appointment that has ended, when and by whom. The same
@@ -233,13 +243,34 @@ const generateAppointment = ({
     appointmentBase.specialAppointment = specialAppointment
   }
 
-  // A cancelled appointment records when it was cancelled and by whom
+  // A cancelled appointment records who cancelled it and why, and when in its
+  // status history. Usually done by admin staff, after it was booked (a day
+  // before the slot, see statusHistory above) and never after now
   if (appointmentStatus === 'cancelled') {
-    appointmentBase.sessionDetails = {
-      endedAt: slotDateTime
-        .subtract(faker.number.int({ min: 15, max: 120 }), 'minute')
-        .toISOString(),
-      endedBy: pickMammographerId()
+    let cancelledAt = slotDateTime.subtract(
+      faker.number.int({ min: 60, max: 23 * 60 }),
+      'minute'
+    )
+    if (cancelledAt.isAfter(simulatedDateTime)) {
+      cancelledAt = simulatedDateTime.subtract(
+        faker.number.int({ min: 5, max: 120 }),
+        'minute'
+      )
+    }
+    const adminUsers = users.filter((user) =>
+      user.role.includes('administrative')
+    )
+
+    appointmentBase.statusHistory.push({
+      status: 'cancelled',
+      timestamp: cancelledAt.toISOString()
+    })
+    appointmentBase.cancellation = {
+      reason: [faker.helpers.arrayElement(CANCELLATION_REASONS)],
+      reschedule: weighted.select({ 'no-invite': 0.9, 'no-opt-out': 0.1 }),
+      cancelledBy: adminUsers.length
+        ? faker.helpers.arrayElement(adminUsers).id
+        : pickMammographerId()
     }
   }
 
@@ -266,39 +297,67 @@ const generateAppointment = ({
     }
   }
 
-  // For paused appointments, add session details with start and pause information.
-  // Paused by a different user than started, and paused a few minutes after starting.
+  // For paused appointments, the same person started and paused it, as only
+  // whoever is running an appointment can pause it. Started around its slot
+  // and paused a few minutes later, both before now.
   if (appointmentStatus === 'paused') {
-    const startedAt = screenedAt
+    const latestStart = simulatedDateTime.subtract(15, 'minute')
+    let startedAt = screenedAt
       ? onClinicDay(screenedAt)
-      : simulatedDateTime.subtract(
-          faker.number.int({ min: 20, max: 60 }),
-          'minutes'
-        )
-    const startedByUser = pickMammographerId()
-
-    // Pick a different user to pause
-    const pausedByUser = (() => {
-      const allClinicians = users.filter((user) =>
-        user.role.includes('clinician')
-      )
-      const otherClinicians = allClinicians.filter(
-        (u) => u.id !== startedByUser
-      )
-      return otherClinicians.length > 0
-        ? faker.helpers.arrayElement(otherClinicians).id
-        : startedByUser
-    })()
+      : slotDateTime.add(faker.number.int({ min: 0, max: 5 }), 'minute')
+    if (startedAt.isAfter(latestStart)) {
+      startedAt = latestStart
+    }
+    const pausedAt = startedAt.add(
+      faker.number.int({
+        min: 5,
+        max: Math.min(30, simulatedDateTime.diff(startedAt, 'minute') - 1)
+      }),
+      'minute'
+    )
+    // Not the default signed-in user, so the clinic list shows "Claim
+    // appointment" rather than "Resume appointment"
+    const defaultUserId = users[0].id
+    const otherMammographers = (mammographers || []).filter(
+      (user) => user.id !== defaultUserId
+    )
+    const runnerId = otherMammographers.length
+      ? faker.helpers.arrayElement(otherMammographers).id
+      : pickMammographerId()
+    const sessionDetails = buildSessionDetails({
+      startedAt,
+      startedBy: runnerId
+    })
 
     appointmentBase.sessionDetails = {
-      startedAt: startedAt.toISOString(),
-      startedBy: startedByUser,
-      pausedAt: startedAt
-        .add(faker.number.int({ min: 10, max: 30 }), 'minutes')
-        .toISOString(),
-      pausedBy: pausedByUser,
-      authors: []
+      ...sessionDetails,
+      pausedAt: pausedAt.toISOString(),
+      pausedBy: runnerId,
+      authors: [
+        ...sessionDetails.authors,
+        {
+          userId: runnerId,
+          action: 'paused',
+          timestamp: pausedAt.toISOString()
+        }
+      ]
     }
+    appointmentBase.statusHistory.push(
+      {
+        status: 'checked_in',
+        timestamp: startedAt
+          .subtract(faker.number.int({ min: 2, max: 10 }), 'minute')
+          .toISOString()
+      },
+      {
+        status: 'in_progress',
+        timestamp: startedAt.toISOString()
+      },
+      {
+        status: 'paused',
+        timestamp: pausedAt.toISOString()
+      }
+    )
   }
 
   if (

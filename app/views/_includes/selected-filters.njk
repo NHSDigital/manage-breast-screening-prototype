@@ -1,0 +1,23 @@
+{# app/views/_includes/selected-filters.njk #}
+{#
+  The active filters as removable tags, above a filtered list.
+
+  selectedFilters - from describeSelectedFilters (filter-list.js), each with
+  the label to show and the URL that removes it
+#}
+{% if selectedFilters | length %}
+  <div class="app-selected-filters">
+    <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Selected filters</h2>
+    <ul class="app-selected-filters__list">
+      {% for item in selectedFilters %}
+        <li class="app-selected-filters__item">
+          <a href="{{ item.href }}" class="app-selected-filters__tag">
+            <span class="nhsuk-u-visually-hidden">Remove this filter:</span>
+            {{ item.label }}
+            <span aria-hidden="true">✕</span>
+          </a>
+        </li>
+      {% endfor %}
+    </ul>
+  </div>
+{% endif %}

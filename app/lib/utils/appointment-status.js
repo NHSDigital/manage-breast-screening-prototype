@@ -52,8 +52,8 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
   })
   if (!updatedAppointment) return null
 
-  // Attended not screened still takes a place in the order, unless it already
-  // has one from being started
+  // Attended not screened takes a place in the order of screening, unless it
+  // already has one from being started
   if (
     newStatus === 'attended_not_screened' &&
     updatedAppointment.screeningOrder == null

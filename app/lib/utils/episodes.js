@@ -177,25 +177,26 @@ const getEpisode = (data, episodeId) => {
 }
 
 /**
- * Whether an appointment is the participant's first screening - shown as the
- * "New" tag and "New to screening" filter on the clinic list
+ * Whether an appointment's episode is the participant's first screening -
+ * shown as the "New" tag and "New to screening" filter on the clinic list
  *
  * @param {object} appointment - Appointment with an episodeId
  * @param {object} data - Session data
  * @returns {boolean} True if the appointment's episode is a first screening
  */
-const isFirstScreeningAppointment = (appointment, data) =>
+const isFirstScreening = (appointment, data) =>
   Boolean(getEpisode(data, appointment?.episodeId)?.isFirstScreening)
 
 /**
- * Whether an appointment is the participant's last routine screening - shown as
- * the "Final" tag and "Final screening invite" filter on the clinic list
+ * Whether an appointment's episode is the participant's last routine
+ * screening - shown as the "Final" tag and "Final screening invite" filter on
+ * the clinic list
  *
  * @param {object} appointment - Appointment with an episodeId
  * @param {object} data - Session data
  * @returns {boolean} True if the appointment's episode is a last screening
  */
-const isLastScreeningAppointment = (appointment, data) =>
+const isLastScreening = (appointment, data) =>
   Boolean(getEpisode(data, appointment?.episodeId)?.isLastScreening)
 
 /**
@@ -780,8 +781,8 @@ module.exports = {
   appointmentProducedImages,
   buildMammogramEntry,
   getEpisode,
-  isFirstScreeningAppointment,
-  isLastScreeningAppointment,
+  isFirstScreening,
+  isLastScreening,
   getEpisodesForParticipant,
   getCurrentEpisode,
   getEpisodeAppointments,

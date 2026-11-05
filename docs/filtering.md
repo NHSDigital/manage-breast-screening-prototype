@@ -1,6 +1,6 @@
 # Filtering an index page
 
-Index pages filter with checkboxes in a left-hand column. The setup is generic: a page declares its filters as **data** and passes them through one set of helpers and one component. Reading cases (`app/routes/reading-cases.js`, `app/views/reading/cases.html`) is the worked example; the participant index (`app/routes/participants.js`, `app/views/participants/index.html`) is the second, with the same parts arranged for a different job.
+Index pages filter with checkboxes in a left-hand column. The setup is generic: a page declares its filters as **data** and passes them through one set of helpers and one component. Reading cases (`app/routes/reading-cases.js`, `app/views/reading/cases.html`) is the worked example; the participant index (`app/routes/participants.js`, `app/views/participants/index.html`) is the second, with the same parts arranged for a different job. A clinic's appointment list (`app/routes/clinics.js`, `getClinicFilterGroups` in `app/lib/utils/clinic-appointment-list.js`) uses the same groups and helpers, but renders its checkboxes in a "Filter appointments" expander above the list rather than in `appFilterPanel`, and shows no counts.
 
 ## 1. Declare the filter groups
 
@@ -89,7 +89,7 @@ Filter pages use the wide container with a third/two-thirds split:
 </div>
 ```
 
-The selected-filters summary sits above the results in the right-hand column.
+The selected-filters summary sits above the results in the right-hand column. Render it with `{% include "_includes/selected-filters.njk" %}`, which reads `selectedFilters` and shows nothing when it is empty.
 
 ## 5. Live updating (optional)
 

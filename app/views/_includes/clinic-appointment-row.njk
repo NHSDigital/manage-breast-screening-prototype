@@ -57,7 +57,7 @@
           label: "NHS number"
         }) }}
       </p>
-      {% if appointment | isFirstScreeningAppointment(data) %}
+      {% if appointment | isFirstScreening(data) %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
           {{ tag({
           text: "New",
@@ -66,7 +66,7 @@
           })}}
         </p>
       {% endif %}
-      {% if appointment | isLastScreeningAppointment(data) %}
+      {% if appointment | isLastScreening(data) %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
           {{ tag({
           text: "Final",
@@ -127,7 +127,7 @@
             at {{ checkInTime | formatTimeString }}
             {% if waitingMinutes !== null %}
               <br>
-              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s js-waiting-time" data-waiting-since="{{ appointment | getWaitingSince }}">{{ waitingMinutes | formatWaitingTime }} ago</span>
+              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s js-elapsed-time" data-elapsed-since="{{ appointment | getWaitingSince }}">{{ waitingMinutes | formatWaitingTime }} ago</span>
             {% endif %}
           </p>
         {% endif %}
@@ -172,53 +172,64 @@
             {{ checkInTime | formatTimeString }}
             {% if waitingMinutes !== null %}
               <br>
-              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s js-waiting-time" data-waiting-since="{{ appointment | getWaitingSince }}">{{ waitingMinutes | formatWaitingTime }} ago</span>
+              <span class="nhsuk-u-secondary-text-colour nhsuk-body-s js-elapsed-time" data-elapsed-since="{{ appointment | getWaitingSince }}">{{ waitingMinutes | formatWaitingTime }} ago</span>
             {% endif %}
           {% endif %}
         {% endif %}
       </td>
     {% endif %}
 
-    {# Started at - when screening started with the operator who started it,
-       shown on the In progress tab. Start time, time elapsed and name are stacked. #}
+    {# Started at - when screening started, how long ago, and who is running
+       it now (whoever last started or resumed it), shown on the In progress
+       tab #}
     {% if columns.startedAt %}
       {% set startedTime = appointment.sessionDetails.startedAt %}
-      {% set startedBy = appointment.sessionDetails.startedBy %}
-      {% set startedMinutes = appointment | getStartedMinutes %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__started-at-column">
-        {% if startedTime %}<span class="app-clinic-appointments-table__started-time">{{ startedTime | formatTimeString }}</span><span class="nhsuk-u-secondary-text-colour nhsuk-body-s js-started-time" data-started-since="{{ appointment | getStartedSince }}">{{ startedMinutes | formatWaitingTime }} ago</span>{% if startedBy %}<span class="nhsuk-u-secondary-text-colour nhsuk-body-s">({{ startedBy | getUsername({ format: 'short' }) }})</span>{% endif %}{% endif %}
+        {% if startedTime %}
+          {{ startedTime | formatTimeString }}
+          <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0 js-elapsed-time" data-elapsed-since="{{ startedTime | getElapsedSince }}">{{ startedTime | getMinutesSince | formatWaitingTime }} ago</span>
+          <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0">({{ appointment | getAppointmentRunnerId | getUsername({
+            format: 'short'
+          }) }})</span>
+        {% endif %}
       </td>
     {% endif %}
 
-    {# Time completed - when the appointment ended, for screened (including
-       partially screened), attended not screened and cancelled; blank otherwise. The
-       mammographer and screening order badge sit on the same line after the
-       time on the Complete and All tabs, moved here from the Status column.
-       The time is a fixed-width block so the badge and name line up across
-       rows however wide each time string is. #}
+    {# Time completed - when the appointment ended (see getCompletedTime), then
+       the screening order badge and who it was, on the Complete and All tabs.
+       Attended appointments (see wasAttended) show their place in the order
+       of screening and who screened them; one cancelled before it started
+       shows who cancelled it. The time is a fixed-width block so the badge and
+       name line up across rows however wide each time string is. #}
     {% if columns.completed %}
-      {% set completedTime = appointment.sessionDetails.endedAt if (appointment.status in ['complete', 'partially_screened', 'attended_not_screened', 'cancelled']) and appointment.sessionDetails.endedAt %}
-      {# For cancelled appointments that were started, prefer endedBy (who cancelled);
-         for cancelled that never started, use endedBy; otherwise use startedBy #}
-      {% set completedBy = (appointment.status == 'cancelled' and appointment.sessionDetails.endedBy) or appointment.sessionDetails.startedBy or appointment.sessionDetails.endedBy %}
-      {% set isCompletedStatus = appointment.status in ['complete', 'partially_screened', 'attended_not_screened', 'cancelled'] %}
-      {% set completedScreener = completedBy and isCompletedStatus %}
-      {# Cancelled shows the time and mammographer but no order badge #}
-      {% set completedOrder = appointment.screeningOrder if isCompletedStatus and appointment.status != 'cancelled' %}
+      {% set completedTime = appointment | getCompletedTime %}
+      {% set attended = appointment | wasAttended %}
+      {% set completedOrder = appointment.screeningOrder if attended %}
+      {% set completedByName = "" %}
+      {% if attended and appointment.sessionDetails.startedBy %}
+        {% set completedByName = appointment | getScreenedByName({
+          format: 'short',
+          identifyCurrentUser: true
+        }) %}
+      {% elseif appointment.status == 'cancelled' and appointment.cancellation.cancelledBy %}
+        {% set completedByName = appointment.cancellation.cancelledBy | getUsername({
+          format: 'short',
+          identifyCurrentUser: true
+        }) %}
+      {% endif %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
-        {% if completedTime or completedScreener or completedOrder %}
-          <span class="app-clinic-appointments-table__completed-time">{% if completedTime %}{{ completedTime | formatTimeString }}{% endif %}</span>
+        {% if completedTime or completedByName %}
+          {# A cancellation made on an earlier day shows its date instead #}
+          {% set completedOnAnotherDay = completedTime and (completedTime | formatDate("YYYY-MM-DD")) != (appointment.timing.startTime | formatDate("YYYY-MM-DD")) %}
+          <span class="app-clinic-appointments-table__completed-time">{% if completedOnAnotherDay %}{{ completedTime | formatDate("D MMM") }}{% elseif completedTime %}{{ completedTime | formatTimeString }}{% endif %}</span>
           {% if completedOrder %}
-            <span class="nhsapp-badge nhsapp-badge--small app-nowrap nhsuk-u-margin-right-1">
+            <span class="nhsapp-badge nhsapp-badge--small nhsapp-badge--muted app-nowrap nhsuk-u-margin-right-1">
               <span aria-hidden="true">{{ completedOrder }}</span>
-              <span class="nhsuk-u-visually-hidden">{{ completedOrder | getOrdinalNumber }} in order</span>
+              <span class="nhsuk-u-visually-hidden">{{ completedOrder | getOrdinalNumber }} in order of screening</span>
             </span>
           {% endif %}
-          {% if completedScreener %}
-            <span class="nhsuk-u-font-size-16">{{ appointment | getScreenedByName({
-              format: 'short',
-              identifyCurrentUser: true
-            }) }}</span>
+          {% if completedByName %}
+            <span class="nhsuk-u-font-size-16">{{ completedByName }}</span>
           {% endif %}
         {% endif %}
       </td>
@@ -251,19 +262,11 @@
             classes: "app-nowrap js-start-appointment-link" + (" app-display-none" if appointment.status == 'scheduled')
           }) }}
 
-        {% elseif appointment | isPaused %}
-          {% set pausedBy = appointment.sessionDetails.pausedBy %}
-          {% set isCurrentUserPausedBy = pausedBy === currentUser.id %}
-          {% set buttonText = "Resume appointment" if isCurrentUserPausedBy else "Claim appointment" %}
+        {# Whoever is running it can resume it; anyone can claim a paused one #}
+        {% elseif (appointment | isInProgress) and ((appointment | isRunByCurrentUser) or (appointment | isPaused)) %}
+          {% set resumeText = "Resume appointment" if (appointment | isRunByCurrentUser) else "Claim appointment" %}
           {{ button({
-            html: buttonText ~ ((" for " + (participant | getShortName)) | asVisuallyHiddenText),
-            href: appointmentBaseUrl + "/resume",
-            variant: "secondary",
-            small: true
-          }) }}
-        {% elseif appointment | isInProgress and appointment | isRunByCurrentUser %}
-          {{ button({
-            html: "Resume appointment" ~ ((" for " + (participant | getShortName)) | asVisuallyHiddenText),
+            html: resumeText ~ ((" for " + (participant | getShortName)) | asVisuallyHiddenText),
             href: appointmentBaseUrl + "/resume",
             variant: "secondary",
             small: true

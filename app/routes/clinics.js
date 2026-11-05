@@ -12,16 +12,20 @@ const {
   filterAppointmentsByStatus,
   isInProgress,
   isFinal,
-  isSpecialAppointment,
-  getCheckInTime
+  getCheckInTime,
+  getCompletedTime
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
-const { describeSelectedFilters } = require('../lib/utils/filter-list')
-const { getParticipant } = require('../lib/utils/participants')
 const {
-  isFirstScreeningAppointment,
-  isLastScreeningAppointment
-} = require('../lib/utils/episodes')
+  parseFilterQuery,
+  applyFilterGroups,
+  describeSelectedFilters,
+  hasSelectedFilters
+} = require('../lib/utils/filter-list')
+const {
+  getClinicFilterGroups
+} = require('../lib/utils/clinic-appointment-list')
+const { getParticipant } = require('../lib/utils/participants')
 const { participantMatchesQuery } = require('../lib/utils/search')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
 const {
@@ -29,7 +33,6 @@ const {
   updateAppointmentData
 } = require('../lib/utils/appointment-data')
 const { pluralise } = require('../lib/utils/strings')
-const { getAppointmentRunByIds } = require('../lib/utils/roles-and-permissions')
 const { OTHER_REASON } = require('../lib/utils/mastectomy')
 
 /**
@@ -560,76 +563,25 @@ module.exports = (router) => {
     // Free-text search narrows the list by participant, keeping the counts and
     // the current tab in step. Empty query matches everyone.
     const search = req.query.search?.trim() || ''
-    // Checkbox filter - the unchecked-checkbox script posts "_unchecked" when
-    // off, so match on the "yes" value rather than mere presence
-    const filterSpecialAppointment = []
-      .concat(req.query.specialAppointment || [])
-      .includes('yes')
-    // "First screening" - participants attending for the first time
-    const filterFirstScreening = []
-      .concat(req.query.firstScreening || [])
-      .includes('yes')
-    // "Last screening" - participants whose next routine invitation would fall
-    // after their 71st birthday
-    const filterLastScreening = []
-      .concat(req.query.lastScreening || [])
-      .includes('yes')
-    // Appointments after the free-text search and the special-appointment and
-    // first-screening filters, but before the mammographer filter.
-    let baseAppointments = clinicData.appointments
-    if (search) {
-      baseAppointments = baseAppointments.filter((appointment) =>
-        participantMatchesQuery(appointment.participant, search)
-      )
-    }
-    if (filterSpecialAppointment) {
-      baseAppointments = baseAppointments.filter((appointment) =>
-        isSpecialAppointment(appointment)
-      )
-    }
-    if (filterFirstScreening) {
-      baseAppointments = baseAppointments.filter((appointment) =>
-        isFirstScreeningAppointment(appointment, req.session.data)
-      )
-    }
-
-    if (filterLastScreening) {
-      baseAppointments = baseAppointments.filter((appointment) =>
-        isLastScreeningAppointment(appointment, req.session.data)
-      )
-    }
-
-    // Keep mammographer options available on every tab and while participant
-    // search or the other filters narrow the rows. Sorted by first name. An
-    // appointment matches everyone who ran it and whoever was nominated to
-    // take its images.
-    const getAppointmentMammographerIds = (appointment) =>
-      [
-        ...getAppointmentRunByIds(appointment),
-        appointment.authorisedMammographerId
-      ].filter(Boolean)
-    const mammographerIds = [
-      ...new Set(clinicData.appointments.flatMap(getAppointmentMammographerIds))
-    ]
-    const mammographers = mammographerIds
-      .map((userId) =>
-        req.session.data.users.find((user) => user.id === userId)
-      )
-      .filter(Boolean)
-      .sort((a, b) => a.firstName.localeCompare(b.firstName))
-    const selectedMammographers = []
-      .concat(req.query.mammographer || [])
-      .filter((userId) => mammographerIds.includes(userId))
-
-    // Apply the mammographer selection to get the final filtered list
-    let matchedAppointments = baseAppointments
-    if (selectedMammographers.length) {
-      matchedAppointments = matchedAppointments.filter((appointment) =>
-        getAppointmentMammographerIds(appointment).some((userId) =>
-          selectedMammographers.includes(userId)
+    const searchedAppointments = search
+      ? clinicData.appointments.filter((appointment) =>
+          participantMatchesQuery(appointment.participant, search)
         )
-      )
-    }
+      : clinicData.appointments
+
+    // Filter groups (see docs/filtering.md). Mammographer options come from
+    // the whole clinic, so they stay available on every tab and while search
+    // or the other filters narrow the rows.
+    const groups = getClinicFilterGroups(
+      req.session.data,
+      clinicData.appointments
+    )
+    const selected = parseFilterQuery(req.query, groups)
+    const matchedAppointments = applyFilterGroups(
+      searchedAppointments,
+      groups,
+      selected
+    )
 
     let filteredAppointments = filterAppointmentsByStatus(
       matchedAppointments,
@@ -677,12 +629,6 @@ module.exports = (router) => {
         return sortDescending ? -diff : diff
       })
     } else if (sort.startsWith('completed')) {
-      const getCompletedTime = (appointment) =>
-        ['complete', 'partially_screened', 'attended_not_screened', 'cancelled'].includes(
-          appointment.status
-        )
-          ? appointment.sessionDetails?.endedAt
-          : null
       filteredAppointments = [...filteredAppointments].sort((a, b) => {
         const aCompleted = getCompletedTime(a)
         const bCompleted = getCompletedTime(b)
@@ -699,58 +645,21 @@ module.exports = (router) => {
       })
     }
 
-    // The active filters as removable tags, each linking to the same page
-    // without that filter. Search and sort ride along on every removal link
-    const yesOption = (label) => [{ value: 'yes', label }]
-    const selectedFilters = describeSelectedFilters(
-      [
-        {
-          name: 'specialAppointment',
-          legend: 'Appointment type',
-          options: yesOption('Special appointments')
-        },
-        {
-          name: 'firstScreening',
-          legend: 'Appointment type',
-          options: yesOption('New to screening')
-        },
-        {
-          name: 'lastScreening',
-          legend: 'Appointment type',
-          options: yesOption('Final screening invite')
-        },
-        {
-          name: 'mammographer',
-          legend: 'Mammographers',
-          options: mammographers.map((user) => ({
-            value: user.id,
-            label: `${user.firstName} ${user.lastName}`
-          }))
-        }
-      ],
-      {
-        specialAppointment: filterSpecialAppointment ? ['yes'] : [],
-        firstScreening: filterFirstScreening ? ['yes'] : [],
-        lastScreening: filterLastScreening ? ['yes'] : [],
-        mammographer: selectedMammographers
-      },
-      req.path,
-      { search, sort }
-    )
-
     res.render('clinics/show', {
-      selectedFilters,
+      groups,
+      selected,
+      // Search and sort ride along on every removal link
+      selectedFilters: describeSelectedFilters(groups, selected, req.path, {
+        search,
+        sort
+      }),
+      isFiltered: hasSelectedFilters(selected),
       clinicId: req.params.id,
       clinic: clinicData.clinic,
       allAppointments: clinicData.appointments,
       matchedAppointments,
       filteredAppointments,
       search,
-      specialAppointment: filterSpecialAppointment,
-      firstScreening: filterFirstScreening,
-      lastScreening: filterLastScreening,
-      mammographers,
-      selectedMammographers,
       sort,
       status: filter,
       unit: clinicData.unit,

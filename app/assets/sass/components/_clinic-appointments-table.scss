@@ -156,13 +156,6 @@
   }
 }
 
-// Started at cell stacks the start time, time elapsed and operator name, one
-// per line
-.app-clinic-appointments-table__started-at-column span {
-  display: block;
-  margin: 0;
-}
-
 // Complete tab drops the Actions column (every row is final), so the remaining
 // five columns share the space
 .app-clinic-appointments-table--with-screened-by.app-clinic-appointments-table--no-actions {

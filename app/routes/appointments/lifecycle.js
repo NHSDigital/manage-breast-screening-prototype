@@ -163,6 +163,8 @@ module.exports = (router) => {
         // Update status to in progress
         updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
 
+        // startedBy keeps whoever first started it. The resume in authors
+        // makes this user the one running it (see getAppointmentRunnerId).
         const updates = {
           sessionDetails: {
             startedAt: existingDetails.startedAt,
@@ -173,11 +175,14 @@ module.exports = (router) => {
           }
         }
 
-        if (!appointment.screeningOrder) {
-          updates.screeningOrder = getNextScreeningOrder(data, req.params.clinicId)
+        // Starting assigns the order, so this only catches one without it
+        if (appointment.screeningOrder == null) {
+          updates.screeningOrder = getNextScreeningOrder(
+            data,
+            req.params.clinicId
+          )
         }
 
-        // Update session details - preserve original starter
         updateAppointmentData(data, req.params.appointmentId, updates)
       }
 

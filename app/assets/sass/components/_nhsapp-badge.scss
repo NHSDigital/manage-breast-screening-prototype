@@ -11,11 +11,10 @@
   display: inline-block;
   padding: 0 nhsuk-spacing(2);
   margin: 0;
-  color: nhsuk-colour("black");
+  color: nhsuk-colour("white");
   font-weight: bold;
-  // Pale blue, matching the NHS blue tag, rather than the component's default
-  // red, which reads as an alert
-  background-color: nhsuk-tint(nhsuk-colour("blue"), 80%);
+  // NHS blue rather than the component's default red, which reads as an alert
+  background-color: nhsuk-colour("blue");
   border-radius: nhsuk-spacing(1);
 
   @include nhsuk-media-query($from: tablet) {
@@ -26,4 +25,11 @@
 // One size smaller, to sit as secondary detail beneath other content
 .nhsapp-badge--small {
   @include nhsuk-font-size(16);
+}
+
+// Pale blue with black text, matching the NHS blue tag, for a badge that
+// labels rather than draws attention
+.nhsapp-badge--muted {
+  color: nhsuk-colour("black");
+  background-color: nhsuk-tint(nhsuk-colour("blue"), 80%);
 }

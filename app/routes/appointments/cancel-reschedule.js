@@ -50,10 +50,15 @@ module.exports = (router) => {
           `/clinics/${clinicId}/appointments/${appointmentId}/cancel-or-reschedule-appointment/reschedule`
         )
       } else {
-        // Record when the appointment was cancelled and by whom, started or not
-        captureSessionEndTime(data, appointmentId, data.currentUser.id)
+        // Capture session end time only if appointment was started
+        const appointment = getAppointment(data, appointmentId)
+        if (appointment?.sessionDetails?.startedAt) {
+          captureSessionEndTime(data, appointmentId, data.currentUser.id)
+        }
 
-        // Save the cancellation data
+        // Save the cancellation data, with who cancelled. When is in the
+        // status history
+        data.appointment.cancellation.cancelledBy = data.currentUser.id
         saveTempAppointmentToAppointment(data)
         saveTempParticipantToParticipant(data)
 

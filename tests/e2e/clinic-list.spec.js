@@ -173,9 +173,7 @@ test.describe('Clinic appointment list', () => {
     const runner = users.find(
       (user) => user.id === getAppointmentRunnerId(appointment)
     )
-    const starter = users.find(
-      (user) => user.id === appointment.sessionDetails.startedBy
-    )
+    const runnerName = `${runner.firstName.charAt(0)}. ${runner.lastName}`
     const row = page.locator(`tr[data-fragment-id="${appointment.id}"]`)
     const statusColumn = row.locator(
       '.app-clinic-appointments-table__appointment-column'
@@ -190,20 +188,14 @@ test.describe('Clinic appointment list', () => {
     await page.goto(`/clinics/${clinic.id}/all`)
 
     await expect(row).toBeVisible()
-    await expect(statusColumn).toContainText(
-      `with ${runner.firstName.charAt(0)}. ${runner.lastName}`
-    )
+    await expect(statusColumn).toContainText(`with ${runnerName}`)
     await expect(completedColumn).toBeEmpty()
     await expect(completedColumn.locator('.nhsapp-badge')).toHaveCount(0)
 
     await page.goto(`/clinics/${clinic.id}/in-progress`)
 
-    await expect(statusColumn).not.toContainText(
-      `${starter.firstName.charAt(0)}. ${starter.lastName}`
-    )
-    await expect(startedAtColumn).toContainText(
-      `${starter.firstName.charAt(0)}. ${starter.lastName}`
-    )
+    await expect(statusColumn).not.toContainText(runnerName)
+    await expect(startedAtColumn).toContainText(runnerName)
   })
 
   test('keeps mammographer options visible on every tab', async ({ page }) => {
@@ -352,9 +344,9 @@ test.describe('Clinic appointment list', () => {
     await page.goto(`/clinics/${clinic.id}/checked-in`)
 
     const waitingTime = page.locator(
-      `tr[data-fragment-id="${appointment.id}"] .js-waiting-time`
+      `tr[data-fragment-id="${appointment.id}"] .js-elapsed-time`
     )
-    await expect(waitingTime).toHaveAttribute('data-waiting-since', /\d{4}/)
+    await expect(waitingTime).toHaveAttribute('data-elapsed-since', /\d{4}/)
     const initialText = await waitingTime.innerText()
     await expect(waitingTime).toHaveText(/^\d+ mins? ago$/)
 
@@ -377,7 +369,7 @@ test.describe('Clinic appointment list', () => {
       .join(' ')
     const query = new URLSearchParams({
       search: fullName,
-      specialAppointment: 'yes'
+      appointmentType: 'special'
     })
 
     await page.goto(`/clinics/${clinic.id}/all?${query}`)
@@ -393,7 +385,7 @@ test.describe('Clinic appointment list', () => {
     const { clinic, newCount } = findClinicWithNewAndReturningParticipants()
     const rows = page.locator('tbody tr.appointment-row')
 
-    await page.goto(`/clinics/${clinic.id}/all?firstScreening=yes`)
+    await page.goto(`/clinics/${clinic.id}/all?appointmentType=new`)
 
     await expect(page.getByLabel('New to screening')).toBeChecked()
     await expect(rows).toHaveCount(newCount)
@@ -407,6 +399,32 @@ test.describe('Clinic appointment list', () => {
     ).toHaveCount(newCount)
   })
 
+  test('shows appointments of any ticked type', async ({ page }) => {
+    const appointments = readCollection('appointments.json', 'appointments')
+    const episodes = readCollection('episodes.json', 'episodes')
+    const episodesById = new Map(
+      episodes.map((episode) => [episode.id, episode])
+    )
+    const clinicId = appointments.find(
+      (appointment) => episodesById.get(appointment.episodeId)?.isLastScreening
+    ).clinicId
+    const matchingCount = appointments.filter((appointment) => {
+      const episode = episodesById.get(appointment.episodeId)
+      return (
+        appointment.clinicId === clinicId &&
+        (episode?.isFirstScreening || episode?.isLastScreening)
+      )
+    }).length
+
+    await page.goto(
+      `/clinics/${clinicId}/all?appointmentType=new&appointmentType=final`
+    )
+
+    await expect(page.locator('tbody tr.appointment-row')).toHaveCount(
+      matchingCount
+    )
+  })
+
   test('shows selected filters as tags and removes one at a time', async ({
     page
   }) => {
@@ -417,7 +435,7 @@ test.describe('Clinic appointment list', () => {
     await expect(selectedFilters).toHaveCount(0)
 
     await page.goto(
-      `/clinics/${clinic.id}/all?firstScreening=yes&specialAppointment=yes`
+      `/clinics/${clinic.id}/all?appointmentType=new&appointmentType=special`
     )
     await expect(selectedFilters.getByRole('link')).toHaveCount(2)
 
@@ -425,8 +443,8 @@ test.describe('Clinic appointment list', () => {
       .getByRole('link', { name: 'Remove this filter: New to screening' })
       .click()
 
-    await expect(page).toHaveURL(/specialAppointment=yes/)
-    await expect(page).not.toHaveURL(/firstScreening/)
+    await expect(page).toHaveURL(/appointmentType=special/)
+    await expect(page).not.toHaveURL(/appointmentType=new/)
     await expect(selectedFilters.getByRole('link')).toHaveCount(1)
   })
 
@@ -503,7 +521,7 @@ test.describe('Clinic appointment list', () => {
     ).length
     const rows = page.locator('tbody tr.appointment-row')
 
-    await page.goto(`/clinics/${clinicId}/all?lastScreening=yes`)
+    await page.goto(`/clinics/${clinicId}/all?appointmentType=final`)
 
     await expect(page.getByLabel('Final screening invite')).toBeChecked()
     await expect(rows).toHaveCount(lastCount)
@@ -530,9 +548,9 @@ test.describe('Clinic appointment list', () => {
     await expect(clearButton).toHaveCount(0)
 
     await page.getByText('Filter appointments', { exact: true }).click()
-    await page.locator('#filter-special-appointment').check()
-    await page.locator('#filter-first-screening').check()
-    await expect(page).toHaveURL(/firstScreening=yes/)
+    await page.getByLabel('Special appointments').check()
+    await page.getByLabel('New to screening').check()
+    await expect(page).toHaveURL(/appointmentType=new/)
     await page.locator('#filter-mammographer').check()
     await page.locator('#participant-search').fill('NoMatchClinicListTest')
     await expect(page).toHaveURL(/search=NoMatchClinicListTest/)
@@ -545,8 +563,8 @@ test.describe('Clinic appointment list', () => {
       `/clinics/${clinic.id}/all?sort=time-descending`
     )
     await expect(page.locator('#participant-search')).toHaveValue('')
-    await expect(page.locator('#filter-special-appointment')).not.toBeChecked()
-    await expect(page.locator('#filter-first-screening')).not.toBeChecked()
+    await expect(page.getByLabel('Special appointments')).not.toBeChecked()
+    await expect(page.getByLabel('New to screening')).not.toBeChecked()
     await expect(
       page.locator('input[name="mammographer"]:checked')
     ).toHaveCount(0)
