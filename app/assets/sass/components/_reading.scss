@@ -311,12 +311,12 @@
   }
 
   &.app-reading-compare-card--technical-recall {
-    outline-color: nhsuk-shade(nhsuk-colour("warm-yellow"), 70%);
+    outline-color: nhsuk-colour("dark-orange");
 
     .nhsuk-card__heading {
-      background-color: nhsuk-tint(nhsuk-colour("warm-yellow"), 50%);
-      color: nhsuk-shade(nhsuk-colour("warm-yellow"), 70%);
-      outline-color: nhsuk-shade(nhsuk-colour("warm-yellow"), 70%);
+      background-color: nhsuk-colour("pale-orange");
+      color: nhsuk-colour("dark-orange");
+      outline-color: nhsuk-colour("dark-orange");
     }
   }
 
