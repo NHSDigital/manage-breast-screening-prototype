@@ -97,7 +97,7 @@ Page conventions:
 - Start the file with a comment naming it: `{# app/views/participants/show.html #}`.
 - `{% set pageHeading = "..." %}` and put content in `{% block pageContent %}`. Back links go in `{% block beforeContent %}`.
 - Setting `formAction` makes the layout wrap the page in a form posting there. Setting `isForm` does the same with the current URL. Do not add a second `<form>` inside.
-- Reuse `_includes/` and `_components/` before writing new markup. The style guide at `/style-guide/` shows every custom component.
+- Reuse `_includes/` and `_components/` before writing new markup. [components.md](components.md) lists every component and the style guide at `/style-guide/` shows the reusable ones.
 
 ## Common mistakes
 

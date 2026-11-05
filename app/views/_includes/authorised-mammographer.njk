@@ -20,7 +20,7 @@
 {% if needsNominatedAuthorisedMammographer %}
 
   {% set insetTextHtml %}
-    <p>Due to {{ appointment | getImplantImagingReason }} you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or {{ appLink({ text: "exit the appointment", href: (appointmentUrl + "/exit-appointment") | urlWithReferrer(referrerChain) }) | trim | safe }}.</p>
+    <p>Due to {{ appointment | getImplantImagingReason }} you do not have the relevant permissions to take all the mammograms required for this appointment. Change the mammographer to someone authorised to take these images or {{ link({ text: "exit the appointment", href: (appointmentUrl + "/exit-appointment") | urlWithReferrer(referrerChain) }) | trim | safe }}.</p>
   {% endset %}
 
   {{ insetText({
@@ -49,7 +49,7 @@
         text: continueButtonText,
         classes: "nhsuk-u-margin-bottom-0 js-complete-all-sections"
       }) }}
-      <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span> ({{ appLink({ text: "change", href: authorisedMammographerChangeHref } | openInModal) | trim | safe }})</p>
+      <p class="nhsuk-u-margin-top-2">Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span> ({{ link({ text: "change", href: authorisedMammographerChangeHref } | openInModal) | trim | safe }})</p>
     </div>
   </div>
 

@@ -1,4 +1,20 @@
 {# app/views/_components/copy-to-clipboard/macro.njk #}
+{#
+  Purpose: A small button that copies a value, such as an NHS number, to the clipboard.
+  Use when: staff are likely to paste a value into another system. Requires JavaScript; the button stays hidden without it.
+
+  Params:
+    text      (required) — the string to copy to the clipboard
+    type      (optional) — "text" (default) shows a "Copy" label
+                           "icon" shows a copy icon only
+                           "value" wraps the visible value itself (from `html`) with an icon,
+                           so clicking anywhere on the value copies it
+    html      (required for type "value") — the visible value, e.g. the formatted number
+    label     (optional) — describes what is being copied, e.g. "NHS number"
+                           used for the accessible name ("Copy NHS number") and the
+                           screen reader announcement ("NHS number copied to clipboard")
+    classes   (optional) — additional classes on the button
+#}
 
 {% macro appCopyToClipboard(params) %}
   {%- include "./template.njk" -%}

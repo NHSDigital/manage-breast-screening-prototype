@@ -1,4 +1,12 @@
 {# app/views/_components/status-bar/macro.njk #}
+{#
+  Purpose: A full-width bar of key and value pairs.
+  Use when: showing participant or appointment context above a page, usually from the pageNavigation block.
+
+  Params:
+    rows    — each: { classes, items: [{ key, value } or { text } or { html }] }
+    classes — additional classes on the bar
+#}
 
 {% macro appStatusBar(params) %}
   {%- include "./template.njk" -%}

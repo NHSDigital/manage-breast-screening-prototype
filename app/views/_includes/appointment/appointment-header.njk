@@ -67,13 +67,13 @@
       {% if allowEdits %}
         <ul class="nhsuk-list">
           <li>
-            {{ appLink({
+            {{ link({
               text: "Cancel or reschedule appointment",
               href: (appointmentUrl + '/cancel-or-reschedule-appointment/details') | urlWithReferrer(appointmentUrl)
             } | openInModal) }}
           </li>
           <li>
-            {{ appLink({
+            {{ link({
               text: "Make special appointment" if not appointment | isSpecialAppointment else "Change special appointment details",
               href: (appointmentUrl + '/special-appointment/edit') | urlWithReferrer(appointmentUrl)
             } | openInModal) }}

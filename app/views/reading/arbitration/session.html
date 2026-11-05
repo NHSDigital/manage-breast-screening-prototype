@@ -51,7 +51,7 @@
           {{ arbitrationActionText }}
         </a>
         {% if canEndSessionEarly %}
-          {{ appLink({
+          {{ link({
             text: "End session",
             href: "/reading/session/" + session.id + "/end",
             classes: "nhsuk-link--no-visited-state"
@@ -86,7 +86,7 @@
       {% endset %}
 
       {{ panel({
-        titleText: "Session ended" if endedEarly else "Session complete",
+        heading: "Session ended" if endedEarly else "Session complete",
         html: sessionCompletePanelHtml
       }) }}
     {% endif %}

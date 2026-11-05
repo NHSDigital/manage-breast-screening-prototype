@@ -15,7 +15,7 @@
 {%- from '_components/filter-panel/macro.njk' import appFilterPanel %}
 {%- from '_components/forward-link/macro.njk' import appForwardLink %}
 {%- from '_components/hidden-input/macro.njk' import appHiddenInput %}
-{%- from '_components/link/macro.njk' import appLink %}
+{%- from 'link/macro.njk' import link %}
 {%- from '_components/modal/macro.njk' import appModal %}
 {%- from '_components/modal/macro.njk' import appConfirmationModal %}
 {%- from '_components/secondary-navigation/macro.njk' import appSecondaryNavigation %}
@@ -26,7 +26,7 @@
 {%- from '_components/status-bar/macro.njk' import appStatusBar %}
 {%- from "_components/stepper-input/macro.njk" import appStepperInput -%}
 {%- from "_components/collapsible-input/macro.njk" import appCollapsibleInput -%}
-{%- from "_components/environment/macro.njk" import appEnvironment -%}
+{%- from "environment-banner/macro.njk" import environmentBanner -%}
 {%- from "_components/notification-banner/macro.njk" import appNotificationBanner -%}
 {%- from '_components/icon/macro.njk' import appIcon %}
 {%- from '_components/status-message/macro.njk' import appStatusMessage %}
@@ -40,7 +40,7 @@
 <!-- Edit the header -->
 <!-- Header code examples can be found at https://service-manual.nhs.uk/design-system/components/header -->
 {% block header %}
-  {{ appEnvironment(environment) if environment and data.settings.showEnvironmentBanner == 'true' }}
+  {{ environmentBanner(environment) if environment and data.settings.showEnvironmentBanner == 'true' }}
   {{ header({
     service: {
       text: serviceName,

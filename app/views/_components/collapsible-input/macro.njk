@@ -1,4 +1,14 @@
 {# app/views/_components/collapsible-input/macro.njk #}
+{#
+  Purpose: Hides an input or textarea behind a toggle link such as “Add a comment”.
+  Use when: an optional field would otherwise clutter the form. Without JavaScript the content shows as normal.
+
+  Params:
+    text        - trigger link text (default: "Add a comment")
+    html        - inner HTML (alternative to caller())
+    classes     - additional classes on the wrapper element
+    attributes  - additional HTML attributes on the wrapper element
+#}
 
 {% macro appCollapsibleInput(params) %}
   {%- include "./template.njk" -%}

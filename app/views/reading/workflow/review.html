@@ -68,8 +68,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Arbitration decision" if isArbitration else "Your read",
-    headingLevel: "2",
+    heading: {
+      text: "Arbitration decision" if isArbitration else "Your read",
+      level: 2
+    },
     feature: true,
     descriptionHtml: readSummaryHtml
   }) }}

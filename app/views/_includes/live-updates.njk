@@ -28,8 +28,10 @@
       <p class="nhsuk-u-margin-bottom-0"><a href="" class="nhsuk-notification-banner__link">Refresh the page</a> to see the changes.</p>
     {% endset %}
     {{ notificationBanner({
-      titleText: "This page has been updated",
-      titleId: "live-updates-banner-title",
+      title: {
+        id: "live-updates-banner-title",
+        text: "This page has been updated"
+      },
       html: bannerHtml,
       attributes: {
         "data-live-updates-shown": ""

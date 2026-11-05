@@ -93,7 +93,7 @@
     <p class="nhsuk-u-margin-bottom-3 nhsuk-body-s">
       {% set appointmentNoteUrl = '/clinics/' + clinicId + '/appointments/' + appointment.id + '/appointment-note' %}
       {% set appointmentNoteLinkText = 'View or change appointment note' if appointment.appointmentNote else 'Add appointment note' %}
-      {{ appLink({
+      {{ link({
         text: appointmentNoteLinkText,
         href: appointmentNoteUrl | urlWithReferrer(currentUrl)
       } | openInModal) }}

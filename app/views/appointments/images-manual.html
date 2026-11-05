@@ -50,7 +50,7 @@
 
     <p>
       Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span>
-      ({{ appLink({ text: "change", href: (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) } | openInModal) | trim | safe }})
+      ({{ link({ text: "change", href: (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) } | openInModal) | trim | safe }})
     </p>
 
     {{ appHiddenInput({
@@ -187,8 +187,7 @@
     fieldset: {
       legend: {
         text: "Were a standard set of images taken?",
-        size: "m",
-        isPageHeading: false
+        size: "m"
       }
     },
     value: mammogramSource.isStandardSet,
@@ -200,9 +199,7 @@
       {
         value: "custom",
         text: "No, add other information",
-        hint: {
-          text: "Such as too few or additional images"
-        }
+        hint: "Such as too few or additional images"
       },
       {
         divider: "or"
@@ -210,9 +207,7 @@
       {
         value: "no",
         text: "No images taken",
-        hint: {
-          text: "The appointment cannot proceed"
-        }
+        hint: "The appointment cannot proceed"
       }
     ]
   }) }}

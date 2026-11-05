@@ -86,9 +86,7 @@
           id: "participant-search",
           name: "search",
           value: search,
-          label: {
-            text: "Search by name or NHS number"
-          },
+          label: "Search by name or NHS number",
           button: { variant: "secondary" }
         }) }}
         {{ checkboxes({
@@ -126,7 +124,7 @@
     {% endset %}
     {# Open when a search or filter is active so a live update doesn't collapse it #}
     {{ details({
-      summaryText: "Filter appointments",
+      summary: "Filter appointments",
       html: findParticipantHtml,
       classes: "nhsuk-expander",
       open: true if (search or specialAppointment or selectedMammographers | length)

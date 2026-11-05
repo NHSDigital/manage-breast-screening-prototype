@@ -21,7 +21,7 @@
     conditional: {
       html: input({
         name: stoppedFieldsNamePrefix + "[" + reason.detailsField + "]",
-        label: { text: "Provide details (optional)" },
+        label: "Provide details (optional)",
         value: stoppedFieldsValues[reason.detailsField],
         autocomplete: "off"
       })
@@ -38,7 +38,7 @@
     html: textarea({
       name: stoppedFieldsNamePrefix + "[otherDetails]",
       id: "otherDetails",
-      label: { text: "Provide details" },
+      label: "Provide details",
       rows: 5,
       value: stoppedFieldsValues.otherDetails,
       autocomplete: "off"
@@ -54,8 +54,7 @@
   fieldset: {
     legend: {
       text: "Why has this appointment been stopped?",
-      size: "m",
-      isPageHeading: false
+      size: "m"
     },
     hint: {
       text: "Select all that apply"
@@ -72,8 +71,7 @@
   fieldset: {
     legend: {
       text: "Should the appointment be rescheduled?",
-      size: "m",
-      isPageHeading: false
+      size: "m"
     }
   },
   items: [
@@ -84,9 +82,7 @@
     {
       value: "no-invite",
       text: "No, invite to next routine appointment",
-      hint: {
-        text: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
-      }
+      hint: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
     },
     {
       value: "permanent-exclusion",
@@ -95,13 +91,11 @@
     {
       value: "no-opt-out",
       text: "No, request opt out",
-      hint: {
-        text: "They will receive information explaining their options"
-      },
+      hint: "They will receive information explaining their options",
       conditional: {
         html: input({
           name: stoppedFieldsNamePrefix + "[optOutDetails]",
-          label: { text: "Provide details (optional)" },
+          label: "Provide details (optional)",
           value: stoppedFieldsValues.optOutDetails,
           autocomplete: "off"
         })

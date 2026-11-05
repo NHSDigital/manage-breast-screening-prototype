@@ -1,4 +1,14 @@
 {# app/views/_components/summary-card/macro.njk #}
+{#
+  Purpose: A card with a title bar, actions and freeform content, used through a call block.
+  Use when: wrapping content other than a summary list. For a summary list in a card, pass `card` to appSummaryList.
+  NHS equivalent: `card`, which also supports actions but takes `heading` rather than `title`. Try that first for new cards.
+
+  Params:
+    title   — { text, html, headingLevel, classes }. headingLevel defaults to 2
+    actions — { items: [{ href, text, html, visuallyHiddenText, attributes }], classes }
+    classes, attributes — as usual
+#}
 
 {% macro appSummaryCard(params) %}
   {%- include "./template.njk" -%}

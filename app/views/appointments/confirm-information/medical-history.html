@@ -30,8 +30,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Medical history",
-    headingLevel: "2",
+    heading: {
+      text: "Medical history",
+      level: 2
+    },
     feature: true,
     descriptionHtml: medicalHistoryHtml
   }) }}

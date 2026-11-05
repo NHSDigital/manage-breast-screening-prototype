@@ -1,0 +1,63 @@
+{# app/views/style-guide/collapsible-input.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "collapsible-input" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Collapsible input</h2>
+
+<p>Hides an optional field behind a toggle link until it is needed. Without JavaScript the field shows as normal.</p>
+
+<p>Macro: <code>appCollapsibleInput(params)</code></p>
+
+<h3>Default</h3>
+
+<div class="sg-example">
+  {% call appCollapsibleInput() %}
+    {{ textarea({
+      name: "styleGuideComment",
+      id: "style-guide-comment",
+      label: "Comment"
+    }) }}
+  {% endcall %}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{% call appCollapsibleInput() %}
+  {{ textarea({
+    name: "comment",
+    id: "comment",
+    label: {
+      text: "Comment"
+    }
+  }) }}
+{% endcall %}{% endraw %}</code></pre>
+
+<h3>With custom link text</h3>
+
+<div class="sg-example">
+  {% call appCollapsibleInput({ text: "Add a reason" }) %}
+    {{ input({
+      name: "styleGuideReason",
+      id: "style-guide-reason",
+      label: "Reason"
+    }) }}
+  {% endcall %}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{% call appCollapsibleInput({ text: "Add a reason" }) %}
+  {{ input({
+    name: "reason",
+    id: "reason",
+    label: {
+      text: "Reason"
+    }
+  }) }}
+{% endcall %}{% endraw %}</code></pre>
+
+{% endblock %}

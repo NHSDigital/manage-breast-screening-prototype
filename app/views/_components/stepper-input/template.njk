@@ -1,20 +1,5 @@
 {# app/views/_components/stepper-input/template.njk #}
 
-{#
-  Number input with increment/decrement buttons (stepper)
-  
-  params:
-    - name (string, required): The name attribute for the input
-    - id (string, required): The id attribute for the input
-    - value (string|number, optional): The current value
-    - label (object, optional): Label configuration (same as NHS input component)
-    - hint (object, optional): Hint configuration (same as NHS input component)
-    - classes (string, optional): Additional classes for the input
-    - min (number, optional): Minimum value (no minimum if not provided)
-    - max (number, optional): Maximum value (no maximum if not provided)
-    - step (number, optional): Increment step (default: 1)
-#}
-
 {% set inputId = params.id %}
 {% set inputName = params.name %}
 {% set inputValue = params.value or 0 %}

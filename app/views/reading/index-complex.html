@@ -69,7 +69,7 @@
   {% if inProgressReadingSession %}
     <p>Finish the session before starting a new one.</p>
 
-    {{ appLink({
+    {{ link({
       text: "Resume reading",
       href: "/reading/session/" + inProgressReadingSession.id + "/resume",
       classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
@@ -80,14 +80,14 @@
 
     <p><a href="/reading/cases?status=awaiting_first_read&status=awaiting_second_read" class="nhsuk-link--no-visited-state">View reading list</a></p>
 
-    {{ appLink({
+    {{ link({
       text: "Start reading session",
       href: "/reading/create-session?type=all_reads",
       classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
     }) }}
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
-      Read up to {{ defaultSessionSize }} cases ({{ appLink({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
+      Read up to {{ defaultSessionSize }} cases ({{ link({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
     </p>
 
     {% set completedReadingSessionsHtml %}
@@ -106,7 +106,7 @@
       <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history/sessions">See all</a></p>
     {% endset %}
     {{ details({
-      summaryText: "Completed reading sessions",
+      summary: "Completed reading sessions",
       html: completedReadingSessionsHtml,
       classes: "nhsuk-u-margin-bottom-0"
     }) }}
@@ -127,7 +127,7 @@
   {% if inProgressArbitrationSession %}
     <p>Finish the session before starting a new one.</p>
 
-    {{ appLink({
+    {{ link({
       text: "Resume arbitration",
       href: "/reading/session/" + inProgressArbitrationSession.id + "/resume",
       classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
@@ -138,14 +138,14 @@
 
     <p><a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View arbitration case list</a></p>
 
-    {{ appLink({
+    {{ link({
       text: "Start arbitration session",
       href: "/reading/arbitration/start",
       classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
     }) }}
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
-      Arbitrate up to {{ defaultSessionSize }} cases ({{ appLink({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
+      Arbitrate up to {{ defaultSessionSize }} cases ({{ link({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
     </p>
 
     {% set completedArbitrationSessionsHtml %}
@@ -164,7 +164,7 @@
       <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history/sessions">See all</a></p>
     {% endset %}
     {{ details({
-      summaryText: "Completed arbitration sessions",
+      summary: "Completed arbitration sessions",
       html: completedArbitrationSessionsHtml,
       classes: "nhsuk-u-margin-bottom-0"
     }) }}
@@ -253,17 +253,21 @@
 <ul class="nhsuk-grid-row nhsuk-card-group">
   <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
     {{ card({
-      heading: (awaitingPriorsAppointments | length) ~ " " ~ ("case" | pluralise(awaitingPriorsAppointments | length)) ~ " awaiting priors",
-      headingClasses: "nhsuk-heading-s",
-      headingLevel: 3,
+      heading: {
+        text: (awaitingPriorsAppointments | length) ~ " " ~ ("case" | pluralise(awaitingPriorsAppointments | length)) ~ " awaiting priors",
+        level: 3,
+        classes: "nhsuk-heading-s"
+      },
       descriptionHtml: awaitingPriorsContent
     }) }}
   </li>
   <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
     {{ card({
-      heading: openIssueCaseCount ~ " " ~ ("case" | pluralise(openIssueCaseCount)) ~ " with open issues",
-      headingClasses: "nhsuk-heading-s",
-      headingLevel: 3,
+      heading: {
+        text: openIssueCaseCount ~ " " ~ ("case" | pluralise(openIssueCaseCount)) ~ " with open issues",
+        level: 3,
+        classes: "nhsuk-heading-s"
+      },
       descriptionHtml: openIssuesContent
     }) }}
   </li>

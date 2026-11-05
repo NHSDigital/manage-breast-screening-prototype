@@ -164,8 +164,10 @@
 
 
       {% call card({
-        heading: "Case details",
-        headingLevel: "2"
+        heading: {
+          text: "Case details",
+          level: 2
+        }
       }) %}
         {{ appSummaryList({ rows: caseRows, lastRowBorder: false }) }}
       {% endcall %}
@@ -254,8 +256,10 @@
         {% endset %}
 
         {% call card({
-          heading: "Outcome",
-          headingLevel: "2",
+          heading: {
+            text: "Outcome",
+            level: 2
+          },
           feature: true
         }) %}
           {% set read = decidingRead %}
@@ -304,8 +308,10 @@
          lives in the Outcome card and the reads list below. #}
       {% if not arbitrationRead and caseState in ['awaiting_arbitration', 'in_arbitration'] %}
         {% call card({
-          heading: "Arbitration",
-          headingLevel: "2"
+          heading: {
+            text: "Arbitration",
+            level: 2
+          }
         }) %}
           {# How long it has sat - counted from the second read, which is
              when the disagreement became known #}
@@ -351,8 +357,10 @@
       {# Once arbitration has happened it joins the rows here, so the card is
          the whole reading history and its name widens to match #}
       {% call card({
-        heading: "Reads" if arbitrationRead else "First and second reads",
-        headingLevel: "2"
+        heading: {
+          text: "Reads" if arbitrationRead else "First and second reads",
+          level: 2
+        }
       }) %}
 
       {# An opinion stays hidden from everyone but its author while the case is

@@ -1,4 +1,16 @@
 {# app/views/_components/appointment-status/macro.njk #}
+{#
+  Purpose: An appointment's status as a tag, plus the confirm identity modal when that is switched on.
+  Use when: showing the status on the appointment page. For the check-in link itself, use appCheckIn.
+
+  Params:
+    appointment  — the appointment (required)
+    participant  — the participant
+    clinicId     — id of the appointment's clinic
+    confirmIdentityOnCheckIn — boolean, include the confirm identity modal
+    showAppointmentLink      — passed to the confirm identity modal
+    referrerChain, participantUrl, appointmentUrl — read by the confirm identity modal
+#}
 {% macro appointmentStatus(params) %}
   {%- include './template.njk' -%}
 {% endmacro %}

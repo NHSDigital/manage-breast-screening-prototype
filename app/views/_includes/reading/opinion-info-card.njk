@@ -15,7 +15,7 @@
   {% set hidePreviousMammograms = true %}
   {% include "_includes/summary-lists/medical-info-summary.njk" %}
   <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-    {{ appLink({ text: "View full medical information", href: "./medical-information", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
+    {{ link({ text: "View full medical information", href: "./medical-information", classes: "nhsuk-link--no-visited-state" } | openInModal) }}
   </p>
 {% endset %}
 
@@ -46,8 +46,10 @@
   {{ combinedInfoHtml | safe }}
 {% else %}
   {{ card({
-    headingLevel: "2",
-    heading: "Additional information",
+    heading: {
+      text: "Additional information",
+      level: 2
+    },
     feature: true,
     classes: "_app-card--feature-subtle",
     descriptionHtml: combinedInfoHtml

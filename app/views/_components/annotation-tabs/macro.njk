@@ -1,4 +1,19 @@
 {# app/views/_components/annotation-tabs/macro.njk #}
+{#
+  Purpose: A tab bar for switching between right and left breast, with annotation counts and image thumbnails.
+  Use when: pairing with panels that JavaScript shows and hides by side. Without JavaScript both panels show, stacked.
+
+  Params:
+    activeSide    — "right" or "left" (which tab is initially active, default: "right")
+    imagePaths    — object of all image paths (e.g. { rcc: "/path", rmlo: "/path", lcc: "/path", lmlo: "/path" })
+    viewOrder     — "cc-first" (default) or "mlo-first"
+    rightCount    — number of annotations for right breast (default: 0)
+    leftCount     — number of annotations for left breast (default: 0)
+    showThumbs    — boolean, show thumbnail previews in tabs (default: true)
+    id            — id attribute for the tab bar (default: "app-annotation-tabs")
+    rightError    — error object for right breast (truthy shows error indicator)
+    leftError     — error object for left breast (truthy shows error indicator)
+#}
 
 {% macro appAnnotationTabs(params) %}
   {%- include "./template.njk" -%}

@@ -79,8 +79,10 @@
     {% endset %}
 
     {{ card({
-      heading: "Outcome" if isArbitration else "Your read",
-      headingLevel: "2",
+      heading: {
+        text: "Outcome" if isArbitration else "Your read",
+        level: 2
+      },
       feature: true,
       descriptionHtml: issueSummaryHtml
     }) }}
@@ -138,8 +140,10 @@
     {% endset %}
 
     {{ card({
-      heading: "Outcome" if isArbitration else "Your read",
-      headingLevel: "2",
+      heading: {
+        text: "Outcome" if isArbitration else "Your read",
+        level: 2
+      },
       feature: true,
       descriptionHtml: priorsReadSummaryHtml
     }) }}
@@ -197,8 +201,10 @@
     {% endset %}
 
     {{ card({
-      heading: "Arbitration decision" if isArbitration else "Your read",
-      headingLevel: "2",
+      heading: {
+        text: "Arbitration decision" if isArbitration else "Your read",
+        level: 2
+      },
       feature: true,
       descriptionHtml: readSummaryHtml
     }) }}

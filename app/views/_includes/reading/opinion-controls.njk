@@ -22,8 +22,7 @@
     fieldset: {
       legend: {
         text: questionText,
-        size: "m",
-        isPageHeading: false
+        size: "m"
       }
     },
     items: [
@@ -96,6 +95,7 @@
     } | openInModal) }}
     {{ button({
       html: recallForAssessmentLabelHtml,
+      ariaLabel: "Recall for assessment (R)",
       value: "recall_for_assessment",
       name: "imageReadingTemp[opinion]",
       variant: "warning",
@@ -143,6 +143,7 @@
       } | openInModal) }}
       {{ button({
         html: recallForAssessmentLabelHtml,
+        ariaLabel: "Recall for assessment (R)",
         value: "recall_for_assessment",
         name: "imageReadingTemp[opinion]",
         variant: "warning",
