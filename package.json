@@ -40,7 +40,7 @@
     "@playwright/test": "^1.64.1",
     "cssnano": "^9.0.5",
     "eslint": "^10.14.0",
-    "globals": "^17.13.0",
+    "globals": "^17.14.0",
     "postcss": "^8.5.32",
     "prettier": "^3.9.10",
     "purgecss": "^8.0.0"
