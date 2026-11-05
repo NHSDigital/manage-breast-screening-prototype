@@ -203,7 +203,8 @@
       {% set completedBy = (appointment.status == 'cancelled' and appointment.sessionDetails.endedBy) or appointment.sessionDetails.startedBy or appointment.sessionDetails.endedBy %}
       {% set isCompletedStatus = appointment.status in ['complete', 'partially_screened', 'attended_not_screened', 'cancelled'] %}
       {% set completedScreener = completedBy and isCompletedStatus %}
-      {% set completedOrder = appointment.screeningOrder if isCompletedStatus %}
+      {# Cancelled shows the time and mammographer but no order badge #}
+      {% set completedOrder = appointment.screeningOrder if isCompletedStatus and appointment.status != 'cancelled' %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
         {% if completedTime or completedScreener or completedOrder %}
           <span class="app-clinic-appointments-table__completed-time">{% if completedTime %}{{ completedTime | formatTimeString }}{% endif %}</span>
