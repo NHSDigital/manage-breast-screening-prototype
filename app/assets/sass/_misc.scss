@@ -104,6 +104,8 @@ body.js-enabled .app-no-js-only {
   @include nhsuk-responsive-margin(4, "top");
 }
 
+// Includes first children, as a feature card's heading overhangs what is above it
+.nhsuk-card--feature:first-child,
 .nhsuk-card--feature:not(:first-child) {
   @include nhsuk-responsive-margin(7, "top");
 }
