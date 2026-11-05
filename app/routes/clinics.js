@@ -16,6 +16,7 @@ const {
   getCheckInTime
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
+const { describeSelectedFilters } = require('../lib/utils/filter-list')
 const { getParticipant } = require('../lib/utils/participants')
 const {
   isFirstScreeningAppointment,
@@ -698,7 +699,47 @@ module.exports = (router) => {
       })
     }
 
+    // The active filters as removable tags, each linking to the same page
+    // without that filter. Search and sort ride along on every removal link
+    const yesOption = (label) => [{ value: 'yes', label }]
+    const selectedFilters = describeSelectedFilters(
+      [
+        {
+          name: 'specialAppointment',
+          legend: 'Appointment type',
+          options: yesOption('Special appointments')
+        },
+        {
+          name: 'firstScreening',
+          legend: 'Appointment type',
+          options: yesOption('New to screening')
+        },
+        {
+          name: 'lastScreening',
+          legend: 'Appointment type',
+          options: yesOption('Final screening invite')
+        },
+        {
+          name: 'mammographer',
+          legend: 'Mammographers',
+          options: mammographers.map((user) => ({
+            value: user.id,
+            label: `${user.firstName} ${user.lastName}`
+          }))
+        }
+      ],
+      {
+        specialAppointment: filterSpecialAppointment ? ['yes'] : [],
+        firstScreening: filterFirstScreening ? ['yes'] : [],
+        lastScreening: filterLastScreening ? ['yes'] : [],
+        mammographer: selectedMammographers
+      },
+      req.path,
+      { search, sort }
+    )
+
     res.render('clinics/show', {
+      selectedFilters,
       clinicId: req.params.id,
       clinic: clinicData.clinic,
       allAppointments: clinicData.appointments,

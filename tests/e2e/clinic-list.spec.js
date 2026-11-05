@@ -407,6 +407,29 @@ test.describe('Clinic appointment list', () => {
     ).toHaveCount(newCount)
   })
 
+  test('shows selected filters as tags and removes one at a time', async ({
+    page
+  }) => {
+    const { clinic } = findClinicWithNewAndReturningParticipants()
+    const selectedFilters = page.locator('.app-selected-filters')
+
+    await page.goto(`/clinics/${clinic.id}/all`)
+    await expect(selectedFilters).toHaveCount(0)
+
+    await page.goto(
+      `/clinics/${clinic.id}/all?firstScreening=yes&specialAppointment=yes`
+    )
+    await expect(selectedFilters.getByRole('link')).toHaveCount(2)
+
+    await selectedFilters
+      .getByRole('link', { name: 'Remove this filter: New to screening' })
+      .click()
+
+    await expect(page).toHaveURL(/specialAppointment=yes/)
+    await expect(page).not.toHaveURL(/firstScreening/)
+    await expect(selectedFilters.getByRole('link')).toHaveCount(1)
+  })
+
   test('seeds an age-eligible final invite in every screening clinic', async () => {
     const clinics = readCollection('clinics.json', 'clinics')
     const appointments = readCollection('appointments.json', 'appointments')
