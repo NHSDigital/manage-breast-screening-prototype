@@ -672,14 +672,6 @@ $ann-marker-shadow:
   font-size: 19px;
 }
 
-// ─── Modal secondary actions ─────────────────────────────────────────────────
-
-// Delete row: forces 'Delete annotation' onto its own line below button + Cancel
-.app-ann-modal__delete-row {
-  flex-basis: 100%;
-  font-size: 19px;
-}
-
 // Dark mode: tabs, panel, annotation cards
 .app-dark-mode {
   .app-ann-v2__annotation-card {

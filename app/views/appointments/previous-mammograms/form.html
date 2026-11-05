@@ -296,21 +296,17 @@
     }
   }) }}
 
-  {{ button({
-    text: "Save"
-  }) }}
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Save"
+    }) }}
 
-  {# Only show delete link if this is a previously saved mammogram #}
-  {% if appointment.previousMammogramTemp.id %}
-    {% set deleteHref %}
-      ./delete/{{ appointment.previousMammogramTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
-    {% endset %}
-    <p class="nhsuk-u-margin-top-4">
-      <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
-        Delete this mammogram
-      </a>
-    </p>
-  {% endif %}
+    {# Only show delete link if this is a previously saved mammogram #}
+    {% if appointment.previousMammogramTemp.id %}
+      {% set deleteHref = ("./delete/" + appointment.previousMammogramTemp.id) | urlWithReferrer(referrerChain, query.scrollTo) %}
+      <a href="{{ deleteHref }}" class="nhsuk-link nhsuk-link--no-visited-state app-link--warning">Delete this mammogram</a>
+    {% endif %}
+  </div>
 
 {% endblock %}
 

@@ -56,9 +56,7 @@
     }) }}
 
     {% if appointment.appointmentNote %}
-      <a href="{{ (appointmentUrl + "/appointment-note/delete") | urlWithReferrer(referrerChain) }}"
-        class="nhsuk-link app-link--warning"> Delete appointment note
-      </a>
+      <a href="{{ (appointmentUrl + "/appointment-note/delete") | urlWithReferrer(referrerChain) }}" class="nhsuk-link nhsuk-link--no-visited-state app-link--warning">Delete appointment note</a>
     {% endif %}
   </div>
 

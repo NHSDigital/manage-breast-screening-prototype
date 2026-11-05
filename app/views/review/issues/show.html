@@ -352,7 +352,7 @@
       {{ appLink({
         text: "Close as raised in error",
         href: ("/review/issues/" + issue.id + "/raised-in-error?issueTemp[raisedInError][issueId]=" + issue.id) | urlWithReferrer(referrerChain),
-        classes: "nhsuk-link--no-visited-state nhsuk-button-group__item"
+        classes: "nhsuk-link--no-visited-state"
       }) | trim | safe }}
     </div>
   {% endif %}

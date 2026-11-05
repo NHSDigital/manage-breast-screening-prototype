@@ -111,9 +111,7 @@
         {# Only show delete link if this is a previously saved annotation #}
         {% if annotation.id %}
           {% set deleteHref = ('./annotation/delete/' + annotation.id) | urlWithReferrer(referrerChain) %}
-          <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
-            Delete this annotation
-          </a>
+          <a href="{{ deleteHref }}" class="nhsuk-link nhsuk-link--no-visited-state app-link--warning">Delete this annotation</a>
         {% endif %}
       </div>
 

@@ -42,13 +42,12 @@
     value: "Contact details updated successfully"
   }) }}
 
-  {{ button({
-    text: "Confirm changes"
-  }) }}
-
-  <p>
-    <a href="{{participantUrl}}">Cancel and return to participant</a>
-  </p>
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Confirm changes"
+    }) }}
+    <a href="{{ participantUrl }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel and return to participant</a>
+  </div>
 
 
 {% endblock %}
