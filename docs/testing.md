@@ -18,6 +18,14 @@ own:
 | `npm run test:routes`   | Requests every GET page and checks for server errors | ~20s  |
 | `npm run test:journeys` | Drives the core journeys in a browser                | ~10s  |
 
+### Running the suite from an AI agent
+
+Lint and the route sweep run inside a coding agent's terminal sandbox, such as
+the one in VS Code. The journeys do not: on macOS the sandbox stops Chromium
+starting, so it crashes with a segmentation fault and every journey fails.
+No sandbox setting fixes this, so agents should run `npm run test:journeys`,
+or `npm test`, outside the sandbox and ask for approval to do so.
+
 ## The three layers
 
 **Lint** (`eslint.config.mjs`) exists mainly for `no-undef`. It ignores

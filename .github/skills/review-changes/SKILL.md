@@ -34,7 +34,7 @@ A subagent has not seen the reasoning behind the change, which is what makes it 
 
 ## 4. Check again
 
-- Run `npm test`. Fix anything the change broke.
+- Run `npm test` outside the terminal sandbox, asking for approval, because the journeys crash inside it. Fix anything the change broke.
 - Run the `code-reviewer` subagent again, passing it the previous report so it re-checks each finding. Fix anything new. Stop after two rounds of fixes and report what is left.
 - Look at the changed pages in the running app if you can.
 

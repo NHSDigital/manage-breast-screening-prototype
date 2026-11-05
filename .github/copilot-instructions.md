@@ -1,6 +1,6 @@
 # Working on this prototype
 
-A prototype of Run breast screening in England (Rubie), an NHS service for running screening clinics and reading mammograms. Built on the NHS prototype kit: Node, Express, Nunjucks and NHS.UK Frontend. It is heavily data driven: realistic seed data is generated daily and populates almost every page.
+A prototype of Run breast screening in England (Rubie), an NHS service for running breast cancer screening clinics and reading mammograms. Built on the NHS prototype kit: Node, Express, Nunjucks and NHS.UK Frontend. It is heavily data driven: realistic seed data is generated daily and populates almost every page.
 
 Read [docs/domain.md](../docs/domain.md) before working on views or content. The docs index at the end of this file says what else to read and when.
 
@@ -10,6 +10,7 @@ This is an advanced prototype, so some things differ from a plain prototype kit 
 
 - Aiming for outward realism; internals can be faked. It may be hacky in places, and that is fine, but the codebase must stay maintainable because it is large and long-lived.
 - There is a lint step and a small smoke suite (`npm test`: eslint, a route sweep, Playwright journeys). Keep them passing. Run them before opening a PR and after refactors that move code between modules. See [docs/testing.md](../docs/testing.md).
+- Agents: run `npm run test:journeys` and `npm test` outside the terminal sandbox and ask for approval. Chromium cannot start inside the sandbox, so the journeys crash there.
 - Layouts live in `app/views/_templates/`, not the kit's single `layout.html`. Routes are split by area under `app/routes/`.
 - Seed data is shared and read only. Writes go through working copies and update helpers. See [docs/data-conventions.md](../docs/data-conventions.md).
 - No backwards compatibility needed for old seed data. Data regenerates daily, from `/settings`, and when the tests run, so never rely on a specific generated record or id persisting.
@@ -31,13 +32,13 @@ This is an advanced prototype, so some things differ from a plain prototype kit 
 
 These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/routing-and-forms.md) has the detail.
 
-- **Form data saves itself.** Every POST or GET field is merged into `req.session.data` by its `name` before any route runs. A form can post straight to the next page. Never write a route whose only job is to receive a form.
+- **Form data saves itself.** Every POST or GET field is merged into `req.session.data` by its `name` before any route runs. A form can post straight to the next page. Avoid writing a route whose only job is to receive a form.
 - **Read submitted values from `req.session.data`, not `req.body`.** The two exceptions are in routing-and-forms.md.
 - **Pages under `/participants/:id/`, `/clinics/:id/appointments/:id/` and the reading workflow are served by dynamic routing.** Add a template, not a route. The middleware has already loaded `participant`, `appointment`, `clinic`, `episode` and URL locals such as `appointmentUrl`.
 - **Write a route only for branching, saving, validation or real processing**, in the area's file under `app/routes/`, posting to a separate URL and finishing with `res.redirect()`.
 - **Use the referrer filters for "return to where I came from"**: `urlWithReferrer` to go deeper, `getReturnUrl` to come back, `appendReferrer` to extend the chain. Never build `?returnTo=` or `?referrerChain=` by hand. See [docs/referrers.md](../docs/referrers.md).
 - **Check for an existing helper before writing logic.** [docs/utils-filter-reference.md](../docs/utils-filter-reference.md) lists every filter and helper, with a table of contents from line 14. Prefer generic composable filters over one-offs; new ones go in `app/lib/utils/` and need a JSDoc comment (the reference is generated from them with `npm run docs`).
-- **Validation is rare.** Only where missing data would break what follows. See [docs/validation.md](../docs/validation.md).
+- **Validation is rare.** Only where missing data would break what follows. See [docs/validation.md](../docs/validation.md). Once a page has validation, keep it working.
 
 ## Data
 
@@ -93,14 +94,19 @@ Never add `Co-authored-by` trailers, or any other line crediting an AI tool, to 
 
 To deal with review comments on a pull request, from Copilot's code review or a person, use the `pr-comments` skill (`/pr-comments`). Reply, then resolve: reply to every thread with what changed and the commit, and resolve only the fixed ones. Leave a thread open, with a reply saying why, when a comment does not apply. Replies post under the user's GitHub account, so write them as short, plain notes from that person.
 
-## NHS design system references
+## NHS Frontend
 
-Copilot applies the guides in `.github/instructions/` automatically when editing matching files. If your tool does not, read them:
+This project uses NHS Frontend Nunjucks macros. Your knowledge of NHS Frontend is likely to be out of date, and parameter names from memory are often wrong.
 
-- `.github/instructions/nhs-frontend-guide.instructions.md` - NHS Frontend components, Sass and content conventions
-- `.github/instructions/nhs-prototype-kit-guide.instructions.md` - general prototype kit patterns (this repo goes beyond it, see above)
-- [docs/nhs-frontend-component-reference.md](../docs/nhs-frontend-component-reference.md) - every macro with parameters. Table of contents near the top, or search for `## Component name`
-- [docs/nhs-frontend-sass-reference.md](../docs/nhs-frontend-sass-reference.md) - every mixin, function and variable. Table of contents near the top
+You MUST follow these rules:
+
+- Before adding or changing any NHS component, read its file in `docs/nhsuk-frontend/components/`, for example `docs/nhsuk-frontend/components/button.md`. `docs/nhsuk-frontend/index.md` lists every component.
+- Use only the parameters listed in that file. Never guess or invent a parameter.
+- Use the macros. Never hand-write component HTML when a macro exists.
+- Before using an `nhsuk-u-` class, check it in `docs/nhsuk-frontend/utility-classes.md`.
+- Before using a Sass mixin, function or variable, check it in `docs/nhsuk-frontend/sass-reference.md`. Never hard-code colours, spacing or breakpoints.
+
+Before building or changing pages, read `.github/instructions/nhs-frontend-guide.instructions.md`. In a prototype, also read `.github/instructions/nhs-prototype-kit-guide.instructions.md`.
 
 ## Docs index
 
