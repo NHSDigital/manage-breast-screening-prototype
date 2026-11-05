@@ -1,4 +1,14 @@
 {# app/views/_components/status-message/macro.njk #}
+{#
+  Purpose: A bold inline status line with an optional icon.
+  Use when: showing the current state of something, such as an opinion.
+
+  Params:
+    text    — the message
+    icon    — icon name, passed to appIcon
+    colour  — "blue", "green" or "red"
+    classes — additional classes, such as "app-status-message--small"
+#}
 
 {% macro appStatusMessage(params) -%}
   {%- include './template.njk' -%}

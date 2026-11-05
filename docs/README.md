@@ -27,10 +27,16 @@ Reference for people and coding assistants working on the prototype. The always-
 - [image-reading.md](image-reading.md) - the reading section: sessions, cases, reads, arbitration, routes, layouts and data.
 - [pacs-viewer.md](pacs-viewer.md) - the simulated PACS viewer window and the mammogram image sets.
 
+## Project components
+
+- [components.md](components.md) - generated list of the project's own components, and when to use each rather than the NHS version. Regenerate with `npm run docs`.
+- [sass-modifiers.md](sass-modifiers.md) - project modifier classes that can be added to components.
+
 ## NHS Frontend
 
-- [nhs-frontend-component-reference.md](nhs-frontend-component-reference.md) - every NHS.UK Frontend macro with parameters and examples. Generated; use the table of contents.
-- [nhs-frontend-sass-reference.md](nhs-frontend-sass-reference.md) - every Sass mixin, function and variable. Generated; use the table of contents.
+- [nhsuk-frontend/index.md](nhsuk-frontend/index.md) - every NHS.UK Frontend component, with one file each for parameters and examples. Generated.
+- [nhsuk-frontend/utility-classes.md](nhsuk-frontend/utility-classes.md) - every `nhsuk-u-` class. Generated.
+- [nhsuk-frontend/sass-reference.md](nhsuk-frontend/sass-reference.md) - every Sass mixin, function and variable. Generated; use the table of contents.
 
 The conventions for using them are in `.github/instructions/nhs-frontend-guide.instructions.md` and `.github/instructions/nhs-prototype-kit-guide.instructions.md`.
 

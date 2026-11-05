@@ -1,4 +1,13 @@
 {# app/views/_components/hidden-input/macro.njk #}
+{#
+  Purpose: A hidden form input.
+  Use when: a form must submit a value the user does not see. Omits the value attribute for any falsy value, including 0 and false.
+
+  Params:
+    name  — the field name
+    value — the value
+    id    — the id
+#}
 {% macro appHiddenInput(params) %}
   {%- include "./template.njk" -%}
 {% endmacro %}

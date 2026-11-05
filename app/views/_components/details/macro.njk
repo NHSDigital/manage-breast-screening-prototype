@@ -1,4 +1,18 @@
 {# app/views/_components/details/macro.njk #}
+{#
+  Purpose: The NHS details component extended with a subtitle, a contents summary and a status tag.
+  Use when: the closed summary must show more than its title. Use `summaryText` or `summaryHtml` for the summary, not the NHS `summary` option.
+  NHS equivalent: `details`. Use that when none of the extras are needed.
+
+  Params:
+    summaryText, summaryHtml — the summary
+    text, html  — the content, or use a call block
+    subtitle    — shown under the summary
+    contentsSummary, contentsSummaryHtml — a summary of what is inside, shown while closed
+    status        — passed through toTag and shown beside the details
+    statusOptions — options for toTag
+    open, id, classes, attributes — as the NHS component
+#}
 
 {% macro appDetails(params) %}
   {%- include "./template.njk" -%}

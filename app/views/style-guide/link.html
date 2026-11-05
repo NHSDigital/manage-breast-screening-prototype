@@ -1,0 +1,56 @@
+{# app/views/style-guide/link.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "link" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Link</h2>
+
+<p>A plain link as a macro. Pass its params through the <code>openInModal</code> filter to open it in a modal when modal forms are switched on.</p>
+
+<p>Macro: <code>appLink(params)</code></p>
+
+<h3>Default</h3>
+
+<div class="sg-example">
+  <p>{{ appLink({
+    text: "View clinic",
+    href: "#"
+  }) }}</p>
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appLink({
+  text: "View clinic",
+  href: "#"
+}) }}{% endraw %}</code></pre>
+
+<h3>For a destructive action</h3>
+
+<div class="sg-example">
+  <p>{{ appLink({
+    text: "Cancel appointment",
+    href: "#",
+    classes: "app-link--warning"
+  }) }}</p>
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appLink({
+  text: "Cancel appointment",
+  href: "#",
+  classes: "app-link--warning"
+}) }}{% endraw %}</code></pre>
+
+<h3>Opening in a modal</h3>
+
+<pre class="sg-snippet"><code>{% raw %}{{ appLink({
+  text: "Cancel appointment",
+  href: cancelUrl
+} | openInModal) }}{% endraw %}</code></pre>
+
+{% endblock %}

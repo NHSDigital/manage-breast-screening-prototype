@@ -1,4 +1,12 @@
 {# app/views/_components/icon/macro.njk #}
+{#
+  Purpose: An NHS icon by name, plus the alert, warning, information and copy icons the NHS set does not provide.
+  Use when: showing any icon. Called as appIcon(name, params). Other names go to the NHS icon macro.
+
+  Params:
+    classes — additional classes on the svg
+    title   — accessible name. Without it the icon is hidden from screen readers
+#}
 {%- from "nhsuk/macros/icon.njk" import nhsukIcon -%}
 
 {% macro appIcon(name, params) -%}

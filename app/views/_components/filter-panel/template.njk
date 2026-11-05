@@ -1,25 +1,4 @@
-{# app/views/_components/filter-panel/template.njk
-
-   A search and filter column for an index page, rendered as a grey feature
-   card. Groups are data (see app/lib/utils/filter-list.js) - this only knows
-   how to render them.
-
-   params:
-     action       - form action, the page's own path
-     groups       - filter groups: { name, legend, options: [{ value, label }],
-                    style } - style "radios" or "select" renders a
-                    single-value group; a select's "no choice" option is
-                    labelled by the group's emptyLabel. An option revealing
-                    another group renders it inside a conditional reveal
-                    rather than as a group of its own
-     selected     - group name -> selected values
-     counts       - group name -> option value -> count
-     search       - optional search control: { name, value, label, id }
-     hiddenFields - params to carry through filtering (the current view)
-     live         - optional CSS selector for a region to update in place with
-                    JavaScript (see app/assets/javascript/live-filters.js). The
-                    region must contain this form. Without JavaScript the form
-                    submits as normal. #}
+{# app/views/_components/filter-panel/template.njk #}
 
 {% from "nhsuk/components/card/macro.njk" import card %}
 {% from "nhsuk/components/checkboxes/macro.njk" import checkboxes %}

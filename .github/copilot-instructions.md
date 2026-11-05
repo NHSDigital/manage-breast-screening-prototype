@@ -9,7 +9,7 @@ Read [docs/domain.md](../docs/domain.md) before working on views or content. The
 This is an advanced prototype, so some things differ from a plain prototype kit project and from the general kit guidance in `.github/instructions/`:
 
 - Aiming for outward realism; internals can be faked. It may be hacky in places, and that is fine, but the codebase must stay maintainable because it is large and long-lived.
-- There is a lint step and a small smoke suite (`npm test`: eslint, a route sweep, Playwright journeys). Keep them passing. Run them before opening a PR and after refactors that move code between modules. See [docs/testing.md](../docs/testing.md).
+- There is a lint step and a small smoke suite (`npm test`: eslint, a component docs check, a route sweep, Playwright journeys). Keep them passing. Run them before opening a PR and after refactors that move code between modules. See [docs/testing.md](../docs/testing.md).
 - Agents: run `npm run test:journeys` and `npm test` outside the terminal sandbox and ask for approval. Chromium cannot start inside the sandbox, so the journeys crash there.
 - Layouts live in `app/views/_templates/`, not the kit's single `layout.html`. Routes are split by area under `app/routes/`.
 - Seed data is shared and read only. Writes go through working copies and update helpers. See [docs/data-conventions.md](../docs/data-conventions.md).
@@ -20,7 +20,7 @@ This is an advanced prototype, so some things differ from a plain prototype kit 
 
 - `app/views/` - pages, organised by area (clinics, participants, appointments, reading, episodes)
 - `app/views/_templates/` - layouts. `app/views/_components/` and `app/views/_includes/` - reusable Nunjucks
-- `app/views/style-guide/` - live style guide at `/style-guide/` showing every custom component
+- `app/views/style-guide/` - live style guide at `/style-guide/` showing the reusable custom components
 - `app/routes.js` and `app/routes/` - middleware and the routes that do real processing
 - `app/lib/utils/` - helpers, all auto-registered as Nunjucks filters and globals. `app/filters/` - Nunjucks-only filters
 - `app/lib/generators/` - seed data generation. `app/data/` - reference data and generated seed data
@@ -64,7 +64,8 @@ These are the mistakes that happen most. [docs/routing-and-forms.md](../docs/rou
 - `main.scss` sets a tighter spacing scale than NHS Frontend's default, so spacing points 4 to 9 are smaller than the NHS Frontend docs say, and the grid gutter is 24px
 - Sass: BEM with an `app-` namespace, full class names written out (no `&__` nesting), one file per block, NHS Frontend tokens not hard-coded values, no inline styles
 - Server-side rendering first. Client-side JavaScript is progressive enhancement and everything must work without it
-- Reuse before writing: an include, component, layout, helper or filter probably exists
+- Reuse before writing: an include, component, layout, helper or filter probably exists. [docs/components.md](../docs/components.md) lists the components and [docs/sass-modifiers.md](../docs/sass-modifiers.md) the modifier classes
+- A new component needs a comment at the top of its `macro.njk` with `Purpose:`, `Use when:`, `Params`, and `NHS equivalent:` if there is one. Then run `npm run docs`, which generates docs/components.md. `npm test` fails if this is missed
 
 ## Content
 
@@ -100,6 +101,7 @@ This project uses NHS Frontend Nunjucks macros. Your knowledge of NHS Frontend i
 
 You MUST follow these rules:
 
+- Before using an NHS macro, check [docs/components.md](../docs/components.md). The project may have its own version, such as `appDetails` or `appSummaryList`, and that file says when to use which. A project macro's parameters are in the comment at the top of its `macro.njk`, not in the NHS docs.
 - Before adding or changing any NHS component, read its file in `docs/nhsuk-frontend/components/`, for example `docs/nhsuk-frontend/components/button.md`. `docs/nhsuk-frontend/index.md` lists every component.
 - Use only the parameters listed in that file. Never guess or invent a parameter.
 - Use the macros. Never hand-write component HTML when a macro exists.
@@ -119,6 +121,8 @@ Read the doc before working in its area. [docs/README.md](../docs/README.md) has
 | [referrers.md](../docs/referrers.md)                                         | Any link or form that returns the user somewhere                  |
 | [data-conventions.md](../docs/data-conventions.md)                           | Reading or changing participants, clinics, appointments, episodes |
 | [utils-filter-reference.md](../docs/utils-filter-reference.md)               | Before writing any data or display logic                          |
+| [components.md](../docs/components.md)                                       | Before using or adding a component, or using an NHS macro         |
+| [sass-modifiers.md](../docs/sass-modifiers.md)                               | Before writing a new Sass class to vary a component               |
 | [validation.md](../docs/validation.md)                                       | Adding form validation or error messages                          |
 | [modal-system.md](../docs/modal-system.md)                                   | Forms that open in a modal                                        |
 | [filtering.md](../docs/filtering.md)                                         | Index pages with filter panels                                    |

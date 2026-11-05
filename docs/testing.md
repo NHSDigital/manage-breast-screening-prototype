@@ -9,12 +9,13 @@ that moves code between modules.
 npm test
 ```
 
-That runs all three layers in order, cheapest first. Each can be run on its
+That runs all four layers in order, cheapest first. Each can be run on its
 own:
 
 | Command                 | What it does                                         | Takes |
 | ----------------------- | ---------------------------------------------------- | ----- |
 | `npm run lint`          | ESLint over app, lib, scripts and tests              | ~2s   |
+| `npm run test:docs`     | Checks the component and modifier docs are complete  | <1s   |
 | `npm run test:routes`   | Requests every GET page and checks for server errors | ~20s  |
 | `npm run test:journeys` | Drives the core journeys in a browser                | ~10s  |
 
@@ -26,7 +27,7 @@ starting, so it crashes with a segmentation fault and every journey fails.
 No sandbox setting fixes this, so agents should run `npm run test:journeys`,
 or `npm test`, outside the sandbox and ask for approval to do so.
 
-## The three layers
+## The four layers
 
 **Lint** (`eslint.config.mjs`) exists mainly for `no-undef`. It ignores
 `tests/lib/`, which holds inherited Jest specs that cannot run. When code moves
@@ -35,6 +36,8 @@ behind in one file while its callers move to another. Node only throws when
 that route actually runs, so nothing notices until someone clicks the page.
 ESLint sees it statically. Tidiness rules are warnings; only things that are,
 or hide, real breakage fail the run.
+
+**Component docs** (`scripts/generate-components-reference.js --check`) fails if a component has no doc comment in its `macro.njk`, a template reads a parameter the comment does not mention, `docs/components.md` is out of date, or `docs/sass-modifiers.md` names a class missing from the Sass. Fix an out of date reference with `npm run docs`.
 
 **Route sweep** (`scripts/route-sweep.js`) boots the app, enumerates every GET
 route on the Express router, fills the URL parameters from the seeded data, and

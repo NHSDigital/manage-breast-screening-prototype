@@ -1,4 +1,25 @@
 {# app/views/_components/filter-panel/macro.njk #}
+{#
+  Purpose: A search and filter column for an index page, rendered as a grey feature card.
+  Use when: building an index page with filters. Groups are data from app/lib/utils/filter-list.js; see docs/filtering.md.
+
+  Params:
+    action       - form action, the page's own path
+    groups       - filter groups: { name, legend, options: [{ value, label, reveals, hideCount }],
+                   style, emptyLabel } - style defaults to checkboxes;
+                   "radios" or "select" renders a single-value group. A select's
+                   "no choice" option is labelled by emptyLabel. An option's
+                   reveals names another group to render inside a conditional
+                   reveal. hideCount leaves the count off an option
+    selected     - group name -> selected values
+    counts       - group name -> option value -> count
+    search       - optional search control: { name, value, label: { text }, id }
+    hiddenFields - params to carry through filtering (the current view)
+    live         - optional CSS selector for a region to update in place with
+                   JavaScript (see app/assets/javascript/live-filters.js). The
+                   region must contain this form. Without JavaScript the form
+                   submits as normal.
+#}
 {% macro appFilterPanel(params) %}
   {%- include "./template.njk" -%}
 {% endmacro %}
