@@ -11,7 +11,7 @@
   Import with context so openInModal can read the modal forms setting.
 #}
 
-{%- from '_components/link/macro.njk' import appLink %}
+{%- from 'link/macro.njk' import link %}
 
 {% macro closeClinicAppointmentRow(appointment, participant, clinicId) %}
   {% set reasonUrl = "/clinics/" + clinicId + "/close/reason/" + appointment.id %}
@@ -52,7 +52,7 @@
       {% if appointment | isInProgress %}
         <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">Go to appointment</a>
       {% elseif appointment.status == "checked_in" %}
-        {{ appLink({
+        {{ link({
           text: "Mark as attended not screened",
           href: reasonUrl
         } | openInModal) }}
@@ -62,7 +62,7 @@
         <a href="{{ setStatusUrl }}scheduled" data-fragment-action>Undo status</a>
       {% elseif appointment.status == "attended_not_screened" or (appointment.status == "rescheduled" and appointment | hasStoppedDetails) %}
         <a href="{{ setStatusUrl }}checked_in" data-fragment-action>Undo status</a>
-        <br>{{ appLink({
+        <br>{{ link({
           text: "Change details",
           href: reasonUrl
         } | openInModal) }}

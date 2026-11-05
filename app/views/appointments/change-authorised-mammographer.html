@@ -92,14 +92,14 @@
     {{ button({
       text: "Save"
     }) }}
-    {{ appLink({
+    {{ link({
       text: "Cancel",
       href: returnPageHref,
       classes: "nhsuk-link--no-visited-state",
       attributes: { "data-modal-action": "close" }
     }) | trim | safe }}
     {% if not imagesTaken %}
-      {{ appLink({
+      {{ link({
         text: "Exit appointment",
         href: (appointmentUrl + "/exit-appointment") | urlWithReferrer(referrerChain),
         classes: "nhsuk-link--no-visited-state"

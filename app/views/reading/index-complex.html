@@ -69,7 +69,7 @@
   {% if inProgressReadingSession %}
     <p>Finish the session before starting a new one.</p>
 
-    {{ appLink({
+    {{ link({
       text: "Resume reading",
       href: "/reading/session/" + inProgressReadingSession.id + "/resume",
       classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
@@ -80,14 +80,14 @@
 
     <p><a href="/reading/cases?status=awaiting_first_read&status=awaiting_second_read" class="nhsuk-link--no-visited-state">View reading list</a></p>
 
-    {{ appLink({
+    {{ link({
       text: "Start reading session",
       href: "/reading/create-session?type=all_reads",
       classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
     }) }}
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
-      Read up to {{ defaultSessionSize }} cases ({{ appLink({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
+      Read up to {{ defaultSessionSize }} cases ({{ link({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
     </p>
 
     {% set completedReadingSessionsHtml %}
@@ -127,7 +127,7 @@
   {% if inProgressArbitrationSession %}
     <p>Finish the session before starting a new one.</p>
 
-    {{ appLink({
+    {{ link({
       text: "Resume arbitration",
       href: "/reading/session/" + inProgressArbitrationSession.id + "/resume",
       classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
@@ -138,14 +138,14 @@
 
     <p><a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View arbitration case list</a></p>
 
-    {{ appLink({
+    {{ link({
       text: "Start arbitration session",
       href: "/reading/arbitration/start",
       classes: "nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1"
     }) }}
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
-      Arbitrate up to {{ defaultSessionSize }} cases ({{ appLink({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
+      Arbitrate up to {{ defaultSessionSize }} cases ({{ link({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
     </p>
 
     {% set completedArbitrationSessionsHtml %}

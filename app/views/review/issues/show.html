@@ -349,7 +349,7 @@
         text: "Resolve issue",
         href: ("/review/issues/" + issue.id + "/resolve?issueTemp[resolve][issueId]=" + issue.id) | urlWithReferrer(referrerChain)
       }) }}
-      {{ appLink({
+      {{ link({
         text: "Close as raised in error",
         href: ("/review/issues/" + issue.id + "/raised-in-error?issueTemp[raisedInError][issueId]=" + issue.id) | urlWithReferrer(referrerChain),
         classes: "nhsuk-link--no-visited-state"

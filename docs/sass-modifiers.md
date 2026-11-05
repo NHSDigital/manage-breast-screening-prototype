@@ -11,6 +11,6 @@ This list leaves out modifiers that a macro sets through its own parameters, and
 | `app-card--feature-green` | NHS `card` with `variant: "feature"` | Green heading |
 | `app-card--feature-orange` | NHS `card` with `variant: "feature"` | Orange heading |
 | `app-count--reverse` | `appCount` | Dark blue badge, for a count on a blue background |
-| `app-link--warning` | `appLink`, NHS `link` or `nhsuk-link` | Red link, for destructive actions |
+| `app-link--warning` | NHS `link` | Red link, for destructive actions |
 | `app-link-button--warning` | `app-link-button` | Red version of a button styled as a link |
 | `app-status-message--small` | `appStatusMessage` | Smaller text |

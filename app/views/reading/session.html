@@ -58,7 +58,7 @@
           {{ readingActionText }}
         </a>
         {% if canEndSessionEarly %}
-          {{ appLink({
+          {{ link({
             text: "End session",
             href: "/reading/session/" + session.id + "/end",
             classes: "nhsuk-link--no-visited-state"

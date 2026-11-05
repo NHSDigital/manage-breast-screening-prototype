@@ -38,7 +38,7 @@ Use the `openInModal` Nunjucks filter. It adds data attributes to the link/butto
 **Standalone link:**
 
 ```nunjucks
-{{ appLink({ text: "Cancel appointment", href: cancelUrl } | openInModal) }}
+{{ link({ text: "Cancel appointment", href: cancelUrl } | openInModal) }}
 ```
 
 **Button with href:**

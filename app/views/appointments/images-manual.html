@@ -50,7 +50,7 @@
 
     <p>
       Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span>
-      ({{ appLink({ text: "change", href: (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) } | openInModal) | trim | safe }})
+      ({{ link({ text: "change", href: (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) } | openInModal) | trim | safe }})
     </p>
 
     {{ appHiddenInput({
