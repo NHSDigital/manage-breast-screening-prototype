@@ -1,5 +1,1 @@
-{
-    "chat.tools.terminal.autoApprove": {
-        "npm test": true
-    }
-}
+{}
