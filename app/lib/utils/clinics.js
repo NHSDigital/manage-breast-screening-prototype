@@ -130,6 +130,8 @@ const getClinicTableColumns = (filter) => {
     // In progress, Complete and All show the mammographer and screening order
     screenedBy:
       filter === 'in-progress' || filter === 'complete' || filter === 'all',
+    // In progress shows when screening started
+    startedAt: filter === 'in-progress',
     // Complete and All show when each appointment finished
     completed: filter === 'complete' || filter === 'all',
     // Completed appointments are all final, so there is nothing to action

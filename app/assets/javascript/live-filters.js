@@ -148,7 +148,21 @@ class LiveFilters {
 
     this.update(url.href, {
       fallback: () => window.location.assign(url.href)
+    }).then((updated) => {
+      // A link that removes itself - clear filters, a selected-filter pill -
+      // would otherwise drop focus to the top of the page
+      if (updated && !link.isConnected) this.focusFilters()
     })
+  }
+
+  // The first visible field of the filter form, where a keyboard user can
+  // carry on from
+  focusFilters() {
+    const field = this.region.querySelector(
+      '[data-live-filters] input:not([type="hidden"]), [data-live-filters] select'
+    )
+
+    if (field) field.focus()
   }
 
   updateFromForm(form) {
@@ -167,6 +181,7 @@ class LiveFilters {
    * @param {boolean} [options.push] - add the URL to history (not on popstate)
    * @param {boolean} [options.ignoreActiveValue] - keep what is being typed
    * @param {Function} [options.fallback] - what to do if the fetch fails
+   * @returns {Promise<boolean>} whether the region was updated
    */
   async update(url, { push = true, ignoreActiveValue = true, fallback } = {}) {
     this.latestRequest += 1
@@ -182,7 +197,7 @@ class LiveFilters {
       const html = await response.text()
 
       // A slower earlier request must not overwrite a later one
-      if (request !== this.latestRequest) return
+      if (request !== this.latestRequest) return false
 
       const responseDocument = new DOMParser().parseFromString(
         html,
@@ -197,10 +212,17 @@ class LiveFilters {
       // the region element (passing the element would nest it inside itself).
       // Idiomorph restores focus by default; ignoring the active value stops
       // the server's echo of the search text overwriting what has been typed
-      // since - which is wrong on popstate, hence the option.
+      // since - which is wrong on popstate, hence the option. For every live
+      // region, a details element keeps the open state the user left it in:
+      // the server's open attribute only applies on a full page load (see
+      // docs/filtering.md).
       Idiomorph.morph(this.region, newRegion.children, {
         morphStyle: 'innerHTML',
-        ignoreActiveValue
+        ignoreActiveValue,
+        callbacks: {
+          beforeAttributeUpdated: (attributeName, element) =>
+            !(attributeName === 'open' && element instanceof HTMLDetailsElement)
+        }
       })
 
       this.region.dispatchEvent(
@@ -214,8 +236,12 @@ class LiveFilters {
       this.announce()
 
       if (push) window.history.pushState({}, '', response.url || url)
+
+      return true
     } catch {
       if (fallback) fallback()
+
+      return false
     }
   }
 

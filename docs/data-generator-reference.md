@@ -619,6 +619,12 @@ const appointmentsWithReadingData = generateReadingData(
 
 Started appointments (in progress, completed and attended not screened) get `sessionDetails` from `buildSessionDetails`, in the shape the appointment workflow writes: `startedAt` and `startedBy`, empty `pausedAt` and `pausedBy`, an `authors` list holding the start, and for appointments that have ended, `endedAt` and `endedBy`. The same mammographer runs a seeded appointment throughout. Who is running an appointment, and who screened it, are read from these by `getAppointmentRunnerId` and `getScreenedByName`.
 
+Each of today's screening clinics gets one paused appointment, in a slot that is already due. Its `sessionDetails` start from `buildSessionDetails` too, with `pausedAt` and `pausedBy` set: the same mammographer (never the default signed-in user) started and paused it, so the `authors` list holds both, and its status history records the check-in, start and pause.
+
+Cancelled appointments never get `sessionDetails`, as they were not started. They get a `cancellation` with a reason, the reschedule answer and `cancelledBy` (an administrative user), and a `cancelled` entry in their status history, after the booking and never after now. The clinic list reads the time with `getStatusTime` (through `getCompletedTime`).
+
+Appointments that were started (in progress, paused, completed and attended not screened) get a `screeningOrder`, numbered 1 to N per clinic in the order they started. Cancelled appointments in seed data never have one. In the running app, an appointment started and then rescheduled or cancelled keeps its number (see `wasAttended`).
+
 Medical information is generated for completed appointments (and again, similarly, for today's in-progress appointment):
 
 ```javascript

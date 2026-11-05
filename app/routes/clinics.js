@@ -12,10 +12,19 @@ const {
   filterAppointmentsByStatus,
   isInProgress,
   isFinal,
-  isSpecialAppointment,
-  getCheckInTime
+  getCheckInTime,
+  getCompletedTime
 } = require('../lib/utils/status')
 const { getReturnUrl } = require('../lib/utils/referrers')
+const {
+  parseFilterQuery,
+  applyFilterGroups,
+  describeSelectedFilters,
+  hasSelectedFilters
+} = require('../lib/utils/filter-list')
+const {
+  getClinicFilterGroups
+} = require('../lib/utils/clinic-appointment-list')
 const { getParticipant } = require('../lib/utils/participants')
 const { participantMatchesQuery } = require('../lib/utils/search')
 const { updateAppointmentStatus } = require('../lib/utils/appointment-status')
@@ -24,7 +33,6 @@ const {
   updateAppointmentData
 } = require('../lib/utils/appointment-data')
 const { pluralise } = require('../lib/utils/strings')
-const { getAppointmentRunByIds } = require('../lib/utils/roles-and-permissions')
 const { OTHER_REASON } = require('../lib/utils/mastectomy')
 
 /**
@@ -555,56 +563,25 @@ module.exports = (router) => {
     // Free-text search narrows the list by participant, keeping the counts and
     // the current tab in step. Empty query matches everyone.
     const search = req.query.search?.trim() || ''
-    // Checkbox filter - the unchecked-checkbox script posts "_unchecked" when
-    // off, so match on the "yes" value rather than mere presence
-    const filterSpecialAppointment = []
-      .concat(req.query.specialAppointment || [])
-      .includes('yes')
-    // Appointments after the free-text search and special-appointment filter,
-    // but before the mammographer filter.
-    let baseAppointments = clinicData.appointments
-    if (search) {
-      baseAppointments = baseAppointments.filter((appointment) =>
-        participantMatchesQuery(appointment.participant, search)
-      )
-    }
-    if (filterSpecialAppointment) {
-      baseAppointments = baseAppointments.filter((appointment) =>
-        isSpecialAppointment(appointment)
-      )
-    }
-
-    // Keep mammographer options available on every tab and while participant
-    // search or the special-appointment filter narrows the rows. Sorted by
-    // first name. An appointment matches everyone who ran it and whoever was
-    // nominated to take its images.
-    const getAppointmentMammographerIds = (appointment) =>
-      [
-        ...getAppointmentRunByIds(appointment),
-        appointment.authorisedMammographerId
-      ].filter(Boolean)
-    const mammographerIds = [
-      ...new Set(clinicData.appointments.flatMap(getAppointmentMammographerIds))
-    ]
-    const mammographers = mammographerIds
-      .map((userId) =>
-        req.session.data.users.find((user) => user.id === userId)
-      )
-      .filter(Boolean)
-      .sort((a, b) => a.firstName.localeCompare(b.firstName))
-    const selectedMammographers = []
-      .concat(req.query.mammographer || [])
-      .filter((userId) => mammographerIds.includes(userId))
-
-    // Apply the mammographer selection to get the final filtered list
-    let matchedAppointments = baseAppointments
-    if (selectedMammographers.length) {
-      matchedAppointments = matchedAppointments.filter((appointment) =>
-        getAppointmentMammographerIds(appointment).some((userId) =>
-          selectedMammographers.includes(userId)
+    const searchedAppointments = search
+      ? clinicData.appointments.filter((appointment) =>
+          participantMatchesQuery(appointment.participant, search)
         )
-      )
-    }
+      : clinicData.appointments
+
+    // Filter groups (see docs/filtering.md). Mammographer options come from
+    // the whole clinic, so they stay available on every tab and while search
+    // or the other filters narrow the rows.
+    const groups = getClinicFilterGroups(
+      req.session.data,
+      clinicData.appointments
+    )
+    const selected = parseFilterQuery(req.query, groups)
+    const matchedAppointments = applyFilterGroups(
+      searchedAppointments,
+      groups,
+      selected
+    )
 
     let filteredAppointments = filterAppointmentsByStatus(
       matchedAppointments,
@@ -635,17 +612,9 @@ module.exports = (router) => {
     }
     let sort = allowedSorts.includes(req.query.sort) ? req.query.sort : ''
 
-    // Each tab's default sort, reset to whenever a tab is opened without an
-    // explicit sort: Remaining and All by Time ascending, Checked in by
-    // check-in time ascending so the longest wait is first, and In progress and
-    // Complete by the order of screening ascending. All stays in chronological
-    // Time order because it mixes screened and unscreened participants.
-    if (!sort && (filter === 'remaining' || filter === 'all')) {
+    // Every tab opens sorted by scheduled Time ascending unless a sort is chosen
+    if (!sort) {
       sort = 'time-ascending'
-    } else if (!sort && filter === 'checked-in') {
-      sort = 'checkedIn-ascending'
-    } else if (!sort && (filter === 'in-progress' || filter === 'complete')) {
-      sort = 'screeningOrder-ascending'
     }
 
     const sortDescending = sort.endsWith('descending')
@@ -659,22 +628,7 @@ module.exports = (router) => {
         const diff = new Date(aCheckIn) - new Date(bCheckIn)
         return sortDescending ? -diff : diff
       })
-    } else if (sort.startsWith('screeningOrder')) {
-      filteredAppointments = [...filteredAppointments].sort((a, b) => {
-        const aOrder = a.screeningOrder
-        const bOrder = b.screeningOrder
-        if (aOrder == null && bOrder == null) return 0
-        if (aOrder == null) return 1
-        if (bOrder == null) return -1
-        return sortDescending ? bOrder - aOrder : aOrder - bOrder
-      })
     } else if (sort.startsWith('completed')) {
-      const getCompletedTime = (appointment) =>
-        ['complete', 'partially_screened', 'attended_not_screened'].includes(
-          appointment.status
-        )
-          ? appointment.sessionDetails?.endedAt
-          : null
       filteredAppointments = [...filteredAppointments].sort((a, b) => {
         const aCompleted = getCompletedTime(a)
         const bCompleted = getCompletedTime(b)
@@ -692,15 +646,20 @@ module.exports = (router) => {
     }
 
     res.render('clinics/show', {
+      groups,
+      selected,
+      // Search and sort ride along on every removal link
+      selectedFilters: describeSelectedFilters(groups, selected, req.path, {
+        search,
+        sort
+      }),
+      isFiltered: hasSelectedFilters(selected),
       clinicId: req.params.id,
       clinic: clinicData.clinic,
       allAppointments: clinicData.appointments,
       matchedAppointments,
       filteredAppointments,
       search,
-      specialAppointment: filterSpecialAppointment,
-      mammographers,
-      selectedMammographers,
       sort,
       status: filter,
       unit: clinicData.unit,

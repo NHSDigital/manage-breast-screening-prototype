@@ -129,6 +129,33 @@
   }
 }
 
+// In progress tab adds a Started at column, so adjust widths to make room
+.app-clinic-appointments-table--with-started-at {
+  .app-clinic-appointments-table__time-column {
+    width: 10%;
+  }
+
+  .app-clinic-appointments-table__details-column {
+    width: 28%;
+  }
+
+  .app-clinic-appointments-table__dob-column {
+    width: 16%;
+  }
+
+  .app-clinic-appointments-table__appointment-column {
+    width: 14%;
+  }
+
+  .app-clinic-appointments-table__started-at-column {
+    width: 15%;
+  }
+
+  .app-clinic-appointments-table__actions-column {
+    width: 17%;
+  }
+}
+
 // Complete tab drops the Actions column (every row is final), so the remaining
 // five columns share the space
 .app-clinic-appointments-table--with-screened-by.app-clinic-appointments-table--no-actions {
