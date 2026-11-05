@@ -99,6 +99,15 @@ body.js-enabled .app-no-js-only {
   @include nhsuk-responsive-margin(4, "bottom");
 }
 
+// NHS Frontend spaces cards with a top margin too, which would otherwise win
+.nhsuk-card:not(:first-child) {
+  @include nhsuk-responsive-margin(4, "top");
+}
+
+.nhsuk-card--feature:not(:first-child) {
+  @include nhsuk-responsive-margin(7, "top");
+}
+
 // Style guide: rendered example container + code snippet
 .sg-example {
   border: 1px solid $nhsuk-border-colour;
