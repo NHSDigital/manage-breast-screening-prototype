@@ -22,8 +22,10 @@
 
   {% if resolvedIssues | length %}
     {% call card({
-      heading: "Resolved issues",
-      headingLevel: "2"
+      heading: {
+        text: "Resolved issues",
+        level: 2
+      }
     }) %}
       <table class="nhsuk-table nhsuk-u-margin-bottom-0">
         <thead class="nhsuk-table__head">

@@ -63,7 +63,7 @@
     {% endset %}
     {{ details({
       classes: "nhsuk-expander",
-      summaryText: "Show the first and second reads",
+      summary: "Show the first and second reads",
       html: readsCardsHtml
     }) }}
 
@@ -84,8 +84,10 @@
       </details>
     {% endset %}
     {{ card({
-      heading: "First and second reads",
-      headingLevel: "2",
+      heading: {
+        text: "First and second reads",
+        level: 2
+      },
       feature: true,
       descriptionHtml: cardContentHtml
     }) }}
@@ -100,8 +102,10 @@
       </p>
     {% endset %}
     {{ card({
-      heading: "First and second reads",
-      headingLevel: "2",
+      heading: {
+        text: "First and second reads",
+        level: 2
+      },
       feature: true,
       descriptionHtml: cardContentHtml
     }) }}

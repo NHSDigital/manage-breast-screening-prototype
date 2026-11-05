@@ -86,7 +86,7 @@
       fieldset: {
         legend: {
           text: group.legend,
-          classes: "nhsuk-fieldset__legend--s"
+          size: "s"
         }
       },
       items: items
@@ -98,7 +98,7 @@
       {{ select({
         id: "filter-" + group.name,
         name: group.name,
-        label: { text: group.legend, classes: "nhsuk-label--s" },
+        label: { text: group.legend, size: "s" },
         formGroup: { classes: "app-filter-panel__group" },
         items: items
       }) }}
@@ -136,9 +136,11 @@
 
 <form class="app-filter-panel" method="get" action="{{ params.action }}"{% if params.live %} data-live-filters="{{ params.live }}"{% endif %}>
   {{ card({
-    heading: "Search and filter",
-    headingLevel: 2,
-    headingSize: "s",
+    heading: {
+      text: "Search and filter",
+      level: 2,
+      size: "s"
+    },
     feature: true,
     classes: "app-card--feature-grey app-filter-panel__card",
     descriptionHtml: panelHtml

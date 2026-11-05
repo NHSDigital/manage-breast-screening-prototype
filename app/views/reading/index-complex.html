@@ -106,7 +106,7 @@
       <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history/sessions">See all</a></p>
     {% endset %}
     {{ details({
-      summaryText: "Completed reading sessions",
+      summary: "Completed reading sessions",
       html: completedReadingSessionsHtml,
       classes: "nhsuk-u-margin-bottom-0"
     }) }}
@@ -164,7 +164,7 @@
       <p class="nhsuk-u-margin-bottom-0"><a href="/reading/history/sessions">See all</a></p>
     {% endset %}
     {{ details({
-      summaryText: "Completed arbitration sessions",
+      summary: "Completed arbitration sessions",
       html: completedArbitrationSessionsHtml,
       classes: "nhsuk-u-margin-bottom-0"
     }) }}
@@ -253,17 +253,21 @@
 <ul class="nhsuk-grid-row nhsuk-card-group">
   <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
     {{ card({
-      heading: (awaitingPriorsAppointments | length) ~ " " ~ ("case" | pluralise(awaitingPriorsAppointments | length)) ~ " awaiting priors",
-      headingClasses: "nhsuk-heading-s",
-      headingLevel: 3,
+      heading: {
+        text: (awaitingPriorsAppointments | length) ~ " " ~ ("case" | pluralise(awaitingPriorsAppointments | length)) ~ " awaiting priors",
+        level: 3,
+        classes: "nhsuk-heading-s"
+      },
       descriptionHtml: awaitingPriorsContent
     }) }}
   </li>
   <li class="nhsuk-grid-column-one-half nhsuk-card-group__item">
     {{ card({
-      heading: openIssueCaseCount ~ " " ~ ("case" | pluralise(openIssueCaseCount)) ~ " with open issues",
-      headingClasses: "nhsuk-heading-s",
-      headingLevel: 3,
+      heading: {
+        text: openIssueCaseCount ~ " " ~ ("case" | pluralise(openIssueCaseCount)) ~ " with open issues",
+        level: 3,
+        classes: "nhsuk-heading-s"
+      },
       descriptionHtml: openIssuesContent
     }) }}
   </li>

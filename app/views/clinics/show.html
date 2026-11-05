@@ -126,7 +126,7 @@
     {% endset %}
     {# Open when a search or filter is active so a live update doesn't collapse it #}
     {{ details({
-      summaryText: "Filter appointments",
+      summary: "Filter appointments",
       html: findParticipantHtml,
       classes: "nhsuk-expander",
       open: true if (search or specialAppointment or selectedMammographers | length)

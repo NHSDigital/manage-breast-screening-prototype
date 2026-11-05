@@ -29,8 +29,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Breast density factors",
-    headingLevel: "2",
+    heading: {
+      text: "Breast density factors",
+      level: 2
+    },
     feature: true,
     descriptionHtml: breastDensityFactorsHtml
   }) }}

@@ -34,8 +34,7 @@
       fieldset: {
         legend: {
           text: "What is your opinion of the " + params.side + " breast?",
-          size: "s",
-          isPageHeading: false
+          size: "s"
         }
       },
       items: [
@@ -93,8 +92,10 @@
   {% endset %}
 
   {{ card({
-    heading: Side + " breast",
-    headingLevel: "2",
+    heading: {
+      text: Side + " breast",
+      level: 2
+    },
     feature: true,
     classes: "nhsuk-u-margin-top-3",
     descriptionHtml: breastDetailsHtml

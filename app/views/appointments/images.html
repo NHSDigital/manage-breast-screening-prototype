@@ -29,8 +29,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Mammogram details",
-    headingLevel: "2",
+    heading: {
+      text: "Mammogram details",
+      level: 2
+    },
     feature: true,
     descriptionHtml: mammogramDetailsHtml
   }) }}

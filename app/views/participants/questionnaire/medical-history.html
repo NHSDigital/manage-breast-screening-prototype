@@ -15,7 +15,7 @@
 
     {% if flash.error %}
       {{ errorSummary({
-        "titleText": "There is a problem",
+        "heading": "There is a problem",
         "errorList": flash.error
       }) }}
     {% endif %}
@@ -121,8 +121,7 @@
         fieldset: {
           legend: {
             text: "Have you been diagnosed with breast cancer before?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [

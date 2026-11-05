@@ -13,7 +13,7 @@
 
     {% if flash.error %}
       {{ errorSummary({
-        "titleText": "There is a problem",
+        "heading": "There is a problem",
         "errorList": flash.error
       }) }}
     {% endif %}
@@ -118,8 +118,7 @@
         fieldset: {
           legend: {
             text: "Do you have any implanted medical devices or pacemakers?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [
@@ -155,8 +154,7 @@
         fieldset: {
           legend: {
             text: "Are you taking HRT (hormone replacement therapy)?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [

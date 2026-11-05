@@ -47,7 +47,7 @@
 {% set _errorList = errors if (errors and errors | length) else flash.error %}
 {% if _errorList and _errorList | length %}
   {{ errorSummary({
-    titleText: "There is a problem",
+    heading: "There is a problem",
     errorList: _errorList
   }) }}
 {% endif %}

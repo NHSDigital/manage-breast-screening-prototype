@@ -191,7 +191,7 @@
   {# Implant displaced (Eklund) views – collapsible, open if any data already present #}
   {% set hasImplantDisplacedData = (viewsRightBreastCCIDCount | int) > 0 or (viewsRightBreastMLOIDCount | int) > 0 or (viewsLeftBreastCCIDCount | int) > 0 or (viewsLeftBreastMLOIDCount | int) > 0 %}
   {% call details({
-    summaryText: "Other views",
+    summary: "Other views",
     open: hasImplantDisplacedData
   }) %}
       <div class="nhsuk-grid-row">

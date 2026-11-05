@@ -83,8 +83,10 @@
           {% endset %}
 
           {{ card({
-            heading: "To be completed (" + needsOutcomeCount + ")",
-            headingLevel: "2",
+            heading: {
+              text: "To be completed (" + needsOutcomeCount + ")",
+              level: 2
+            },
             feature: true,
             descriptionHtml: needsOutcomeHtml
           }) }}
@@ -98,8 +100,10 @@
         {% endset %}
 
         {{ card({
-          heading: "Completed appointments (" + outcomeRecordedAppointments | length + ")",
-          headingLevel: "2",
+          heading: {
+            text: "Completed appointments (" + outcomeRecordedAppointments | length + ")",
+            level: 2
+          },
           feature: true,
           classes: "app-card--feature-green",
           descriptionHtml: outcomeRecordedHtml
@@ -122,8 +126,10 @@
         {% endset %}
 
         {{ card({
-          heading: "Actions",
-          headingLevel: "2",
+          heading: {
+            text: "Actions",
+            level: 2
+          },
           feature: true,
           descriptionHtml: actionsHtml
         }) }}

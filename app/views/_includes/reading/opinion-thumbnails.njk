@@ -37,9 +37,11 @@
 {% endfor %}
 
 {% call card({
-  heading: "Images (" + imageCount + ")",
-  headingLevel: 2,
-  headingSize: "s",
+  heading: {
+    text: "Images (" + imageCount + ")",
+    level: 2,
+    size: "s"
+  },
   classes: "app-card--feature-grey",
   feature: "true"
 }) %}

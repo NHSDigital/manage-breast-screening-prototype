@@ -86,7 +86,7 @@
       {% endset %}
 
       {{ panel({
-        titleText: "Session ended" if endedEarly else "Session complete",
+        heading: "Session ended" if endedEarly else "Session complete",
         html: sessionCompletePanelHtml
       }) }}
     {% endif %}
