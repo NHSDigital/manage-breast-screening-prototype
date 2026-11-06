@@ -14,7 +14,11 @@ const { getClinic } = require('./clinics')
 const { eligibleForReading, getStatusTagColour } = require('./status')
 const { isWithinDayRange } = require('./dates')
 const { awaitingPriors, userRequestedPriors } = require('./prior-mammograms')
-const { hasOpenIssue, getOpenIssuePeriods } = require('./issues')
+const {
+  hasOpenIssue,
+  getOpenIssuesFor,
+  getOpenIssuePeriods
+} = require('./issues')
 const {
   getReadingCase,
   getReadingCaseById,
@@ -26,10 +30,12 @@ const {
   getReadsAsArray,
   getReadForUser,
   getReadAuthorIds,
+  getArbitrationRead,
   getReadingMetadata,
   getReadingCaseState,
   getReadingCaseOutcome,
   isReadFinalised,
+  isManualFinalisation,
   getAutoFinaliseTime,
   caseHasReads,
   caseHasBeenArbitrated,
@@ -1510,6 +1516,7 @@ const createReadingSession = (data, options) => {
     targetSize: sessionTargetSize,
     clinicId,
     createdAt: new Date().toISOString(),
+    createdBy: data.currentUser?.id || null,
     skippedAppointments: [],
     filters: {
       ...filters
@@ -1702,6 +1709,233 @@ const endSession = (data, sessionId, userId, endedAt = null) => {
   session.endedBy = userId || null
 
   return true
+}
+
+/**
+ * Whether a case carries any of the work a session is judged by. Reading
+ * counts the user's own acts; arbitration counts the panel's, since a case is
+ * arbitrated once for everyone. A case worked when the session ended stays
+ * part of it, so resolving its issue or undoing a priors request afterwards
+ * doesn't drop it.
+ *
+ * @param {object} data - Session data
+ * @param {object} session - Reading session
+ * @param {object} appointment - The appointment
+ * @param {string} userId - User ID
+ * @returns {boolean}
+ */
+const wasWorkedInSession = (data, session, appointment, userId) => {
+  if (session.workedAppointmentIds?.includes(appointment.id)) return true
+
+  if (session.type === 'arbitration') {
+    return (
+      appointmentHasBeenArbitrated(data, appointment) ||
+      hasOpenIssueOnEpisode(data, appointment) ||
+      awaitingPriors(appointment)
+    )
+  }
+
+  return (
+    userHasReadAppointment(data, appointment, userId) ||
+    userRequestedPriors(appointment, userId) ||
+    hasOpenIssueOnEpisode(data, appointment)
+  )
+}
+
+/**
+ * Whether the user has done any work in a session - skipped a case, or acted
+ * on one: read it (or, in arbitration, been one of the arbitrators who
+ * decided it), asked for its priors, or raised an issue on it. Work by other
+ * people doesn't count, so another reader acting on a case loaded in an
+ * untouched session leaves it untouched.
+ *
+ * @param {object} data - Session data
+ * @param {object} session - Reading session
+ * @param {string} userId - User ID
+ * @returns {boolean}
+ */
+const sessionHasWork = (data, session, userId) => {
+  if ((session.skippedAppointments || []).length > 0) return true
+
+  return session.appointmentIds.some((appointmentId) => {
+    const appointment = data.appointments.find(
+      (candidate) => candidate.id === appointmentId
+    )
+    if (!appointment) return false
+
+    const decided =
+      session.type === 'arbitration'
+        ? getReadAuthorIds(
+            getArbitrationRead(resolveCase(data, appointment))
+          ).includes(userId)
+        : userHasReadAppointment(data, appointment, userId)
+
+    return (
+      decided ||
+      userRequestedPriors(appointment, userId) ||
+      getOpenIssuesFor(data, appointment.episodeId).some(
+        (issue) => issue.raisedBy === userId
+      )
+    )
+  })
+}
+
+/**
+ * Where a session has got to - the one answer to whether it is complete.
+ *
+ * - `in_progress` - cases are still to do: it hasn't reached its target (or
+ *   run out of cases), and hasn't been ended
+ * - `awaiting_finalisation` - the cases are done, but reads only finalise by
+ *   hand and some of the user's are still unfinalised
+ * - `complete` - done with. Where reads finalise themselves, outstanding ones
+ *   don't hold the session open. An ended session is always complete
+ *
+ * @param {object} data - Session data
+ * @param {object} session - Reading session
+ * @param {string} [userId] - User ID (defaults to current user)
+ * @param {object} [progress] - The session's progress, if already worked out
+ * @returns {'in_progress' | 'awaiting_finalisation' | 'complete'}
+ */
+const getSessionState = (data, session, userId = null, progress = null) => {
+  // Ending is final. Ending finalises what it can, and a case held by an issue
+  // counts as done for the session - resolving the issue later makes the case
+  // available to new sessions, not this one
+  if (isSessionEnded(session)) return 'complete'
+
+  const resolvedUserId = userId || data.currentUser?.id
+  const sessionProgress =
+    progress ||
+    getSessionReadingProgress(data, session.id, null, resolvedUserId)
+
+  if (sessionProgress?.targetRemaining !== 0) return 'in_progress'
+
+  if (
+    isManualFinalisation(data.settings) &&
+    getUnfinalisedUserReadsForSession(data, session.id, resolvedUserId).length >
+      0
+  ) {
+    return 'awaiting_finalisation'
+  }
+
+  return 'complete'
+}
+
+/**
+ * Whether a session is reading or arbitration - what decides which other
+ * sessions it competes with for being the user's open one.
+ *
+ * @param {object} session - Reading session
+ * @returns {'reading' | 'arbitration'}
+ */
+const getSessionKind = (session) => {
+  return session?.type === 'arbitration' ? 'arbitration' : 'reading'
+}
+
+/**
+ * Whether a session belongs to the user - they started it, or, for an
+ * arbitration session, they are on its panel.
+ *
+ * @param {object} session - Reading session
+ * @param {string} userId - User ID
+ * @returns {boolean}
+ */
+const isUsersSession = (session, userId) => {
+  return (
+    session.createdBy === userId ||
+    (session.arbitration?.arbitratorIds || []).includes(userId)
+  )
+}
+
+/**
+ * The user's open session of a kind, if they have one: a session that is
+ * theirs, has their work in it and isn't complete. A user has at most one open session
+ * of each kind, and can't start another until it is complete.
+ *
+ * Clinic sessions never count - a clinic's cases are shared work, not one
+ * reader's queue. An arbitration session counts for everyone on its panel,
+ * since they arbitrate together.
+ *
+ * @param {object} data - Session data
+ * @param {string} userId - User ID
+ * @param {'reading' | 'arbitration'} kind - Which kind of session
+ * @param {object} [stateById] - Session states already worked out, by session id
+ * @returns {object | null} The session, or null if there is none
+ */
+const getOpenSessionForUser = (data, userId, kind, stateById = {}) => {
+  return (
+    Object.values(data.readingSessions || {})
+      .filter(
+        (session) =>
+          !session.clinicId &&
+          isUsersSession(session, userId) &&
+          getSessionKind(session) === kind &&
+          sessionHasWork(data, session, userId) &&
+          (stateById[session.id] || getSessionState(data, session, userId)) !==
+            'complete'
+      )
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] || null
+  )
+}
+
+/**
+ * Remove the user's untouched sessions of a kind - ones started and left
+ * before any work was done in them. Called when starting a new session, which
+ * replaces them.
+ *
+ * @param {object} data - Session data
+ * @param {string} userId - User ID
+ * @param {'reading' | 'arbitration'} kind - Which kind of session
+ */
+const discardUntouchedSessions = (data, userId, kind) => {
+  Object.values(data.readingSessions || {}).forEach((session) => {
+    if (
+      !session.clinicId &&
+      session.createdBy === userId &&
+      getSessionKind(session) === kind &&
+      !isSessionEnded(session) &&
+      !sessionHasWork(data, session, userId)
+    ) {
+      // readingSessions is per-session working data, so in-place edits are fine
+      delete data.readingSessions[session.id]
+    }
+  })
+}
+
+/**
+ * Top a lazy session up until it has a case the user can work on, or can grow
+ * no further. A session can be left with nothing workable loaded - its next
+ * case taken by another reader - while the backlog still has cases for it.
+ *
+ * Stops at the first workable case rather than running topUpSession to
+ * exhaustion, which would load every remaining case at once and defeat lazy
+ * sessions. The bound is a backstop only.
+ *
+ * @param {object} data - Session data
+ * @param {object} session - Reading session
+ * @param {string} userId - User ID
+ */
+const topUpSessionUntilWorkable = (data, session, userId) => {
+  const maxTopUps = session.targetSize || 25
+  for (let count = 0; count < maxTopUps; count++) {
+    const loadedAppointments = session.appointmentIds
+      .map((appointmentId) =>
+        data.appointments.find((candidate) => candidate.id === appointmentId)
+      )
+      .filter(Boolean)
+
+    if (
+      getFirstOutstandingCaseInSession(
+        data,
+        session,
+        loadedAppointments,
+        userId
+      )
+    ) {
+      return
+    }
+
+    if (!topUpSession(data, session.id)) return
+  }
 }
 
 /**
@@ -1985,6 +2219,14 @@ module.exports = {
   unskipAppointmentInSession,
   isSessionEnded,
   endSession,
+  wasWorkedInSession,
+  sessionHasWork,
+  getSessionState,
+  getSessionKind,
+  isUsersSession,
+  getOpenSessionForUser,
+  discardUntouchedSessions,
   topUpSession,
+  topUpSessionUntilWorkable,
   getSessionReadingProgress
 }

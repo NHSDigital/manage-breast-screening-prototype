@@ -6,14 +6,22 @@
 {% set hideStatusBar = true %}
 {% set hideBackLink = true %}
 
-{% set pageHeading = "Session complete" %}
+{% set isArbitration = session.type == 'arbitration' %}
+
+{# Running out of cases doesn't always complete a session: reads may still
+   need finalising, or cases may be held up by other readers #}
+{% if sessionState == "complete" %}
+  {% set pageHeading = "Session complete" %}
+{% elseif sessionState == "awaiting_finalisation" %}
+  {% set pageHeading = "Finalise the outcomes to complete this session" if isArbitration else "Finalise your opinions to complete this session" %}
+{% else %}
+  {% set pageHeading = "No more cases available" %}
+{% endif %}
 
 {% block pageContent %}
 
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-two-thirds">
-
-    {% set isArbitration = session.type == 'arbitration' %}
 
     <span class="nhsuk-caption-l">{{ "Arbitration" if isArbitration else "Image reading" }}</span>
     <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>

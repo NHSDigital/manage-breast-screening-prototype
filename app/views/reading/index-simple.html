@@ -9,11 +9,12 @@
 {% set currentUserId = data.currentUser.id %}
 {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
 {% set sessionProgressById = sessionProgressById or {} %}
+{% set sessionStateById = sessionStateById or {} %}
 
 {#
-  Build a list of the current user's sessions, most-recent first.
-  A session counts as "the user's" if they've already read at least one case in it.
-  Used both to detect an in-progress session and to list previous sessions.
+  The current user's sessions, most-recent first, for the list of previous
+  sessions. A session counts as "the user's" if they've read at least one case
+  in it. Their open session comes from the route, as openReadingSession.
 #}
 {% set userSessions = [] %}
 {% for sessionId, session in data.readingSessions %}
@@ -32,21 +33,12 @@
       createdAt: session.createdAt,
       targetSize: targetSize,
       userReadCount: userReadCount,
-      isFinished: session.endedAt or (progress and progress.targetRemaining == 0)
+      isFinished: sessionStateById[session.id] == "complete"
     }) %}
   {% endif %}
 {% endfor %}
 
 {% set userSessions = userSessions | sort(true, false, 'createdAt') %}
-
-{# In-progress = the user's most recent session that hasn't finished - worked
-   through, or ended early #}
-{% set inProgressSession = null %}
-{% for session in userSessions %}
-  {% if not inProgressSession and not session.isFinished %}
-    {% set inProgressSession = session %}
-  {% endif %}
-{% endfor %}
 
 {# Previous (finished) sessions — show 3 most recent #}
 {% set previousSessions = [] %}
@@ -95,7 +87,18 @@
       <h1>{{ pageHeading }}</h1>
       <p class="nhsuk-u-secondary-text-colour nhsuk-body-l">{{ backlogTotal }} {{ "case" | pluralise(backlogTotal) }} {{ "is" if backlogTotal == 1 else "are" }} awaiting an outcome</p>
 
-  {% if inProgressSession %}
+  {% if openReadingSession and openReadingSession.state == "awaiting_finalisation" %}
+
+    <h2>Finalise your image reading session</h2>
+
+    <p>Your session is complete once your opinions are finalised. Finalise them before starting a new session.</p>
+
+    {{ button({
+      text: "View session",
+      href: "/reading/session/" + openReadingSession.id
+    }) }}
+
+  {% elseif openReadingSession %}
 
     <h2>Resume image reading</h2>
 
@@ -103,10 +106,10 @@
 
     {{ button({
       text: "Resume session",
-      href: "/reading/session/" + inProgressSession.id + "/resume"
+      href: "/reading/session/" + openReadingSession.id
     }) }}
 
-    <p class="nhsuk-u-secondary-text-colour">{{ inProgressSession.userReadCount }} of {{ inProgressSession.targetSize }} cases read</p>
+    <p class="nhsuk-u-secondary-text-colour">{{ openReadingSession.userReadCount }} of {{ openReadingSession.targetSize }} cases read</p>
 
   {% elseif userReadableTotal == 0 %}
 

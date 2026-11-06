@@ -116,7 +116,7 @@ const defaultSettings = {
     annotationsMode: 'with-images-simple', // 'without-images' | 'with-images-simple' | 'with-images' | 'with-images-progressive'
     secondReaderComparison: 'off', // 'early' | 'late' | 'off'
     compareWhen: 'non_normal', // 'non_normal' | 'discordant_only'
-    finalisationDelay: '60', // minutes before reads auto-finalise; '0' immediate | 'never' manual only
+    finalisationDelay: 'never', // minutes before reads auto-finalise; '0' immediate | 'never' manual only
     lazySessions: 'true',
     defaultSessionSize: '25',
     arbitration: {

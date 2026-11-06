@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-05 15:37 UTC
+- **Generated:** 2026-11-06 16:03 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -23,30 +23,30 @@
 | `episodes.js` | Episode lookups and stage changes | 200 |
 | `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 239 |
 | `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 259 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 306 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 362 |
-| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 384 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 410 |
-| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 437 |
-| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 454 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 466 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 479 |
-| `objects.js` | Object utilities for extracting and flattening values. | 498 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 509 |
-| `random.js` | Seeded random functions for stable prototype data | 519 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 536 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 551 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 561 |
-| `roles-and-permissions.js` | User role checks | 574 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 603 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 619 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 631 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 307 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 371 |
+| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 393 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 419 |
+| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 446 |
+| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 463 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 475 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 488 |
+| `objects.js` | Object utilities for extracting and flattening values. | 507 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 518 |
+| `random.js` | Seeded random functions for stable prototype data | 528 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 545 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 560 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 570 |
+| `roles-and-permissions.js` | User role checks | 583 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 612 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 628 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 640 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 647 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 660 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 672 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 686 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 696 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 656 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 669 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 681 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 695 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 705 |
 
 ---
 
@@ -282,26 +282,27 @@ A reading case is one set of mammograms being read, held on the episode as episo
 | `isCaseInArbitration(readingCase)` | Whether a case has been released into arbitration. | 294 |
 | `areReadsDiscordant(readA, readB)` | Whether the reads on a case disagree in a clinically meaningful way. | 310 |
 | `willGoToArbitration(readA, readB, [settings])` | Whether two reads mean the case needs arbitrating, taking the site's | 367 |
-| `isReadFinalised(read, [settings], [issuePeriods])` | Whether a read is finalised. — e.g. `{{ read \| isReadFinalised(data.settings, data \| getOpenIssuePeriods(episode)) }}` | 444 |
-| `getAutoFinaliseTime(read, [settings], [issuePeriods])` | When a read finalises itself, or did, or null if that can't be said. | 469 |
-| `getReadFinalisedTime(read, [settings], [issuePeriods])` | When a read finalised, or will: its explicit stamp, else the moment the | 491 |
-| `getDecidingRead(readingCase, [settings], [issuePeriods])` | The read a case's outcome comes from: the arbitration read where there was | 505 |
-| `getReadingCaseOutcomeDate(readingCase, [settings], [issuePeriods])` | When a case's outcome finalised - the deciding read's finalised time. Null | 529 |
-| `areAllReadsFinalised(readingCase, [settings], [issuePeriods])` | Whether every read on a case is finalised | 551 |
-| `getReadingCaseState(readingCase, [settings], [issuePeriods])` | Where a case has got to. | 569 |
-| `getReadingCaseOutcome(readingCase, [settings], [issuePeriods])` | What a case found, or null while reading is still under way. | 611 |
-| `getReadingCaseStatus(readingCase, [settings], [issuePeriods])` | The facts about where a case stands, for composing status displays. | 641 |
-| `getReadingMetadata(readingCase, [settings], [issuePeriods])` | Summary counts and flags for a case, for lists and progress displays | 687 |
-| `caseNeedsFirstRead(readingCase)` | Whether a case still needs a first read | 719 |
-| `caseNeedsSecondRead(readingCase)` | Whether a case has a first read and still needs a second | 729 |
-| `caseNeedsArbitration(readingCase, [settings], [issuePeriods])` | Whether a case sits in the arbitration backlog - finalised reads whose | 739 |
-| `canUserReadCase(readingCase, userId, [options], [options.maxReadsPerCase], [options.panelArbitration], [options.episodeHasOpenIssue])` | Whether a user can read a case. | 767 |
-| `getComparisonInfo(readingCase, secondReadData, userId, [settings])` | Work out what the second reader should be shown about the first read. | 810 |
-| `shouldShowComparePage(readingCase, secondReadData, userId, [settings])` | Whether the compare page should be shown to the second reader. | 859 |
-| `buildRead(readingCase, userId, readerType, reading, [options], [options.timestamp], [options.arbitratorIds])` | Build the read record for a user's opinion on a case. | 898 |
-| `withRead(readingCase, read)` | Add or replace a user's read on a case, returning a new case record. | 955 |
-| `withReadFinalised(readingCase, userId, [options], [options.finalisedAt], [options.finalisedBy])` | Mark a user's read on a case as finalised, returning a new case record. | 990 |
-| `withoutRead(readingCase, userId, [options], [options.arbitration])` | Remove a user's read from a case, returning a new case record. — e.g. `withoutRead(readingCase, userId, { arbitration: session.type === 'arbitration' })` | 1017 |
+| `isManualFinalisation([settings])` | Whether reads only finalise by hand - the 'never' finalisation delay. Where | 399 |
+| `isReadFinalised(read, [settings], [issuePeriods])` | Whether a read is finalised. — e.g. `{{ read \| isReadFinalised(data.settings, data \| getOpenIssuePeriods(episode)) }}` | 457 |
+| `getAutoFinaliseTime(read, [settings], [issuePeriods])` | When a read finalises itself, or did, or null if that can't be said. | 482 |
+| `getReadFinalisedTime(read, [settings], [issuePeriods])` | When a read finalised, or will: its explicit stamp, else the moment the | 504 |
+| `getDecidingRead(readingCase, [settings], [issuePeriods])` | The read a case's outcome comes from: the arbitration read where there was | 518 |
+| `getReadingCaseOutcomeDate(readingCase, [settings], [issuePeriods])` | When a case's outcome finalised - the deciding read's finalised time. Null | 542 |
+| `areAllReadsFinalised(readingCase, [settings], [issuePeriods])` | Whether every read on a case is finalised | 564 |
+| `getReadingCaseState(readingCase, [settings], [issuePeriods])` | Where a case has got to. | 582 |
+| `getReadingCaseOutcome(readingCase, [settings], [issuePeriods])` | What a case found, or null while reading is still under way. | 624 |
+| `getReadingCaseStatus(readingCase, [settings], [issuePeriods])` | The facts about where a case stands, for composing status displays. | 654 |
+| `getReadingMetadata(readingCase, [settings], [issuePeriods])` | Summary counts and flags for a case, for lists and progress displays | 700 |
+| `caseNeedsFirstRead(readingCase)` | Whether a case still needs a first read | 732 |
+| `caseNeedsSecondRead(readingCase)` | Whether a case has a first read and still needs a second | 742 |
+| `caseNeedsArbitration(readingCase, [settings], [issuePeriods])` | Whether a case sits in the arbitration backlog - finalised reads whose | 752 |
+| `canUserReadCase(readingCase, userId, [options], [options.maxReadsPerCase], [options.panelArbitration], [options.episodeHasOpenIssue])` | Whether a user can read a case. | 780 |
+| `getComparisonInfo(readingCase, secondReadData, userId, [settings])` | Work out what the second reader should be shown about the first read. | 823 |
+| `shouldShowComparePage(readingCase, secondReadData, userId, [settings])` | Whether the compare page should be shown to the second reader. | 872 |
+| `buildRead(readingCase, userId, readerType, reading, [options], [options.timestamp], [options.arbitratorIds])` | Build the read record for a user's opinion on a case. | 911 |
+| `withRead(readingCase, read)` | Add or replace a user's read on a case, returning a new case record. | 968 |
+| `withReadFinalised(readingCase, userId, [options], [options.finalisedAt], [options.finalisedBy])` | Mark a user's read on a case as finalised, returning a new case record. | 1003 |
+| `withoutRead(readingCase, userId, [options], [options.arbitration])` | Remove a user's read from a case, returning a new case record. — e.g. `withoutRead(readingCase, userId, { arbitration: session.type === 'arbitration' })` | 1030 |
 
 ### reading.js
 
@@ -311,53 +312,61 @@ Image reading workflow: read state, progress tracking, batch management, per-use
 
 | Function | Description | Line |
 |---|---|---|
-| `getAppointmentReadingMetadata(data, appointment)` | Get the reading metadata for an appointment's case | 54 |
-| `writeReading(data, appointment, userId, reading, [sessionId])` | Save a user's read of an appointment's images, and take the appointment off | 69 |
-| `unskipAppointmentInSession(data, sessionId, appointmentId)` | Take an appointment off a session's skipped list. | 110 |
-| `getUnfinalisedUserReadsForSession(data, sessionId, userId)` | The user's not-yet-finalised reads in a session, each with the appointment | 132 |
-| `finaliseReadOnCase(data, appointment, readingCase, userId, [finalisedAt])` | Finalise the user's read on one case, and settle what that makes true: a case | 190 |
-| `finaliseUserReadsForSession(data, sessionId, userId)` | Finalise all the user's outstanding reads from a session. | 261 |
-| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode. | 293 |
-| `hasOpenIssueOnEpisode(data, appointment)` | Whether an appointment's episode has an open issue - what holds its case out | 334 |
-| `getReadingCaseIssuePeriods(data, readingCase)` | The periods during which a case's episode had an open issue. — e.g. `{% set issuePeriods = data \| getReadingCaseIssuePeriods(readingCase) %}` | 347 |
-| `enhanceAppointmentsWithReadingData(data, appointments, participants, userId)` | Enhance appointments with their reading case and pre-calculated metadata. | 369 |
-| `getReadingStatusForAppointments(data, appointments, [userId])` | Get detailed reading status for a group of appointments | 564 |
-| `getReadingProgress(data, appointments, skippedAppointments, [userId])` | Get progress through reading a set of appointments. | 615 |
-| `sortAppointmentsByScreeningDate(appointments)` | Sort appointments by screening date (oldest first) | 648 |
-| `getFirstAvailableClinic(data)` | Get the first clinic that still has appointments needing reads | 672 |
-| `getReadingClinics(data, [options])` | Get all clinics available for reading, enriched with unit, location, and reading status | 683 |
-| `getReadableAppointmentsForClinic(data, clinicId)` | Get readable appointments for a clinic with pre-calculated metadata | 721 |
-| `filterAppointmentsByEligibleForReading(appointments)` | Filter appointments that are eligible for reading | 754 |
-| `filterAppointmentsByNeedsAnyRead(data, appointments, maxReadsPerCase)` | Filter appointments that need any read (first or second) | 763 |
-| `filterAppointmentsByNeedsFirstRead(data, appointments)` | Filter appointments that need a first read | 782 |
-| `filterAppointmentsByNeedsSecondRead(data, appointments)` | Filter appointments that need a second read | 795 |
-| `filterAppointmentsByNeedsArbitration(data, appointments, [userId])` | Filter appointments whose case sits in the arbitration backlog and which | 808 |
-| `filterAppointmentsByFullyRead(data, appointments, requiredReads)` | Filter appointments that are fully read (have all required reads) | 835 |
-| `filterAppointmentsByUserCanRead(data, appointments, userId)` | Filter appointments that a specific user can read | 854 |
-| `filterAppointmentsByClinic(appointments, clinicId)` | Filter appointments for a specific clinic | 868 |
-| `filterAppointmentsByDayRange(appointments, minDays, [maxDays])` | Filter appointments that are within a specific day range | 879 |
-| `getFirstUserReadableAppointment(data, appointments, userId)` | Get first appointment from an array that a user can read | 907 |
-| `getNextUserReadableAppointment(data, appointments, currentAppointmentId, [userId])` | Get the next appointment the user can read after the current appointment, wrapping to start if needed | 931 |
-| `getNextCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The next case to work on in a session, after the current one. | 965 |
-| `canOpenCaseInSession(data, session, appointment, userId)` | Whether a case in a session can be opened by the reader. | 1018 |
-| `getPreviousCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The case before the current one in a session, if there is one to go back to. | 1045 |
-| `getFollowingCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The case after the current one in a session, if there is one to open. | 1079 |
-| `getFirstOutstandingCaseInSession(data, session, sessionAppointments, userId)` | The first case still to work on in a session, wherever it sits. | 1113 |
-| `getResumeAppointmentForUser(data, appointments, [userId], [skippedAppointments], [session])` | Get the appointment the user should resume reading from. | 1140 |
-| `appointmentHasBeenArbitrated(data, appointment)` | Whether an appointment's case has been arbitrated. | 1229 |
-| `canArbitrateAppointment(data, appointment)` | Whether an appointment's case can be arbitrated now. | 1243 |
-| `canUserReadAppointment(data, appointment, [userId], [options])` | Check if a user can read an appointment's images. | 1277 |
-| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible appointment candidates for a session based on its type and filters | 1345 |
-| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of appointments for reading based on specified criteria | 1433 |
-| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1530 |
-| `generateSessionId()` | Generate a unique ID for a session | 1567 |
-| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1576 |
-| `getFirstReadableAppointmentInSession(data, sessionId, [userId])` | Get the first appointment in a session that a user can read | 1613 |
-| `skipAppointmentInSession(data, sessionId, appointmentId)` | Mark an appointment as skipped in a session | 1646 |
-| `isSessionEnded(session)` | Whether a session has been ended. | 1669 |
-| `endSession(data, sessionId, userId, [endedAt])` | End a session, if it isn't ended already. | 1683 |
-| `topUpSession(data, sessionId, [currentAppointmentId])` | Add the next eligible appointment to a session if it needs one | 1707 |
-| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 1797 |
+| `getAppointmentReadingMetadata(data, appointment)` | Get the reading metadata for an appointment's case | 60 |
+| `writeReading(data, appointment, userId, reading, [sessionId])` | Save a user's read of an appointment's images, and take the appointment off | 75 |
+| `unskipAppointmentInSession(data, sessionId, appointmentId)` | Take an appointment off a session's skipped list. | 116 |
+| `getUnfinalisedUserReadsForSession(data, sessionId, userId)` | The user's not-yet-finalised reads in a session, each with the appointment | 138 |
+| `finaliseReadOnCase(data, appointment, readingCase, userId, [finalisedAt])` | Finalise the user's read on one case, and settle what that makes true: a case | 196 |
+| `finaliseUserReadsForSession(data, sessionId, userId)` | Finalise all the user's outstanding reads from a session. | 267 |
+| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode. | 299 |
+| `hasOpenIssueOnEpisode(data, appointment)` | Whether an appointment's episode has an open issue - what holds its case out | 340 |
+| `getReadingCaseIssuePeriods(data, readingCase)` | The periods during which a case's episode had an open issue. — e.g. `{% set issuePeriods = data \| getReadingCaseIssuePeriods(readingCase) %}` | 353 |
+| `enhanceAppointmentsWithReadingData(data, appointments, participants, userId)` | Enhance appointments with their reading case and pre-calculated metadata. | 375 |
+| `getReadingStatusForAppointments(data, appointments, [userId])` | Get detailed reading status for a group of appointments | 570 |
+| `getReadingProgress(data, appointments, skippedAppointments, [userId])` | Get progress through reading a set of appointments. | 621 |
+| `sortAppointmentsByScreeningDate(appointments)` | Sort appointments by screening date (oldest first) | 654 |
+| `getFirstAvailableClinic(data)` | Get the first clinic that still has appointments needing reads | 678 |
+| `getReadingClinics(data, [options])` | Get all clinics available for reading, enriched with unit, location, and reading status | 689 |
+| `getReadableAppointmentsForClinic(data, clinicId)` | Get readable appointments for a clinic with pre-calculated metadata | 727 |
+| `filterAppointmentsByEligibleForReading(appointments)` | Filter appointments that are eligible for reading | 760 |
+| `filterAppointmentsByNeedsAnyRead(data, appointments, maxReadsPerCase)` | Filter appointments that need any read (first or second) | 769 |
+| `filterAppointmentsByNeedsFirstRead(data, appointments)` | Filter appointments that need a first read | 788 |
+| `filterAppointmentsByNeedsSecondRead(data, appointments)` | Filter appointments that need a second read | 801 |
+| `filterAppointmentsByNeedsArbitration(data, appointments, [userId])` | Filter appointments whose case sits in the arbitration backlog and which | 814 |
+| `filterAppointmentsByFullyRead(data, appointments, requiredReads)` | Filter appointments that are fully read (have all required reads) | 841 |
+| `filterAppointmentsByUserCanRead(data, appointments, userId)` | Filter appointments that a specific user can read | 860 |
+| `filterAppointmentsByClinic(appointments, clinicId)` | Filter appointments for a specific clinic | 874 |
+| `filterAppointmentsByDayRange(appointments, minDays, [maxDays])` | Filter appointments that are within a specific day range | 885 |
+| `getFirstUserReadableAppointment(data, appointments, userId)` | Get first appointment from an array that a user can read | 913 |
+| `getNextUserReadableAppointment(data, appointments, currentAppointmentId, [userId])` | Get the next appointment the user can read after the current appointment, wrapping to start if needed | 937 |
+| `getNextCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The next case to work on in a session, after the current one. | 971 |
+| `canOpenCaseInSession(data, session, appointment, userId)` | Whether a case in a session can be opened by the reader. | 1024 |
+| `getPreviousCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The case before the current one in a session, if there is one to go back to. | 1051 |
+| `getFollowingCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The case after the current one in a session, if there is one to open. | 1085 |
+| `getFirstOutstandingCaseInSession(data, session, sessionAppointments, userId)` | The first case still to work on in a session, wherever it sits. | 1119 |
+| `getResumeAppointmentForUser(data, appointments, [userId], [skippedAppointments], [session])` | Get the appointment the user should resume reading from. | 1146 |
+| `appointmentHasBeenArbitrated(data, appointment)` | Whether an appointment's case has been arbitrated. | 1235 |
+| `canArbitrateAppointment(data, appointment)` | Whether an appointment's case can be arbitrated now. | 1249 |
+| `canUserReadAppointment(data, appointment, [userId], [options])` | Check if a user can read an appointment's images. | 1283 |
+| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible appointment candidates for a session based on its type and filters | 1351 |
+| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of appointments for reading based on specified criteria | 1439 |
+| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1537 |
+| `generateSessionId()` | Generate a unique ID for a session | 1574 |
+| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1583 |
+| `getFirstReadableAppointmentInSession(data, sessionId, [userId])` | Get the first appointment in a session that a user can read | 1620 |
+| `skipAppointmentInSession(data, sessionId, appointmentId)` | Mark an appointment as skipped in a session | 1653 |
+| `isSessionEnded(session)` | Whether a session has been ended. | 1676 |
+| `endSession(data, sessionId, userId, [endedAt])` | End a session, if it isn't ended already. | 1690 |
+| `wasWorkedInSession(data, session, appointment, userId)` | Whether a case carries any of the work a session is judged by. Reading | 1714 |
+| `sessionHasWork(data, session, userId)` | Whether the user has done any work in a session - skipped a case, or acted | 1745 |
+| `getSessionState(data, session, [userId], [progress])` | Where a session has got to - the one answer to whether it is complete. | 1783 |
+| `getSessionKind(session)` | Whether a session is reading or arbitration - what decides which other | 1823 |
+| `isUsersSession(session, userId)` | Whether a session belongs to the user - they started it, or, for an | 1834 |
+| `getOpenSessionForUser(data, userId, kind, [stateById])` | The user's open session of a kind, if they have one: a session that is | 1849 |
+| `discardUntouchedSessions(data, userId, kind)` | Remove the user's untouched sessions of a kind - ones started and left | 1880 |
+| `topUpSessionUntilWorkable(data, session, userId)` | Top a lazy session up until it has a case the user can work on, or can grow | 1904 |
+| `topUpSession(data, sessionId, [currentAppointmentId])` | Add the next eligible appointment to a session if it needs one | 1941 |
+| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 2031 |
 
 ### prior-mammograms.js
 

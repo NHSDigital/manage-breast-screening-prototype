@@ -343,7 +343,7 @@ Two reads are not a result by themselves — the result becomes real once the
 reads are finalised, explicitly (`read.finalisedAt` / `finalisedBy`) or
 automatically when the finalisation delay passes
 (`settings.reading.finalisationDelay`, minutes as a string, `'0'` immediate,
-`'never'` manual only — see `isReadFinalised`). Until then the case sits in
+`'never'` manual only, the default — see `isReadFinalised`). Until then the case sits in
 `awaiting_finalisation`. Whether it is heading for arbitration is a **fact
 about the case, not a separate state**: `getReadingCaseStatus(case, settings,
 issuePeriods)` returns `{ state, finalised, willArbitrate, provisionalOutcome }`, so

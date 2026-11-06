@@ -433,8 +433,14 @@ const finaliseEpisodeStage = (
         ? lastReadAt
         : appointmentEnded
 
+    // Only finalisations the seed records count: an episode moves on when its
+    // reads are finalised by hand, and the delay passing never moves one on
     const destinationAfterReading =
-      EPISODE_STAGE_BY_READING_OUTCOME[getReadingCaseOutcome(latestCase, {})]
+      EPISODE_STAGE_BY_READING_OUTCOME[
+        getReadingCaseOutcome(latestCase, {
+          reading: { finalisationDelay: 'never' }
+        })
+      ]
 
     if (destinationAfterReading) {
       moveTo(destinationAfterReading, concludedAt)

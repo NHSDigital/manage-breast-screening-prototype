@@ -180,7 +180,8 @@ test.describe('Image reading', () => {
     await page.goto('/reading')
     await expect(
       page.locator('p').filter({
-        hasText: /^(?:1 case is|(?:0|[2-9]|[1-9]\d+) cases are) awaiting an outcome$/
+        hasText:
+          /^(?:1 case is|(?:0|[2-9]|[1-9]\d+) cases are) awaiting an outcome$/
       })
     ).toBeVisible()
   })
@@ -261,10 +262,17 @@ test.describe('Image reading', () => {
     await expect(sessionProgress).toBeVisible()
     await expect(sessionProgress).toHaveClass(/nhsuk-u-font-size-16/)
 
-    const resumeSessionLink = page.getByRole('link', {
+    const resumeSessionButton = page.getByRole('button', {
       name: 'Resume reading'
     })
-    await resumeSessionLink.click()
+    await resumeSessionButton.click()
+
+    // Resuming lands on the session overview, where the reader can carry on
+    // or end the session
+    await expect(page).toHaveURL(
+      new RegExp(`/reading/session/${sessionId}/your-reads`)
+    )
+    await page.getByRole('button', { name: 'Resume reading' }).first().click()
     await expect(page).toHaveURL(
       new RegExp(`/reading/session/${sessionId}/appointments/`)
     )
@@ -303,6 +311,71 @@ test.describe('Image reading', () => {
     ).toBeVisible()
     await expect(page.getByText('Recall for assessment').first()).toBeVisible()
     await page.getByRole('button', { name: 'Confirm and continue' }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Session complete' })
+    ).toBeVisible()
+  })
+
+  test('sends a reader back to their open session rather than starting another', async ({
+    page
+  }) => {
+    await pinSettings(page, readingSettings)
+
+    await page.goto(
+      `/reading/create-session?type=all_reads&limit=${sessionSize}&lazy=false`
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const firstCaseUrl = page.url()
+    const sessionId = firstCaseUrl.split('/session/')[1].split('/')[0]
+
+    await recordNormal(page)
+    await expect(page).not.toHaveURL(firstCaseUrl)
+
+    await page.goto('/reading/create-session?type=all_reads')
+    await expect(page).toHaveURL(
+      new RegExp(`/reading/session/${sessionId}/your-reads`)
+    )
+    await expect(
+      page.getByText('Finish your current session before starting a new one')
+    ).toBeVisible()
+  })
+
+  test('holds a worked-through session open until its reads are finalised', async ({
+    page
+  }) => {
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][indexLayout]': 'complex',
+      'settings[reading][finalisationDelay]': 'never'
+    })
+
+    await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+
+    await recordNormal(page)
+    await expect(page).toHaveURL(/\/no-more-cases/)
+    await expect(
+      page.getByRole('heading', {
+        name: 'Finalise your opinions to complete this session'
+      })
+    ).toBeVisible()
+
+    await page.goto('/reading')
+    await expect(
+      page.getByRole('heading', {
+        name: 'Reading session awaiting finalisation'
+      })
+    ).toBeVisible()
+
+    await page.goto(`/reading/session/${sessionId}`)
+    await expect(
+      page.getByRole('heading', {
+        name: 'Finalise your opinions to complete this session'
+      })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Finalise opinions' }).click()
 
     await expect(
       page.getByRole('heading', { name: 'Session complete' })
@@ -522,9 +595,9 @@ test.describe('Image reading', () => {
       page.getByText('Image re-sent from the mammography machine')
     ).toBeVisible()
     await page.getByRole('link', { name: 'View reading case' }).click()
-    await expect(page.getByRole('heading', { name: 'Issue raised' })).toHaveCount(
-      0
-    )
+    await expect(
+      page.getByRole('heading', { name: 'Issue raised' })
+    ).toHaveCount(0)
     await expect(page.getByRole('button', { name: 'Read now' })).toBeVisible()
   })
 
@@ -817,7 +890,7 @@ test.describe('Image reading', () => {
       page.getByRole('link', { name: 'View arbitration case list' })
     ).toBeVisible()
     await expect(
-      page.getByRole('link', { name: 'Start arbitration session' })
+      page.getByRole('button', { name: 'Start arbitration session' })
     ).toBeVisible()
 
     await page.goto('/reading/arbitration/start')
@@ -843,9 +916,12 @@ test.describe('Image reading', () => {
     ).toBeVisible()
     await expect(page.getByText(/1 of \d+ cases arbitrated/)).toBeVisible()
 
-    await page
-      .getByRole('link', { name: 'Resume arbitration' })
-      .click()
+    await page.getByRole('button', { name: 'Resume arbitration' }).click()
+
+    // Resuming lands on the session overview, where the reader can carry on
+    // or end the session
+    await expect(page).toHaveURL(new RegExp(`/reading/session/${sessionId}$`))
+    await page.getByRole('button', { name: 'Resume session' }).first().click()
     await expect(page).toHaveURL(
       new RegExp(`/reading/session/${sessionId}/appointments/`)
     )

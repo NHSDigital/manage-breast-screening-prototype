@@ -85,6 +85,7 @@ const getHistoricReadingSessions = (data) => {
       progress: { effectiveTargetSize: shape.size },
       userCompletedCount: shape.size,
       unfinalisedReadCount: 0,
+      state: 'complete',
       arbitration:
         shape.type === 'arbitration'
           ? {
