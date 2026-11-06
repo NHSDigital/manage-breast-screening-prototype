@@ -103,6 +103,7 @@ Check [utils-filter-reference.md](utils-filter-reference.md) (table of contents 
 - Client-side JavaScript that recreates markup the server already renders (tags, action links, rows). It will drift from the server version. Fetch the server-rendered fragment instead (see section 5).
 - Hand-written HTML where an NHS.UK Frontend macro exists. Look up the parameters in [nhsuk-frontend/components/](nhsuk-frontend/index.md) rather than guessing.
 - A `radios` or `checkboxes` macro without `small: true`.
+- Links that look like buttons built with the `link` macro or a hand-written `<a class="nhsuk-button">`. Use the `button` macro with `href`, which adds `role="button"` and the JavaScript behaviour so screen readers announce a button.
 - Inline `<script>` blocks in views. Client-side code is a module in `app/assets/javascript/`, and the page must still work without it.
 
 > **Past example.** A 129-line inline script rebuilt status tags and action links as strings (`renderTag`, `renderActionCell`). It was replaced by a server-rendered row include and a small module that swaps the fragment in, later reused on two other pages.

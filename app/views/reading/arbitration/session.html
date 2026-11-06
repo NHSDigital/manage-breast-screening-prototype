@@ -47,9 +47,10 @@
 
     {% if resumeAppointment %}
       <div class="nhsuk-button-group">
-        <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button">
-          {{ arbitrationActionText }}
-        </a>
+        {{ button({
+          text: arbitrationActionText,
+          href: "/reading/session/" + session.id + "/appointments/" + resumeAppointment.id
+        }) }}
         {% if canEndSessionEarly %}
           {{ link({
             text: "End session",
@@ -237,7 +238,12 @@
             </td>
             <td class="nhsuk-table__cell app-placeholder-action-cell">
               {% if isNextCase %}
-                <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ arbitrationActionText }}</a>
+                {{ button({
+                  text: arbitrationActionText,
+                  href: "/reading/session/" + session.id + "/appointments/" + resumeAppointment.id,
+                  small: true,
+                  classes: "app-placeholder-action-button"
+                }) }}
               {% else %}
                 {# The link says what opening the case will do, with the name
                    hidden for screen readers so each row's link is distinct #}
