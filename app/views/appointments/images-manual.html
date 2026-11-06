@@ -49,7 +49,7 @@
     </p>
 
     <p>
-      Authorised mammographer: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span>
+      Operator: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span>
       ({{ link({ text: "change", href: (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) } | openInModal) | trim | safe }})
     </p>
 

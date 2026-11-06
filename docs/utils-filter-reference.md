@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-05 15:37 UTC
+- **Generated:** 2026-11-06 16:00 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -38,15 +38,15 @@
 | `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 551 |
 | `referrers.js` | Referrer chain navigation for multi-level back links | 561 |
 | `roles-and-permissions.js` | User role checks | 574 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 603 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 619 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 631 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 604 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 620 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 632 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 647 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 660 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 672 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 686 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 696 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 648 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 661 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 673 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 687 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 697 |
 
 ---
 
@@ -598,7 +598,8 @@ User role checks. Use these instead of comparing role strings directly.
 | `isRunByCurrentUser(appointment)` | Check if an appointment is being run by the current user, meaning they | 270 |
 | `getAppointmentRunByIds(appointment)` | Get the ids of everyone who ran an appointment, in the order they joined | 285 |
 | `getAppointmentRunByNames(appointment, [options])` | Get the names of everyone who ran an appointment, for showing everyone — e.g. `{{ appointment \| getAppointmentRunByNames({ format: "reversed" }) \| formatList }}` | 305 |
-| `getScreenedByName(appointment, [options])` | Get the name of whoever screened an appointment, for showing one name in a — e.g. `{{ appointment \| getScreenedByName({ format: "short", identifyCurrentUser: true }) }}` | 321 |
+| `getAppointmentMammographerSummary(appointment)` | Get the people and roles to show for a completed appointment | 321 |
+| `getScreenedByName(appointment, [options])` | Get the name of whoever screened an appointment, for showing one name in a — e.g. `{{ appointment \| getScreenedByName({ format: "short", identifyCurrentUser: true }) }}` | 366 |
 
 ### filter-list.js
 

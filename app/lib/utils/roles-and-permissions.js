@@ -319,6 +319,51 @@ const getAppointmentRunByNames = function (appointment, options = {}) {
 }
 
 /**
+ * Get the people and roles to show for a completed appointment
+ *
+ * A nominated mammographer is the operator. If nobody was nominated, the
+ * person who ended the appointment is the operator. Everyone recorded as
+ * having run the appointment is a practitioner.
+ *
+ * @param {object} appointment - Appointment object
+ * @returns {{label: string, people: Array<{id: (string|null), name: string, roles: Array<string>}>}} Display label and people with their roles
+ */
+const getAppointmentMammographerSummary = function (appointment) {
+  const people = getAppointmentRunByIds(appointment).map((userId) => ({
+    id: userId,
+    name: getUsername.call(this, userId),
+    roles: ['Practitioner']
+  }))
+
+  const hasOtherNameOperator = Boolean(
+    appointment?.authorisedMammographerOtherName
+  )
+  const operatorId =
+    appointment?.authorisedMammographerId ||
+    (hasOtherNameOperator ? null : appointment?.sessionDetails?.endedBy) ||
+    null
+  const operatorName =
+    getAuthorisedMammographerName.call(this, appointment) ||
+    getScreenedByName.call(this, appointment)
+  const operator = people.find((person) => person.id === operatorId)
+
+  if (operator) {
+    operator.roles.push('Operator')
+  } else if (operatorName) {
+    people.push({
+      id: operatorId,
+      name: operatorName,
+      roles: ['Operator']
+    })
+  }
+
+  return {
+    label: people.length === 1 ? 'Mammographer' : 'Mammographers',
+    people
+  }
+}
+
+/**
  * Get the name of whoever screened an appointment, for showing one name in a
  * tight space. While it is running, that is whoever is running it. Once it
  * has ended, who took the images matters most: the nominated authorised
@@ -352,6 +397,7 @@ module.exports = {
   hasNominatedAuthorisedMammographer,
   getAuthorisedMammographerName,
   canUserScreenAppointment,
+  getAppointmentMammographerSummary,
   isClinician,
   isAdministrative,
   isHybridUser,

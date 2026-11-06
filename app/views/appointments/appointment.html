@@ -166,6 +166,18 @@
     }) }}
   {% endset %}
 
+  {% set mammographerSummary = appointment | getAppointmentMammographerSummary %}
+
+  {% set mammographersHtml %}
+    {% if mammographerSummary.people | length == 1 %}
+      {{ mammographerSummary.people[0].name }}
+    {% else %}
+      {% for person in mammographerSummary.people %}
+        <p class="nhsuk-u-margin-bottom-1">{{ person.name }} ({{ person.roles | join(" and ") }})</p>
+      {% endfor %}
+    {% endif %}
+  {% endset %}
+
   {% set appointmentHtml %}
     {{ summaryList({
       rows: [
@@ -228,21 +240,10 @@
         },
         {
           key: {
-            text: "Run by"
+            text: mammographerSummary.label
           },
           value: {
-            html: appointment | getAppointmentRunByNames({ format: "reversed" }) | formatList
-          },
-          actions: {
-            items: []
-          }
-        } if appointment.status == "complete" and appointment.sessionDetails.endedBy else {},
-        {
-          key: {
-            text: "Authorised mammographer"
-          },
-          value: {
-            html: (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (appointment | getScreenedByName({ format: "reversed" }))
+            html: mammographersHtml
           },
           actions: {
             items: []

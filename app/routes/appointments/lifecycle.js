@@ -388,7 +388,7 @@ module.exports = (router) => {
         })
       } else if (selectedUserId === 'other' && !otherName) {
         errors.push({
-          text: "Enter the mammographer's full name",
+          text: "Enter the operator's full name",
           name: 'appointment[authorisedMammographerTemp][otherName]',
           href: '#authorisedMammographerOtherName'
         })
@@ -439,7 +439,7 @@ module.exports = (router) => {
           : otherName
         req.flash(
           'success',
-          `Authorised mammographer updated to ${newAuthorisedMammographerName}`
+          `Operator has been changed to ${newAuthorisedMammographerName}`
         )
       }
 
