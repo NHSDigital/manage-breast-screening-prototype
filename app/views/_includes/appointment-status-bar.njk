@@ -5,12 +5,16 @@
 {# Appointment row items - date, time, tags #}
 {% set appointmentRowItems = [] %}
 
+{% set screeningProtocol = participant | getCurrentRiskLevel | sentenceCase %}
+{% if screeningProtocol == "Family history" %}
+  {% set screeningProtocol = "Family history: moderate risk" %}
+{% endif %}
 {% set appointmentRowItems = appointmentRowItems | push({
   html: tag({
-    text: "Routine",
+    text: screeningProtocol,
     colour: "blue"
   })
-}) %}
+})
 
 {# Date and time #}
 {% set appointmentDateTimeHtml %}
