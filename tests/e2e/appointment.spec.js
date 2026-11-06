@@ -8,8 +8,13 @@
 const { test, expect } = require('./helpers/fixtures')
 const { pinSettings, appointmentSettings } = require('./helpers/settings')
 const { findTodayAppointment } = require('./helpers/seed-data')
+const users = require('../../app/data/users')
+const {
+  getAppointmentMammographerSummary
+} = require('../../app/lib/utils/roles-and-permissions')
 const {
   clickToOpenModal,
+  clickLinkToOpenModal,
   openFormModal,
   revealInModal,
   expectModalClosed,
@@ -39,8 +44,9 @@ const checkIn = async (page, appointment) => {
  * Walk the imaging and completion steps that both journeys share
  *
  * @param {import('@playwright/test').Page} page - Playwright page
+ * @param {string} [operatorId] - Different mammographer to nominate as operator
  */
-const takeImagesAndComplete = async (page) => {
+const takeImagesAndComplete = async (page, operatorId) => {
   await expect(
     page.getByRole('heading', { name: 'Take mammogram images' })
   ).toBeVisible()
@@ -54,12 +60,60 @@ const takeImagesAndComplete = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'Check information' })
   ).toBeVisible()
+
+  if (operatorId) {
+    const mammographerModal = await clickLinkToOpenModal(
+      page,
+      'Change operator'
+    )
+    const operatorRadio = mammographerModal.locator(
+      `input[name="appointment[authorisedMammographerTemp][userId]"][value="${operatorId}"]`
+    )
+    await revealInModal(operatorRadio)
+    await operatorRadio.check()
+    await mammographerModal.getByRole('button', { name: 'Save' }).click()
+    await expectModalClosed(mammographerModal)
+  }
+
   await page
     .getByRole('button', { name: 'Complete screening and return to clinic' })
     .click()
 }
 
 test.describe('Screening appointment', () => {
+  test('shows both roles when a practitioner also operates in a multi-person appointment', () => {
+    const [practitioner, operator] = users
+    const appointment = {
+      authorisedMammographerId: practitioner.id,
+      sessionDetails: {
+        startedBy: practitioner.id,
+        authors: [{ userId: practitioner.id }, { userId: operator.id }],
+        endedBy: operator.id
+      }
+    }
+
+    const summary = getAppointmentMammographerSummary.call(
+      { ctx: { data: { users } } },
+      appointment
+    )
+
+    expect(summary).toEqual({
+      label: 'Mammographers',
+      people: [
+        {
+          id: practitioner.id,
+          name: `${practitioner.firstName} ${practitioner.lastName}`,
+          roles: ['Practitioner', 'Operator']
+        },
+        {
+          id: operator.id,
+          name: `${operator.firstName} ${operator.lastName}`,
+          roles: ['Practitioner']
+        }
+      ]
+    })
+  })
+
   test('records medical history and a symptom, then completes', async ({
     page
   }) => {
@@ -176,7 +230,7 @@ test.describe('Screening appointment', () => {
     await expect(page.getByText('Lump').first()).toBeVisible()
 
     await page
-      .getByRole('button', { name: 'Complete all and continue' })
+      .getByRole('button', { name: 'Complete all and authorise imaging' })
       .first()
       .click()
 
@@ -185,12 +239,33 @@ test.describe('Screening appointment', () => {
     // Back on the clinic list, with the appointment finished
     await expect(page).toHaveURL(new RegExp(`/clinics/${clinic.id}`))
     await expect(page.getByText(`${fullName} has been screened`)).toBeVisible()
+    await page.goto(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`
+    )
+    const mammographerRow = page
+      .locator('.nhsuk-summary-list__row')
+      .filter({ has: page.getByText('Mammographer', { exact: true }) })
+    await expect(mammographerRow).toContainText('Mammographer')
+    await expect(mammographerRow).toContainText(
+      `${users[0].firstName} ${users[0].lastName}`
+    )
+    await expect(mammographerRow).not.toContainText('(Practitioner)')
+    await expect(mammographerRow).not.toContainText('(Operator)')
   })
 
   test('goes straight through with nothing to record', async ({ page }) => {
     // A different appointment to the journey above, so a failure points at one
     // journey rather than at the two interfering
     const { clinic, appointment, fullName } = findTodayAppointment({ index: 1 })
+    const operator = users.find(
+      (user) =>
+        user.id !== users[0].id && user.permissions.includes('implantImaging')
+    )
+    if (!operator) {
+      throw new Error(
+        'Seed data needs another mammographer with implant imaging permission'
+      )
+    }
 
     await pinSettings(page, appointmentSettings)
     await page.goto(
@@ -206,14 +281,26 @@ test.describe('Screening appointment', () => {
       page.getByRole('heading', { name: 'Review medical information' })
     ).toBeVisible()
     await page
-      .getByRole('button', { name: 'Complete all and continue' })
+      .getByRole('button', { name: 'Complete all and authorise imaging' })
       .first()
       .click()
 
-    await takeImagesAndComplete(page)
+    await takeImagesAndComplete(page, operator.id)
 
     await expect(page).toHaveURL(new RegExp(`/clinics/${clinic.id}`))
     await expect(page.getByText(`${fullName} has been screened`)).toBeVisible()
+    await page.goto(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`
+    )
+    const mammographersRow = page
+      .locator('.nhsuk-summary-list__row')
+      .filter({ has: page.getByText('Mammographers', { exact: true }) })
+    await expect(mammographersRow).toContainText(
+      `${users[0].firstName} ${users[0].lastName} (Practitioner)`
+    )
+    await expect(mammographersRow).toContainText(
+      `${operator.firstName} ${operator.lastName} (Operator)`
+    )
   })
 
   test('records why no images were needed after bilateral mastectomy', async ({

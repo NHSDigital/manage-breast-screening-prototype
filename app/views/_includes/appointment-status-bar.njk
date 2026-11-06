@@ -5,6 +5,17 @@
 {# Appointment row items - date, time, tags #}
 {% set appointmentRowItems = [] %}
 
+{% set screeningProtocol = participant | getCurrentRiskLevel | sentenceCase %}
+{% if screeningProtocol == "Family history" %}
+  {% set screeningProtocol = "Family history: moderate risk" %}
+{% endif %}
+{% set appointmentRowItems = appointmentRowItems | push({
+  html: tag({
+    text: screeningProtocol,
+    colour: "blue"
+  })
+}) %}
+
 {# Date and time #}
 {% set appointmentDateTimeHtml %}
   {{ clinic.date | formatDate }} at {{ appointment.timing.startTime | formatTimeString }}
@@ -110,6 +121,15 @@
   value: dobValue
 }) %}
 
+{# Postcode #}
+{% set postcodeHtml %}
+  <span class="nhsuk-u-nowrap">{{ participant.demographicInformation.address.postcode }}</span>
+{% endset %}
+{% set participantRowItems = participantRowItems | push({
+  key: "Postcode:",
+  value: postcodeHtml
+}) %}
+
 {# NHS Number #}
 {% set nhsNumberHtml %}
   {{ appCopyToClipboard({
@@ -122,6 +142,23 @@
 {% set participantRowItems = participantRowItems | push({
   key: "NHS:",
   value: nhsNumberHtml
+}) %}
+
+{# SX Number #}
+{% set sxNumberDisplayHtml %}
+  <span class="nhsuk-u-font-code nhsuk-u-nowrap">{{ participant.sxNumber }}</span>
+{% endset %}
+{% set sxNumberHtml %}
+  {{ appCopyToClipboard({
+    text: participant.sxNumber,
+    type: "value",
+    html: sxNumberDisplayHtml,
+    label: "SX number"
+  }) }}
+{% endset %}
+{% set participantRowItems = participantRowItems | push({
+  key: "SX:",
+  value: sxNumberHtml
 }) %}
 
 {{ appStatusBar({

@@ -123,7 +123,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Initialize progress
   updateProgress(sections, completedSections)
 
-  // Handle "Complete all and continue" button
+  // Handle "Complete all and authorise imaging" button
   const completeAllButtons = document.querySelectorAll(
     '.js-complete-all-sections'
   )
@@ -311,32 +311,6 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
 
       return // Exit once we've found and opened the incomplete section
     }
-  }
-
-  // If we get here, all sections are complete
-  // console.log('All sections are now complete!')
-  highlightCompletionButton()
-}
-
-// Function to highlight the completion button when all sections are done
-function highlightCompletionButton() {
-  const completeButton = document.querySelector(
-    'button:contains("Complete all and continue")'
-  )
-
-  if (!completeButton) {
-    // Try a more specific selector if the above doesn't work
-    const buttons = document.querySelectorAll('button')
-
-    buttons.forEach((btn) => {
-      if (btn.textContent.includes('Complete all and continue')) {
-        btn.classList.add('nhsuk-button--green') // Highlight in green
-        btn.style.animation = 'pulse 2s infinite' // Add a subtle animation
-      }
-    })
-  } else {
-    completeButton.classList.add('nhsuk-button--green')
-    completeButton.style.animation = 'pulse 2s infinite'
   }
 }
 
