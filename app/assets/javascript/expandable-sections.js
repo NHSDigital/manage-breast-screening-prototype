@@ -320,24 +320,11 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
 
 // Function to highlight the completion button when all sections are done
 function highlightCompletionButton() {
-  const completeButton = document.querySelector(
-    'button:contains("Complete all and authorise imaging")'
-  )
+  const completeButtons = document.querySelectorAll('.js-complete-all-sections')
 
-  if (!completeButton) {
-    // Try a more specific selector if the above doesn't work
-    const buttons = document.querySelectorAll('button')
-
-    buttons.forEach((btn) => {
-      if (btn.textContent.includes('Complete all and authorise imaging')) {
-        btn.classList.add('nhsuk-button--green') // Highlight in green
-        btn.style.animation = 'pulse 2s infinite' // Add a subtle animation
-      }
-    })
-  } else {
-    completeButton.classList.add('nhsuk-button--green')
-    completeButton.style.animation = 'pulse 2s infinite'
-  }
+  completeButtons.forEach((button) => {
+    button.classList.add('app-button-pulse')
+  })
 }
 
 // Function to update section status

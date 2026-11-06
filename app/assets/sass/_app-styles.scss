@@ -2,6 +2,7 @@
 // All app component and utility styles. The NHS frontend base and its config are forwarded in main.scss.
 
 @forward "components/button";
+@forward "components/button-pulse";
 @forward "components/button-menu";
 @forward "components/action-link";
 @forward "components/details";
