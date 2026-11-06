@@ -312,19 +312,6 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
       return // Exit once we've found and opened the incomplete section
     }
   }
-
-  // If we get here, all sections are complete
-  // console.log('All sections are now complete!')
-  highlightCompletionButton()
-}
-
-// Function to highlight the completion button when all sections are done
-function highlightCompletionButton() {
-  const completeButtons = document.querySelectorAll('.js-complete-all-sections')
-
-  completeButtons.forEach((button) => {
-    button.classList.add('app-button-pulse')
-  })
 }
 
 // Function to update section status
