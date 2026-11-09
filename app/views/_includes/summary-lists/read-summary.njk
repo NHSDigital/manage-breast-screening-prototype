@@ -210,6 +210,7 @@
 {# Recall for assessment details #}
 {% if read.opinion == 'recall_for_assessment' %}
   
+  {% set readableSides = appointment.mammogramData | getReadableSides if appointment else ["right", "left"] %}
   {% set breastAssessmentHtml %}
     <div class="nhsuk-grid-row nhsuk-u-margin-bottom-0">
       {% for breastSide in ["right", "left"] %}
@@ -231,6 +232,8 @@
             {% if breastData.comment %}
               <p class="nhsuk-u-margin-bottom-0">Comment: {{ breastData.comment }}</p>
             {% endif %}
+          {% elseif not (breastSide in readableSides) %}
+            <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">Not imaged</p>
           {% else %}
             <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-0">Not recorded</p>
           {% endif %}

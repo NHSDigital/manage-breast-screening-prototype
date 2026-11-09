@@ -20,6 +20,7 @@ const { getReturnUrl, urlWithReferrer } = require('../../lib/utils/referrers')
 const {
   getImageSetForAppointment
 } = require('../../lib/utils/mammogram-images')
+const { getExpectedViews } = require('../../lib/utils/expected-views')
 const {
   ensureSeedProfilesState,
   getSeedDataProfileFromState
@@ -101,6 +102,7 @@ module.exports = (router) => {
           startTime,
           isSeedData: false,
           config: appointmentData?.participant?.config,
+          expectedViews: getExpectedViews(data.appointment).views,
           scenarioWeights: mammogramProfile.scenarioWeights || null,
           imperfectChanceForTechnicalOrIncomplete:
             mammogramProfile.imperfectChanceForTechnicalOrIncomplete,

@@ -5,6 +5,7 @@
 const {
   getImageSetForAppointment
 } = require('../../lib/utils/mammogram-images')
+const { getExpectedViews } = require('../../lib/utils/expected-views')
 
 module.exports = (router) => {
   // Initialize or edit manual imaging - clears temp or prepopulates from existing data
@@ -181,7 +182,16 @@ module.exports = (router) => {
       notesForReader: mammogramData.notesForReader,
       viewsRightBreast: [],
       viewsLeftBreast: []
-    } // Convert views back to checkbox/input format
+    }
+
+    // A view with no saved images was not taken, so reopens as zero
+    for (const breastKey of ['viewsRightBreast', 'viewsLeftBreast']) {
+      for (const viewShort of ['CC', 'MLO', 'CCID', 'MLOID']) {
+        formData[`${breastKey}${viewShort}Count`] = '0'
+      }
+    }
+
+    // Convert views back to checkbox/input format
     for (const [viewKey, viewData] of Object.entries(mammogramData.views)) {
       const breastKey =
         viewData.side === 'right' ? 'viewsRightBreast' : 'viewsLeftBreast'
@@ -358,15 +368,6 @@ module.exports = (router) => {
       }
     }
 
-    // Check if standard views completed (4 standard views: RCC, RMLO, LCC, LMLO)
-    const standardViews = [
-      'rightCraniocaudal',
-      'rightMediolateralOblique',
-      'leftCraniocaudal',
-      'leftMediolateralOblique'
-    ]
-    const standardViewsCompleted = standardViews.every((view) => views[view])
-
     // Handle incomplete mammography
     const hasIncompleteMammography =
       formData.isIncompleteMammography?.includes('yes')
@@ -411,7 +412,6 @@ module.exports = (router) => {
       notesForReader: formData.notesForReader,
       metadata: {
         totalImages,
-        standardViewsCompleted,
         hasAdditionalImages,
         hasRepeat,
         hasExtraImages,
@@ -438,19 +438,28 @@ module.exports = (router) => {
         )
       }
 
-      // If standard 4 images, preset the data
+      // If the expected images were taken (a standard set, unless a mastectomy
+      // or recall says otherwise), preset one image of each expected view
       if (isStandardSet === 'yes') {
         if (!data.appointment.mammogramDataTemp) {
           data.appointment.mammogramDataTemp = {}
         }
 
-        // Preset standard views in temp
-        data.appointment.mammogramDataTemp.viewsRightBreast = ['CC', 'MLO']
-        data.appointment.mammogramDataTemp.viewsRightBreastCCCount = '1'
-        data.appointment.mammogramDataTemp.viewsRightBreastMLOCount = '1'
-        data.appointment.mammogramDataTemp.viewsLeftBreast = ['CC', 'MLO']
-        data.appointment.mammogramDataTemp.viewsLeftBreastCCCount = '1'
-        data.appointment.mammogramDataTemp.viewsLeftBreastMLOCount = '1'
+        const { views: expectedViews } = getExpectedViews(data.appointment)
+        const mammogramDataTemp = data.appointment.mammogramDataTemp
+        for (const [breast, sideCode] of [
+          ['Right', 'R'],
+          ['Left', 'L']
+        ]) {
+          const viewTypes = ['CC', 'MLO'].filter((viewType) =>
+            expectedViews.includes(`${sideCode}${viewType}`)
+          )
+          mammogramDataTemp[`views${breast}Breast`] = viewTypes
+          for (const viewType of ['CC', 'MLO']) {
+            mammogramDataTemp[`views${breast}Breast${viewType}Count`] =
+              viewTypes.includes(viewType) ? '1' : '0'
+          }
+        }
 
         // Convert to final format
         const mammogramData = convertManualDataToMammogramFormat(

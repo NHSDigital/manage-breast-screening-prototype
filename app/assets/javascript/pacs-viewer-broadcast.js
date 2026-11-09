@@ -18,6 +18,7 @@
 
   const allPaths = getMeta('mammogram-all-paths')
   const context = getMeta('mammogram-context')
+  const notExpected = getMeta('mammogram-not-expected')
 
   new BroadcastChannel('mammogram-viewer').postMessage({
     type: 'show',
@@ -34,6 +35,7 @@
     },
     allPaths: allPaths ? JSON.parse(allPaths) : null,
     hasAdditionalImages: getMeta('mammogram-has-additional') === 'true',
+    notExpected: notExpected ? JSON.parse(notExpected) : null,
     setId: getMeta('mammogram-set-id'),
     setDescription: getMeta('mammogram-set-description'),
     setTag: getMeta('mammogram-set-tag'),

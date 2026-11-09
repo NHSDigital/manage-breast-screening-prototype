@@ -1,14 +1,32 @@
 {# app/views/_includes/mastectomy-imaging-warning.njk #}
 
-{# Tells readers which breasts were imaged after a mastectomy #}
-{% for note in appointment.medicalInformation.medicalHistory | getMastectomyImagingNotes %}
+{# Tells readers when the images aren't a standard set, and why. A mastectomy
+   that still had both breasts imaged keeps its own callout #}
+{% set expectedViews = appointment | getExpectedViews %}
+{% set mastectomyNotes = appointment.medicalInformation.medicalHistory | getMastectomyImagingNotes %}
+
+{% if not expectedViews.isStandardSet %}
   {% call warningCallout({
-    heading: note.heading,
+    heading: expectedViews.heading,
     headingLevel: 2
   }) %}
-    <p>{{ note.imagedText }}</p>
-    {% if note.details %}
-      <p>Details: {{ note.details }}</p>
-    {% endif %}
+    <p>{{ expectedViews.summary }}</p>
+    {% for note in mastectomyNotes %}
+      {% for details in note.detailsList %}
+        <p>Details: {{ details }}</p>
+      {% endfor %}
+    {% endfor %}
   {% endcall %}
-{% endfor %}
+{% else %}
+  {% for note in mastectomyNotes %}
+    {% call warningCallout({
+      heading: note.heading,
+      headingLevel: 2
+    }) %}
+      <p>{{ note.imagedText }}</p>
+      {% for details in note.detailsList %}
+        <p>Details: {{ details }}</p>
+      {% endfor %}
+    {% endcall %}
+  {% endfor %}
+{% endif %}

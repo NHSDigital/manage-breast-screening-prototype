@@ -337,7 +337,7 @@
                   {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
                     <span class="app-reading-case-tag">{{ "Imperfect" | toTag }}</span>
                   {% endif %}
-                  {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
+                  {% if appointment | hasIncompleteMammography %}
                     <span class="app-reading-case-tag">{{ "Incomplete" | toTag }}</span>
                   {% endif %}
                 {% endif %}
@@ -551,7 +551,7 @@
                   {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
                     <span class="app-reading-case-tag">{{ "Imperfect" | toTag }}</span>
                   {% endif %}
-                  {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
+                  {% if appointment | hasIncompleteMammography %}
                     <span class="app-reading-case-tag">{{ "Incomplete" | toTag }}</span>
                   {% endif %}
                 {% endif %}

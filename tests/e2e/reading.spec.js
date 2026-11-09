@@ -139,6 +139,38 @@ const addTextAnnotation = async (page, abnormalityType) => {
 }
 
 /**
+ * On the recall for assessment page, mark the first imaged breast abnormal and
+ * the other normal. A case can have one breast imaged, for example after a
+ * mastectomy, and that page asks no opinion of a breast with no images.
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page
+ */
+const recordRecallOpinions = async (page) => {
+  const opinionInput = (side, value) =>
+    page.locator(
+      `input[name="imageReadingTemp[${side}][breastAssessment]"][value="${value}"]`
+    )
+
+  await page
+    .locator('input[name$="[breastAssessment]"]')
+    .first()
+    .waitFor({ state: 'attached' })
+
+  const imagedSides = []
+  for (const side of ['right', 'left']) {
+    if (await opinionInput(side, 'abnormal').count()) {
+      imagedSides.push(side)
+    }
+  }
+
+  const [abnormalSide, ...normalSides] = imagedSides
+  await opinionInput(abnormalSide, 'abnormal').check()
+  for (const side of normalSides) {
+    await opinionInput(side, 'normal').check()
+  }
+}
+
+/**
  * Fill in the technical recall details for one view and continue.
  *
  * The technical recall form opens in the shared modal - unlike recall for
@@ -268,16 +300,7 @@ test.describe('Image reading', () => {
       .click()
 
     await expect(page).toHaveURL(/\/recall-for-assessment-details/)
-    await page
-      .locator(
-        'input[name="imageReadingTemp[right][breastAssessment]"][value="abnormal"]'
-      )
-      .check()
-    await page
-      .locator(
-        'input[name="imageReadingTemp[left][breastAssessment]"][value="normal"]'
-      )
-      .check()
+    await recordRecallOpinions(page)
 
     // An abnormal breast needs at least one annotation before it can be saved
     await addTextAnnotation(page, 'Ill-defined mass')
@@ -383,16 +406,7 @@ test.describe('Image reading', () => {
       .click()
 
     await expect(page).toHaveURL(/\/recall-for-assessment-details/)
-    await page
-      .locator(
-        'input[name="imageReadingTemp[right][breastAssessment]"][value="abnormal"]'
-      )
-      .check()
-    await page
-      .locator(
-        'input[name="imageReadingTemp[left][breastAssessment]"][value="normal"]'
-      )
-      .check()
+    await recordRecallOpinions(page)
     await addTextAnnotation(page, 'Ill-defined mass')
     await page.getByRole('button', { name: 'Continue' }).first().click()
 
@@ -448,16 +462,7 @@ test.describe('Image reading', () => {
     await page.getByLabel('Recall for assessment (R)').check()
     await page.getByRole('button', { name: 'Update opinion' }).click()
     await expect(page).toHaveURL(/\/recall-for-assessment-details/)
-    await page
-      .locator(
-        'input[name="imageReadingTemp[right][breastAssessment]"][value="abnormal"]'
-      )
-      .check()
-    await page
-      .locator(
-        'input[name="imageReadingTemp[left][breastAssessment]"][value="normal"]'
-      )
-      .check()
+    await recordRecallOpinions(page)
 
     // Continuing without an annotation fails validation, which must keep the
     // chain back to the existing read

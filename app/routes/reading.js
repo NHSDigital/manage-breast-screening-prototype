@@ -5,6 +5,7 @@ const {
   updateAppointmentData
 } = require('../lib/utils/appointment-data')
 const { getClinic } = require('../lib/utils/clinics')
+const { getReadableSides } = require('../lib/utils/expected-views')
 const {
   getResumeAppointmentForUser,
   getReadableAppointmentsForClinic,
@@ -1877,9 +1878,14 @@ module.exports = (router) => {
     (req, res) => {
       const { side } = req.query
       const data = req.session.data
-
-      // Validate side parameter
-      if (!side || !['left', 'right'].includes(side)) {
+      const appointment = data.appointments.find(
+        (item) => item.id === req.params.appointmentId
+      )
+      // Validate side parameter. A breast with no images can't be annotated
+      if (
+        !side ||
+        !getReadableSides(appointment?.mammogramData).includes(side)
+      ) {
         return res.redirect(
           urlWithReferrer(
             `/reading/session/${req.params.sessionId}/appointments/${req.params.appointmentId}/recall-for-assessment-details`,
@@ -2490,63 +2496,56 @@ module.exports = (router) => {
       const formData = data.imageReadingTemp
       const opinion = formData?.opinion
 
-      // Validate recall for assessment details
+      // Validate recall for assessment details. A breast with no images
+      // has no opinion to give
       if (opinion === 'recall_for_assessment') {
-        const rightAssessment = formData?.right?.breastAssessment
-        const leftAssessment = formData?.left?.breastAssessment
+        const appointment = data.appointments.find(
+          (item) => item.id === appointmentId
+        )
+        const readableSides = getReadableSides(appointment?.mammogramData)
         const errors = []
 
-        if (!rightAssessment) {
-          errors.push({
-            text: 'Give an opinion for the right breast',
-            name: 'imageReadingTemp[right][breastAssessment]',
-            href: '#right-breastAssessment'
-          })
-        }
-        if (!leftAssessment) {
-          errors.push({
-            text: 'Give an opinion for the left breast',
-            name: 'imageReadingTemp[left][breastAssessment]',
-            href: '#left-breastAssessment'
-          })
+        for (const side of readableSides) {
+          if (!formData?.[side]?.breastAssessment) {
+            errors.push({
+              text: `Give an opinion for the ${side} breast`,
+              name: `imageReadingTemp[${side}][breastAssessment]`,
+              href: `#${side}-breastAssessment`
+            })
+          }
         }
 
-        // Both breasts cannot be normal — at least one must be abnormal or clinical
+        // Imaged breasts cannot all be normal — at least one must be abnormal or clinical
+        const readableAssessments = readableSides.map(
+          (side) => formData?.[side]?.breastAssessment
+        )
         if (
-          rightAssessment &&
-          leftAssessment &&
-          rightAssessment === 'normal' &&
-          leftAssessment === 'normal'
+          readableAssessments.length &&
+          readableAssessments.every((assessment) => assessment === 'normal')
         ) {
-          const appointment = data.appointments.find(
-            (e) => e.id === appointmentId
-          )
           const hasSymptoms =
             appointment?.medicalInformation?.symptoms?.length > 0
-          const errorText = hasSymptoms
-            ? 'At least one breast must be marked abnormal or needing clinical assessment to recall for assessment'
-            : 'At least one breast must be marked abnormal to recall for assessment'
-          errors.push({
-            text: errorText,
-            name: 'imageReadingTemp[right][breastAssessment]',
-            href: '#right-breastAssessment'
-          })
-          errors.push({
-            text: errorText,
-            name: 'imageReadingTemp[left][breastAssessment]',
-            href: '#left-breastAssessment',
-            hideFromSummary: true
+          const markedAs = hasSymptoms
+            ? 'abnormal or needing clinical assessment'
+            : 'abnormal'
+          const errorText =
+            readableSides.length === 1
+              ? `Mark the ${readableSides[0]} breast as ${markedAs} to recall for assessment`
+              : `At least one breast must be marked ${markedAs} to recall for assessment`
+          readableSides.forEach((side, index) => {
+            errors.push({
+              text: errorText,
+              name: `imageReadingTemp[${side}][breastAssessment]`,
+              href: `#${side}-breastAssessment`,
+              ...(index > 0 ? { hideFromSummary: true } : {})
+            })
           })
         }
 
         // Validate annotations match breast assessment
-        const rightAnnotations = formData?.right?.annotations || []
-        const leftAnnotations = formData?.left?.annotations || []
-
-        for (const side of ['right', 'left']) {
-          const assessment = side === 'right' ? rightAssessment : leftAssessment
-          const annotations =
-            side === 'right' ? rightAnnotations : leftAnnotations
+        for (const side of readableSides) {
+          const assessment = formData?.[side]?.breastAssessment
+          const annotations = formData?.[side]?.annotations || []
           const sideLabel = side
 
           if (!assessment) continue

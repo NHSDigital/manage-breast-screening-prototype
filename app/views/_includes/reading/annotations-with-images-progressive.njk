@@ -2,7 +2,10 @@
 {# Mode: with-images-progressive
    Always shows tabs for right/left breast. Each tab panel starts with a
    simple empty state (just annotation list with add link). Once a side has
-   annotations, it shows the full interactive images + sidebar UI. #}
+   annotations, it shows the full interactive images + sidebar UI.
+   Uses from the page: appointment (a breast with no images shows a "Not
+   imaged" panel), rightAnnotations, leftAnnotations, their errors, allPaths
+   and mammogramViewOrder. #}
 
 {% from '_components/annotation-list/macro.njk' import appAnnotationList %}
 {% from '_components/annotation-images/macro.njk' import appAnnotationImages %}
@@ -21,6 +24,13 @@
   {% set initialSide = "right" %}
 {% elseif leftAnnotationsError and not rightAnnotationsError %}
   {% set initialSide = "left" %}
+{% endif %}
+
+{# Open on a breast that has images #}
+{% set readableSides = appointment.mammogramData | getReadableSides %}
+{% set expectedViews = appointment | getExpectedViews %}
+{% if not (initialSide in readableSides) %}
+  {% set initialSide = readableSides[0] %}
 {% endif %}
 
 <div class="nhsuk-grid-row">
@@ -47,7 +57,11 @@
           <div class="app-annotation-panel" data-panel-side="{{ breastSide }}"{{ ' hidden' if breastSide != initialSide }}>
             {% set _sideAnnotationsError = rightAnnotationsError if breastSide == "right" else leftAnnotationsError %}
 
-            {% if sideHasAnnotations %}
+            {# A breast with no images has nothing to annotate #}
+            {% if not (breastSide in readableSides) %}
+              {% set notExpectedViewsText = "Not imaged" %}
+              {% include "_includes/images/not-expected-views.njk" %}
+            {% elseif sideHasAnnotations %}
               {# Full interactive UI with images and sidebar #}
               <div class="app-ann-v2">
                 <div class="app-ann-v2__images">
