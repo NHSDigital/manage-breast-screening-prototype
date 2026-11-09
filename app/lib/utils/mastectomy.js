@@ -137,17 +137,38 @@ const describeMastectomyImaging = (item) => {
 /**
  * Describe the mastectomies where images were taken, for readers
  *
- * Bilateral mastectomies with no images are left out.
+ * Bilateral mastectomies with no images are left out. Mastectomies recorded
+ * more than once (for example under both breast cancer and mastectomy) with
+ * the same side and imaging answer give one note, with all their details.
  *
  * @param {object} medicalHistory - Appointment medical history, keyed by type
- * @returns {Array<object>} One describeMastectomyImaging result per mastectomy
+ * @returns {Array<{heading: string, imagedText: string, detailsList: Array<string>}>}
+ * One note per side and imaging answer
  * @example
  * {% for note in appointment.medicalInformation.medicalHistory | getMastectomyImagingNotes %}
  */
-const getMastectomyImagingNotes = (medicalHistory) =>
+const getMastectomyImagingNotes = (medicalHistory) => {
+  const notes = []
+
   MASTECTOMY_HISTORY_TYPES.flatMap((type) => medicalHistory?.[type] || [])
     .map(describeMastectomyImaging)
-    .filter((note) => note?.imagedText)
+    .filter((described) => described?.imagedText)
+    .forEach(({ heading, imagedText, details }) => {
+      let note = notes.find(
+        (existing) =>
+          existing.heading === heading && existing.imagedText === imagedText
+      )
+      if (!note) {
+        note = { heading, imagedText, detailsList: [] }
+        notes.push(note)
+      }
+      if (details && !note.detailsList.includes(details)) {
+        note.detailsList.push(details)
+      }
+    })
+
+  return notes
+}
 
 /**
  * Check whether a medical history item records a bilateral mastectomy with no images needed
@@ -188,6 +209,8 @@ const getBilateralMastectomySuccessMessage = (
   `Appointment ended. ${participantName} does not need any images because of their bilateral mastectomy. <a href="${appointmentUrl}" class="app-nowrap">View their appointment</a>`
 
 module.exports = {
+  MASTECTOMY_HISTORY_TYPES,
+  getMastectomyImagingOptions,
   OTHER_REASON,
   BILATERAL_MASTECTOMY,
   PERMANENT_EXCLUSION,

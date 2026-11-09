@@ -24,6 +24,8 @@
   {# Pass all image paths for additional images view #}
   <meta name="mammogram-all-paths" content="{{ mammogramImages.allPaths | dump | escape }}">
   <meta name="mammogram-has-additional" content="{{ 'true' if mammogramImages.hasAdditionalImages else 'false' }}">
+  {# Views that weren't expected and weren't taken, which the viewer leaves blank rather than showing "No image" #}
+  <meta name="mammogram-not-expected" content="{{ viewerAppointment | getNotExpectedViews | map("lower") | dump | escape }}">
   {# Pass set info for debugging #}
   <meta name="mammogram-set-id" content="{{ mammogramImages.set.id }}">
   <meta name="mammogram-set-description" content="{{ mammogramImages.set.description }}">

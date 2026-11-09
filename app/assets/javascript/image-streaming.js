@@ -39,8 +39,13 @@ function initStreaming(config) {
     }
   })
 
-  // Set all slots to awaiting state before any images arrive
-  slots.forEach((slot) => setSlotAwaiting(slot))
+  // Set slots to awaiting state before any images arrive. Views that aren't
+  // expected keep their placeholder, as nothing will arrive for them
+  slots.forEach((slot) => {
+    if (!slot.querySelector('[data-not-expected]')) {
+      setSlotAwaiting(slot)
+    }
+  })
 
   let nextIndex = 0
   let timer = null
@@ -98,13 +103,11 @@ function setSlotAwaiting(slot) {
     ? labelEl.textContent.trim()
     : slot.dataset.view || ''
 
-  // Give the slot a preferred width so the wrapper's width: 100% can resolve.
-  // Keep max-width at 100% so placeholders still shrink on smaller screens.
-  const isLarge = firstWrapper.classList.contains(
-    'app-mammogram-thumbnail__image-wrapper--large'
+  // Style the wrapper as a placeholder (sized like an image, without the
+  // black background and border) until the image arrives
+  firstWrapper.classList.add(
+    'app-mammogram-thumbnail__image-wrapper--placeholder'
   )
-  slot.style.width = isLarge ? '200px' : '120px'
-  slot.style.maxWidth = '100%'
 
   // Show a spinner on every placeholder from the start — images may load too fast
   // for a spinner added only at reveal time to be visible
@@ -138,9 +141,9 @@ function revealImage(imageData, slotMap, immediate = false) {
     // Skip the spinner for the first image (already received when we arrived on this page).
     const showImage = () => {
       wrapper.innerHTML = `<span class="app-mammogram-thumbnail__label">${labelText}</span>`
-      // Reset placeholder-only sizing once a real image is shown.
-      slot.style.width = ''
-      slot.style.maxWidth = ''
+      wrapper.classList.remove(
+        'app-mammogram-thumbnail__image-wrapper--placeholder'
+      )
 
       const img = document.createElement('img')
       img.className =

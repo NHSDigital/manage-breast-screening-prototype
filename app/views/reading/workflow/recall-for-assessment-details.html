@@ -26,67 +26,75 @@
 
   {% set breastDetailsHtml %}
 
-    {{ radios({
-      small: true,
-      idPrefix: params.side + "-breastAssessment",
-      name: "imageReadingTemp[" + params.side + "][breastAssessment]",
-      value: data.imageReadingTemp[params.side].breastAssessment,
-      fieldset: {
-        legend: {
-          text: "What is your opinion of the " + params.side + " breast?",
-          size: "s"
-        }
-      },
-      items: [
-        {
-          value: "normal",
-          text: "Normal"
+    {% if not params.isImaged %}
+      {% set notExpectedViewsText = "Not imaged" %}
+      {% set notExpectedViewsClasses = "nhsuk-u-margin-bottom-0" %}
+      {% include "_includes/images/not-expected-views.njk" %}
+    {% else %}
+
+      {{ radios({
+        small: true,
+        idPrefix: params.side + "-breastAssessment",
+        name: "imageReadingTemp[" + params.side + "][breastAssessment]",
+        value: data.imageReadingTemp[params.side].breastAssessment,
+        fieldset: {
+          legend: {
+            text: "What is your opinion of the " + params.side + " breast?",
+            size: "s"
+          }
         },
-        {
-          value: "clinical",
-          text: "Normal, symptoms need clinical assessment"
-        } if appointment.medicalInformation.symptoms | length > 0,
-        {
-          value: "abnormal",
-          text: "Abnormal, recall for assessment"
-        }
+        items: [
+          {
+            value: "normal",
+            text: "Normal"
+          },
+          {
+            value: "clinical",
+            text: "Normal, symptoms need clinical assessment"
+          } if appointment.medicalInformation.symptoms | length > 0,
+          {
+            value: "abnormal",
+            text: "Abnormal, recall for assessment"
+          }
         
-      ] | removeEmpty
-    } | populateErrors) }}
+        ] | removeEmpty
+      } | populateErrors) }}
 
-    {% call appCollapsibleInput({ text: "Add " + params.side + " breast comment" }) %}
-      {{ input({
-        name: "imageReadingTemp[" + params.side + "][comment]",
-        value: data.imageReadingTemp[params.side].comment,
-        label: {
-          text: Side + " breast comment (optional)",
-          size: "s"
-        },
-        formGroup: {
-          classes: "nhsuk-u-margin-bottom-0"
-        }
-      }) }}
-    {% endcall %}
+      {% call appCollapsibleInput({ text: "Add " + params.side + " breast comment" }) %}
+        {{ input({
+          name: "imageReadingTemp[" + params.side + "][comment]",
+          value: data.imageReadingTemp[params.side].comment,
+          label: {
+            text: Side + " breast comment (optional)",
+            size: "s"
+          },
+          formGroup: {
+            classes: "nhsuk-u-margin-bottom-0"
+          }
+        }) }}
+      {% endcall %}
 
-    {# Per-breast annotations (non-tab modes only) #}
-    {% if params.annotationsHtml %}
-      <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
-      <div id="{{ params.side }}-annotations" tabindex="-1" class="{{ 'app-annotation-section--error' if params.annotationError }}">
-        <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">{{ params.side | sentenceCase }} breast annotations</h3>
-        {# Error before the list when annotations exist (wrong level); after hint text when none exist #}
-        {% if params.annotationError and params.annotationCount > 0 %}
-          <span class="app-annotation-section__error-message">
-            <span class="nhsuk-u-visually-hidden">Error: </span>{{ params.annotationError.text }}
-          </span>
-        {% endif %}
-        {{ params.annotationsHtml | safe }}
-        {% if params.annotationError and params.annotationCount == 0 %}
-          <span class="app-annotation-section__error-message">
-            <span class="nhsuk-u-visually-hidden">Error: </span>{{ params.annotationError.text }}
-          </span>
-        {% endif %}
-      </div>
-      {{ params.annotationsButtonHtml | safe }}
+      {# Per-breast annotations (non-tab modes only) #}
+      {% if params.annotationsHtml %}
+        <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+        <div id="{{ params.side }}-annotations" tabindex="-1" class="{{ 'app-annotation-section--error' if params.annotationError }}">
+          <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">{{ params.side | sentenceCase }} breast annotations</h3>
+          {# Error before the list when annotations exist (wrong level); after hint text when none exist #}
+          {% if params.annotationError and params.annotationCount > 0 %}
+            <span class="app-annotation-section__error-message">
+              <span class="nhsuk-u-visually-hidden">Error: </span>{{ params.annotationError.text }}
+            </span>
+          {% endif %}
+          {{ params.annotationsHtml | safe }}
+          {% if params.annotationError and params.annotationCount == 0 %}
+            <span class="app-annotation-section__error-message">
+              <span class="nhsuk-u-visually-hidden">Error: </span>{{ params.annotationError.text }}
+            </span>
+          {% endif %}
+        </div>
+        {{ params.annotationsButtonHtml | safe }}
+      {% endif %}
+
     {% endif %}
 
   {% endset %}
@@ -142,7 +150,9 @@
   {# For non-tab modes, annotations go inside each breast card #}
   {% set isInlineAnnotationsMode = annotationsMode == 'without-images' or annotationsMode == 'with-images-simple' %}
 
-  {# Breast opinion cards #}
+  {# Breast opinion cards. A breast with no images gets no opinion #}
+  {% set readableSides = appointment.mammogramData | getReadableSides %}
+  {% set expectedViews = appointment | getExpectedViews %}
   <div class="nhsuk-grid-row">
     {% for breastSide in ["right", "left"] %}
       {% set sideAnnotations = rightAnnotations if breastSide == "right" else leftAnnotations %}
@@ -232,6 +242,7 @@
       <div class="nhsuk-grid-column-one-half">
         {{ breastDetails({
           side: breastSide,
+          isImaged: breastSide in readableSides,
           annotationsHtml: sideAnnotationsHtml if isInlineAnnotationsMode,
           annotationsButtonHtml: sideAnnotationsButtonHtml if isInlineAnnotationsMode,
           annotationError: _sideAnnotationsError if isInlineAnnotationsMode,

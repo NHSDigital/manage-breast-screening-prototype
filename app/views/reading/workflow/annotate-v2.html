@@ -15,6 +15,11 @@
   {% set existingLeft = data.imageReadingTemp.left.annotations | default([]) %}
   {% set existingRight = data.imageReadingTemp.right.annotations | default([]) %}
 
+  {# Views that weren't expected and weren't taken, for example after a mastectomy #}
+  {% set expectedViews = appointment | getExpectedViews %}
+  {% set notExpectedViews = appointment | getNotExpectedViews | map("lower") %}
+  {% set readableSides = appointment.mammogramData | getReadableSides %}
+
   <script>
     const V2 = {}
     V2.imagePaths = {{ allPaths | dump | safe }}
@@ -22,6 +27,8 @@
     V2.sessionId = "{{ sessionId }}"
     V2.appointmentId = "{{ appointmentId }}"
     V2.viewOrder = "{{ data.settings.mammogramViewOrder or 'cc-first' }}"
+    V2.notExpectedViews = {{ notExpectedViews | dump | safe }}
+    V2.readableSides = {{ readableSides | dump | safe }}
   </script>
 
   {% set mammogramViewOrder = data.settings.mammogramViewOrder or 'cc-first' %}
@@ -64,6 +71,7 @@
         type="button"
         data-thumb-side="{{ group.side }}"
         aria-label="Switch to {{ group.label }}"
+        {{- " disabled" if not (group.side in readableSides) }}
       >
         <span class="app-ann-v2__tab-label" data-side="{{ group.side }}">{{ group.label }}</span>
         <span class="app-count" data-side-count="{{ group.side }}">0</span>
@@ -82,7 +90,7 @@
                 </span>
               {% endfor %}
             {% else %}
-              <span class="app-ann-v2__tab-thumb app-ann-v2__tab-thumb--missing" data-thumb-side="{{ group.side }}" data-thumb-view="{{ view.key }}">
+              <span class="app-ann-v2__tab-thumb app-ann-v2__tab-thumb--missing{{ ' app-ann-v2__tab-thumb--not-expected' if view.key in notExpectedViews }}" data-thumb-side="{{ group.side }}" data-thumb-view="{{ view.key }}">
               </span>
             {% endif %}
           {% endfor %}
@@ -178,7 +186,8 @@
 
   // ─── state ─────────────────────────────────────────────────────────────────
 
-  let activeSide = 'right'
+  // Start on a breast that has images
+  let activeSide = V2.readableSides[0]
   let activeAnnotationId = null
   let modalAnnotationId = null
   let annotationCounter = 0
@@ -236,9 +245,14 @@
       const paths = rawPath ? (Array.isArray(rawPath) ? rawPath : [rawPath]) : []
 
       if (paths.length === 0) {
-        html += '<div class="app-ann-v2__image-panel app-ann-v2__image-panel--no-image app-ann-v2__image-panel--' + activeSide + '" data-view="' + viewKey + '">' +
+        // A view that wasn't expected says so, rather than "No image"
+        const isNotExpected = V2.notExpectedViews.includes(viewKey)
+        const placeholderHtml = isNotExpected
+          ? 'Not imaged'
+          : 'No image'
+        html += '<div class="app-ann-v2__image-panel app-ann-v2__image-panel--no-image' + (isNotExpected ? ' app-ann-v2__image-panel--not-expected' : '') + ' app-ann-v2__image-panel--' + activeSide + '" data-view="' + viewKey + '">' +
           '<span class="app-ann-v2__view-label">' + VIEW_LABELS[viewKey] + '</span>' +
-          '<div class="app-ann-v2__no-image">No image</div></div>'
+          '<div class="app-ann-v2__no-image">' + placeholderHtml + '</div></div>'
       } else {
         paths.forEach((path, idx) => {
           const subKey = paths.length > 1 ? viewKey + '-' + (idx + 1) : viewKey

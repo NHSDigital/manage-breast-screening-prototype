@@ -29,7 +29,7 @@
 {% endif %}
 
 {# 3. Incomplete mammography #}
-{% if appointment.mammogramData.isIncompleteMammography and appointment.mammogramData.isIncompleteMammography | includes("yes") %}
+{% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
   {% set incompleteValueHtml %}
     {% if appointment.mammogramData.incompleteMammographyReasons and appointment.mammogramData.incompleteMammographyReasons | length > 0 %}
       {% if appointment.mammogramData.incompleteMammographyReasons | length == 1 %}
