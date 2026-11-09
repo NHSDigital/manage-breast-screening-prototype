@@ -207,7 +207,7 @@ test.describe('Image reading', () => {
       '/reading/cases?status=awaiting_first_read&status=awaiting_second_read'
     )
     await expect(
-      page.getByRole('heading', { name: /cases? available for reading/ })
+      page.getByRole('heading', { name: /cases? require reading/ })
     ).toBeVisible()
     await expect(
       page.getByRole('heading', {
@@ -336,7 +336,7 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/no-more-cases/)
     await expect(
       page.getByRole('heading', {
-        name: 'Finalise your opinions to complete this session'
+        name: 'You have read every case in this session'
       })
     ).toBeVisible()
 
