@@ -577,13 +577,15 @@ const generateSnapshotPeriod = (startDate, numberOfDays) => {
  * @param {Array} participants - All participants
  * @param {object} seedDataProfile - Active seed profile
  * @param {Array} readers - Users who could have read these past rounds
+ * @param {Array} mammographers - Users who could have taken the images
  * @returns {Array} Historic episodes
  */
 const generateHistoricEpisodesForParticipants = (
   episodes,
   participants,
   seedDataProfile,
-  readers
+  readers,
+  mammographers
 ) => {
   const max = config.generation.maxHistoricEpisodesPerParticipant
   const outcomeWeights = seedDataProfile?.episodes?.historicOutcomeWeights
@@ -617,6 +619,7 @@ const generateHistoricEpisodesForParticipants = (
         max,
         outcomeWeights,
         readers,
+        mammographers,
         seedProfile: seedDataProfile
       })
     )
@@ -951,7 +954,8 @@ const generateData = async (options = {}) => {
     allEpisodes,
     finalParticipants,
     selectedSeedDataProfile,
-    users
+    users,
+    users.filter((user) => user.role.includes('clinician'))
   )
 
   const episodesWithHistory = [...allEpisodes, ...historicEpisodes]

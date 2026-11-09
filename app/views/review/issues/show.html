@@ -265,7 +265,17 @@
         {% endif %}
       {% endset %}
 
-      {% set mammographerName = imagesAppointment | getScreenedByName({ identifyCurrentUser: true }) %}
+      {% set mammographerSummary = imagesAppointment | getAppointmentMammographerSummary %}
+
+      {% set mammographersHtml %}
+        {% if mammographerSummary.people | length == 1 %}
+          {{ mammographerSummary.people[0].name }}
+        {% else %}
+          {% for person in mammographerSummary.people %}
+            <p class="nhsuk-u-margin-bottom-1">{{ person.name }} ({{ person.roles | join(" and ") }})</p>
+          {% endfor %}
+        {% endif %}
+      {% endset %}
 
       {% set imageCountHtml %}
         {{ imagesSummary.imageCount }} {{ "image" | pluralise(imagesSummary.imageCount) }}
@@ -321,10 +331,10 @@
             key: { text: "Taken" },
             value: { html: takenHtml }
           }) }}
-          {% if mammographerName %}
+          {% if mammographerSummary.people | length %}
             {{ appSummaryListRow({
-              key: { text: "Mammographer" },
-              value: { text: mammographerName }
+              key: { text: mammographerSummary.label },
+              value: { html: mammographersHtml }
             }) }}
           {% endif %}
           {{ appSummaryListRow({
