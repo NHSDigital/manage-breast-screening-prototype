@@ -68,15 +68,19 @@
 
   {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
 
+  <p><a href="/reading/cases?status=awaiting_first_read&status=awaiting_second_read" class="nhsuk-link--no-visited-state">View reading list</a></p>
+
   {% if openReadingSession.state == "awaiting_finalisation" %}
-    <p>Finalise your opinions to complete the session before starting a new one.</p>
+    {# <p>Finalise your opinions to complete the session before starting a new one.</p> #}
 
     {{ button({
-      text: "View session",
+      text: "Resume session",
       href: "/reading/session/" + openReadingSession.id,
       variant: "secondary",
       classes: "nhsuk-u-margin-bottom-2"
     }) }}
+
+    <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">Started on {{ openReadingSession.createdAt | formatDate }} at {{ openReadingSession.createdAt | formatTime }} ({{ openReadingSession.createdAt | formatDuration }} ago)</p>
   {% elseif openReadingSession %}
     <p>Finish the session before starting a new one.</p>
 
@@ -89,9 +93,6 @@
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ openReadingSession.userReadCount }} of {{ openReadingSession.targetSize }} cases read</p>
   {% else %}
-
-    <p><a href="/reading/cases?status=awaiting_first_read&status=awaiting_second_read" class="nhsuk-link--no-visited-state">View reading list</a></p>
-
     {{ button({
       text: "Start reading session",
       href: "/reading/create-session?type=all_reads",
@@ -139,15 +140,19 @@
 
   {% set defaultSessionSize = data.settings.reading.defaultSessionSize or 25 %}
 
+  <p><a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View arbitration case list</a></p>
+
   {% if openArbitrationSession.state == "awaiting_finalisation" %}
-    <p>Finalise the outcomes to complete the session before starting a new one.</p>
+    {# <p>Finalise the outcomes to complete the session before starting a new one.</p> #}
 
     {{ button({
-      text: "View session",
+      text: "Resume session",
       href: "/reading/session/" + openArbitrationSession.id,
       variant: "secondary",
       classes: "nhsuk-u-margin-bottom-2"
     }) }}
+
+    <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">Started on {{ openArbitrationSession.createdAt | formatDate }} at {{ openArbitrationSession.createdAt | formatTime }} ({{ openArbitrationSession.createdAt | formatDuration }} ago)</p>
   {% elseif openArbitrationSession %}
     <p>Finish the session before starting a new one.</p>
 
@@ -160,9 +165,6 @@
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ openArbitrationSession.arbitratedCount }} of {{ openArbitrationSession.targetSize }} cases arbitrated</p>
   {% else %}
-
-    <p><a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View arbitration case list</a></p>
-
     {{ button({
       text: "Start arbitration session",
       href: "/reading/arbitration/start",

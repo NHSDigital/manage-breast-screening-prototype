@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-06 16:03 UTC
+- **Generated:** 2026-11-09 12:15 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -16,37 +16,37 @@
 | File | Purpose | Line |
 |---|---|---|
 | `dates.js` | Date formatting and calculation using dayjs | 57 |
-| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 94 |
-| `status.js` | Appointment status checks and display helpers | 129 |
-| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 165 |
-| `appointment-data.js` | Appointment lookups and mutations in session data | 185 |
-| `episodes.js` | Episode lookups and stage changes | 200 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 239 |
-| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 259 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 307 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 371 |
-| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 393 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 419 |
-| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 446 |
-| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 463 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 475 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 488 |
-| `objects.js` | Object utilities for extracting and flattening values. | 507 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 518 |
-| `random.js` | Seeded random functions for stable prototype data | 528 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 545 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 560 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 570 |
-| `roles-and-permissions.js` | User role checks | 583 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 612 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 628 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 640 |
+| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 95 |
+| `status.js` | Appointment status checks and display helpers | 130 |
+| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 166 |
+| `appointment-data.js` | Appointment lookups and mutations in session data | 186 |
+| `episodes.js` | Episode lookups and stage changes | 201 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 240 |
+| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 260 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 308 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 372 |
+| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 394 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 420 |
+| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 447 |
+| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 464 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 476 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 489 |
+| `objects.js` | Object utilities for extracting and flattening values. | 508 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 519 |
+| `random.js` | Seeded random functions for stable prototype data | 529 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 546 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 561 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 571 |
+| `roles-and-permissions.js` | User role checks | 584 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 613 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 629 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 641 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 656 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 669 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 681 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 695 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 705 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 657 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 670 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 682 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 696 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 706 |
 
 ---
 
@@ -87,9 +87,10 @@ Date formatting and calculation using dayjs. Use these for all date work — for
 | `getWeekDates(dateString)` | Get calendar week dates | 662 |
 | `isWithinDayRange(dateString, minDays, [maxDays], [compareDate])` | Check if a date is within specified age range | 686 |
 | `calculateDurationMinutes(startTime, endTime)` | Calculate duration between two times in minutes (rounded up) — e.g. `calculateDurationMinutes("09:00", "10:30") // returns 90` | 718 |
-| `add(dateInput, amount, unit)` | Add or subtract time from a date — e.g. `add('2023-01-01', 5, 'weeks') // returns '2023-02-05T00:00:00.000Z'` | 758 |
-| `remove(dateInput, amount, unit)` | Remove time from a date (convenience wrapper for add with negative amount) — e.g. `remove('2023-01-01', 2, 'days') // returns '2022-12-30T00:00:00.000Z'` | 805 |
-| `toSeason(dateInput)` | Get the season name and year for a given date — e.g. `toSeason('2025-12-01') // 'winter 2025'` | 820 |
+| `formatDuration(startInput, [endInput], [options])` | Format how long something took, or has taken so far, in words — e.g. `formatDuration('2026-11-09T10:00:00', '2026-11-09T10:47:00') // '47 minutes'` | 758 |
+| `add(dateInput, amount, unit)` | Add or subtract time from a date — e.g. `add('2023-01-01', 5, 'weeks') // returns '2023-02-05T00:00:00.000Z'` | 800 |
+| `remove(dateInput, amount, unit)` | Remove time from a date (convenience wrapper for add with negative amount) — e.g. `remove('2023-01-01', 2, 'days') // returns '2022-12-30T00:00:00.000Z'` | 847 |
+| `toSeason(dateInput)` | Get the season name and year for a given date — e.g. `toSeason('2025-12-01') // 'winter 2025'` | 862 |
 
 ### strings.js
 

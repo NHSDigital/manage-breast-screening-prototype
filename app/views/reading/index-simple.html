@@ -94,9 +94,11 @@
     <p>Your session is complete once your opinions are finalised. Finalise them before starting a new session.</p>
 
     {{ button({
-      text: "View session",
+      text: "Resume session",
       href: "/reading/session/" + openReadingSession.id
     }) }}
+
+    <p class="nhsuk-u-secondary-text-colour">Started on {{ openReadingSession.createdAt | formatDate }} at {{ openReadingSession.createdAt | formatTime }} ({{ openReadingSession.createdAt | formatDuration }} ago)</p>
 
   {% elseif openReadingSession %}
 

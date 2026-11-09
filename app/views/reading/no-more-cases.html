@@ -10,10 +10,11 @@
 
 {# Running out of cases doesn't always complete a session: reads may still
    need finalising, or cases may be held up by other readers #}
+{% set isAwaitingFinalisation = sessionState == "awaiting_finalisation" %}
 {% if sessionState == "complete" %}
   {% set pageHeading = "Session complete" %}
-{% elseif sessionState == "awaiting_finalisation" %}
-  {% set pageHeading = "Finalise the outcomes to complete this session" if isArbitration else "Finalise your opinions to complete this session" %}
+{% elseif isAwaitingFinalisation %}
+  {% set pageHeading = "You have arbitrated every case in this session" if isArbitration else "You have read every case in this session" %}
 {% else %}
   {% set pageHeading = "No more cases available" %}
 {% endif %}
@@ -26,13 +27,15 @@
     <span class="nhsuk-caption-l">{{ "Arbitration" if isArbitration else "Image reading" }}</span>
     <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-    <p>
-      {%- if isArbitration -%}
-        Every available case has been arbitrated.
-      {%- else -%}
-        You have given an opinion on all available cases.
-      {%- endif -%}
-    </p>
+    {% if not isAwaitingFinalisation %}
+      <p>
+        {%- if isArbitration -%}
+          Every available case has been arbitrated.
+        {%- else -%}
+          You have given an opinion on all available cases.
+        {%- endif -%}
+      </p>
+    {% endif %}
 
     {% if unfinalisedReadCount > 0 %}
       {# Finalisation itself lives on the session overview, behind a chance to
@@ -44,7 +47,7 @@
         {% else %}
           {{ "The" if isArbitration else "Your" }} {{ unfinalisedReadCount }} {{ unfinalisedNoun }}s from this session are not yet finalised.
         {% endif %}
-        Review and finalise them from the session overview.
+        Review and finalise them before starting a new session.
       </p>
     {% endif %}
 
