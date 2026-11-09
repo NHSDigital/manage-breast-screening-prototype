@@ -34,8 +34,6 @@ const MASTECTOMY_LUMPECTOMY_CONFIG = {
     'left-only': 0.4,
     'both': 0.2
   },
-  // Procedure types (checkboxes)
-  procedureTypes: ['Lumpectomy', 'Mastectomy'],
   // Other surgery options
   otherSurgeryOptions: ['Reconstruction', 'Symmetrisation'],
   // Surgery reasons (skip 'Other reason')
@@ -44,6 +42,14 @@ const MASTECTOMY_LUMPECTOMY_CONFIG = {
     'Gender affirmation': 0.3
   }
 }
+
+// Chance that a recorded breast procedure is a mastectomy rather than a
+// lumpectomy. Mastectomy is much rarer than lumpectomy, and changes which
+// views are expected, so seed profiles can raise or lower it
+const DEFAULT_PROBABILITY_OF_MASTECTOMY = 0.35
+
+const pickBreastProcedure = (probabilityOfMastectomy) =>
+  Math.random() < probabilityOfMastectomy ? 'Mastectomy' : 'Lumpectomy'
 
 // Configuration for cysts generation
 const CYSTS_CONFIG = {
@@ -86,8 +92,6 @@ const BREAST_CANCER_CONFIG = {
     'both': 0.2,
     'unknown': 0.1
   },
-  // Procedure types (checkboxes)
-  procedureTypes: ['Lumpectomy', 'Mastectomy'],
   // Other surgery options (checkboxes)
   otherSurgeryOptions: [
     'Lymph node surgery',
@@ -130,7 +134,10 @@ const addMastectomyImagingAnswers = (item) => {
  * @returns {object} Generated breast cancer item
  */
 const generateBreastCancerItem = (options = {}) => {
-  const { addedByUserId } = options
+  const {
+    addedByUserId,
+    probabilityOfMastectomy = DEFAULT_PROBABILITY_OF_MASTECTOMY
+  } = options
 
   // Determine which breast(s) affected
   const breastAffected = weighted.select(BREAST_CANCER_CONFIG.breastAffected)
@@ -159,19 +166,15 @@ const generateBreastCancerItem = (options = {}) => {
   }
 
   // Procedures - always generate based on which breast is affected
-  const actualProcedureTypes = BREAST_CANCER_CONFIG.procedureTypes
+  const pickProcedure = () => pickBreastProcedure(probabilityOfMastectomy)
 
   // Even if cancer location is unknown, procedures might still be recorded
   if (breastAffected === 'right-only' || breastAffected === 'both') {
-    item.proceduresRightBreast = [
-      faker.helpers.arrayElement(actualProcedureTypes)
-    ]
+    item.proceduresRightBreast = [pickProcedure()]
   }
 
   if (breastAffected === 'left-only' || breastAffected === 'both') {
-    item.proceduresLeftBreast = [
-      faker.helpers.arrayElement(actualProcedureTypes)
-    ]
+    item.proceduresLeftBreast = [pickProcedure()]
   }
 
   // If cancer location is unknown, still might have procedures recorded
@@ -184,15 +187,11 @@ const generateBreastCancerItem = (options = {}) => {
     })
 
     if (unknownBreastChoice === 'right' || unknownBreastChoice === 'both') {
-      item.proceduresRightBreast = [
-        faker.helpers.arrayElement(actualProcedureTypes)
-      ]
+      item.proceduresRightBreast = [pickProcedure()]
     }
 
     if (unknownBreastChoice === 'left' || unknownBreastChoice === 'both') {
-      item.proceduresLeftBreast = [
-        faker.helpers.arrayElement(actualProcedureTypes)
-      ]
+      item.proceduresLeftBreast = [pickProcedure()]
     }
   }
 
@@ -384,10 +383,15 @@ const generateBreastImplantsItem = (options = {}) => {
  * @param {object} [options] - Generation options
  * @param {string} [options.addedByUserId] - User who added this information
  * @param {boolean} [options.bilateralMastectomyWithoutImages] - Generate a bilateral mastectomy with no images required
+ * @param {number} [options.probabilityOfMastectomy] - Chance each procedure is a mastectomy rather than a lumpectomy
  * @returns {object} Generated mastectomy/lumpectomy item
  */
 const generateMastectomyLumpectomyItem = (options = {}) => {
-  const { addedByUserId, bilateralMastectomyWithoutImages = false } = options
+  const {
+    addedByUserId,
+    bilateralMastectomyWithoutImages = false,
+    probabilityOfMastectomy = DEFAULT_PROBABILITY_OF_MASTECTOMY
+  } = options
 
   const item = {
     id: generateId(),
@@ -415,7 +419,7 @@ const generateMastectomyLumpectomyItem = (options = {}) => {
   const pickProcedure = () =>
     bilateralMastectomyWithoutImages
       ? 'Mastectomy'
-      : faker.helpers.arrayElement(MASTECTOMY_LUMPECTOMY_CONFIG.procedureTypes)
+      : pickBreastProcedure(probabilityOfMastectomy)
 
   item.proceduresRightBreast = hasRight ? [pickProcedure()] : []
   item.proceduresLeftBreast = hasLeft ? [pickProcedure()] : []
@@ -746,6 +750,7 @@ const generateOtherProceduresItem = (options = {}) => {
  * Generate medical history for an appointment
  * @param {object} [options] - Generation options
  * @param {number} [options.probability=0.20] - Chance of having any medical history
+ * @param {number} [options.probabilityOfMastectomy=0.35] - Chance each recorded breast procedure is a mastectomy rather than a lumpectomy
  * @param {string} [options.addedByUserId] - User who added this information
  * @param {object} [options.medicalHistory] - Complete override for medical history
  * @param {Array} [options.forceMedicalHistoryTypes] - Force specific types to be included
@@ -755,6 +760,7 @@ const generateOtherProceduresItem = (options = {}) => {
 const generateMedicalHistory = (options = {}) => {
   const {
     probability = 0.2,
+    probabilityOfMastectomy,
     addedByUserId,
     medicalHistory,
     forceMedicalHistoryTypes = [],
@@ -775,7 +781,7 @@ const generateMedicalHistory = (options = {}) => {
       2: 0.15
     })
     history.breastCancer = Array.from({ length: numberOfItems }, () =>
-      generateBreastCancerItem({ addedByUserId })
+      generateBreastCancerItem({ addedByUserId, probabilityOfMastectomy })
     )
   }
 
@@ -802,7 +808,10 @@ const generateMedicalHistory = (options = {}) => {
       2: 0.15
     })
     history.mastectomyLumpectomy = Array.from({ length: numberOfItems }, () =>
-      generateMastectomyLumpectomyItem({ addedByUserId })
+      generateMastectomyLumpectomyItem({
+        addedByUserId,
+        probabilityOfMastectomy
+      })
     )
   }
 
@@ -850,7 +859,7 @@ const generateMedicalHistory = (options = {}) => {
     const typeWeights = {
       cysts: 0.25, // Most common
       benignLumps: 0.2, // Common
-      mastectomyLumpectomy: 0.15, // Fairly common
+      mastectomyLumpectomy: 0.08, // Uncommon
       implantedMedicalDevice: 0.15, // Fairly common
       breastCancer: 0.1, // Less common
       otherProcedures: 0.1, // Less common
@@ -885,7 +894,7 @@ const generateMedicalHistory = (options = {}) => {
           2: 0.15
         })
         history.breastCancer = Array.from({ length: numberOfItems }, () =>
-          generateBreastCancerItem({ addedByUserId })
+          generateBreastCancerItem({ addedByUserId, probabilityOfMastectomy })
         )
       } else if (type === 'implantedMedicalDevice') {
         const numberOfItems = weighted.select({
@@ -908,7 +917,11 @@ const generateMedicalHistory = (options = {}) => {
         })
         history.mastectomyLumpectomy = Array.from(
           { length: numberOfItems },
-          () => generateMastectomyLumpectomyItem({ addedByUserId })
+          () =>
+            generateMastectomyLumpectomyItem({
+              addedByUserId,
+              probabilityOfMastectomy
+            })
         )
       } else if (type === 'cysts') {
         // Cysts can only have one entry (single entry only)
