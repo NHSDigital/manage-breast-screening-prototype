@@ -169,31 +169,13 @@ const recordTechnicalRecallDetails = async (modal, view, reason) => {
 }
 
 test.describe('Image reading', () => {
-  test('shows correctly pluralised backlog summary on the simple dashboard', async ({
-    page
-  }) => {
-    await pinSettings(page, {
-      ...readingSettings,
-      'settings[reading][indexLayout]': 'simple'
-    })
-
-    await page.goto('/reading')
-    await expect(
-      page.locator('p').filter({
-        hasText:
-          /^(?:1 case is|(?:0|[2-9]|[1-9]\d+) cases are) awaiting an outcome$/
-      })
-    ).toBeVisible()
-  })
-
   test('changes reading session size and dark mode from dashboard settings', async ({
     page
   }) => {
     await pinSettings(page, {
       ...readingSettings,
       'settings[darkMode]': 'false',
-      'settings[reading][defaultSessionSize]': '25',
-      'settings[reading][indexLayout]': 'complex'
+      'settings[reading][defaultSessionSize]': '25'
     })
 
     await page.goto('/reading')
@@ -212,10 +194,7 @@ test.describe('Image reading', () => {
   })
 
   test('reads a session of cases as normal and recall', async ({ page }) => {
-    await pinSettings(page, {
-      ...readingSettings,
-      'settings[reading][indexLayout]': 'complex'
-    })
+    await pinSettings(page, readingSettings)
 
     await page.goto('/reading')
     await expect(
@@ -346,7 +325,6 @@ test.describe('Image reading', () => {
   }) => {
     await pinSettings(page, {
       ...readingSettings,
-      'settings[reading][indexLayout]': 'complex',
       'settings[reading][finalisationDelay]': 'never'
     })
 
@@ -871,10 +849,7 @@ test.describe('Image reading', () => {
   test('resumes an in-progress arbitration session from the dashboard', async ({
     page
   }) => {
-    await pinSettings(page, {
-      ...readingSettings,
-      'settings[reading][indexLayout]': 'complex'
-    })
+    await pinSettings(page, readingSettings)
 
     await page.goto('/reading')
     await expect(

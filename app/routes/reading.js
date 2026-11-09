@@ -94,13 +94,10 @@ module.exports = (router) => {
     next()
   })
 
-  // Reading index — choose layout based on setting
+  // Reading index
   router.get('/reading', (req, res) => {
     const data = req.session.data
     const currentUserId = data?.currentUser?.id
-    const layout = req.session.data?.settings?.reading?.indexLayout || 'simple'
-    const template =
-      layout === 'complex' ? 'reading/index-complex' : 'reading/index-simple'
 
     const sessionProgressById = {}
     const sessionStateById = {}
@@ -123,7 +120,7 @@ module.exports = (router) => {
     })
 
     // The user's open session of each kind - the one they have to complete
-    // before they can start another. Both layouts show it.
+    // before they can start another.
     const summariseOpenSession = (session) => {
       if (!session) return null
       const progress = sessionProgressById[session.id]
@@ -144,102 +141,89 @@ module.exports = (router) => {
       getOpenSessionForUser(data, currentUserId, 'reading', sessionStateById)
     )
 
-    // Only the complex layout has an arbitration card
-    const openArbitrationSession =
-      layout === 'complex'
-        ? summariseOpenSession(
-            getOpenSessionForUser(
-              data,
-              currentUserId,
-              'arbitration',
-              sessionStateById
-            )
-          )
-        : null
+    const openArbitrationSession = summariseOpenSession(
+      getOpenSessionForUser(
+        data,
+        currentUserId,
+        'arbitration',
+        sessionStateById
+      )
+    )
 
     // The cases that have reached arbitration, counted the same way the
-    // arbitration setup page counts them so the two agree. Only the complex
-    // layout shows the card, and the count walks every episode - don't pay
-    // for it otherwise
-    const arbitrationCount =
-      layout === 'complex'
-        ? getArbitrationBacklogCounts(data, { view: 'current' }).reached
-        : null
+    // arbitration setup page counts them so the two agree
+    const arbitrationCount = getArbitrationBacklogCounts(data, {
+      view: 'current'
+    }).reached
 
     // Finished reading sessions the current user has worked in, for the reading
     // card preview. Merged with the display-only historic sessions below so the
     // card always has recent sessions, real ones pushing the stand-ins out.
-    const completedReadingSessions =
-      layout === 'complex'
-        ? Object.values(data.readingSessions || {})
-            .map((session) => {
-              if (session.type === 'arbitration') return null
+    const completedReadingSessions = Object.values(data.readingSessions || {})
+      .map((session) => {
+        if (session.type === 'arbitration') return null
 
-              const progress = sessionProgressById[session.id]
-              const isFinished = sessionStateById[session.id] === 'complete'
-              const userHasRead = session.appointmentIds.some((id) => {
-                const appointment = data.appointments.find((a) => a.id === id)
-                return (
-                  appointment &&
-                  userHasReadAppointment(data, appointment, currentUserId)
-                )
-              })
-              if (!isFinished || !userHasRead) return null
-              return {
-                id: session.id,
-                createdAt: session.createdAt,
-                caseCount:
-                  (progress && progress.effectiveTargetSize) ||
-                  session.targetSize ||
-                  session.appointmentIds.length
-              }
-            })
-            .filter(Boolean)
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        : null
+        const progress = sessionProgressById[session.id]
+        const isFinished = sessionStateById[session.id] === 'complete'
+        const userHasRead = session.appointmentIds.some((id) => {
+          const appointment = data.appointments.find((a) => a.id === id)
+          return (
+            appointment &&
+            userHasReadAppointment(data, appointment, currentUserId)
+          )
+        })
+        if (!isFinished || !userHasRead) return null
+        return {
+          id: session.id,
+          createdAt: session.createdAt,
+          caseCount:
+            (progress && progress.effectiveTargetSize) ||
+            session.targetSize ||
+            session.appointmentIds.length
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
     // Finished arbitration sessions the current user was on, for the
     // arbitration card preview. Merged with historic sessions as above.
-    const completedArbitrationSessions =
-      layout === 'complex'
-        ? Object.values(data.readingSessions || {})
-            .map((session) => {
-              if (session.type !== 'arbitration') return null
-              const progress = sessionProgressById[session.id]
-              const isFinished = sessionStateById[session.id] === 'complete'
-              if (!isFinished || !isUsersSession(session, currentUserId)) {
-                return null
-              }
-              return {
-                id: session.id,
-                createdAt: session.createdAt,
-                caseCount:
-                  (progress && progress.effectiveTargetSize) ||
-                  session.targetSize ||
-                  session.appointmentIds.length
-              }
-            })
-            .filter(Boolean)
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        : null
+    const completedArbitrationSessions = Object.values(
+      data.readingSessions || {}
+    )
+      .map((session) => {
+        if (session.type !== 'arbitration') return null
+        const progress = sessionProgressById[session.id]
+        const isFinished = sessionStateById[session.id] === 'complete'
+        if (!isFinished || !isUsersSession(session, currentUserId)) {
+          return null
+        }
+        return {
+          id: session.id,
+          createdAt: session.createdAt,
+          caseCount:
+            (progress && progress.effectiveTargetSize) ||
+            session.targetSize ||
+            session.appointmentIds.length
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
     // The newest three finished sessions of one kind, real or historic. Historic
     // sessions have no id, so the dashboard links them nowhere
     const getRecentCompletedSessions = (realSessions, isOfKind) =>
-      layout === 'complex'
-        ? [
-            ...realSessions,
-            ...getHistoricReadingSessions(data)
-              .filter(isOfKind)
-              .map((historic) => ({
-                id: null,
-                createdAt: historic.createdAt,
-                caseCount: historic.progress.effectiveTargetSize
-              }))
-          ]
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, 3)
-        : null
+      [
+        ...realSessions,
+        ...getHistoricReadingSessions(data)
+          .filter(isOfKind)
+          .map((historic) => ({
+            id: null,
+            createdAt: historic.createdAt,
+            caseCount: historic.progress.effectiveTargetSize
+          }))
+      ]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 3)
 
     const recentCompletedSessions = getRecentCompletedSessions(
       completedReadingSessions,
@@ -250,7 +234,7 @@ module.exports = (router) => {
       (session) => session.type === 'arbitration'
     )
 
-    res.render(template, {
+    res.render('reading/index', {
       sessionProgressById,
       sessionStateById,
       openReadingSession,
@@ -475,7 +459,6 @@ module.exports = (router) => {
     const returnTo = req.body.returnTo?.startsWith('/')
       ? req.body.returnTo
       : null
-
     // Fetch requests get the fragment the surface asked for re-rendered, so
     // the page can update in place - a table row on the priors dashboard, a
     // card on the case's priors tab

@@ -1,4 +1,4 @@
-{# app/views/reading/index-complex.html #}
+{# app/views/reading/index.html #}
 
 {% extends 'layout-app.html' %}
 
@@ -43,7 +43,7 @@
 {% set firstReadsAppointments = filterAppointmentsByNeedsFirstRead(data, allReadsAppointments) %}
 {% set secondReadsAppointments = filterAppointmentsByNeedsSecondRead(data, allReadsAppointments) %}
 
-{# Filter for current user - currently not used #}
+{# Filter for current user - only allReadsForUser is used, to gate the start button #}
 {% set allReadsForUser = filterAppointmentsByUserCanRead(data, allReadsAppointments, data.currentUser.id) %}
 {% set firstReadsForUser = filterAppointmentsByUserCanRead(data, firstReadsAppointments, data.currentUser.id) %}
 {% set secondReadsForUser = filterAppointmentsByUserCanRead(data, secondReadsAppointments, data.currentUser.id) %}
@@ -56,7 +56,7 @@
 {% set oldestAwaitingPrior = awaitingPriorsAppointments[0].timing.startTime if awaitingPriorsAppointments.length > 0 %}
 
 {% set allReadsCount = allReadsAppointments | length %}
-{% set allReadsHeading = allReadsCount ~ " " ~ ("case" | pluralise(allReadsCount)) ~ " available for reading" %}
+{% set allReadsHeading = allReadsCount ~ " " ~ ("case" | pluralise(allReadsCount)) ~ " require reading" %}
 {% if openReadingSession.state == "awaiting_finalisation" %}
   {% set allReadsHeading = "Reading session awaiting finalisation" %}
 {% elseif openReadingSession %}
@@ -93,16 +93,29 @@
 
     <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16">{{ openReadingSession.userReadCount }} of {{ openReadingSession.targetSize }} cases read</p>
   {% else %}
-    {{ button({
-      text: "Start reading session",
-      href: "/reading/create-session?type=all_reads",
-      variant: "secondary",
-      classes: "nhsuk-u-margin-bottom-2"
-    }) }}
+    {% if allReadsForUser | length %}
+      {{ button({
+        text: "Start reading session",
+        href: "/reading/create-session?type=all_reads",
+        variant: "secondary",
+        classes: "nhsuk-u-margin-bottom-2"
+      }) }}
 
-    <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
-      Read up to {{ defaultSessionSize }} cases ({{ link({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
-    </p>
+      <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
+        Read up to {{ defaultSessionSize }} cases ({{ link({ text: "change", href: "/reading/settings", classes: "nhsuk-link--no-visited-state" } | openInModal) | trim | safe }})
+      </p>
+    {% else %}
+      {{ button({
+        text: "Start reading session",
+        disabled: true,
+        variant: "secondary",
+        classes: "nhsuk-u-margin-bottom-2"
+      }) }}
+
+      <p class="nhsuk-u-secondary-text-colour nhsuk-u-font-size-16 nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-5">
+        There are no cases available for you to read
+      </p>
+    {% endif %}
 
     {% set completedReadingSessionsHtml %}
       {% if recentCompletedSessions | length %}

@@ -47,8 +47,7 @@ app/
 │   └── prior-mammograms.js           # Prior mammogram utilities
 ├── views/
 │   ├── reading/
-│   │   ├── index-simple.html        # Reading dashboard/home (default layout)
-│   │   ├── index-complex.html       # Reading dashboard/home (via settings.reading.indexLayout)
+│   │   ├── index.html               # Reading dashboard/home
 │   │   ├── clinics.html             # Clinic list view
 │   │   ├── session.html             # Session view with appointment list
 │   │   ├── skipped-review.html      # End-of-session page when skipped cases remain
@@ -255,7 +254,7 @@ data.readingSessions = {
 ### URL Structure
 
 ```
-/reading                              # Dashboard (index-simple or index-complex via settings)
+/reading                              # Dashboard
 /reading/clinics                      # Clinic list (redirects to /mine)
 /reading/clinics/mine                 # Clinics with cases user can read
 /reading/clinics/all                  # All clinics
@@ -582,7 +581,6 @@ for both reading and arbitration, and the global dark-mode preference.
 - `autoOpenPacsViewer` - Auto-open PACS viewer when entering reading workflow (once per session)
 - `enableOpinionDelay` - Enforce lockout period before shortcuts/buttons become active
 - `annotationsMode` - Annotation UI variant: `'without-images'` | `'with-images-simple'` (default) | `'with-images'` | `'with-images-progressive'`
-- `indexLayout` - Reading dashboard layout: `'simple'` (default) | `'complex'`
 - `secondReaderComparison` - When to show compare page: `'early'` | `'late'` | `'off'` (default)
 - `compareWhen` - Which cases trigger compare: `'non_normal'` (default) | `'discordant_only'`
 - `lazySessions` - Build sessions lazily one case at a time: `'true'` (default) | `'false'`
