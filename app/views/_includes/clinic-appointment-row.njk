@@ -206,8 +206,13 @@
       {% set attended = appointment | wasAttended %}
       {% set completedOrder = appointment.screeningOrder if attended %}
       {% set completedByName = "" %}
+      {% set completedByNames = [] %}
       {% if attended and appointment.sessionDetails.startedBy %}
         {% set completedByName = appointment | getScreenedByName({
+          format: 'short',
+          identifyCurrentUser: true
+        }) %}
+        {% set completedByNames = appointment | getAppointmentRunByNames({
           format: 'short',
           identifyCurrentUser: true
         }) %}
@@ -217,19 +222,39 @@
           identifyCurrentUser: true
         }) %}
       {% endif %}
+      {% set completedByDisplayNames = [] %}
+      {% set currentUserName = currentUser.id | getUsername({
+        format: 'short',
+        identifyCurrentUser: true
+      }) %}
+      {% if currentUserName in completedByNames %}
+        {% set completedByDisplayNames = completedByDisplayNames | push(currentUserName) %}
+      {% endif %}
+      {% if completedByName and completedByName not in completedByDisplayNames %}
+        {% set completedByDisplayNames = completedByDisplayNames | push(completedByName) %}
+      {% endif %}
+      {% for name in completedByNames %}
+        {% if name not in completedByDisplayNames %}
+          {% set completedByDisplayNames = completedByDisplayNames | push(name) %}
+        {% endif %}
+      {% endfor %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
         {% if completedTime or completedByName %}
           {# A cancellation made on an earlier day shows its date instead #}
           {% set completedOnAnotherDay = completedTime and (completedTime | formatDate("YYYY-MM-DD")) != (appointment.timing.startTime | formatDate("YYYY-MM-DD")) %}
           <span class="app-clinic-appointments-table__completed-time">{% if completedOnAnotherDay %}{{ completedTime | formatDate("D MMM") }}{% elseif completedTime %}{{ completedTime | formatTimeString }}{% endif %}</span>
-          {% if completedOrder %}
-            <span class="nhsapp-badge nhsapp-badge--small nhsapp-badge--muted app-nowrap nhsuk-u-margin-right-1">
-              <span aria-hidden="true">{{ completedOrder }}</span>
-              <span class="nhsuk-u-visually-hidden">{{ completedOrder | getOrdinalNumber }} in order of screening</span>
-            </span>
-          {% endif %}
-          {% if completedByName %}
-            <span class="nhsuk-u-font-size-16">{{ completedByName }}</span>
+          {% if completedOrder or completedByName %}
+            <div class="app-clinic-appointments-table__completed-details">
+              {% if completedOrder %}
+                <span class="nhsapp-badge nhsapp-badge--small nhsapp-badge--muted app-nowrap nhsuk-u-margin-right-1">
+                  <span aria-hidden="true">{{ completedOrder }}</span>
+                  <span class="nhsuk-u-visually-hidden">{{ completedOrder | getOrdinalNumber }} in order of screening</span>
+                </span>
+              {% endif %}
+              {% if completedByName %}
+                <span class="nhsuk-u-font-size-16">{{ completedByDisplayNames | join(", ") }}</span>
+              {% endif %}
+            </div>
           {% endif %}
         {% endif %}
       </td>

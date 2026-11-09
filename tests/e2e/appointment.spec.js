@@ -301,6 +301,21 @@ test.describe('Screening appointment', () => {
     await expect(mammographersRow).toContainText(
       `${operator.firstName} ${operator.lastName} (Operator)`
     )
+
+    await page.goto(`/clinics/${clinic.id}/complete`)
+    const clinicRow = page.locator(`tr[data-fragment-id="${appointment.id}"]`)
+    const completedColumn = clinicRow.locator(
+      '.app-clinic-appointments-table__completed-column'
+    )
+    await expect(
+      completedColumn.locator('.app-clinic-appointments-table__completed-time')
+    ).toHaveCSS('display', 'block')
+    await expect(
+      completedColumn.locator('.app-clinic-appointments-table__completed-details')
+    ).toHaveCSS('display', 'block')
+    await expect(completedColumn).toContainText(
+      `${users[0].firstName.charAt(0)}. ${users[0].lastName} (you), ${operator.firstName.charAt(0)}. ${operator.lastName}`
+    )
   })
 
   test('records why no images were needed after bilateral mastectomy', async ({

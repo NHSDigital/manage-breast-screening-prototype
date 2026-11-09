@@ -178,6 +178,17 @@
     {% endif %}
   {% endset %}
 
+  {% set screeningProtocol = participant | getCurrentRiskLevel | sentenceCase %}
+  {% if screeningProtocol == "Family history" %}
+    {% set screeningProtocol = "Family history: moderate risk" %}
+  {% endif %}
+  {% set screeningProtocolHtml %}
+    {{ tag({
+      text: screeningProtocol,
+      colour: "blue"
+    }) }}
+  {% endset %}
+
   {% set appointmentHtml %}
     {{ summaryList({
       rows: [
@@ -198,6 +209,17 @@
           },
           value: {
             text: clinic.clinicType | formatWords | sentenceCase
+          },
+          actions: {
+            items: []
+          }
+        },
+        {
+          key: {
+            text: "Appointment type"
+          },
+          value: {
+            html: screeningProtocolHtml
           },
           actions: {
             items: []

@@ -57,13 +57,13 @@
   }
 }
 
-// Time completed cell lays the time out as a fixed-width block so the
-// screening order badge and mammographer name line up in a column across rows,
-// however wide each time string is
+// Keep the completion time above the screening order and mammographer name
 .app-clinic-appointments-table__completed-time {
-  display: inline-block;
-  min-width: 4.5em;
-  padding-right: nhsuk-spacing(1);
+  display: block;
+}
+
+.app-clinic-appointments-table__completed-details {
+  display: block;
 }
 
 // Remaining and Checked in tabs add a Checked in column, so the six columns
