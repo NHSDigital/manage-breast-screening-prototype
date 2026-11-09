@@ -30,8 +30,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Symptoms",
-    headingLevel: "2",
+    heading: {
+      text: "Symptoms",
+      level: 2
+    },
     feature: true,
     descriptionHtml: symptomsCardContent
   }) }}

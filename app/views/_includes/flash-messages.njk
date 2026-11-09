@@ -17,7 +17,7 @@
     {% endif %}
   {% endfor %}
   {{ errorSummary({
-    "titleText": "There is a problem",
+    "heading": "There is a problem",
     "errorList": _summaryErrors
   }) }}
   {{ flash.error | log("Flash error") }}

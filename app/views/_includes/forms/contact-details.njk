@@ -2,9 +2,8 @@
 {# Home address #}
 {% call fieldset({
   legend: {
-    text: "Address",
-    size: "m",
-    isPageHeading: true
+    heading: "Address",
+    size: "m"
   }
 }) %}
 
@@ -39,9 +38,7 @@
   }) }}
 
   {{ input({
-    label: {
-      text: "Town or city"
-    },
+    label: "Town or city",
     classes: "nhsuk-u-width-two-thirds",
     id: "address-town",
     value: participant.demographicInformation.address.town,
@@ -58,9 +55,7 @@
   }) }} #}
 
   {{ input({
-    label: {
-      text: "Postcode"
-    },
+    label: "Postcode",
     classes: "nhsuk-input--width-10",
     id: "address-postcode",
     value: participant.demographicInformation.address.postcode,

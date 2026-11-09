@@ -267,9 +267,26 @@ const generateClinicsForDay = (
   // Handle regular clinic slot allocation for all clinics
   newClinics.forEach((clinic) => {
     const episodesBefore = episodes.length
+    const availableFinalInviteSlots =
+      clinic.clinicType === 'screening'
+        ? clinic.slots.filter((slot) => {
+            const bookedCount = appointments.filter(
+              (appointment) => appointment.slotId === slot.id
+            ).length
+            return bookedCount < slot.capacity
+          })
+        : []
+    const reserveCandidates =
+      availableFinalInviteSlots.length > 1
+        ? availableFinalInviteSlots.slice(1)
+        : availableFinalInviteSlots
+    const reservedFinalInviteSlot = reserveCandidates.length
+      ? reserveCandidates[Math.floor(Math.random() * reserveCandidates.length)]
+      : null
 
     const remainingSlots = clinic.slots
       .filter(() => Math.random() < config.generation.bookingProbability)
+      .filter((slot) => slot.id !== reservedFinalInviteSlot?.id)
       .filter((slot) => !appointments.some((e) => e.slotId === slot.id))
 
     remainingSlots.forEach((slot) => {
@@ -340,7 +357,7 @@ const generateClinicsForDay = (
     // start of the screening age range; generateHistoricEpisodesForParticipants
     // then gives them no past rounds, so the flag stays true.
     const clinicEpisodes = episodes.slice(episodesBefore)
-    if (clinic.clinicType === 'screening' && clinicEpisodes.length > 0) {
+    if (clinic.clinicType === 'screening') {
       const youngestFirst = [...clinicEpisodes].sort((a, b) => {
         const dobA = participants.find((p) => p.id === a.participantId)
           ?.demographicInformation.dateOfBirth
@@ -355,6 +372,157 @@ const generateClinicsForDay = (
       youngestFirst.slice(0, firstTimeCount).forEach((episode) => {
         episode.isFirstScreening = true
       })
+
+      // Routine invitations stop at the 71st birthday, so a participant is on
+      // their last screening when the next one, 3 years on, would fall on or
+      // after it. They must also be within the routine age range today.
+      const isLastScreeningAge = (episode) => {
+        const dateOfBirth = participants.find(
+          (participant) => participant.id === episode.participantId
+        ).demographicInformation.dateOfBirth
+        const age = dayjs(clinic.date).diff(dayjs(dateOfBirth), 'year')
+
+        return (
+          age >= riskLevels.routine.ageRange.lower &&
+          age <= riskLevels.routine.ageRange.upper &&
+          !dayjs(clinic.date)
+            .add(3, 'year')
+            .isBefore(
+              dayjs(dateOfBirth).add(
+                riskLevels.routine.ageRange.upper + 1,
+                'year'
+              ),
+              'day'
+            )
+        )
+      }
+      const lastScreeningEpisode = clinicEpisodes
+        .filter((episode) => !episode.isFirstScreening)
+        .filter(isLastScreeningAge)
+        .at(0)
+
+      if (lastScreeningEpisode) {
+        lastScreeningEpisode.isLastScreening = true
+      } else if (!reservedFinalInviteSlot) {
+        console.warn(
+          `No free slot for a final screening invite in clinic ${clinic.id}, so it has none`
+        )
+      } else {
+        const finalInviteParticipant = generateParticipant({
+          ethnicities,
+          breastScreeningUnits: [unit],
+          riskLevel: 'routine',
+          overrides: {
+            demographicInformation: {
+              dateOfBirth: dayjs(clinic.date).subtract(69, 'year').toISOString()
+            }
+          }
+        })
+
+        const finalInviteAppointment = addAppointmentToNewEpisode(
+          finalInviteParticipant,
+          {
+            slot: reservedFinalInviteSlot,
+            participant: finalInviteParticipant,
+            clinic,
+            outcomeWeights: config.screening.outcomes[clinic.clinicType],
+            mammographers: mammographersByClinic.get(clinic.id),
+            seedDataProfile
+          }
+        )
+        const finalInviteEpisode = episodes.find(
+          (episode) => episode.id === finalInviteAppointment.episodeId
+        )
+
+        finalInviteEpisode.isLastScreening = true
+        participants.push(finalInviteParticipant)
+        usedParticipantsInPeriod.add(finalInviteParticipant.id)
+      }
+    }
+
+    // Today's screening clinics each get one paused appointment, to show
+    // claiming an appointment someone else paused. Made before the order of
+    // screening is assigned, as it was started too.
+    if (isToday && clinic.clinicType === 'screening') {
+      // An unused slot that is already due, so the participant could have
+      // been started and paused by now
+      const usedSlotIds = new Set(appointments.map((a) => a.slotId))
+      const [simulatedHours, simulatedMinutes] =
+        config.clinics.simulatedTime.split(':')
+      const simulatedNow = dayjs()
+        .hour(parseInt(simulatedHours, 10))
+        .minute(parseInt(simulatedMinutes, 10))
+      const dueSlots = clinic.slots.filter(
+        (slot) =>
+          !usedSlotIds.has(slot.id) &&
+          dayjs(slot.dateTime).isBefore(simulatedNow.subtract(15, 'minute'))
+      )
+      const unusedSlot = dueSlots.length
+        ? dueSlots[Math.floor(Math.random() * dueSlots.length)]
+        : null
+
+      if (!unusedSlot) {
+        console.warn(
+          `No free slot for a paused appointment in clinic ${clinic.id}, so it has none`
+        )
+      } else {
+        // Get or create a participant for the paused appointment
+        const availableRiskLevels = clinic.riskLevels
+        const selectedRiskLevel = weighted.select(
+          Object.fromEntries(
+            availableRiskLevels.map((level) => [
+              level,
+              riskLevels[level].weight
+            ])
+          )
+        )
+
+        let pausedParticipant = indices.riskLevelIndex[selectedRiskLevel].find(
+          (participant) =>
+            !usedParticipantsInPeriod.has(participant.id) &&
+            !testScenarioParticipantIds.has(participant.id)
+        )
+
+        if (!pausedParticipant) {
+          pausedParticipant = generateParticipant({
+            ethnicities,
+            breastScreeningUnits: [unit],
+            riskLevel: selectedRiskLevel
+          })
+          participants.push(pausedParticipant)
+        }
+
+        // Create episode for paused appointment
+        const pausedEpisode = generateEpisode({
+          participant: pausedParticipant,
+          type: getCurrentRiskLevel(
+            pausedParticipant,
+            dayjs(clinic.date).toDate()
+          ),
+          appointmentDate: unusedSlot.dateTime
+        })
+
+        // Create the paused appointment
+        const pausedAppointment = generateAppointment({
+          slot: unusedSlot,
+          participant: pausedParticipant,
+          clinic,
+          episodeId: pausedEpisode.id,
+          outcomeWeights: config.screening.outcomes[clinic.clinicType],
+          forceStatus: 'paused',
+          mammographers: mammographersByClinic.get(clinic.id),
+          seedDataProfile
+        })
+
+        pausedEpisode.appointmentIds.push(pausedAppointment.id)
+        episodes.push(pausedEpisode)
+        appointments.push(pausedAppointment)
+        usedParticipantsInPeriod.add(pausedParticipant.id)
+
+        console.log(
+          `Created paused appointment for participant ${pausedParticipant.demographicInformation.firstName} ${pausedParticipant.demographicInformation.lastName}`
+        )
+      }
     }
 
     // Assign the order of screening for this clinic: a single 1 to N sequence
@@ -363,7 +531,10 @@ const generateClinicsForDay = (
     const screenedAppointments = appointments
       .filter((appointment) => appointment.clinicId === clinic.id)
       .filter(
-        (appointment) => isInProgress(appointment) || isCompleted(appointment)
+        (appointment) =>
+          isInProgress(appointment) ||
+          isCompleted(appointment) ||
+          appointment.status === 'attended_not_screened'
       )
       .sort((a, b) => {
         const aStart =

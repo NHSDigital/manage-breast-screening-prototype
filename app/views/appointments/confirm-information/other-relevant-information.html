@@ -29,8 +29,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Other medical information",
-    headingLevel: "2",
+    heading: {
+      text: "Other medical information",
+      level: 2
+    },
     feature: true,
     descriptionHtml: otherMedicalInformationHtml
   }) }}

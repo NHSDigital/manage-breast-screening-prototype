@@ -78,8 +78,10 @@
   {# Outcome leads, as it is what anyone opening a finished round came for #}
   {% if episode.outcome %}
     {% call card({
-      heading: "Outcome",
-      headingLevel: "2",
+      heading: {
+        text: "Outcome",
+        level: 2
+      },
       feature: true
     }) %}
       {{ appSummaryList({
@@ -102,8 +104,10 @@
   {% endif %}
 
   {% call card({
-    heading: "Episode details",
-    headingLevel: "2"
+    heading: {
+      text: "Episode details",
+      level: 2
+    }
   }) %}
 
     {# No stage row - the header tag carries it #}
@@ -165,8 +169,10 @@
   {% endif %}
 
   {% call card({
-    heading: "Appointments",
-    headingLevel: "2"
+    heading: {
+      text: "Appointments",
+      level: 2
+    }
   }) %}
     {% if appointmentRows | length %}
       {% include "_includes/episodes/appointments-table.njk" %}
@@ -183,8 +189,10 @@
      one owes a reading state #}
   {% if episode.readingCases.length or episode.stage != 'closed' %}
     {% call card({
-      heading: "Image reading",
-      headingLevel: "2"
+      heading: {
+        text: "Image reading",
+        level: 2
+      }
     }) %}
       {% if episode.readingCases.length %}
         {% include "_includes/episodes/reading-cases-table.njk" %}
@@ -210,8 +218,10 @@
   {# How the round moved through its stages - the live round's own record #}
   {% if episode.stageHistory | length %}
     {% call card({
-      heading: "Episode history",
-      headingLevel: "2"
+      heading: {
+        text: "Episode history",
+        level: 2
+      }
     }) %}
       {% set historyRows = [] %}
       {% for entry in episode.stageHistory %}

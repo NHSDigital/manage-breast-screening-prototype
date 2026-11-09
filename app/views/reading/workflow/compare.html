@@ -210,8 +210,10 @@
       <div class="nhsuk-grid-column-one-half">
         <h2 class="nhsuk-u-margin-bottom-0">First read</h2>
         {{ card({
-          heading: firstOpinionLabel,
-          headingLevel: "2",
+          heading: {
+            text: firstOpinionLabel,
+            level: 2
+          },
           feature: true,
           classes: "app-reading-compare-card " + firstOpinionCardClass,
           descriptionHtml: firstReadCardContentHtml
@@ -220,8 +222,10 @@
       <div class="nhsuk-grid-column-one-half">
         <h2 class="nhsuk-u-margin-bottom-0">Your read</h2>
         {{ card({
-          heading: secondOpinionLabel,
-          headingLevel: "2",
+          heading: {
+            text: secondOpinionLabel,
+            level: 2
+          },
           feature: true,
           classes: "app-reading-compare-card " + secondOpinionCardClass,
           descriptionHtml: secondReadCardContentHtml
@@ -233,16 +237,20 @@
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-full">
         {{ card({
-          heading: "First read",
-          headingLevel: "2",
+          heading: {
+            text: "First read",
+            level: 2
+          },
           feature: true,
           classes: "app-reading-compare-card " + firstOpinionCardClass,
           descriptionHtml: firstReadSummaryHtml
         }) }}
 
         {{ card({
-          heading: "Your read",
-          headingLevel: "2",
+          heading: {
+            text: "Your read",
+            level: 2
+          },
           feature: true,
           classes: "app-reading-compare-card " + secondOpinionCardClass,
           descriptionHtml: secondReadSummaryHtml
@@ -283,8 +291,7 @@
           fieldset: {
             legend: {
               text: "What would you like to do?",
-              size: "m",
-              isPageHeading: false
+              size: "m"
             }
           },
           items: radioItems

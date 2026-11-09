@@ -56,7 +56,9 @@ module.exports = (router) => {
           captureSessionEndTime(data, appointmentId, data.currentUser.id)
         }
 
-        // Save the cancellation data
+        // Save the cancellation data, with who cancelled. When is in the
+        // status history
+        data.appointment.cancellation.cancelledBy = data.currentUser.id
         saveTempAppointmentToAppointment(data)
         saveTempParticipantToParticipant(data)
 

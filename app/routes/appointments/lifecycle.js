@@ -166,7 +166,7 @@ module.exports = (router) => {
 
         // startedBy keeps whoever first started it. The resume in authors
         // makes this user the one running it (see getAppointmentRunnerId).
-        updateAppointmentData(data, req.params.appointmentId, {
+        const updates = {
           sessionDetails: {
             startedAt: existingDetails.startedAt,
             startedBy: existingDetails.startedBy,
@@ -174,7 +174,17 @@ module.exports = (router) => {
             pausedBy: null,
             authors: authors
           }
-        })
+        }
+
+        // Starting assigns the order, so this only catches one without it
+        if (appointment.screeningOrder == null) {
+          updates.screeningOrder = getNextScreeningOrder(
+            data,
+            req.params.clinicId
+          )
+        }
+
+        updateAppointmentData(data, req.params.appointmentId, updates)
       }
 
       // Determine redirect destination

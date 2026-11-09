@@ -6,7 +6,7 @@
     text: "Email"
   },
   value: {
-    html: (participant.demographicInformation.email | trim) | safe
+    html: (participant.demographicInformation.email | default("", true) | trim) | safe
   },
   actions: {
      items: [

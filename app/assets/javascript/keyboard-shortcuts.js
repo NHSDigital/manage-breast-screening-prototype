@@ -53,7 +53,8 @@ const isOpinionLocked = () => {
 
 /**
  * Find and trigger an element with a matching data-shortcut attribute (buttons)
- * or data-shortcut-radio attribute (radio inputs)
+ * or data-shortcut-radio attribute (radio inputs). Either attribute can hold
+ * several space-separated keys, such as "n d"
  * @param {string} key - The shortcut key (lowercase)
  * @returns {boolean} - True if a shortcut was triggered
  */
@@ -66,7 +67,7 @@ const triggerShortcut = (key) => {
   }
 
   // First, try button/submit elements with data-shortcut
-  const button = document.querySelector(`[data-shortcut="${key}"]`)
+  const button = document.querySelector(`[data-shortcut~="${key}"]`)
   if (button && !button.disabled) {
     console.log('[Shortcut] Triggering:', key)
     button.click()
@@ -74,7 +75,7 @@ const triggerShortcut = (key) => {
   }
 
   // Then, try radio inputs with data-shortcut-radio (attribute is on the input)
-  const radio = document.querySelector(`input[data-shortcut-radio="${key}"]`)
+  const radio = document.querySelector(`input[data-shortcut-radio~="${key}"]`)
   if (radio && !radio.disabled) {
     console.log('[Shortcut] Triggering:', key)
     radio.checked = true
@@ -136,7 +137,7 @@ const initViewerShortcutForwarding = () => {
   if (!channel) return
 
   // Define which keys to forward to the reading page
-  const forwardKeys = ['n', 't', 'r']
+  const forwardKeys = ['n', 'd', 't', 'r']
 
   document.addEventListener('keydown', (e) => {
     // Ignore if modifier keys are pressed

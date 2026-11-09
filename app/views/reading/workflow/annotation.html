@@ -90,9 +90,7 @@
             text: "Location",
             size: "s"
           },
-          hint: {
-            text: "Describe the location in the " + side + " breast, for example 'upper outer quadrant' or 'UOQ'"
-          },
+          hint: "Describe the location in the " + side + " breast, for example 'upper outer quadrant' or 'UOQ'",
           classes: "nhsuk-u-width-two-thirds"
         } | populateErrors) }}
       {% endif %}
@@ -111,9 +109,7 @@
         {# Only show delete link if this is a previously saved annotation #}
         {% if annotation.id %}
           {% set deleteHref = ('./annotation/delete/' + annotation.id) | urlWithReferrer(referrerChain) %}
-          <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
-            Delete this annotation
-          </a>
+          <a href="{{ deleteHref }}" class="nhsuk-link nhsuk-link--no-visited-state app-link--warning">Delete this annotation</a>
         {% endif %}
       </div>
 

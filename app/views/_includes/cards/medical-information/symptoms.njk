@@ -28,8 +28,10 @@
 {% endset %}
 
 {{ card({
-  heading: "Recent breast changes or symptoms",
-  headingLevel: "2",
+  heading: {
+    text: "Recent breast changes or symptoms",
+    level: 2
+  },
   feature: false,
   descriptionHtml: symptomsCardHtml
 }) }}

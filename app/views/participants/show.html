@@ -55,8 +55,10 @@
   {# One card for their episodes: the open one picked out as live casework,
      past rounds as history beneath #}
   {% call card({
-    heading: "Screening episodes",
-    headingLevel: "2"
+    heading: {
+      text: "Screening episodes",
+      level: 2
+    }
   }) %}
     {% if currentEpisode %}
       {% set nextAppointment = data | getNextAppointment(participant.id) %}

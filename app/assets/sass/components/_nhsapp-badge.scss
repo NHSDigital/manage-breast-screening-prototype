@@ -26,3 +26,10 @@
 .nhsapp-badge--small {
   @include nhsuk-font-size(16);
 }
+
+// Pale blue with black text, matching the NHS blue tag, for a badge that
+// labels rather than draws attention
+.nhsapp-badge--muted {
+  color: nhsuk-colour("black");
+  background-color: nhsuk-tint(nhsuk-colour("blue"), 80%);
+}

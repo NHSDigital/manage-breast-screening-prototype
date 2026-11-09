@@ -25,9 +25,7 @@
     {% endif %}
 
     {# First/second read tag - arbitration is its own kind of read #}
-    {% if isArbitration %}
-      {{ "Arbitration" | toTag }}
-    {% else %}
+    {% if not isArbitration %}
       {% set readCount = (readingCase | getReadingMetadata).readCount %}
       {% if existingOpinion %}
         {% if readCount == 1 %}

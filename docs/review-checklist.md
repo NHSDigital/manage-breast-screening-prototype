@@ -86,7 +86,7 @@ Spot it: string literals of people's names or list options in templates. For eve
 
 ## 5. Reuse before writing
 
-Check [utils-filter-reference.md](utils-filter-reference.md) (table of contents near the top), `app/views/_includes/`, `app/views/_components/` and the style guide at `/style-guide/` before accepting new logic or markup.
+Check [utils-filter-reference.md](utils-filter-reference.md) (table of contents near the top), `app/views/_includes/`, [components.md](components.md), [sass-modifiers.md](sass-modifiers.md) and the style guide at `/style-guide/` before accepting new logic or markup.
 
 - **Modals.** Use `openInModal`, `parentLayout`, `modalBreakout` and the modal layout. See [modal-system.md](modal-system.md). No hand-rolled `_modal` checks or modal markup.
 - **Index page filters.** Use the filter groups, `filter-list.js` helpers and `appFilterPanel`. See [filtering.md](filtering.md).
@@ -101,7 +101,7 @@ Check [utils-filter-reference.md](utils-filter-reference.md) (table of contents 
 
 - HTML assembled by string concatenation in routes, utils or client-side JavaScript. Use a Nunjucks macro or include; in templates, build HTML in a `set` or `call` block, never inline.
 - Client-side JavaScript that recreates markup the server already renders (tags, action links, rows). It will drift from the server version. Fetch the server-rendered fragment instead (see section 5).
-- Hand-written HTML where an NHS.UK Frontend macro exists. Look up the parameters in [nhs-frontend-component-reference.md](nhs-frontend-component-reference.md) rather than guessing.
+- Hand-written HTML where an NHS.UK Frontend macro exists. Look up the parameters in [nhsuk-frontend/components/](nhsuk-frontend/index.md) rather than guessing.
 - A `radios` or `checkboxes` macro without `small: true`.
 - Inline `<script>` blocks in views. Client-side code is a module in `app/assets/javascript/`, and the page must still work without it.
 
@@ -109,7 +109,7 @@ Check [utils-filter-reference.md](utils-filter-reference.md) (table of contents 
 
 ## 7. Styling
 
-Read `.github/instructions/nhs-frontend-guide.instructions.md` and [nhs-frontend-sass-reference.md](nhs-frontend-sass-reference.md).
+Read `.github/instructions/nhs-frontend-guide.instructions.md` and [nhsuk-frontend/sass-reference.md](nhsuk-frontend/sass-reference.md).
 
 - `style="..."` in templates. Use an NHS Frontend class or utility, or a new BEM class in Sass.
 - Piles of utility or override classes on one element to force a look. If a component needs a variant, make a modifier.
@@ -159,8 +159,9 @@ Fix it: run `npx prettier --write` on every new or changed JavaScript and Sass f
 
 ## 11. Tests and docs
 
-- `npm test` passes: lint, the route sweep and the journeys. See [testing.md](testing.md).
+- `npm test` passes: lint, the component docs check, the route sweep and the journeys. See [testing.md](testing.md).
 - A changed core journey should have its Playwright test updated, not deleted.
 - A new GET route that changes data (marks a status, undoes one) is added to the skip list in `scripts/route-sweep.js`. Otherwise the sweep calls it and changes seeded data mid-run.
 - A new or changed helper in `app/lib/utils/` has a JSDoc comment, and `npm run docs` has been run.
+- A new or changed component has an up to date comment at the top of its `macro.njk`, and `npm run docs` has been run.
 - A new pattern others will reuse is described in the relevant doc.

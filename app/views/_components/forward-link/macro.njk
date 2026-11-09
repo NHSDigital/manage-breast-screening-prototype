@@ -1,4 +1,16 @@
 {# app/views/_components/forward-link/macro.njk #}
+{#
+  Purpose: A directional link or button pointing forward, the counterpart to the NHS back link.
+  Use when: moving forward through a sequence, such as between cases in image reading.
+  NHS equivalent: `backLink` is the counterpart going back. Use `button` for the main action on a page.
+
+  Params:
+    text       — link text (default: "Forward")
+    html       — link HTML, overrides text
+    href       — the URL (default: "#")
+    element    — "button" renders a button, for use inside forms
+    id, classes, attributes — as usual
+#}
 {% macro appForwardLink(params) %}
   {%- include "./template.njk" -%}
 {% endmacro %}

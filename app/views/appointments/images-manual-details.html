@@ -154,7 +154,7 @@
           {% endfor %}
 
           {% call details({
-            summaryText: "Add images for this breast",
+            summary: "Add images for this breast",
             open: hasBreastData
           }) %}
             <fieldset class="nhsuk-fieldset">
@@ -175,7 +175,7 @@
   {# Implant displaced (Eklund) views, and views that aren't expected of an expected breast – open if any data already present #}
   {% if inputs | where("group", "other") | length %}
     {% call details({
-      summaryText: "Other views",
+      summary: "Other views",
       open: hasOtherViewData
     }) %}
       <div class="nhsuk-grid-row">

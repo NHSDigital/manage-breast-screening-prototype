@@ -1,24 +1,4 @@
 {# app/views/_components/annotation-tabs/template.njk #}
-{#
-  Horizontal tab bar for switching between right and left breast.
-  Shows breast label, annotation count badge, and optional image thumbnails.
-
-  Designed to be paired with content panels that are shown/hidden by JS
-  based on the active side. Without JS, both panels are visible (stacked).
-
-  Params:
-    activeSide    — "right" or "left" (which tab is initially active, default: "right")
-    imagePaths    — object of all image paths (e.g. { rcc: "/path", rmlo: "/path", lcc: "/path", lmlo: "/path" })
-    viewOrder     — "cc-first" (default) or "mlo-first"
-    rightCount    — number of annotations for right breast (default: 0)
-    leftCount     — number of annotations for left breast (default: 0)
-    showThumbs    — boolean, show thumbnail previews in tabs (default: true)
-    id            — id attribute for the tab bar (default: "app-annotation-tabs")
-    classes       — additional CSS classes
-    rightError    — error object for right breast (truthy shows error indicator)
-    leftError     — error object for left breast (truthy shows error indicator)
-#}
-
 {% set _activeSide = params.activeSide | default("right") %}
 {% set _imagePaths = params.imagePaths | default({}) %}
 {% set _viewOrder = params.viewOrder | default("cc-first") %}

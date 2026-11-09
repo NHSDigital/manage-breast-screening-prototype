@@ -1,0 +1,78 @@
+{# app/views/style-guide/filter-panel.html #}
+
+{% extends 'layout-app.html' %}
+
+{% set hideBackLink = true %}
+{% set currentPage = "filter-panel" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageNavigation %}
+  {% include "style-guide/_nav.njk" %}
+{% endblock %}
+
+{% block pageContent %}
+
+<h2>Filter panel</h2>
+
+<p>A search and filter column for an index page. The groups, selection and counts are data, usually built with the helpers in <code>app/lib/utils/filter-list.js</code>. See <code>docs/filtering.md</code>.</p>
+
+<p>Macro: <code>appFilterPanel(params)</code></p>
+
+<h3>Checkboxes with a search</h3>
+
+<div class="sg-example">
+  {{ appFilterPanel({
+    action: "/style-guide/filter-panel",
+    search: {
+      name: "styleGuideSearch",
+      label: { text: "Search by name" }
+    },
+    groups: [
+      {
+        name: "styleGuideStatus",
+        legend: "Status",
+        options: [
+          { value: "scheduled", label: "Scheduled" },
+          { value: "complete", label: "Complete" }
+        ]
+      }
+    ],
+    selected: {
+      styleGuideStatus: ["scheduled"]
+    },
+    counts: {
+      styleGuideStatus: {
+        scheduled: 12,
+        complete: 3
+      }
+    }
+  }) }}
+</div>
+<pre class="sg-snippet"><code>{% raw %}{{ appFilterPanel({
+  action: "/clinics",
+  search: {
+    name: "search",
+    label: { text: "Search by name" }
+  },
+  groups: [
+    {
+      name: "status",
+      legend: "Status",
+      options: [
+        { value: "scheduled", label: "Scheduled" },
+        { value: "complete", label: "Complete" }
+      ]
+    }
+  ],
+  selected: {
+    status: ["scheduled"]
+  },
+  counts: {
+    status: {
+      scheduled: 12,
+      complete: 3
+    }
+  }
+}) }}{% endraw %}</code></pre>
+
+{% endblock %}

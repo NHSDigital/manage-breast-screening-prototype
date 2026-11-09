@@ -43,9 +43,7 @@
         {{ input({
           id: "customLabel",
           name: "customLabel",
-          label: {
-            text: customInputLabel
-          }
+          label: customInputLabel
         }) }}
       {% endset %}
 
@@ -71,14 +69,13 @@
     fieldset: {
       legend: {
         size: "s",
-        classes: "nhsuk-u-visually-hidden",
-        isPageHeading: false
+        classes: "nhsuk-u-visually-hidden"
       }
     },
     items: radioItems
   }) }}
 
-  <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+  <div class="nhsuk-button-group nhsuk-button-group--small nhsuk-u-margin-bottom-0">
     {{ button({
       text: addButtonText,
       id: "addBtn",

@@ -39,9 +39,7 @@
       {
         value: "Unable to scan tissue",
         text: "Unable to scan tissue",
-        hint: {
-          text: "For example, large breasts or implanted device"
-        }
+        hint: "For example, large breasts or implanted device"
       },
       {
         value: "Positioning difficulties due to wheelchair",
@@ -66,9 +64,7 @@
     name: namePrefix + "[incompleteMammographyReasonDetails]",
     value: mammogramSource.incompleteMammographyReasonDetails,
     id: "incompleteMammographyReasonDetails",
-    label: {
-      text: "Provide details (optional)"
-    },
+    label: "Provide details (optional)",
     rows: 2
   }) }}
 
@@ -77,9 +73,7 @@
       name: namePrefix + "[incompleteMammographyFollowUpAppointmentDetails]",
       value: mammogramSource.incompleteMammographyFollowUpAppointmentDetails,
       id: "incompleteMammographyFollowUpAppointmentDetails",
-      label: {
-        text: "Note for scheduling recall appointment"
-      },
+      label: "Note for scheduling recall appointment",
       rows: 3
     }) }}
   {% endset %}
@@ -121,9 +115,7 @@
     {
       value: "yes",
       text: "Imperfect, but best possible images",
-      hint: {
-        text: "Image readers will be advised not to request a technical recall"
-      }
+      hint: "Image readers will be advised not to request a technical recall"
     }
   ]
 }) }}
@@ -157,8 +149,6 @@
     text: "Notes for reader (optional)",
     size: "s"
   },
-  hint: {
-    text: "Provide information for image readers when reviewing"
-  },
+  hint: "Provide information for image readers when reviewing",
   rows: 2
 }) }}

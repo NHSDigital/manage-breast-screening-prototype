@@ -40,8 +40,7 @@
         fieldset: {
           legend: {
             text: "What is your opinion of the " + params.side + " breast?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [
@@ -101,8 +100,10 @@
   {% endset %}
 
   {{ card({
-    heading: Side + " breast",
-    headingLevel: "2",
+    heading: {
+      text: Side + " breast",
+      level: 2
+    },
     feature: true,
     classes: "nhsuk-u-margin-top-3",
     descriptionHtml: breastDetailsHtml
@@ -221,7 +222,7 @@
           {% if sideAnnotations | length > 0 %}
             <h4 class="nhsuk-heading-xs nhsuk-u-margin-bottom-2">Add another annotation</h4>
           {% endif %}
-          <div class="nhsuk-button-group app-button-group--small">
+          <div class="nhsuk-button-group nhsuk-button-group--small">
             {% for abnormalityType in data.abnormalityTypes %}
               {{ button({
                 text: abnormalityType,

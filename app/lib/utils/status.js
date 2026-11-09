@@ -404,10 +404,10 @@ const describeReadingCaseStatus = (status) => {
 }
 
 /**
- * Filter appointments by status category
+ * Filter appointments by status category; Remaining includes in-progress and paused appointments
  *
  * @param {Array} appointments - Appointments to filter
- * @param {string} filter - Category: 'scheduled', 'checked-in', 'in-progress', 'complete', or 'remaining'
+ * @param {string} filter - Category: 'scheduled', 'checked-in', 'in-progress', 'complete', or 'remaining' (scheduled, checked-in, in-progress and paused appointments)
  * @returns {Array} Filtered appointments
  */
 const filterAppointmentsByStatus = (appointments, filter) => {
@@ -421,15 +421,13 @@ const filterAppointmentsByStatus = (appointments, filter) => {
         (appointment) => appointment.status === 'checked_in'
       )
     case 'in-progress':
-      return appointments.filter(
-        (appointment) =>
-          appointment.status === 'in_progress' ||
-          appointment.status === 'paused'
-      )
+      return appointments.filter((appointment) => isInProgress(appointment))
     case 'complete':
       return appointments.filter((appointment) => isFinal(appointment))
     case 'remaining':
-      return appointments.filter((appointment) => hasNotStarted(appointment))
+      return appointments.filter(
+        (appointment) => hasNotStarted(appointment) || isInProgress(appointment)
+      )
     default:
       return appointments
   }
@@ -483,19 +481,74 @@ const hasStoppedDetails = (appointment) => {
 }
 
 /**
+ * When an appointment last moved to a status, taken from its status history.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @param {string} status - Status to look for, such as 'cancelled'
+ * @returns {string | null} ISO timestamp of the latest change to it, or null
+ * @example
+ * {{ appointment | getStatusTime('cancelled') | formatTimeString }}
+ */
+const getStatusTime = (appointment, status) => {
+  const history = appointment?.statusHistory
+  if (!history) return null
+
+  const entry = [...history].reverse().find((item) => item.status === status)
+  return entry ? entry.timestamp : null
+}
+
+/**
  * The timestamp an appointment was checked in, taken from its status history.
  *
  * @param {object} appointment - Appointment object to check
  * @returns {string | null} ISO timestamp of the latest check-in, or null
  */
-const getCheckInTime = (appointment) => {
-  const history = appointment?.statusHistory
-  if (!history) return null
+const getCheckInTime = (appointment) => getStatusTime(appointment, 'checked_in')
 
-  const checkIn = [...history]
-    .reverse()
-    .find((entry) => entry.status === 'checked_in')
-  return checkIn ? checkIn.timestamp : null
+/**
+ * Whether an appointment that has ended was attended: screened, attended not
+ * screened, or started and then rescheduled or cancelled. An attended
+ * appointment keeps its place in the order of screening.
+ *
+ * Stopping an appointment can end in a reschedule or cancellation rather than
+ * attended not screened, so having been started is what counts for those.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether the appointment was attended
+ */
+const wasAttended = (appointment) => {
+  const status = appointment?.status
+
+  if (
+    ['complete', 'partially_screened', 'attended_not_screened'].includes(status)
+  ) {
+    return true
+  }
+
+  return (
+    ['cancelled', 'rescheduled'].includes(status) &&
+    Boolean(appointment.sessionDetails?.startedAt)
+  )
+}
+
+/**
+ * When an appointment reached its outcome, for the clinic list's Time
+ * completed column: when the session ended for an attended appointment (see
+ * wasAttended), or when one that never started was cancelled.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {string | null} ISO timestamp, or null for any other status
+ */
+const getCompletedTime = (appointment) => {
+  if (wasAttended(appointment)) {
+    return appointment.sessionDetails?.endedAt || null
+  }
+
+  if (appointment?.status === 'cancelled') {
+    return getStatusTime(appointment, 'cancelled')
+  }
+
+  return null
 }
 
 /**
@@ -516,41 +569,62 @@ const getSimulatedNow = () => {
 }
 
 /**
- * How long a checked-in participant has been waiting, measured against the
- * prototype's simulated "now" (config.clinics.simulatedTime) so the figure
- * stays stable whatever the real time of viewing.
+ * Whole minutes from a timestamp to the prototype's simulated "now"
+ * (config.clinics.simulatedTime), so the figure stays stable whatever the real
+ * time of viewing.
  *
- * @param {object} appointment - Appointment object to check
- * @returns {number | null} Whole minutes waited, or null if not checked in
+ * @param {string} timestamp - ISO timestamp
+ * @returns {number | null} Whole minutes since, or null if no timestamp
+ * @example
+ * {{ appointment.sessionDetails.startedAt | getMinutesSince | formatWaitingTime }} ago
  */
-const getWaitingMinutes = (appointment) => {
-  const checkInTime = getCheckInTime(appointment)
-  if (!checkInTime) return null
+const getMinutesSince = (timestamp) => {
+  if (!timestamp) return null
 
-  return Math.max(0, getSimulatedNow().diff(dayjs(checkInTime), 'minute'))
+  return Math.max(0, getSimulatedNow().diff(dayjs(timestamp), 'minute'))
 }
 
 /**
- * A real-time anchor for the waiting figure: now minus the minutes already
- * waited. The clinic page's client script counts up from this, so the "N
- * minutes ago" ticks over while the page stays open. Anchored to real now
- * (not the simulated clinic time) precisely so it advances.
+ * A real-time anchor for an elapsed time: real now minus the minutes since the
+ * timestamp. The clinic page's elapsed-time script counts up from this, so the
+ * "N mins ago" ticks over while the page stays open. Anchored to real now (not
+ * the simulated clinic time) precisely so it advances.
  *
- * @param {object} appointment - Appointment object to check
+ * @param {string} timestamp - ISO timestamp
  * @returns {string | null} ISO timestamp to count up from, or null
  */
-const getWaitingSince = (appointment) => {
-  const minutes = getWaitingMinutes(appointment)
+const getElapsedSince = (timestamp) => {
+  const minutes = getMinutesSince(timestamp)
   if (minutes === null) return null
 
   return dayjs().subtract(minutes, 'minute').toISOString()
 }
 
 /**
- * Format a waiting duration as whole minutes, e.g. "1 min", "75 mins".
- * Always minutes, never hours. Seconds are added live by the client script.
+ * How long a checked-in participant has been waiting, in whole minutes
+ * against the simulated "now" (see getMinutesSince).
  *
- * @param {number | null} totalMinutes - Whole minutes waited
+ * @param {object} appointment - Appointment object to check
+ * @returns {number | null} Whole minutes waited, or null if not checked in
+ */
+const getWaitingMinutes = (appointment) =>
+  getMinutesSince(getCheckInTime(appointment))
+
+/**
+ * A real-time anchor for the waiting figure (see getElapsedSince).
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {string | null} ISO timestamp to count up from, or null
+ */
+const getWaitingSince = (appointment) =>
+  getElapsedSince(getCheckInTime(appointment))
+
+/**
+ * Format an elapsed time, such as a wait or time since screening started, as
+ * whole minutes, e.g. "1 min", "75 mins". Always minutes, never hours. The
+ * elapsed-time client script ticks it up in the same format.
+ *
+ * @param {number | null} totalMinutes - Whole minutes elapsed
  * @returns {string} Human-readable duration, or empty string if not a number
  */
 const formatWaitingTime = (totalMinutes) => {
@@ -580,6 +654,11 @@ module.exports = {
   getCheckInTime,
   getWaitingMinutes,
   getWaitingSince,
+  getMinutesSince,
+  getElapsedSince,
+  getStatusTime,
+  getCompletedTime,
+  wasAttended,
   getSimulatedNow,
   formatWaitingTime,
   // Export groups and display vocabularies for testing/reference

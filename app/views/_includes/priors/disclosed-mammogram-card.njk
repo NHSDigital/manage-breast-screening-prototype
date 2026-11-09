@@ -115,9 +115,11 @@
 {% set cardTitle = ("Mammogram from " + dateTakenText) if dateTakenText else "Mammogram, date not known" %}
 
 {% call card({
-  heading: cardTitle,
-  headingLevel: "3",
-  headingClasses: "nhsuk-heading-s",
+  heading: {
+    text: cardTitle,
+    level: 3,
+    classes: "nhsuk-heading-s"
+  },
   attributes: { "data-fragment-id": mammogram.id }
 }) %}
   {{ summaryList({ rows: mammogramRows }) }}

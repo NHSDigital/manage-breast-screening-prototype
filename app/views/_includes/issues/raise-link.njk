@@ -15,7 +15,7 @@
    - options.type - issue type to preselect, from ISSUE_TYPES
    - options.classes - extra classes for the paragraph #}
 
-{% from '_components/link/macro.njk' import appLink %}
+{% from 'link/macro.njk' import link %}
 
 {% macro raiseIssueLink(raisedFrom, options = {}) %}
   {% set raiseUrl = getRaiseIssueUrl({
@@ -36,7 +36,7 @@
   {% if raiseUrl %}
     {% set defaultText = "Raise another issue" if (data | hasOpenIssue(episode or participant)) else (linkTextByRaisedFrom[raisedFrom] or "Raise an issue") %}
     <p class="{{ options.classes }}">
-      {{ appLink({
+      {{ link({
         text: options.text or defaultText,
         href: raiseUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
         classes: "nhsuk-link--no-visited-state"

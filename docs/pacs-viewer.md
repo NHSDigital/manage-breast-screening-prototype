@@ -58,9 +58,9 @@ When the viewer opens (manually or auto), it requests current participant data:
 
 - **Zoom**: Click any image in the main grid to view fullscreen; click or press Escape to close
 - **Keyboard navigation**: Arrow keys cycle through zoomed images (ordered by breast: right then left). When not zoomed, left arrow opens first right breast image, right arrow opens first left breast image.
-- **Opinion shortcuts**: Press N (normal), T (technical recall), or R (recall for assessment) to trigger the corresponding opinion on the reading page - works even when PACS viewer is focused
+- **Opinion shortcuts**: Press N (normal), D (normal, but add details), T (technical recall), or R (recall for assessment) to trigger the corresponding opinion on the reading page - works even when PACS viewer is focused. When the participant has symptoms, plain Normal is not offered: “Normal, and add details” replaces it, and both N and D trigger it
 - **Additional images**: When a case has repeat/retake images, "View additional images" button appears; modal shows all attempts with labels
-- **Debug mode**: Press 'd' to toggle debug bar showing set ID, tag, description, and context flags
+- **Debug mode**: Press 'i' to toggle debug bar showing set ID, tag, description, and context flags
 
 ---
 
@@ -327,7 +327,7 @@ The following planned features have been implemented:
 - [x] **Side preference**: Abnormalities matched to symptom side (70% probability)
 - [x] **View filtering**: Only show views present in mammogram data
 - [x] **Additional images**: Support for repeat/retake scenarios with modal viewer
-- [x] **Debug display**: Press 'd' in viewer to see set info and context flags
+- [x] **Debug display**: Press 'i' in viewer to see set info and context flags
 - [x] **Repeat sets**: 7 composite sets with `hasRepeat: true` flag
 
 ### Real Mammogram Images

@@ -69,8 +69,10 @@
   </h3>
 {% endif %}
 {{ card({
-  heading: outcomeLabel,
-  headingLevel: "3",
+  heading: {
+    text: outcomeLabel,
+    level: 3
+  },
   feature: true,
   classes: "app-reading-compare-card " + outcomeCardClass,
   descriptionHtml: cardContentHtml
