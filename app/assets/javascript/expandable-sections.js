@@ -54,10 +54,11 @@ document.addEventListener('DOMContentLoaded', function () {
   sections.forEach(function (section, index) {
     const content = section.querySelector('.nhsuk-details__text')
     if (content) {
-      // Create HR element
+      // Divider between the content and the section's own buttons. Its
+      // spacing is in _expandable-section.scss
       const hr = document.createElement('hr')
       hr.className =
-        'nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-bottom-2'
+        'nhsuk-section-break nhsuk-section-break--visible app-expandable-section__divider'
 
       // Create button container
       const buttonContainer = document.createElement('div')
@@ -77,7 +78,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Create button
       const button = document.createElement('button')
       button.className =
-        'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3 js-save-and-next'
+        'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-save-and-next'
       button.type = 'button'
       button.setAttribute('data-section-index', index)
 
@@ -89,7 +90,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (isBreastFeaturesSection) {
         const reviewAfterImagingButton = document.createElement('button')
         reviewAfterImagingButton.className =
-          'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3'
+          'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0'
         reviewAfterImagingButton.type = 'button'
         reviewAfterImagingButton.textContent = 'Review at imaging'
 
@@ -102,14 +103,7 @@ document.addEventListener('DOMContentLoaded', function () {
         })
       }
 
-      // Append HR first, then button container. A section ending in a button
-      // takes its spacing on the HR instead, so the same content can be used
-      // elsewhere without a trailing margin
-      const lastContentElement = content.lastElementChild
-      if (lastContentElement?.matches('.nhsuk-button')) {
-        lastContentElement.classList.add('nhsuk-u-margin-bottom-0')
-        hr.classList.add('nhsuk-u-margin-top-5')
-      }
+      // Append HR first, then button container
       content.appendChild(hr)
       content.appendChild(buttonContainer)
 

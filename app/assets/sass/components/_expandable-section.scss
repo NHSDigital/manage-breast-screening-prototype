@@ -1,0 +1,26 @@
+// app/assets/sass/components/_expandable-section.scss
+
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// The divider between an expandable section's content and its own buttons,
+// with the same visible space above and below
+.app-expandable-section__divider {
+  margin-top: nhsuk-spacing(5);
+  margin-bottom: nhsuk-spacing(5);
+}
+
+// The divider carries the space, so whatever ends the content has none
+.nhsuk-details__text > :has(+ .app-expandable-section__divider) {
+  margin-bottom: 0;
+}
+
+// A button's shadow sits below its box, so leave room for it
+.nhsuk-button + .app-expandable-section__divider {
+  margin-top: nhsuk-spacing(5) + $nhsuk-button-shadow-size;
+}
+
+// Buttons in a group already have their shadow and the group's row gap
+// (nhsuk-spacing(3)) below them, inside the group
+.nhsuk-button-group + .app-expandable-section__divider {
+  margin-top: nhsuk-spacing(5) - nhsuk-spacing(3);
+}
