@@ -266,6 +266,9 @@ test.describe('Screening appointment', () => {
       page.getByRole('heading', { name: 'Record breast features' })
     ).toBeVisible()
 
+    // The diagram is a module script, so it can attach its click handler after
+    // the heading is already visible
+    await page.waitForFunction(() => window.breastFeaturesInitialized)
     const diagram = page.locator('.breast-features__diagram svg')
     const diagramBox = await diagram.boundingBox()
     await diagram.click({
