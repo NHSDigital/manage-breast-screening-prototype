@@ -136,6 +136,7 @@
     {
       "enabled": {{ 'false' if data.settings.appointment.imageStreaming.enabled == 'false' else 'true' }},
       "alreadyReceived": {{ 'true' if appointment.workflowStatus['take-images'] == 'completed' else 'false' }},
+      "progressKey": "{{ appointment.id }}-{{ appointment.sessionDetails.startedAt }}",
       "intervalMs": {{ data.settings.appointment.imageStreaming.intervalMs if data.settings.appointment.imageStreaming.intervalMs else 3000 }},
       "totalImages": {{ imageCount }},
       "images": {{ streamingImages | dump | safe }}
