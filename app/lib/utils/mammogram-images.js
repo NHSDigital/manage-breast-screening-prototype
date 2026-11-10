@@ -4,6 +4,7 @@ const path = require('path')
 const fs = require('fs')
 const config = require('../../config')
 const { isMedicalHistoryItemRemoved } = require('./medical-information')
+const { getImagedSides } = require('./expected-views')
 
 // Image sources
 const IMAGE_SOURCES = {
@@ -75,7 +76,7 @@ const seededRandom = (seed) => {
 /**
  * Extract context flags from appointment data for smart set selection
  * @param {object} appointment - The appointment object
- * @returns {object} - Context flags: hasSymptoms, symptomSides, hasImplants, isImperfect, hasRepeat, hasExtraImages, repeatViews
+ * @returns {object} - Context flags: hasSymptoms, symptomSides, hasImplants, isImperfect, hasRepeat, hasExtraImages, repeatViews, notImagedSides
  */
 const extractAppointmentContext = (appointment) => {
   if (!appointment) return {}
@@ -167,6 +168,14 @@ const extractAppointmentContext = (appointment) => {
   // Check for extra images (large breasts - not a problem)
   if (appointment.mammogramData?.metadata?.hasExtraImages) {
     context.hasExtraImages = true
+  }
+
+  // Breasts with no images, for example after a mastectomy
+  if (appointment.mammogramData?.views) {
+    const imagedSides = getImagedSides(appointment.mammogramData)
+    context.notImagedSides = ['right', 'left'].filter(
+      (side) => !imagedSides.includes(side)
+    )
   }
 
   return context
@@ -267,6 +276,15 @@ const filterSetsByContext = (sets, context) => {
     } else {
       // If appointment doesn't have repeats, exclude repeat sets
       if (set.hasRepeat) return false
+    }
+
+    // A breast with no images can't show a finding
+    if (
+      context.notImagedSides?.some((side) =>
+        ['abnormal', 'technical'].includes(set[side]?.status)
+      )
+    ) {
+      return false
     }
 
     return true

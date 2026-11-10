@@ -274,6 +274,19 @@
   {% endif %}
 {% endfor %}
 
+{# Expected images, only when the plan isn't a standard set #}
+{% set expectedViews = appointment | getExpectedViews %}
+{% if not expectedViews.isStandardSet %}
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Expected images"
+    },
+    value: {
+      text: expectedViews.description
+    }
+  }) %}
+{% endif %}
+
 {% set summaryRows = summaryRows | push({
   key: {
     text: "Views taken"

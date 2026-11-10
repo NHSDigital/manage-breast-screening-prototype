@@ -116,7 +116,8 @@ episode.readingCases = [
         readType: 'first' | 'second' | 'arbitration',
         readNumber: 1,
         timestamp: '2026-01-15T10:30:00.000Z',
-        // For abnormal opinions, includes per-breast data:
+        // For abnormal opinions, includes per-breast data. A breast with no
+        // images (for example after a mastectomy) has no entry:
         left: {
           breastAssessment: 'normal' | 'clinical' | 'abnormal',
           comment: 'optional text',
@@ -346,6 +347,16 @@ If user selects "Normal – add details": opinion normalised to `normal`, `wants
     [add annotation] → /annotation/add → /annotation → POST /annotation/save → back to details
     → POST /opinion-details-complete → /review → POST /save-opinion
 ```
+
+### Cases without a standard set of images
+
+Some appointments don't expect all four views, for example after a mastectomy on one side (see [expected views](data-conventions.md#expected-views)). Reading follows the images taken:
+
+- The warning callout (`_includes/mastectomy-imaging-warning.njk`) says which images to expect and why, from `getExpectedViews`
+- Reading pages say "Not imaged" for views that weren't expected, distinct from "No image" for a missing view: the opinion thumbnails, annotate page, technical recall and recall for assessment. Screening pages say "Not expected". The PACS viewer leaves them blank, as a PACS knows nothing of medical history
+- A case is only tagged "Incomplete" (and so complex) when the mammographer recorded "Not all mammograms taken" and an expected view is missing (`hasIncompleteMammography`). What the mammographer recorded, with their reasons, still shows in the image warnings either way
+- A breast with no images gets no opinion on the recall for assessment page, so a read has no `left` or `right` for it, and the read summary shows "Not imaged"
+- Technical recall offers views that were taken or expected, so a missing expected view can be recalled
 
 ### Second-reader comparison
 

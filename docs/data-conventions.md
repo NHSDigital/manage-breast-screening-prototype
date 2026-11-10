@@ -270,6 +270,33 @@ there is no appointment record to look it up from. A technical recall adds a
 second entry when the re-screen happens; one entry per image set is also the
 skeleton the reading-cases model (a future piece of work) hangs off.
 
+### Expected views
+
+Which of the four standard views (`RCC`, `RMLO`, `LCC`, `LMLO`) an appointment
+is expected to produce is **derived, not stored**. Use `getExpectedViews(appointment)`
+([app/lib/utils/expected-views.js](../app/lib/utils/expected-views.js)), which
+works it out in this order:
+
+1. `appointment.requestedViews`, for a technical recall (not yet created by
+   anything - the recall appointment work will copy it from the reading outcome)
+2. The mastectomy imaging answers (`mastectomyImagingSide`) in the
+   appointment's medical history. Several mastectomies combine to the breasts
+   all of them allow. A lumpectomy doesn't change anything
+3. Otherwise all four
+
+The views in `mammogramData.views` are always the record. Compare them with
+the plan using `getExpectedViewStates`, which gives each standard view a state:
+`taken` (whether expected or not), `missing` (expected, no images) or
+`notExpected` (not expected, no images - not a problem). Status is
+`partially_screened` only when a view is `missing` (`hasMissingExpectedViews`),
+and reading's "Incomplete" flag needs the mammographer's "Not all mammograms
+taken" answer as well as a missing view (`hasIncompleteMammography`).
+
+There is no override: if the mammographer takes something different from the
+plan, the images taken say so, and "Not all mammograms taken" and notes for
+readers explain why. Seed data generates medical information before images, so
+the generator only takes expected views.
+
 ### Advancing an episode
 
 `updateAppointmentStatus` moves the episode to wherever the appointment's new status

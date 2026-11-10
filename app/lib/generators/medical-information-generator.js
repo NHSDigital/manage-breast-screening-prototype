@@ -28,6 +28,7 @@ const {
  * @param {number} [options.probabilityOfBreastFeatures=0.15] - Chance of having breast features
  * @param {number} [options.probabilityOfMultipleBreastFeatures=0.30] - If breast features exist, chance of multiple markers
  * @param {number} [options.probabilityOfMedicalHistory=0.50] - Chance of having medical history
+ * @param {number} [options.probabilityOfMastectomy=0.35] - Chance each recorded breast procedure is a mastectomy rather than a lumpectomy
  * @param {Array} [options.forceMedicalHistoryTypes] - Array of medical history types to force generation (e.g. ['breastCancer', 'cysts'])
  * @param {object} [options.config] - Participant config for overrides and forced generation
  * @returns {object} Complete medicalInformation object
@@ -42,6 +43,7 @@ const generateMedicalInformation = (options = {}) => {
     probabilityOfBreastFeatures = 0.15,
     probabilityOfMultipleBreastFeatures = 0.3,
     probabilityOfMedicalHistory = 0.5,
+    probabilityOfMastectomy,
     forceMedicalHistoryTypes,
     config
   } = options
@@ -79,6 +81,7 @@ const generateMedicalInformation = (options = {}) => {
   const medicalHistory = generateMedicalHistory({
     addedByUserId,
     probability: probabilityOfMedicalHistory,
+    probabilityOfMastectomy,
     forceMedicalHistoryTypes,
     config
   })

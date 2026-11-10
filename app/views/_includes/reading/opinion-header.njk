@@ -75,7 +75,7 @@
       {% if appointment.mammogramData.isImperfectButBestPossible | includes("yes") %}
         {{ "Imperfect" | toTag }}
       {% endif %}
-      {% if appointment.mammogramData.isIncompleteMammography | includes("yes") %}
+      {% if appointment | hasIncompleteMammography %}
         {{ "Incomplete" | toTag }}
       {% endif %}
     {% endif %}

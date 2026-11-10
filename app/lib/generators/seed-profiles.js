@@ -60,7 +60,8 @@ const SEED_DATA_PROFILE_DEFAULTS = {
     probabilityOfOtherMedicalInfo: 0.12,
     probabilityOfBreastFeatures: 0.06,
     probabilityOfMultipleBreastFeatures: 0.2,
-    probabilityOfMedicalHistory: 0.2
+    probabilityOfMedicalHistory: 0.2,
+    probabilityOfMastectomy: 0.35
   },
   specialAppointment: {
     probability: 0.04
@@ -128,7 +129,8 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
         probabilityOfOtherMedicalInfo: 0.2,
         probabilityOfBreastFeatures: 0.15,
         probabilityOfMultipleBreastFeatures: 0.3,
-        probabilityOfMedicalHistory: 0.5
+        probabilityOfMedicalHistory: 0.5,
+        probabilityOfMastectomy: 0.4
       },
       specialAppointment: {
         probability: 0.08
@@ -172,7 +174,8 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
         probabilityOfOtherMedicalInfo: 0.3,
         probabilityOfBreastFeatures: 0.25,
         probabilityOfMultipleBreastFeatures: 0.45,
-        probabilityOfMedicalHistory: 0.65
+        probabilityOfMedicalHistory: 0.65,
+        probabilityOfMastectomy: 0.5
       },
       specialAppointment: {
         probability: 0.2
@@ -291,6 +294,9 @@ const SEED_DATA_PROFILE_DEFINITIONS = [
     description:
       'High rates of extra images, technical repeats, incomplete and imperfect mammograms',
     settings: {
+      medicalInformation: {
+        probabilityOfMastectomy: 0.8
+      },
       mammogram: {
         scenarioWeights: {
           standard: 0.1,

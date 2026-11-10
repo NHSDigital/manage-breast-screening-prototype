@@ -422,6 +422,7 @@ if (isCompleted(appointmentStatus)) {
 | `probabilityOfBreastFeatures` | 0.15 |
 | `probabilityOfMultipleBreastFeatures` | 0.3 |
 | `probabilityOfMedicalHistory` | 0.5 |
+| `probabilityOfMastectomy` | 0.35 |
 
 It also takes `addedByUserId` (passed to every sub-generator), `forceMedicalHistoryTypes` (an array of type keys to guarantee) and `config` (participant config for overrides). See the JSDoc in the file for the current signature.
 
@@ -720,6 +721,8 @@ When a procedure includes `Mastectomy`, the item also records the follow-up:
 - `mastectomyImagingFor`: `Right`, `Left` or `Both` - the side(s) with a mastectomy
 - `mastectomyImagingSide`: `Right`, `Left`, `Both` or `None` - the side(s) to image, or no images for a bilateral mastectomy
 - `mastectomyImagingDetails`: optional string with details about the images
+
+How often a procedure is a mastectomy rather than a lumpectomy is set by `probabilityOfMastectomy` (a seed profile setting), for breast cancer and mastectomy/lumpectomy items alike. With the default of 0.35 about 3% of appointments record a mastectomy; the Medium, High and Image issues profiles raise it.
 
 Not all participants will have procedures on both breasts - weight accordingly:
 

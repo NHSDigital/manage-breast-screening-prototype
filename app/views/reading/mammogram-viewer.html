@@ -768,7 +768,7 @@
      * Update a single view panel - show image or missing placeholder
      * Hides image immediately, then shows once loaded
      */
-    const updateViewPanel = (view, imagePath) => {
+    const updateViewPanel = (view, imagePath, isNotExpected = false) => {
       const imageEl = imageEls[view]
       const missingEl = missingEls[view]
 
@@ -786,7 +786,9 @@
         imageEl.style.display = "none"
         imageEl.src = ""
         imageEl.onload = null
-        missingEl.style.display = "flex"
+        // A PACS knows nothing of medical history, so a view that wasn't
+        // expected (for example after a mastectomy) is just left blank
+        missingEl.style.display = isNotExpected ? "none" : "flex"
       }
     }
 
@@ -870,10 +872,10 @@
 
       // Update images - show placeholder for missing views
       if (data.images) {
-        updateViewPanel("rcc", data.images.rcc)
-        updateViewPanel("lcc", data.images.lcc)
-        updateViewPanel("rmlo", data.images.rmlo)
-        updateViewPanel("lmlo", data.images.lmlo)
+        const notExpectedViews = data.notExpected || []
+        for (const view of ["rcc", "lcc", "rmlo", "lmlo"]) {
+          updateViewPanel(view, data.images[view], notExpectedViews.includes(view))
+        }
       }
 
       // Store all paths and show/hide additional images link

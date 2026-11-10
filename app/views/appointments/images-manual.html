@@ -19,6 +19,9 @@
 
   <h1>{{ pageHeading }}</h1>
 
+  {% include "_includes/images/expected-views-inset.njk" %}
+  {% set expectedViews = appointment | getExpectedViews %}
+
   {% set mammogramSource = appointment.mammogramDataTemp or appointment.mammogramData %}
 
   {# The authorised mammographer defaults to the logged in user, unless an alternative has been nominated #}
@@ -164,7 +167,7 @@
 
     {# {% if isManualFailover %}
       {% call details({
-        summaryText: "Add reason for switching to manual"
+        summary: "Add reason for switching to manual"
       }) %}
         {{ textarea({
           label: {
@@ -186,7 +189,7 @@
     name: "appointment[mammogramDataTemp][isStandardSet]",
     fieldset: {
       legend: {
-        text: "Were a standard set of images taken?",
+        text: "Were a standard set of images taken?" if expectedViews.isStandardSet else "Were the expected images taken?",
         size: "m"
       }
     },
@@ -194,7 +197,7 @@
     items: [
       {
         value: "yes",
-        text: "Yes, 2 CC and 2 MLO"
+        text: "Yes, 2 CC and 2 MLO" if expectedViews.isStandardSet else "Yes, " + expectedViews.viewsText
       },
       {
         value: "custom",
