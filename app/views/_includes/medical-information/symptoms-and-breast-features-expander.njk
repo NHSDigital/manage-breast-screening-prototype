@@ -28,18 +28,6 @@
   {% set contentsSummary = "No symptoms or breast features added" %}
 {% endif %}
 
-{% set breastFeatureRows = [] %}
-{% for feature in breastFeatures %}
-  {% set breastFeatureRows = breastFeatureRows | push({
-    key: {
-      text: feature.text
-    },
-    value: {
-      text: feature.region | sentenceCase if feature.region else "Location not recorded"
-    }
-  }) %}
-{% endfor %}
-
 {% set expanderHtml %}
 <div class="app-summary-list-container">
   <h2 class="nhsuk-heading-s">Symptoms</h2>
@@ -52,19 +40,7 @@
 
   <h2 class="nhsuk-heading-s">Breast features</h2>
 
-  {% if breastFeaturesCount > 0 %}
-    {{ summaryList({
-      rows: breastFeatureRows
-    }) }}
-  {% endif %}
-
-  {{ button({
-    text: "View or change breast features" if breastFeaturesCount > 0 else "Add breast features",
-    href: (contextUrl + "/medical-information/record-breast-features") | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
-    variant: "secondary",
-    small: true,
-    classes: "nhsuk-u-margin-bottom-0"
-  }) }}
+  {% include "_includes/medical-information/breast-features.njk" %}
 </div>
 {% endset %}
 
