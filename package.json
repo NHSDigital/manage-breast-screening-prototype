@@ -40,7 +40,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.65.0",
-    "cssnano": "^9.0.5",
+    "cssnano": "^9.9.0",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",
     "postcss": "^8.5.32",
