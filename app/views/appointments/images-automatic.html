@@ -109,11 +109,14 @@
       {% include "_includes/additional-image-details.njk" %}
 
       {{ button({
-        text: "Confirm all images received"
+        text: "Confirm all images received",
+        classes: "nhsuk-u-margin-bottom-1"
       }) }}
 
     </div>
   </div>
+
+  <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
 
   {% include "_includes/medical-information/symptoms-and-breast-features-expander.njk" %}
 
