@@ -326,12 +326,15 @@ const getAppointmentRunByNames = function (appointment, options = {}) {
  * having run the appointment is a practitioner.
  *
  * @param {object} appointment - Appointment object
+ * @param {object} [options] - Display options, as accepted by getUsername
  * @returns {{label: string, people: Array<{id: (string|null), name: string, roles: Array<string>}>}} Display label and people with their roles
+ * @example
+ * {{ appointment | getAppointmentMammographerSummary({ identifyCurrentUser: true }) }}
  */
-const getAppointmentMammographerSummary = function (appointment) {
+const getAppointmentMammographerSummary = function (appointment, options = {}) {
   const people = getAppointmentRunByIds(appointment).map((userId) => ({
     id: userId,
-    name: getUsername.call(this, userId),
+    name: getUsername.call(this, userId, options),
     roles: ['Practitioner']
   }))
 
@@ -343,8 +346,8 @@ const getAppointmentMammographerSummary = function (appointment) {
     (hasOtherNameOperator ? null : appointment?.sessionDetails?.endedBy) ||
     null
   const operatorName =
-    getAuthorisedMammographerName.call(this, appointment) ||
-    getScreenedByName.call(this, appointment)
+    getAuthorisedMammographerName.call(this, appointment, options) ||
+    getScreenedByName.call(this, appointment, options)
   const operator = people.find((person) => person.id === operatorId)
 
   if (operator) {

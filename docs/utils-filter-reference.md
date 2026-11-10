@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-10 16:06 UTC
+- **Generated:** 2026-11-10 16:19 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -619,8 +619,8 @@ User role checks. Use these instead of comparing role strings directly.
 | `isRunByCurrentUser(appointment)` | Check if an appointment is being run by the current user, meaning they | 270 |
 | `getAppointmentRunByIds(appointment)` | Get the ids of everyone who ran an appointment, in the order they joined | 285 |
 | `getAppointmentRunByNames(appointment, [options])` | Get the names of everyone who ran an appointment, for showing everyone — e.g. `{{ appointment \| getAppointmentRunByNames({ format: "reversed" }) \| formatList }}` | 305 |
-| `getAppointmentMammographerSummary(appointment)` | Get the people and roles to show for a completed appointment | 321 |
-| `getScreenedByName(appointment, [options])` | Get the name of whoever screened an appointment, for showing one name in a — e.g. `{{ appointment \| getScreenedByName({ format: "short", identifyCurrentUser: true }) }}` | 366 |
+| `getAppointmentMammographerSummary(appointment, [options])` | Get the people and roles to show for a completed appointment — e.g. `{{ appointment \| getAppointmentMammographerSummary({ identifyCurrentUser: true }) }}` | 321 |
+| `getScreenedByName(appointment, [options])` | Get the name of whoever screened an appointment, for showing one name in a — e.g. `{{ appointment \| getScreenedByName({ format: "short", identifyCurrentUser: true }) }}` | 369 |
 
 ### filter-list.js
 

@@ -265,7 +265,7 @@
         {% endif %}
       {% endset %}
 
-      {% set mammographerSummary = imagesAppointment | getAppointmentMammographerSummary %}
+      {% set mammographerSummary = imagesAppointment | getAppointmentMammographerSummary({ identifyCurrentUser: true }) %}
 
       {% set mammographersHtml %}
         {% include "_includes/appointment-mammographers.njk" %}
