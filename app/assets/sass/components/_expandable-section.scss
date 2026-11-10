@@ -19,6 +19,12 @@
   margin-top: nhsuk-spacing(5) + $nhsuk-button-shadow-size;
 }
 
+// The section's own buttons end the content. Leave room for their shadow so the
+// visible space below matches the padding at the sides
+.nhsuk-details__text > .app-expandable-section__actions {
+  margin-bottom: $nhsuk-button-shadow-size;
+}
+
 // Buttons in a group already have their shadow and the group's row gap
 // (nhsuk-spacing(3)) below them, inside the group
 .nhsuk-button-group + .app-expandable-section__divider {

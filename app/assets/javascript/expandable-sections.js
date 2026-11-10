@@ -62,7 +62,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       // Create button container
       const buttonContainer = document.createElement('div')
-      buttonContainer.className = 'nhsuk-form-group nhsuk-button-group'
+      buttonContainer.className =
+        'nhsuk-button-group app-expandable-section__actions'
 
       const sectionId = section.getAttribute('id')
       const isBreastFeaturesSection = sectionId === BREAST_FEATURES_SECTION_ID
