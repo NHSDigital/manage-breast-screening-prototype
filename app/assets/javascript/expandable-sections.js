@@ -102,7 +102,14 @@ document.addEventListener('DOMContentLoaded', function () {
         })
       }
 
-      // Append HR first, then button container
+      // Append HR first, then button container. A section ending in a button
+      // takes its spacing on the HR instead, so the same content can be used
+      // elsewhere without a trailing margin
+      const lastContentElement = content.lastElementChild
+      if (lastContentElement?.matches('.nhsuk-button')) {
+        lastContentElement.classList.add('nhsuk-u-margin-bottom-0')
+        hr.classList.add('nhsuk-u-margin-top-5')
+      }
       content.appendChild(hr)
       content.appendChild(buttonContainer)
 
