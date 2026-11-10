@@ -389,6 +389,51 @@ const getScreenedByName = function (appointment, options = {}) {
   )
 }
 
+/**
+ * Get the names of everyone who screened an appointment, for a list where
+ * the most relevant person should come first. The current user comes first
+ * if they were involved, then whoever screened it (see getScreenedByName),
+ * then everyone else who ran it. People are matched by id, so nobody is
+ * listed twice.
+ *
+ * @param {object} appointment - Appointment object
+ * @param {object} [options] - Display options, as accepted by getUsername
+ * @returns {Array<string>} Names in display order
+ * @example
+ * {{ appointment | getAppointmentScreenedByNames({ format: "short", identifyCurrentUser: true }) | join(", ") }}
+ */
+const getAppointmentScreenedByNames = function (appointment, options = {}) {
+  const runByIds = getAppointmentRunByIds(appointment)
+  const currentUser = this?.ctx?.data?.currentUser
+  const currentUserId =
+    typeof currentUser === 'string' ? currentUser : currentUser?.id
+  const hasEnded = Boolean(appointment?.sessionDetails?.endedBy)
+
+  // A nominated mammographer who isn't a user only has a name, no id
+  const otherName = hasEnded
+    ? !appointment?.authorisedMammographerId &&
+      appointment?.authorisedMammographerOtherName
+    : null
+  const screenedById = hasEnded
+    ? appointment?.authorisedMammographerId ||
+      (otherName ? null : appointment.sessionDetails.endedBy)
+    : getAppointmentRunnerId(appointment)
+
+  const leadingIds = runByIds.includes(currentUserId) ? [currentUserId] : []
+  const orderedIds = [
+    ...new Set([...leadingIds, screenedById, ...runByIds].filter(Boolean))
+  ]
+  const names = orderedIds.map((userId) =>
+    getUsername.call(this, userId, options)
+  )
+
+  if (otherName) {
+    names.splice(leadingIds.length, 0, otherName)
+  }
+
+  return names
+}
+
 module.exports = {
   hasRole,
   hasAnyRole,
@@ -401,6 +446,7 @@ module.exports = {
   getAuthorisedMammographerName,
   canUserScreenAppointment,
   getAppointmentMammographerSummary,
+  getAppointmentScreenedByNames,
   isClinician,
   isAdministrative,
   isHybridUser,

@@ -199,45 +199,23 @@
        the screening order badge and who it was, on the Complete and All tabs.
        Attended appointments (see wasAttended) show their place in the order
        of screening and who screened them; one cancelled before it started
-       shows who cancelled it. The time is a fixed-width block so the badge and
-       name line up across rows however wide each time string is. #}
+       shows who cancelled it. The time sits on its own line above them. #}
     {% if columns.completed %}
       {% set completedTime = appointment | getCompletedTime %}
       {% set attended = appointment | wasAttended %}
       {% set completedOrder = appointment.screeningOrder if attended %}
       {% set completedByName = "" %}
-      {% set completedByNames = [] %}
       {% if attended and appointment.sessionDetails.startedBy %}
-        {% set completedByName = appointment | getScreenedByName({
+        {% set completedByName = appointment | getAppointmentScreenedByNames({
           format: 'short',
           identifyCurrentUser: true
-        }) %}
-        {% set completedByNames = appointment | getAppointmentRunByNames({
-          format: 'short',
-          identifyCurrentUser: true
-        }) %}
+        }) | join(", ") %}
       {% elseif appointment.status == 'cancelled' and appointment.cancellation.cancelledBy %}
         {% set completedByName = appointment.cancellation.cancelledBy | getUsername({
           format: 'short',
           identifyCurrentUser: true
         }) %}
       {% endif %}
-      {% set completedByDisplayNames = [] %}
-      {% set currentUserName = currentUser.id | getUsername({
-        format: 'short',
-        identifyCurrentUser: true
-      }) %}
-      {% if currentUserName in completedByNames %}
-        {% set completedByDisplayNames = completedByDisplayNames | push(currentUserName) %}
-      {% endif %}
-      {% if completedByName and completedByName not in completedByDisplayNames %}
-        {% set completedByDisplayNames = completedByDisplayNames | push(completedByName) %}
-      {% endif %}
-      {% for name in completedByNames %}
-        {% if name not in completedByDisplayNames %}
-          {% set completedByDisplayNames = completedByDisplayNames | push(name) %}
-        {% endif %}
-      {% endfor %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
         {% if completedTime or completedByName %}
           {# A cancellation made on an earlier day shows its date instead #}
@@ -252,7 +230,7 @@
                 </span>
               {% endif %}
               {% if completedByName %}
-                <span class="nhsuk-u-font-size-16">{{ completedByDisplayNames | join(", ") }}</span>
+                <span class="nhsuk-u-font-size-16">{{ completedByName }}</span>
               {% endif %}
             </div>
           {% endif %}
