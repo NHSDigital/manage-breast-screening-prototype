@@ -216,6 +216,79 @@ test.describe('Screening appointment', () => {
     await expect(page.getByText(`${fullName} has been screened`)).toBeVisible()
   })
 
+  test('adds a symptom and a breast feature while taking images', async ({
+    page
+  }) => {
+    const { clinic, appointment } = findTodayAppointment({ index: 4 })
+    const imagingUrl = `/clinics/${clinic.id}/appointments/${appointment.id}/take-images`
+
+    await pinSettings(page, appointmentSettings)
+    await page.goto(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/start`
+    )
+    await page.getByRole('button', { name: 'Confirm identity' }).first().click()
+    await page
+      .getByRole('button', { name: 'Complete all and continue' })
+      .first()
+      .click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Take mammogram images' })
+    ).toBeVisible()
+
+    const expander = page.locator('#symptoms-and-breast-features')
+    await expect(expander).not.toHaveAttribute('open')
+    await expander.locator('summary').click()
+
+    // Symptom, in the modal
+    const symptomModal = await clickToOpenModal(page, 'Lump', { exact: true })
+    const symptomLocation = symptomModal.locator(
+      'input[name="appointment[symptomTemp][location]"][value="right breast"]'
+    )
+    await revealInModal(symptomLocation)
+    await symptomLocation.check()
+    await symptomModal
+      .locator(
+        'input[name="appointment[symptomTemp][dateType]"][value="Less than 3 months"]'
+      )
+      .check()
+    await symptomModal.getByRole('button', { name: 'Save symptom' }).click()
+    await expectModalClosed(symptomModal)
+
+    await expect(page).toHaveURL(new RegExp(imagingUrl))
+    await expect(expander).toHaveAttribute('open')
+    await expect(expander).toContainText('1 symptom added')
+
+    // Breast feature, on its own page - the diagram's popover can't work in
+    // a modal. Clicking anywhere on the body outline picks a region.
+    await expander.getByRole('button', { name: 'Add a feature' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Record breast features' })
+    ).toBeVisible()
+
+    // The diagram is a module script, so it can attach its click handler after
+    // the heading is already visible
+    await page.waitForFunction(() => window.breastFeaturesInitialized)
+    const diagram = page.locator('.breast-features__diagram svg')
+    const diagramBox = await diagram.boundingBox()
+    await diagram.click({
+      position: { x: diagramBox.width * 0.3, y: diagramBox.height * 0.6 }
+    })
+    const popover = page.locator('.breast-features__popover')
+    await expect(popover).toBeVisible()
+    await popover
+      .locator('input[name="feature"]')
+      .first()
+      .check({ force: true })
+    await popover.locator('[data-action="add"]').click()
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+
+    await expect(page).toHaveURL(new RegExp(imagingUrl))
+    await expect(page).not.toHaveURL(/_modal_breakout/)
+    await expect(expander).toHaveAttribute('open')
+    await expect(expander).toContainText('1 symptom and 1 breast feature added')
+  })
+
   test('records why no images were needed after bilateral mastectomy', async ({
     page
   }) => {

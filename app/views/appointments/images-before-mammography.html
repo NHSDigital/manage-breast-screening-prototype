@@ -17,18 +17,6 @@
 
   {% include "_includes/images/expected-views-inset.njk" %}
 
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-two-thirds">
-      <h2>Observations during mammogram</h2>
-      {{ button({
-        text: "Add breast features",
-        href: appointmentUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
-        variant: "secondary",
-        small: true
-      }) }}
-    </div>
-  </div>
-
   {% set insetHtml %}
     <p>
       Mammography images will appear below once they have been received
@@ -52,6 +40,11 @@
       <span class="">Loading images...</span>
     </a> #}
   </p>
+
+  <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+
+  {% include "_includes/medical-information/symptoms-and-breast-features-expander.njk" %}
 
   {% include "_includes/images/image-troubleshooting.njk" %}
 

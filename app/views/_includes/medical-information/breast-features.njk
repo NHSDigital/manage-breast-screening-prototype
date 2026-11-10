@@ -7,10 +7,6 @@
 
 {% if hasBreastFeatures %}
 
-  <p>
-    {{ breastFeaturesCount }} breast {{ "feature" | pluralise(breastFeaturesCount) }} added
-  </p>
-
   <script>
   window.breastFeaturesConfig = {
     readOnly: true,
@@ -55,12 +51,11 @@
     <a href="{{ linkHref | safe }}" class="nhsuk-link--no-visited-state">{{ "Add a feature" if not hasBreastFeatures else "View or edit breast features" }}</a>
   </p> #}
 
-  <div class="nhsuk-form-group">
-    {{ button({
-      text: "Add a feature" if not hasBreastFeatures else "View or edit breast features",
-      href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
-      variant: "secondary",
-      small: true
-    }) }}
-  </div>
+  {{ button({
+    text: "Add a feature" if not hasBreastFeatures else "View or edit breast features",
+    href: contextUrl + "/medical-information/record-breast-features" | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
+    variant: "secondary",
+    small: true,
+    classes: "nhsuk-u-margin-bottom-0"
+  }) }}
 {% endif %}

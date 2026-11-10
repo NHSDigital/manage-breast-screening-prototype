@@ -136,12 +136,10 @@
 }) }}
 
 {% if allowEdits and not pregnancyAndBreastfeeding.values | length %}
-  <p class="nhsuk-u-margin-top-4">
-    {{ button({
-      text: "Add pregnancy and breastfeeding",
-      href: pregnancyAndBreastfeedingUrl | urlWithReferrer(currentUrl),
-      variant: "secondary",
-      small: true
-    } | openInModal) }}
-  </p>
+  {{ button({
+    text: "Add pregnancy and breastfeeding",
+    href: pregnancyAndBreastfeedingUrl | urlWithReferrer(currentUrl),
+    variant: "secondary",
+    small: true
+  } | openInModal) }}
 {% endif %}

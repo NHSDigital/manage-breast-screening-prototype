@@ -54,14 +54,16 @@ document.addEventListener('DOMContentLoaded', function () {
   sections.forEach(function (section, index) {
     const content = section.querySelector('.nhsuk-details__text')
     if (content) {
-      // Create HR element
+      // Divider between the content and the section's own buttons. Its
+      // spacing is in _expandable-section.scss
       const hr = document.createElement('hr')
       hr.className =
-        'nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-bottom-2'
+        'nhsuk-section-break nhsuk-section-break--visible app-expandable-section__divider'
 
       // Create button container
       const buttonContainer = document.createElement('div')
-      buttonContainer.className = 'nhsuk-form-group nhsuk-button-group'
+      buttonContainer.className =
+        'nhsuk-button-group app-expandable-section__actions'
 
       const sectionId = section.getAttribute('id')
       const isBreastFeaturesSection = sectionId === BREAST_FEATURES_SECTION_ID
@@ -77,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Create button
       const button = document.createElement('button')
       button.className =
-        'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3 js-save-and-next'
+        'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-save-and-next'
       button.type = 'button'
       button.setAttribute('data-section-index', index)
 
@@ -89,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (isBreastFeaturesSection) {
         const reviewAfterImagingButton = document.createElement('button')
         reviewAfterImagingButton.className =
-          'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3'
+          'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0'
         reviewAfterImagingButton.type = 'button'
         reviewAfterImagingButton.textContent = 'Review at imaging'
 

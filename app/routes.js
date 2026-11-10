@@ -321,11 +321,28 @@ require('./routes/users')(router)
 //   - Sets res.locals.parentLayout so templates use the modal fragment layout
 //   - Wraps res.redirect() to append ?_modal=1 to the target URL, threading
 //     the param through any server-side redirects in the request chain
+//
+// Otherwise (full-page requests), _modal_breakout is stripped from redirects,
+// as it only means something to modal.js.
 router.use((req, res, next) => {
   const isXhr = req.headers['x-requested-with'] === 'XMLHttpRequest'
   const hasModalParam = req.query._modal === '1' || req.body?._modal === '1'
 
-  if (!isXhr && !hasModalParam) return next()
+  if (!isXhr && !hasModalParam) {
+    const originalRedirect = res.redirect.bind(res)
+    res.redirect = (...args) => {
+      const urlIndex = typeof args[0] === 'number' ? 1 : 0
+      const url = args[urlIndex]
+      if (typeof url === 'string') {
+        args[urlIndex] = url.replace(
+          /([?&])_modal_breakout=1(&|#|$)/,
+          (match, separator, after) => (after === '&' ? separator : after)
+        )
+      }
+      originalRedirect(...args)
+    }
+    return next()
+  }
 
   res.locals.parentLayout = '_templates/layout-modal-form.html'
 
