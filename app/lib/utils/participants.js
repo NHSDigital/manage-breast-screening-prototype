@@ -159,6 +159,17 @@ const getCurrentRiskLevel = (participant, referenceDate = new Date()) => {
   return 'routine'
 }
 
+/**
+ * Get the display name of a participant's current screening protocol
+ *
+ * @param {object} participant - Participant object
+ * @param {Date} [referenceDate] - Date to work out their age at
+ * @returns {string} Protocol name, such as 'Routine' or 'Family history: moderate risk'
+ */
+const getScreeningProtocolName = (participant, referenceDate = new Date()) => {
+  return riskLevels[getCurrentRiskLevel(participant, referenceDate)].name
+}
+
 // Saving data
 
 /**
@@ -222,6 +233,7 @@ module.exports = {
   getAge,
   sortBySurname,
   getCurrentRiskLevel,
+  getScreeningProtocolName,
   updateParticipant,
   saveTempParticipantToParticipant
 }

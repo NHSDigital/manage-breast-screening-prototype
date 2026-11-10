@@ -15,6 +15,14 @@
 
   <h1>{{ pageHeading }}</h1>
 
+  {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (currentUser.id | getUsername({ format: "reversed" })) %}
+  {% set authorisedMammographerChangeHref = (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) %}
+
+  <p>
+    Operator: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span>
+    ({{ link({ text: "change", href: authorisedMammographerChangeHref } | openInModal) | trim | safe }})
+  </p>
+
   {% include "_includes/images/expected-views-inset.njk" %}
 
   {% set insetHtml %}

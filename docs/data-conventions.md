@@ -253,7 +253,7 @@ An episode carries its own record of the images its round produced:
 `episode.mammograms`, one entry per image set, oldest first:
 
 ```js
-{ takenDate, appointmentId, breastScreeningUnitId, locationId, viewCount }
+{ takenDate, appointmentId, breastScreeningUnitId, locationId, viewCount, operatorId? }
 ```
 
 `updateAppointmentStatus` writes an entry the moment an appointment reaches a
@@ -264,10 +264,11 @@ Read this - via `getEpisodeMammogramDate` / `getLastMammogram` - rather than
 deriving "were they screened" from appointment timing: a missed appointment
 still has timing, and must never look like someone's last mammogram.
 
-Historic episodes hold one entry with no `appointmentId` or `locationId` - where
-the round was screened is all a summary round knows. A technical recall adds
-a second entry when the re-screen happens; one entry per image set is also
-the skeleton the reading-cases model (a future piece of work) hangs off.
+Historic episodes hold one entry with no `appointmentId` or `locationId`. They
+also carry the `operatorId` for the mammographer who took the images, since
+there is no appointment record to look it up from. A technical recall adds a
+second entry when the re-screen happens; one entry per image set is also the
+skeleton the reading-cases model (a future piece of work) hangs off.
 
 ### Expected views
 

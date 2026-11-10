@@ -519,6 +519,7 @@ const countHistoricEpisodes = (
  * @param {number} options.max - Cap on how many to generate
  * @param {object} [options.outcomeWeights] - Override the default outcome mix
  * @param {Array} [options.readers] - Users who could have read these rounds
+ * @param {Array} [options.mammographers] - Users who could have taken the images
  * @param {object} [options.seedProfile] - Active seed profile
  * @returns {Array} Historic episodes, oldest first
  */
@@ -529,6 +530,7 @@ const generateHistoricEpisodes = ({
   max,
   outcomeWeights,
   readers = [],
+  mammographers = [],
   seedProfile
 }) => {
   const riskLevel = riskLevels[type] || riskLevels.routine
@@ -573,6 +575,9 @@ const generateHistoricEpisodes = ({
     const summaryAppointments = wasScreened
       ? [buildHistoricSummaryAppointment({ screenedDate, seedProfile })]
       : []
+    const operatorId = mammographers.length
+      ? faker.helpers.arrayElement(mammographers).id
+      : null
 
     episodes.push({
       id: generateId(),
@@ -605,7 +610,8 @@ const generateHistoricEpisodes = ({
               appointmentId: null,
               breastScreeningUnitId: participant.assignedBSU,
               locationId: null,
-              viewCount: 4
+              viewCount: 4,
+              operatorId
             }
           ]
         : []

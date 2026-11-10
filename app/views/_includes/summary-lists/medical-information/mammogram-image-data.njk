@@ -182,14 +182,14 @@
       ({
         href: authorisedMammographerChangeHref,
         text: "Change",
-        visuallyHiddenText: "authorised mammographer"
+        visuallyHiddenText: "operator"
       } | openInModal)
     ] %}
   {% endif %}
 
   {% set summaryRows = summaryRows | push({
     key: {
-      text: "Authorised mammographer"
+      text: "Operator"
     },
     value: {
       text: authorisedMammographerName
