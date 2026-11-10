@@ -1236,8 +1236,7 @@ function initializeBreastFeatures() {
   // Initialize: Load any existing features
   loadExistingFeatures()
 
-  // Handle window resize to reposition markers
-  window.addEventListener('resize', function () {
+  function repositionMarkers() {
     allFeatures.forEach((feature) => {
       if (
         feature.element &&
@@ -1251,7 +1250,20 @@ function initializeBreastFeatures() {
         )
       }
     })
-  })
+  }
+
+  window.addEventListener('resize', repositionMarkers)
+
+  // A diagram inside a closed expander has no size when markers are first
+  // placed in some browsers, so place them again when it opens
+  const parentDetails = diagramContainer?.closest('details')
+  if (parentDetails) {
+    parentDetails.addEventListener('toggle', () => {
+      if (parentDetails.open) {
+        repositionMarkers()
+      }
+    })
+  }
 
   // Prevent form submission on Enter key in popover
   if (popover) {
