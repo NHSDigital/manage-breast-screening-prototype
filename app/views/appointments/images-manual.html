@@ -9,15 +9,13 @@
 
 {% set pageHeading = "Take mammogram images" %}
 
-{# Form content is capped at two-thirds; the expander below it uses the full width #}
-{% set gridColumn = "nhsuk-grid-column-full" %}
-
 {% set formAction = './images-manual-answer' %}
 
 {% set activeTab = 'images' %}
 
 {% block pageContent %}
 
+  {# Form content is capped at two-thirds; the expander below uses the page width #}
   <div class="app-u-max-width-two-thirds">
     <h1>{{ pageHeading }}</h1>
 
