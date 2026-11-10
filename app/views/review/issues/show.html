@@ -268,13 +268,7 @@
       {% set mammographerSummary = imagesAppointment | getAppointmentMammographerSummary %}
 
       {% set mammographersHtml %}
-        {% if mammographerSummary.people | length == 1 %}
-          {{ mammographerSummary.people[0].name }}
-        {% else %}
-          {% for person in mammographerSummary.people %}
-            <p class="nhsuk-u-margin-bottom-1">{{ person.name }} ({{ person.roles | join(" and ") }})</p>
-          {% endfor %}
-        {% endif %}
+        {% include "_includes/appointment-mammographers.njk" %}
       {% endset %}
 
       {% set imageCountHtml %}

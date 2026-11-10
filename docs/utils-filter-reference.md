@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-10 09:51 UTC
+- **Generated:** 2026-11-10 16:06 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -19,35 +19,35 @@
 | `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 95 |
 | `status.js` | Appointment status checks and display helpers | 130 |
 | `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 166 |
-| `appointment-data.js` | Appointment lookups and mutations in session data | 186 |
-| `episodes.js` | Episode lookups and stage changes | 201 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 240 |
-| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 260 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 307 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 363 |
-| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 385 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 411 |
-| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 438 |
-| `expected-views.js` | Which mammogram views an appointment is expected to produce (after a mastectomy or for a technical recall), and how the views taken compare. | 456 |
-| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 474 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 486 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 499 |
-| `objects.js` | Object utilities for extracting and flattening values. | 518 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 529 |
-| `random.js` | Seeded random functions for stable prototype data | 539 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 556 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 571 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 581 |
-| `roles-and-permissions.js` | User role checks | 594 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 624 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 640 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 652 |
+| `appointment-data.js` | Appointment lookups and mutations in session data | 187 |
+| `episodes.js` | Episode lookups and stage changes | 202 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 241 |
+| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 261 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 308 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 364 |
+| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 386 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 412 |
+| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 439 |
+| `expected-views.js` | Which mammogram views an appointment is expected to produce (after a mastectomy or for a technical recall), and how the views taken compare. | 457 |
+| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 475 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 487 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 500 |
+| `objects.js` | Object utilities for extracting and flattening values. | 519 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 530 |
+| `random.js` | Seeded random functions for stable prototype data | 540 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 557 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 572 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 582 |
+| `roles-and-permissions.js` | User role checks | 595 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 625 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 641 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 653 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 668 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 681 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 693 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 707 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 717 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 669 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 682 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 694 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 708 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 718 |
 
 ---
 
@@ -180,8 +180,9 @@ Participant lookups and derived data: full/short names, age, clinic history, and
 | `getAge(participant, [referenceDate])` | Get participant's age | 96 |
 | `sortBySurname(participants)` | Sort participants by surname | 117 |
 | `getCurrentRiskLevel(participant)` | Determine a participant's current risk level based on age and risk factors | 131 |
-| `updateParticipant(data, participantId, updatedParticipant)` | Find and update a participant in session data | 164 |
-| `saveTempParticipantToParticipant(data)` | Save temporary participant data back to the main participant | 186 |
+| `getScreeningProtocolName(participant, [referenceDate])` | Get the display name of a participant's current screening protocol | 162 |
+| `updateParticipant(data, participantId, updatedParticipant)` | Find and update a participant in session data | 175 |
+| `saveTempParticipantToParticipant(data)` | Save temporary participant data back to the main participant | 197 |
 
 ### appointment-data.js
 

@@ -169,22 +169,12 @@
   {% set mammographerSummary = appointment | getAppointmentMammographerSummary %}
 
   {% set mammographersHtml %}
-    {% if mammographerSummary.people | length == 1 %}
-      {{ mammographerSummary.people[0].name }}
-    {% else %}
-      {% for person in mammographerSummary.people %}
-        <p class="nhsuk-u-margin-bottom-1">{{ person.name }} ({{ person.roles | join(" and ") }})</p>
-      {% endfor %}
-    {% endif %}
+    {% include "_includes/appointment-mammographers.njk" %}
   {% endset %}
 
-  {% set screeningProtocol = participant | getCurrentRiskLevel | sentenceCase %}
-  {% if screeningProtocol == "Family history" %}
-    {% set screeningProtocol = "Family history: moderate risk" %}
-  {% endif %}
   {% set screeningProtocolHtml %}
     {{ tag({
-      text: screeningProtocol,
+      text: participant | getScreeningProtocolName,
       colour: "blue"
     }) }}
   {% endset %}
