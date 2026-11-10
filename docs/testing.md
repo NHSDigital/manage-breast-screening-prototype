@@ -50,11 +50,13 @@ name, and the skip list is printed on every run so it stays visible.
 
 **Journeys** (`tests/e2e/`) drive real flows in Chromium via Playwright. This is
 the only layer that exercises POST handlers, session state and the client-side
-JavaScript. Twenty-nine journeys, among them:
+JavaScript. Thirty journeys, among them:
 
 - a screening appointment recording medical history and a symptom, from
   check-in to completion
 - a screening appointment straight through with nothing to record
+- adding a symptom (in the modal) and a breast feature (on the diagram page)
+  from the imaging page, returning each time to the expander open
 - a bilateral mastectomy where no images are needed, ending the appointment as
   attended not screened
 - breast implants on both sides asking for consent before they are saved
