@@ -66,14 +66,6 @@
     </p>
   {% endif %}
 
-  <h2>Observations during mammogram</h2>
-  {{ button({
-    text: "Add breast features",
-    href: appointmentUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
-    variant: "secondary",
-    small: true
-  }) }}
-
   {# {{ radios({
     small: true,
     name: "appointment[mammogramDataTemp][machineRoom]",
@@ -218,6 +210,8 @@
   {{ button({
     text: "Continue"
   }) }}
+
+  {% include "_includes/medical-information/symptoms-and-breast-features-expander.njk" %}
 
   {# The workflow side navigation has its own raise link #}
   {% if not isAppointmentWorkflow %}
