@@ -145,7 +145,7 @@
     {# Build the Change action #}
     {% set editUrl = contextUrl + "/medical-information/symptoms/edit/" + symptom.id %}
     {% set changeItem = {
-      href: editUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
+      href: editUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
       text: "Change",
       visuallyHiddenText: symptom.type | lower
     } %}

@@ -406,7 +406,8 @@ module.exports = (router) => {
       res.redirect(
         urlWithReferrer(
           `/clinics/${clinicId}/appointments/${appointmentId}/medical-information/symptoms/details`,
-          req.query.referrerChain
+          req.query.referrerChain,
+          req.query.scrollTo
         )
       )
     }
