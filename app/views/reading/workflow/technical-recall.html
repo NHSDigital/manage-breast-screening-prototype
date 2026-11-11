@@ -1,4 +1,4 @@
-{# /app/views/reading/workflow/technical-recall.html #}
+{# app/views/reading/workflow/technical-recall.html #}
 {#
   Technical recall data structure:
   imageReadingTemp.technicalRecall.views = {
@@ -25,6 +25,8 @@
   <h1 class="nhsuk-heading-l js-image-count">
     {{ pageHeading }}
   </h1>
+
+  {% include "_includes/images/expected-views-inset.njk" %}
 
   {# Standard views - order matches config setting #}
   {% if data.settings.mammogramViewOrder == 'mlo-first' %}
@@ -69,7 +71,18 @@
     {% set currentSelectedViews = [] | push(currentSelectedViews) %}
   {% endif %}
 
+  {# Views that weren't expected and weren't taken can't be retaken #}
+  {% set expectedViews = appointment | getExpectedViews %}
+  {% set viewStates = appointment | getExpectedViewStates %}
+
+  {% set offeredViews = [] %}
   {% for viewCode in views %}
+    {% if viewStates[viewCode].state != "notExpected" %}
+      {% set offeredViews = offeredViews | push(viewCode) %}
+    {% endif %}
+  {% endfor %}
+
+  {% for viewCode in offeredViews %}
     {% set viewData = currentTechRecall[viewCode] | default({}) %}
     {% set isChecked = viewData.reason or viewCode in currentSelectedViews %}
 
@@ -78,9 +91,7 @@
         id: "technicalRecall-" + viewCode + "-reason",
         name: "imageReadingTemp[technicalRecall][views][" + viewCode + "][reason]",
         value: viewData.reason,
-        label: {
-          text: "Reason for recall"
-        },
+        label: "Reason for recall",
         items: selectItems
       } | populateErrors) }}
 
@@ -89,9 +100,7 @@
           id: "technicalRecall-" + viewCode + "-additionalDetails",
           name: "imageReadingTemp[technicalRecall][views][" + viewCode + "][additionalDetails]",
           value: viewData.additionalDetails,
-          label: {
-            text: "Additional details (optional)"
-          }
+          label: "Additional details (optional)"
         }) }}
       {% endcall %}
     {% endset %}
@@ -118,8 +127,7 @@
   {% call fieldset({
     legend: {
       text: "Which views need to be retaken?",
-      size: "m",
-      isPageHeading: false
+      size: "m"
     },
     describedBy: "selectedViews-error" if _viewsError
   }) %}
@@ -135,20 +143,32 @@
       <div class="nhsuk-grid-column-one-half">
         <h2 class="nhsuk-heading-s">Right breast</h2>
 
-        {{ checkboxes({
-          idPrefix: "technicalRecall-selectedViews-right",
-          name: "imageReadingTemp[technicalRecall][selectedViews]",
-          items: rightCheckboxItems
-        }) }}
+        {% if rightCheckboxItems | length %}
+          {{ checkboxes({
+            small: true,
+            idPrefix: "technicalRecall-selectedViews-right",
+            name: "imageReadingTemp[technicalRecall][selectedViews]",
+            items: rightCheckboxItems
+          }) }}
+        {% else %}
+          {% set notExpectedViewsText = "Not imaged" %}
+          {% include "_includes/images/not-expected-views.njk" %}
+        {% endif %}
       </div>
       <div class="nhsuk-grid-column-one-half">
         <h2 class="nhsuk-heading-s">Left breast</h2>
 
-        {{ checkboxes({
-          idPrefix: "technicalRecall-selectedViews-left",
-          name: "imageReadingTemp[technicalRecall][selectedViews]",
-          items: leftCheckboxItems
-        }) }}
+        {% if leftCheckboxItems | length %}
+          {{ checkboxes({
+            small: true,
+            idPrefix: "technicalRecall-selectedViews-left",
+            name: "imageReadingTemp[technicalRecall][selectedViews]",
+            items: leftCheckboxItems
+          }) }}
+        {% else %}
+          {% set notExpectedViewsText = "Not imaged" %}
+          {% include "_includes/images/not-expected-views.njk" %}
+        {% endif %}
       </div>
     </div>
 

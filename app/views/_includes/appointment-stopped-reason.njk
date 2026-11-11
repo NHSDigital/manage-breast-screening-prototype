@@ -1,0 +1,19 @@
+{# app/views/_includes/appointment-stopped-reason.njk #}
+
+{% macro appointmentStoppedReasonText(appointment) %}
+  <strong>Reason for stopping:</strong>&thinsp;{% for reason in appointment.appointmentStopped.stoppedReason -%}
+    {{ reason }}
+    {%- if reason === "Failed identity check" and appointment.appointmentStopped.failedIdentityDetails %} ({{ appointment.appointmentStopped.failedIdentityDetails }})
+    {%- elseif reason === "Pain during screening" and appointment.appointmentStopped.painDetails %} ({{ appointment.appointmentStopped.painDetails }})
+    {%- elseif reason === "Has a symptomatic appointment" and appointment.appointmentStopped.symptomaticDetails %} ({{ appointment.appointmentStopped.symptomaticDetails }})
+    {%- elseif reason === "Consent withdrawn" and appointment.appointmentStopped.consentDetails %} ({{ appointment.appointmentStopped.consentDetails }})
+    {%- elseif reason === "Physical health issue" and appointment.appointmentStopped.physicalHealthDetails %} ({{ appointment.appointmentStopped.physicalHealthDetails }})
+    {%- elseif reason === "Mental health issue" and appointment.appointmentStopped.mentalHealthDetails %} ({{ appointment.appointmentStopped.mentalHealthDetails }})
+    {%- elseif reason === "Language difficulties" and appointment.appointmentStopped.languageDetails %} ({{ appointment.appointmentStopped.languageDetails }})
+    {%- elseif reason === "No qualified mammographer available" and appointment.appointmentStopped.mammographerDetails %} ({{ appointment.appointmentStopped.mammographerDetails }})
+    {%- elseif reason === "Technical issues at clinic" and appointment.appointmentStopped.technicalDetails %} ({{ appointment.appointmentStopped.technicalDetails }})
+    {%- elseif reason === "Other reason" and appointment.appointmentStopped.otherDetails %} ({{ appointment.appointmentStopped.otherDetails }})
+    {%- endif -%}
+    {%- if not loop.last %}, {% endif -%}
+  {% endfor %}
+{% endmacro %}

@@ -1,4 +1,4 @@
-{# app/views/appointments/medical-information/implanted-devices/consent.html #}
+{# app/views/appointments/medical-information/medical-history/consent.html #}
 
 {% extends parentLayout or 'layout-appointment.html' %}
 
@@ -13,26 +13,9 @@
   {% set unit = data.breastScreeningUnits | findById(clinic.breastScreeningUnitId) %}
 
   {# Read implant data from temporary medical history (not yet saved) #}
-  {% set hasRightImplant = false %}
-  {% set hasLeftImplant = false %}
-
-  {% if appointment.medicalHistoryTemp %}
-    {% if appointment.medicalHistoryTemp.proceduresRightBreast %}
-      {% for procedure in appointment.medicalHistoryTemp.proceduresRightBreast %}
-        {% if procedure == "Breast implants" %}
-          {% set hasRightImplant = true %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-
-    {% if appointment.medicalHistoryTemp.proceduresLeftBreast %}
-      {% for procedure in appointment.medicalHistoryTemp.proceduresLeftBreast %}
-        {% if procedure == "Breast implants" %}
-          {% set hasLeftImplant = true %}
-        {% endif %}
-      {% endfor %}
-    {% endif %}
-  {% endif %}
+  {% set implantsItem = appointment.medicalHistoryTemp | medicalHistoryFormToItem("breastImplantsAugmentation") %}
+  {% set hasRightImplant = "Breast implants" in (implantsItem.proceduresRightBreast or []) %}
+  {% set hasLeftImplant = "Breast implants" in (implantsItem.proceduresLeftBreast or []) %}
 
   {# Determine implant configuration #}
   {% set hasBothImplants = hasRightImplant and hasLeftImplant %}
@@ -50,9 +33,9 @@
   {# Generate implant description text #}
   {% if hasBothImplants %}
     {% set implantDescription = "implants in both breasts" %}
-  {% elif hasRightImplant %}
+  {% elseif hasRightImplant %}
     {% set implantDescription = "an implant in the right breast" %}
-  {% elif hasLeftImplant %}
+  {% elseif hasLeftImplant %}
     {% set implantDescription = "an implant in the left breast" %}
   {% endif %}
 
@@ -104,13 +87,13 @@
   }) %}
 
   {{ radios({
+    small: true,
     name: "appointment[medicalInformation][implantedDevices][consentGiven]",
     value: appointment.medicalInformation.implantedDevices.consentGiven,
     fieldset: {
       legend: {
         text: "Have they signed the consent form?",
-        size: "m",
-        isPageHeading: false
+        size: "m"
       }
     },
     items: radioItems

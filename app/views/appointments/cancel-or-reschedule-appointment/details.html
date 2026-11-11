@@ -1,3 +1,4 @@
+{# app/views/appointments/cancel-or-reschedule-appointment/details.html #}
 {% extends parentLayout or '_templates/layout-appointment.html' %}
 
 {% set pageHeading = "Cancel or reschedule appointment" %}
@@ -16,13 +17,13 @@
   </h1>
 
   {{ checkboxes({
+    small: true,
     name: "appointment[cancellation][reason]",
     values: appointment.cancellation.reason,
     fieldset: {
       legend: {
         text: "Why is this appointment not going ahead?",
-        size: "m",
-        isPageHeading: false
+        size: "m"
       },
       hint: {
         text: "Select all that apply"
@@ -35,9 +36,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][availabilityDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.availabilityDetails,
             autocomplete: "off"
           })
@@ -49,9 +48,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][movingDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.movingDetails,
             autocomplete: "off"
           })
@@ -63,9 +60,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][implantDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.implantDetails,
             autocomplete: "off"
           })
@@ -77,9 +72,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][mastectomyDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.mastectomyDetails,
             autocomplete: "off"
           })
@@ -91,9 +84,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][mammogramDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.mammogramDetails,
             autocomplete: "off"
           })
@@ -105,9 +96,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][medicalDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.medicalDetails,
             autocomplete: "off"
           })
@@ -119,9 +108,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][symptomaticDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.symptomaticDetails,
             autocomplete: "off"
           })
@@ -133,9 +120,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][mammographerDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.mammographerDetails,
             autocomplete: "off"
           })
@@ -147,9 +132,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][mammogramRoomDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.mammogramRoomDetails,
             autocomplete: "off"
           })
@@ -161,9 +144,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][technicalDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.technicalDetails,
             autocomplete: "off"
           })
@@ -178,9 +159,7 @@
         conditional: {
           html: input({
             name: "appointment[cancellation][otherReasonDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.otherReasonDetails,
             autocomplete: "off"
           })
@@ -190,13 +169,13 @@
   } | populateErrors) }}
 
   {{ radios({
+    small: true,
     name: "appointment[cancellation][reschedule]",
     value: appointment.cancellation.reschedule,
     fieldset: {
       legend: {
         text: "Should the appointment be rescheduled?",
-        size: "m",
-        isPageHeading: false
+        size: "m"
       }
     },
     items: [
@@ -207,22 +186,16 @@
       {
         value: "no-invite",
         text: "No, cancel the appointment",
-        hint: {
-          text: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
-        }
+        hint: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
       },
       {
         value: "no-opt-out",
         text: "No, request opt out",
-        hint: {
-          text: "They will receive information explaining their options"
-        },
+        hint: "They will receive information explaining their options",
         conditional: {
           html: input({
             name: "appointment[cancellation][optOutDetails]",
-            label: {
-              text: "Provide details (optional)"
-            },
+            label: "Provide details (optional)",
             value: appointment.cancellation.optOutDetails,
             autocomplete: "off"
           })

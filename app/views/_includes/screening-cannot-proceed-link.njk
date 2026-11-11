@@ -1,4 +1,4 @@
-
+{# app/views/_includes/screening-cannot-proceed-link.njk #}
 {# Only allow 'appointment cannot proceed' if images haven't been taken #}
 {% if appointment.workflowStatus['take-images'] != 'completed' %}
   <p>

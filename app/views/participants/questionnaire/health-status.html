@@ -1,4 +1,4 @@
-
+{# app/views/participants/questionnaire/health-status.html #}
 {% extends 'layout.html' %}
 
 {% set pageHeading = "Health status" %}
@@ -13,7 +13,7 @@
 
     {% if flash.error %}
       {{ errorSummary({
-        "titleText": "There is a problem",
+        "heading": "There is a problem",
         "errorList": flash.error
       }) }}
     {% endif %}
@@ -28,9 +28,7 @@
         {{ textarea({
           name: "questionnaire[mobilityYes]",
           id: "mobilityYes",
-          label: {
-            text: "Can you provide more detail?"
-          },
+          label: "Can you provide more detail?",
           _hint: {
             text: "Do not include personal or financial information, for example, your National Insurance number or credit card details."
           }
@@ -38,6 +36,7 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "mobilityIssues",
         name: "questionnaire[mobilityIssues]",
         fieldset: {
@@ -47,9 +46,7 @@
             isPageHeading: "false"
           }
         },
-        hint: {
-          text: "We only need to know about things that may affect your visit"
-        },
+        hint: "We only need to know about things that may affect your visit",
         items: [
           {
             value: "yes",
@@ -66,6 +63,7 @@
       }) }}
 
       {{ radios({
+        small: true,
         idPrefix: "pregnantOrBreastFeeding",
         name: "questionnaire[pregnantOrBreastFeeding]",
         fieldset: {
@@ -90,6 +88,7 @@
       {# Medical devices question #}
       {% set medicalDevicesYesHtml %}
         {{ checkboxes({
+          small: true,
           name: "questionnaire[medicalDeviceTypes]",
           items: [
             {
@@ -109,13 +108,13 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "medicalDevices",
         name: "questionnaire[medicalDevices]",
         fieldset: {
           legend: {
             text: "Do you have any implanted medical devices or pacemakers?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [
@@ -136,22 +135,20 @@
       {# HRT question #}
       {% set hrtYesHtml %}
         {{ input({
-          label: {
-            text: "What type of HRT are you taking?"
-          },
+          label: "What type of HRT are you taking?",
           id: "hrtType",
           name: "questionnaire[hrtType]"
         }) }}
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "takingHRT",
         name: "questionnaire[takingHRT]",
         fieldset: {
           legend: {
             text: "Are you taking HRT (hormone replacement therapy)?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [

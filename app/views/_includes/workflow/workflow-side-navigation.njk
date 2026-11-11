@@ -1,4 +1,5 @@
-{# app/views/_includes/workflow/workflow-side-nav.njk #}
+{# app/views/_includes/workflow/workflow-side-navigation.njk #}
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
 {# Tracking of status #}
 {% set identityStageCompleted = true if appointment.workflowStatus['confirm-identity'] == 'completed' else false %}
@@ -59,7 +60,7 @@
               <span class="app-workflow-side-nav__number">{{ loop.index }}</span>
               <span class="app-workflow-side-nav__label">{{ item.label }}</span>
             </span>
-          {% elif isCurrent %}
+          {% elseif isCurrent %}
             <span class="app-workflow-side-nav__link" aria-current="page">
               <span class="app-workflow-side-nav__number">
                 {% if isCompleted %}
@@ -89,13 +90,16 @@
 
   <div class="nhsuk-u-margin-top-7">
     <hr class="nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-top-0 nhsuk-u-margin-bottom-3">
-    <p class="nhsuk-u-margin-bottom-0 nhsuk-body-s">
+    <p class="nhsuk-u-margin-bottom-3 nhsuk-body-s">
       {% set appointmentNoteUrl = '/clinics/' + clinicId + '/appointments/' + appointment.id + '/appointment-note' %}
       {% set appointmentNoteLinkText = 'View or change appointment note' if appointment.appointmentNote else 'Add appointment note' %}
-      {{ appLink({
+      {{ link({
         text: appointmentNoteLinkText,
         href: appointmentNoteUrl | urlWithReferrer(currentUrl)
       } | openInModal) }}
     </p>
+    {{ raiseIssueLink("appointment", {
+      classes: "nhsuk-u-margin-bottom-0 nhsuk-body-s"
+    }) }}
   </div>
 </div>

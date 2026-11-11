@@ -1,5 +1,7 @@
-
+{# app/views/appointments/images.html #}
 {% extends 'layout-appointment.html' %}
+
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
@@ -27,11 +29,20 @@
   {% endset %}
 
   {{ card({
-    heading: "Mammogram details",
-    headingLevel: "2",
+    heading: {
+      text: "Mammogram details",
+      level: 2
+    },
     feature: true,
     descriptionHtml: mammogramDetailsHtml
   }) }}
+
+  {# The workflow side navigation has its own raise link #}
+  {% if not isAppointmentWorkflow %}
+    {{ raiseIssueLink("appointment", {
+      text: "Report a problem with these images"
+    }) }}
+  {% endif %}
 
 {% endblock %}
 

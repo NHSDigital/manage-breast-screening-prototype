@@ -11,6 +11,7 @@ const {
   getImageSetForAppointment
 } = require('../utils/mammogram-images')
 const generateId = require('../utils/id-generator')
+const { getImagedSides, getTakenViews } = require('../utils/expected-views')
 
 // Default alignment probability - how often reads match the image set's tag
 // This can be overridden by seed data profile settings
@@ -173,6 +174,53 @@ const generateSingleRead = (
     const { left, right } = generateAbnormalData(appointment, set)
     read.left = left
     read.right = right
+  }
+
+  return limitReadToImagedBreasts(read, appointment)
+}
+
+/**
+ * Keep a generated read to the breasts and views that were imaged, as a
+ * reader can't give an opinion on a breast with no images, for example after
+ * a mastectomy
+ */
+const limitReadToImagedBreasts = (read, appointment) => {
+  const imagedSides = getImagedSides(appointment.mammogramData)
+  if (imagedSides.length === 0 || imagedSides.length === 2) return read
+
+  for (const side of ['left', 'right']) {
+    if (!imagedSides.includes(side)) delete read[side]
+  }
+
+  if (read.technicalRecall?.views) {
+    const takenViews = getTakenViews(appointment.mammogramData)
+    const views = Object.fromEntries(
+      Object.entries(read.technicalRecall.views).filter(([code]) =>
+        takenViews.includes(code)
+      )
+    )
+    if (Object.keys(views).length === 0) {
+      views[faker.helpers.arrayElement(takenViews)] = {
+        reason: faker.helpers.arrayElement(TECHNICAL_RECALL_REASONS),
+        additionalDetails: ''
+      }
+    }
+    read.technicalRecall = { ...read.technicalRecall, views }
+  }
+
+  // A recall for assessment needs an abnormal breast among those imaged
+  if (read.opinion === 'recall_for_assessment') {
+    const imagedSide = imagedSides[0]
+    if (read[imagedSide]?.breastAssessment !== 'abnormal') {
+      read[imagedSide] = {
+        ...read[imagedSide],
+        breastAssessment: 'abnormal',
+        annotations: [
+          ...(read[imagedSide]?.annotations || []),
+          generatePlaceholderAnnotation(imagedSide, null)
+        ]
+      }
+    }
   }
 
   return read
@@ -1068,33 +1116,27 @@ const generateReadingData = (
     )
   }
 
-  // A COUPLE OF DEFERRED ARBITRATION CASES: discordant and released into the
-  // arbitration backlog, then deferred by an arbitrator. These stay in
-  // arbitration - deferral holds a case up without moving it back a stage - so
-  // they count towards the backlog while being blocked from an arbitration
-  // session.
+  // A COUPLE OF RELEASED ARBITRATION CASES: discordant, finalised and released
+  // into the arbitration backlog before anyone arbitrated them. The issue
+  // generator raises issues on cases like these, so the backlog has blocked
+  // rows as well as ones an arbitration session can offer.
   if (clinics.length >= 7) {
-    const arbitrationDeferralReasons = [
-      'LCC and RCC images swapped. Needs correcting on PACS',
-      'Images appear to be from a different patient. Needs checking.'
-    ]
-
-    const deferredArbitrationCandidates = [clinics[5], clinics[6]]
+    const releasedArbitrationCandidates = [clinics[5], clinics[6]]
       .flatMap((clinic) => clinic.appointments)
       .filter((appointment) => {
         const readingCase = casesByAppointmentId.get(appointment.id)
-        if (!readingCase || readingCase.deferral) return false
+        if (!readingCase) return false
         const reads = readingCase.reads || []
         // Two discordant reads - the shape that sends a case to arbitration
         return reads.length === 2 && reads[0].opinion !== reads[1].opinion
       })
       .slice(0, 2)
 
-    deferredArbitrationCandidates.forEach((appointment, index) => {
+    releasedArbitrationCandidates.forEach((appointment) => {
       const readingCase = casesByAppointmentId.get(appointment.id)
 
-      // Everything here follows the later read - a case can't be finalised,
-      // released or deferred before it was read
+      // Everything here follows the later read - a case can't be finalised
+      // or released before it was read
       const lastReadAt = readingCase.reads
         .map((read) => dayjs(read.timestamp))
         .sort((a, b) => b.valueOf() - a.valueOf())[0]
@@ -1112,47 +1154,11 @@ const generateReadingData = (
         releasedAt,
         releasedBy: secondReader.id
       }
-
-      readingCase.deferral = {
-        deferredAt: lastReadAt.add(20 + index * 5, 'minute').toISOString(),
-        deferredBy: thirdReader.id,
-        reason: arbitrationDeferralReasons[index]
-      }
     })
 
     console.log(
-      `Deferred ${deferredArbitrationCandidates.length} cases already in arbitration`
+      `Released ${releasedArbitrationCandidates.length} cases into arbitration`
     )
-  }
-
-  // A COUPLE OF DEFERRED CASES: deferred by a reader with a reason, so the
-  // deferred list and the case view's deferral detail have real data behind
-  // them. Drawn from clinics[8]'s unread remainder, matching how deferral
-  // works in the flow (deferring after an opinion withdraws the read).
-  if (clinics.length >= 9) {
-    const clinic = clinics[8]
-    const deferralReasons = [
-      'Waiting for prior imaging to be uploaded',
-      'Needs discussion with colleague before reading'
-    ]
-
-    clinic.appointments
-      .filter((appointment) => !readAppointmentIds.has(appointment.id))
-      .slice(0, 2)
-      .forEach((appointment, index) => {
-        const readingCase = casesByAppointmentId.get(appointment.id)
-        if (!readingCase) return
-
-        readingCase.deferral = {
-          deferredAt: dayjs()
-            .subtract(3 + index, 'hour')
-            .toISOString(),
-          deferredBy: secondReader.id,
-          reason: deferralReasons[index]
-        }
-      })
-
-    console.log('Deferred 2 unread cases')
   }
 
   console.log(

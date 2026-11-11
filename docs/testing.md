@@ -9,23 +9,35 @@ that moves code between modules.
 npm test
 ```
 
-That runs all three layers in order, cheapest first. Each can be run on its
+That runs all four layers in order, cheapest first. Each can be run on its
 own:
 
 | Command                 | What it does                                         | Takes |
 | ----------------------- | ---------------------------------------------------- | ----- |
 | `npm run lint`          | ESLint over app, lib, scripts and tests              | ~2s   |
+| `npm run test:docs`     | Checks the component and modifier docs are complete  | <1s   |
 | `npm run test:routes`   | Requests every GET page and checks for server errors | ~20s  |
 | `npm run test:journeys` | Drives the core journeys in a browser                | ~10s  |
 
-## The three layers
+### Running the suite from an AI agent
 
-**Lint** (`eslint.config.mjs`) exists mainly for `no-undef`. When code moves
+Lint and the route sweep run inside a coding agent's terminal sandbox, such as
+the one in VS Code. The journeys do not: on macOS the sandbox stops Chromium
+starting, so it crashes with a segmentation fault and every journey fails.
+No sandbox setting fixes this, so agents should run `npm run test:journeys`,
+or `npm test`, outside the sandbox and ask for approval to do so.
+
+## The four layers
+
+**Lint** (`eslint.config.mjs`) exists mainly for `no-undef`. It ignores
+`tests/lib/`, which holds inherited Jest specs that cannot run. When code moves
 between modules — a routes split, a rename — it is easy to leave a helper
 behind in one file while its callers move to another. Node only throws when
 that route actually runs, so nothing notices until someone clicks the page.
 ESLint sees it statically. Tidiness rules are warnings; only things that are,
 or hide, real breakage fail the run.
+
+**Component docs** (`scripts/generate-components-reference.js --check`) fails if a component has no doc comment in its `macro.njk`, a template reads a parameter the comment does not mention, `docs/components.md` is out of date, or `docs/sass-modifiers.md` names a class missing from the Sass. Fix an out of date reference with `npm run docs`.
 
 **Route sweep** (`scripts/route-sweep.js`) boots the app, enumerates every GET
 route on the Express router, fills the URL parameters from the seeded data, and
@@ -38,15 +50,27 @@ name, and the skip list is printed on every run so it stays visible.
 
 **Journeys** (`tests/e2e/`) drive real flows in Chromium via Playwright. This is
 the only layer that exercises POST handlers, session state and the client-side
-JavaScript. Fourteen journeys:
+JavaScript. Thirty journeys, among them:
 
 - a screening appointment recording medical history and a symptom, from
   check-in to completion
 - a screening appointment straight through with nothing to record
+- adding a symptom (in the modal) and a breast feature (on the diagram page)
+  from the imaging page, returning each time to the expander open
+- a bilateral mastectomy where no images are needed, ending the appointment as
+  attended not screened
+- breast implants on both sides asking for consent before they are saved
+- changing a bilateral mastectomy to one side, which asks the imaging question
+  again and drops the old imaging details
 - an image reading session: normal opinions, then a recall for assessment with
   an annotation
+- changing a recall from its confirmation page, then confirming, which moves on
+  rather than returning to the saved read
 - a technical recall, through its views-to-retake form and the review step
-- deferring a case, then unflagging it from the deferred cases page
+- raising an issue on a case during reading, then resolving it on the issue page so the case is readable again
+- withdrawing an issue raised by mistake, which returns the case to reading
+- an issue raised without a description being refused, then its description changed on the issue page, with an edit abandoned after an error not prefilling the next
+- a case held by an open issue offering no way to finalise its reads
 - a second reader reaching the comparison page and keeping their opinion
 - a concordant second read taking a case to its concluded outcome, checked on
   the case view
@@ -59,9 +83,12 @@ JavaScript. Fourteen journeys:
 - moving on from a settled arbitration case, which advances the session rather
   than looping back through finished ones
 - a decision submitted twice landing where the first submit did
+- a check-in in one browser appearing live on another browser's checked-in
+  list in the same room, and not in a different room or none, then a reset
+  clearing it
 
 Between them the reading journeys cover all four ways a reader can leave a case
-— normal, recall for assessment, technical recall and deferral — which is what
+— normal, recall for assessment, technical recall and raising an issue — which is what
 makes them useful as a net under changes to how reading data is stored.
 
 **Some pages render inside the shared modal, some break out of it.** With
@@ -97,6 +124,13 @@ started.
 on the shared read-only store, so tests running in parallel do not tread on each
 other and no test needs to clean up after itself.
 
+Both test servers start with sharing set to Browsers that join
+(`SHARED_DATA_MODE=off`), whatever the shell sets, because shared changes would
+let parallel tests tread on each other. No other spec joins, so their sessions
+keep their own changes. The shared data journey (`shared-data.spec.js`) joins
+browsers itself, or switches the server to By room: sessions outside a room
+keep their own changes, so the other specs are unaffected.
+
 **Debugging a failure.** Playwright keeps a trace for failed tests:
 
 ```sh
@@ -111,6 +145,7 @@ npx playwright show-trace test-results/<dir>/trace.zip
 - The image-marking annotation modes in image reading (`with-images-simple` and
   friends), which need pixel-accurate clicks on the mammogram views. The reading
   spec pins `without-images`, where the location is typed instead.
-- Arbitration, and the second reader adopting the first reader's opinion
-  (the comparison journey covers keeping their own)
+- Most of arbitration: the journeys settle an arbitration case with a normal
+  outcome, nothing beyond that. Also the second reader adopting the first
+  reader's opinion (the comparison journey covers keeping their own)
 - CI — the suite runs on demand, not on every push

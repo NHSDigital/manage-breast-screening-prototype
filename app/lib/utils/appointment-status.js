@@ -11,15 +11,14 @@
 // appointment-data.js it needed a lazy require of episodes.js to dodge the
 // resulting cycle.
 
-const {
-  getAppointment,
-  updateAppointmentData
-} = require('./appointment-data')
+const { getAppointment, updateAppointmentData } = require('./appointment-data')
 const {
   syncEpisodeMammogramsForAppointment,
   syncReadingCasesForAppointment,
   advanceEpisodeForAppointmentStatus
 } = require('./episodes')
+const { getSimulatedNow } = require('./status')
+const { getNextScreeningOrder } = require('./clinics')
 
 /**
  * Update appointment status and add to history
@@ -45,11 +44,24 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
       ...baseAppointment.statusHistory,
       {
         status: newStatus,
-        timestamp: new Date().toISOString()
+        // Stamp the simulated clinic clock, not real time, so a live check-in
+        // matches the seed data's simulated times and its wait reads correctly
+        timestamp: getSimulatedNow().toISOString()
       }
     ]
   })
   if (!updatedAppointment) return null
+
+  // Attended not screened takes a place in the order of screening, unless it
+  // already has one from being started
+  if (
+    newStatus === 'attended_not_screened' &&
+    updatedAppointment.screeningOrder == null
+  ) {
+    updateAppointmentData(data, appointmentId, {
+      screeningOrder: getNextScreeningOrder(data, updatedAppointment.clinicId)
+    })
+  }
 
   // Keep the appointment's episode in step, and record on the episode that
   // images were taken (or weren't after all, on an undo). A new set of images

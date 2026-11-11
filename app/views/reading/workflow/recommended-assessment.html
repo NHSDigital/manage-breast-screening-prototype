@@ -1,4 +1,4 @@
-{# /app/views/appointments/reading/confirm-abnormal.html #}
+{# app/views/reading/workflow/recommended-assessment.html #}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
@@ -20,9 +20,7 @@
 
   {% macro makeCheckboxConditionalItem(params) %}
     {{ input({
-      label: {
-        text: "Provide details"
-      },
+      label: "Provide details",
       id: params.value + "Details",
       name: params.value + "Details"
     }) }}
@@ -52,13 +50,13 @@
   {% endfor %}
 
   {{ checkboxes({
+    small: true,
     idPrefix: "recommendedAssessment",
     name: "recommendedAssessment",
     fieldset: {
       legend: {
         text: "What type of assessment is required for further diagnosis?",
-        size: "m",
-        isPageHeading: false
+        size: "m"
       }
     },
     _hint: {

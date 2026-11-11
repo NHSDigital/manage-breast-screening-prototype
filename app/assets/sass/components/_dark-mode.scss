@@ -1,3 +1,4 @@
+// app/assets/sass/components/_dark-mode.scss
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 $app-dark-mode-blue: #348de0;
@@ -23,9 +24,9 @@ $app-tag--red-dark-text: nhsuk-tint(nhsuk-colour("red"), 80%);
 $app-tag--green-dark-background: nhsuk-shade(nhsuk-colour("green"), 40%);
 $app-tag--green-dark-border: nhsuk-tint(nhsuk-colour("green"), 80%);
 $app-tag--green-dark-text: nhsuk-tint(nhsuk-colour("green"), 80%);
-$app-tag--orange-dark-background: nhsuk-shade(nhsuk-colour("warm-yellow"), 70%);
-$app-tag--orange-dark-border: nhsuk-tint(nhsuk-colour("warm-yellow"), 50%);
-$app-tag--orange-dark-text: nhsuk-tint(nhsuk-colour("warm-yellow"), 50%);
+$app-tag--orange-dark-background: nhsuk-shade(nhsuk-colour("orange"), 70%);
+$app-tag--orange-dark-border: nhsuk-tint(nhsuk-colour("orange"), 50%);
+$app-tag--orange-dark-text: nhsuk-tint(nhsuk-colour("orange"), 50%);
 $app-tag--yellow-dark-background: nhsuk-shade(nhsuk-colour("yellow"), 70%);
 $app-tag--yellow-dark-border: nhsuk-tint(nhsuk-colour("yellow"), 50%);
 $app-tag--yellow-dark-text: nhsuk-tint(nhsuk-colour("yellow"), 50%);
@@ -141,6 +142,11 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
   .app-workflow-side-nav__link--disabled,
   .app-suppress-link-styles * {
     color: $app-dark-mode-text-colour-secondary;
+  }
+
+  // The utility sets its colour with !important, so it needs the same here
+  .nhsuk-u-secondary-text-colour {
+    color: $app-dark-mode-text-colour-secondary !important;
   }
 
   // Links and link type things
@@ -288,6 +294,12 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     color: $app-dark-mode-text-colour;
   }
 
+  // The header stays blue in dark mode
+  .app-count--reverse {
+    background-color: nhsuk-colour("dark-blue");
+    color: nhsuk-colour("white");
+  }
+
   .nhsuk-tag--red {
     background-color: $app-tag--red-dark-background;
     border-color: $app-tag--red-dark-border;
@@ -425,6 +437,11 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
     }
   }
 
+  // Translucent so stripes stay subtle on both the page background and cards
+  .nhsuk-table--striped .nhsuk-table__body .nhsuk-table__row:nth-child(odd) {
+    background-color: rgba($app-dark-mode-white, 0.08);
+  }
+
   // Reading session: highlighted “next case” row uses card surface colour so it
   // appears as a raised grey slab on top of the dark background
   .app-placeholder-row--next td {
@@ -432,7 +449,7 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
   }
 
   // Reading session: placeholder rectangle for pending lazy-session slots
-  .app-placeholder-tag {
+  .app-placeholder-row .app-placeholder-tag {
     background-color: nhsuk-shade($app-dark-mode-text-colour, 60%);
   }
 
@@ -519,7 +536,16 @@ $app-tag--aqua-green-dark-text: nhsuk-tint(nhsuk-colour("aqua-green"), 80%);
   }
 
   .app-mammogram-thumbnail__missing-text {
-    color: $app-dark-mode-text-colour;
+    color: $app-dark-mode-text-colour-secondary;
+  }
+
+  .app-not-expected-views {
+    background-color: $app-dark-mode-surface;
+    border-color: $app-dark-mode-text-colour-secondary;
+  }
+
+  .app-not-expected-views__text {
+    color: $app-dark-mode-text-colour-secondary;
   }
 
   // Image container borders — light grey so visible against dark backgrounds

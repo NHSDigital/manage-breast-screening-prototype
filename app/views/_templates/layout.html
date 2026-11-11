@@ -1,3 +1,4 @@
+{# app/views/_templates/layout.html #}
 <!--
   This is the main layout where you can:
     - change the header and footer
@@ -14,7 +15,7 @@
 {%- from '_components/filter-panel/macro.njk' import appFilterPanel %}
 {%- from '_components/forward-link/macro.njk' import appForwardLink %}
 {%- from '_components/hidden-input/macro.njk' import appHiddenInput %}
-{%- from '_components/link/macro.njk' import appLink %}
+{%- from 'link/macro.njk' import link %}
 {%- from '_components/modal/macro.njk' import appModal %}
 {%- from '_components/modal/macro.njk' import appConfirmationModal %}
 {%- from '_components/secondary-navigation/macro.njk' import appSecondaryNavigation %}
@@ -26,25 +27,21 @@
 {%- from '_components/status-bar/macro.njk' import appStatusBar %}
 {%- from "_components/stepper-input/macro.njk" import appStepperInput -%}
 {%- from "_components/collapsible-input/macro.njk" import appCollapsibleInput -%}
-{%- from "_components/environment/macro.njk" import appEnvironment -%}
+{%- from "environment-banner/macro.njk" import environmentBanner -%}
 {%- from "_components/notification-banner/macro.njk" import appNotificationBanner -%}
 {%- from '_components/icon/macro.njk' import appIcon %}
 {%- from '_components/status-message/macro.njk' import appStatusMessage %}
+{%- from '_components/copy-to-clipboard/macro.njk' import appCopyToClipboard %}
 {%- from '_components/option-picker/macro.njk' import appOptionPicker %}
 
 {% block head %}
-  {# Load compact or default stylesheet based on compact mode setting #}
-  {% if data.settings.compactMode == 'true' %}
-  <link href="/assets/sass/main-compact.css" rel="stylesheet">
-  {% else %}
   <link href="/assets/sass/main.css" rel="stylesheet">
-  {% endif %}
 {% endblock %}
 
 <!-- Edit the header -->
 <!-- Header code examples can be found at https://service-manual.nhs.uk/design-system/components/header -->
 {% block header %}
-  {{ appEnvironment(environment) if environment and data.settings.showEnvironmentBanner == 'true' }}
+  {{ environmentBanner(environment) if environment and data.settings.showEnvironmentBanner == 'true' }}
   {{ header({
     service: {
       text: serviceName,
@@ -62,7 +59,21 @@
   <ul class="nhsuk-footer__list">
     <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/">Home</a></li>
     <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/settings">Settings</a></li>
-    <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/prototype-admin/reset?returnPage=' + (currentPage | urlencode) + '" data-reset-session>Reset data</a></li>
+    {# Shows whether this browser shares data with others, so it's easy to tell
+       during research. Nothing shows when the mode is Browsers that join and
+       this browser hasn't joined. #}
+    {% if sharedData.mode == "on" or (sharedData.mode == "off" and sharedData.isShared) %}
+      {% set sharedDataStatus = "on" %}
+    {% elseif sharedData.mode == "room" %}
+      {% set sharedDataStatus = sharedData.room or "not in a room" %}
+    {% endif %}
+    {% if sharedDataStatus %}
+      <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="/settings#shared-data">Shared data: {{ sharedDataStatus }}</a></li>
+    {% endif %}
+    {# When sharing, the reset page also clears the shared changes. With
+       JavaScript, main.js does both without a page. #}
+    {% set resetDataPath = "/shared-data/reset" if sharedData.isShared else "/prototype-admin/reset" %}
+    <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="{{ resetDataPath }}?returnPage={{ currentUrl | urlencode }}" data-reset-session>Reset data</a></li>
     <li class="nhsuk-footer__list-item"><a class="nhsuk-footer__list-item-link" href="https://github.com/NHSDigital/manage-screening-appointments-prototype">Github</a></li>
   </ul>
 {% endset %}
@@ -102,4 +113,5 @@
     {# For adding page specific JavaScript #}
     {% block pageScripts %}{% endblock %}
   {% endblock %}
+  {% include "_includes/live-updates.njk" %}
 {% endblock %}

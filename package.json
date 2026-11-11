@@ -5,29 +5,32 @@
   "main": "app.js",
   "scripts": {
     "start": "node .",
+    "kill": "node scripts/kill.js",
+    "prepare": "git config core.hooksPath .githooks || exit 0",
     "generate": "node scripts/generate-data.js",
     "heroku-postbuild": "npm run generate",
     "build:static-error-page": "node scripts/build-static-error-page.js",
-    "docs": "node scripts/generate-utils-reference.js",
+    "docs": "node scripts/generate-utils-reference.js && node scripts/generate-components-reference.js",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "test:journeys": "playwright test",
     "test:routes": "node scripts/route-sweep.js",
-    "test": "npm run lint && npm run test:routes && npm run test:journeys"
+    "test:docs": "node scripts/generate-components-reference.js --check",
+    "test": "npm run lint && npm run test:docs && npm run test:routes && npm run test:journeys"
   },
   "author": "https://github.com/nhsuk/",
   "license": "MIT",
   "dependencies": {
     "@faker-js/faker": "^10.6.0",
-    "accessible-autocomplete": "^3.0.1",
+    "accessible-autocomplete": "^3.0.2",
     "cookie-parser": "^1.4.7",
     "dayjs": "^1.11.23",
     "gray-matter": "^4.0.3",
     "idiomorph": "^0.8.0",
     "lodash": "^4.18.1",
-    "markdown-it": "^15.0.2",
-    "nhsuk-frontend": "^10.6.1",
-    "nhsuk-prototype-kit": "^8.3.0",
+    "markdown-it": "^15.0.3",
+    "nhsuk-frontend": "^10.7.1",
+    "nhsuk-prototype-kit": "^8.5.2",
     "pluralize": "^8.0.0",
     "weighted": "^1.0.0"
   },
@@ -37,12 +40,12 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.63.0",
-    "cssnano": "^9.0.4",
-    "eslint": "^10.10.0",
-    "globals": "^17.12.0",
-    "postcss": "^8.5.28",
-    "prettier": "^3.9.6",
+    "@playwright/test": "^1.65.0",
+    "cssnano": "^9.0.5",
+    "eslint": "^10.14.0",
+    "globals": "^17.14.0",
+    "postcss": "^8.5.32",
+    "prettier": "^3.9.10",
     "purgecss": "^8.0.0"
   }
 }

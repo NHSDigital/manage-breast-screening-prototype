@@ -1,3 +1,18 @@
+{# app/views/_components/summary-list/macro.njk #}
+{#
+  Purpose: The NHS summary list extended so rows can be HTML, come from a call block, or sit in a card. appSummaryListRow renders one row.
+  Use when: a row is pre-built HTML or rows come from a call block. Without those or `card` it passes through to the NHS macro unchanged.
+  NHS equivalent: `summaryList`, which also supports `card`. Use that for plain lists of rows.
+
+  Params for appSummaryList, as `summaryList` plus:
+    rows — a row can also be { html } containing a whole row
+    card — params for appSummaryCard, to wrap the list
+    border, lastRowBorder, classes, attributes — as the NHS component
+
+  Params for appSummaryListRow(row):
+    key, value, actions, classes — as a `summaryList` row
+    anyRowHasActions — set false if no row in the list has actions (default: true)
+#}
 {% macro appSummaryList(params) %}
   {# Decide whether to use native component or our patched version #}
   {# Iterates through each row, checking if any are html - if so, we need ours #}

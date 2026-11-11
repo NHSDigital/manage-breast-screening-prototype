@@ -1,4 +1,4 @@
-{# /app/views/reading/workflow/normal-details.html #}
+{# app/views/reading/workflow/normal-details.html #}
 
 {% extends parentLayout or 'layout-reading.html' %}
 
@@ -30,6 +30,7 @@
       {% set hasSymptoms = symptoms | length > 0 %}
 
       {% include "symptomsWarningCard.njk" %}
+      {% include "_includes/mastectomy-imaging-warning.njk" %}
     </div>
   </div>
 
@@ -47,6 +48,7 @@
 
       {% if hasSymptoms %}
         {{ checkboxes({
+          small: true,
           idPrefix: "symptomsAcknowledged",
           name: "imageReadingTemp[symptomsAcknowledged]",
           items: [

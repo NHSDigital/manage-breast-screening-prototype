@@ -1,3 +1,4 @@
+{# app/views/_includes/summary-lists/special-appointment/special-appointment.njk #}
 {% set specialAppointmentRows = [] %}
 {% set showChangeLink = false %}
 
@@ -14,21 +15,21 @@
       {# Get the details for each support type #}
       {% if supportType == "Breast implants" and specialAppointmentData.implantDetails %}
         {% set details = specialAppointmentData.implantDetails %}
-      {% elif supportType == "Implanted medical devices" and specialAppointmentData.implantedMedicalDevicesDetails %}
+      {% elseif supportType == "Implanted medical devices" and specialAppointmentData.implantedMedicalDevicesDetails %}
         {% set details = specialAppointmentData.implantedMedicalDevicesDetails %}
-      {% elif supportType == "Vision" and specialAppointmentData.visionDetails %}
+      {% elseif supportType == "Vision" and specialAppointmentData.visionDetails %}
         {% set details = specialAppointmentData.visionDetails %}
-      {% elif supportType == "Hearing" and specialAppointmentData.hearingDetails %}
+      {% elseif supportType == "Hearing" and specialAppointmentData.hearingDetails %}
         {% set details = specialAppointmentData.hearingDetails %}
-      {% elif supportType == "Physical restriction" and specialAppointmentData.physicalRestrictionDetails %}
+      {% elseif supportType == "Physical restriction" and specialAppointmentData.physicalRestrictionDetails %}
         {% set details = specialAppointmentData.physicalRestrictionDetails %}
-      {% elif supportType == "Social, emotional, and mental health" and specialAppointmentData.socialEmotionalMentalHealthDetails %}
+      {% elseif supportType == "Social, emotional, and mental health" and specialAppointmentData.socialEmotionalMentalHealthDetails %}
         {% set details = specialAppointmentData.socialEmotionalMentalHealthDetails %}
-      {% elif supportType == "Language" and specialAppointmentData.languageDetails %}
+      {% elseif supportType == "Language" and specialAppointmentData.languageDetails %}
         {% set details = specialAppointmentData.languageDetails %}
-      {% elif supportType == "Gender identity" and specialAppointmentData.genderIdentityDetails %}
+      {% elseif supportType == "Gender identity" and specialAppointmentData.genderIdentityDetails %}
         {% set details = specialAppointmentData.genderIdentityDetails %}
-      {% elif supportType == "Other" and specialAppointmentData.otherDetails %}
+      {% elseif supportType == "Other" and specialAppointmentData.otherDetails %}
         {% set details = specialAppointmentData.otherDetails %}
       {% endif %}
 
@@ -41,18 +42,17 @@
         {% endfor %}
       {% endif %}
 
-      {# Build the value content (details + temporary tag if applicable) #}
-      {% set valueContent = "" %}
-      {% if details %}
-        {% set valueContent = details %}
-      {% else %}
-        {% set valueContent = "<span style=\"color: var(--nhsuk-secondary-text-color);\">No details provided</span>" %}
-      {% endif %}
-
-      {# Add temporary tag to the value content if needed #}
-      {% if isTemporary %}
-        {% set valueContent = valueContent + "<br><span class=\"nhsuk-tag nhsuk-tag--white nhsuk-u-margin-top-2\">Temporary</span>" %}
-      {% endif %}
+      {# The value: details (or a placeholder) and a tag if it's temporary #}
+      {% set valueContent %}
+        {% if details %}
+          {{ details }}
+        {% else %}
+          <span class="nhsuk-u-secondary-text-colour">No details provided</span>
+        {% endif %}
+        {% if isTemporary %}
+          <br><span class="nhsuk-tag nhsuk-tag--white nhsuk-u-margin-top-2">Temporary</span>
+        {% endif %}
+      {% endset %}
 
       {# Add row for this support type #}
       {% set specialAppointmentRows = specialAppointmentRows | push({

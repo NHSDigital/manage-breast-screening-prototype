@@ -1,3 +1,20 @@
+{# app/views/_components/stepper-input/macro.njk #}
+{#
+  Purpose: A number input with increase and decrease buttons.
+  Use when: entering small whole numbers that are usually changed by one or two, such as an image count. The buttons need JavaScript; the input works without it.
+  NHS equivalent: `input`. Use that for numbers that are typed, not stepped.
+
+  Params:
+    - name (string, required): The name attribute for the input
+    - id (string, required): The id attribute for the input
+    - value (string|number, optional): The current value
+    - label (object, optional): { text, classes }
+    - hint (object, optional): { text, classes }
+    - classes (string, optional): Additional classes for the input
+    - min (number, optional): Minimum value (no minimum if not provided)
+    - max (number, optional): Maximum value (no maximum if not provided)
+    - step (number, optional): Increment step (default: 1)
+#}
 {% macro appStepperInput(params) %}
   {%- include "./template.njk" -%}
 {% endmacro %}

@@ -21,7 +21,7 @@
   </h1>
 
   {% set insetHtml %}
-    <p>{{ appLink({
+    <p>{{ link({
       text: "Add details of a previous mammogram",
       href: './previous-mammograms/add' | urlWithReferrer(currentUrl)
     } | openInModal) }} if the appointment is being stopped because the participant has recently had one</p>

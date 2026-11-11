@@ -1,15 +1,10 @@
-{% set riskLevel = participant | getCurrentRiskLevel | sentenceCase %}
-
-{% if riskLevel == "Family history" %}
-  {% set riskLevel = "Family history: moderate risk" %}
-{% endif %}
-
+{# app/views/_includes/summary-lists/rows/screening-protocol.njk #}
 {% set screeningProtocolRow = {
   key: {
     text: "Screening protocol"
   },
   value: {
-    text: riskLevel
+    text: participant | getScreeningProtocolName
   },
   actions: {
     items: [

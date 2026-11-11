@@ -1,12 +1,10 @@
 # Data conventions: reading and updating seed data
 
-How participant, clinic, appointment and episode data works in this prototype, and
-the rules to follow when changing it.
+How participant, clinic, appointment, episode and issue data works in this prototype, and the rules to follow when changing it.
 
 ## How it works
 
-The generated seed data (`data.participants`, `data.clinics`, `data.appointments`,
-`data.episodes`)
+The generated seed data (`data.participants`, `data.clinics`, `data.appointments`, `data.episodes`, `data.issues`)
 is **shared and read-only**. It is loaded once at boot into a shared store
 ([app/lib/data-store.js](../app/lib/data-store.js)) and attached to every
 request by middleware in [app/routes.js](../app/routes.js) - it is not copied
@@ -69,6 +67,141 @@ changes its `generationId`. Session changes are stamped with the generation
 they were made against, and stale changes are discarded automatically - so a
 profile swap resets everyone's data. This is intentional demo behaviour.
 
+## Sharing changes between browsers
+
+Several browsers can work on the same data, so reception can check someone in
+and the mammography room sees them arrive. [app/lib/shared-data.js](../app/lib/shared-data.js)
+owns it. Normally each session keeps its own `_changes`; when sharing, the
+attach middleware points `data._changes` at a changes object held in server
+memory instead, and keeps it out of the saved session.
+
+There are three modes, server-wide:
+
+- **Browsers that join** (`off`) - a session shares only once it has joined,
+  with “Start shared data” on the index or “This browser: Sharing” in
+  `/settings`, which set `data.settings.sharedData.joined`. Sessions that joined share one set of
+  changes; the rest keep their own. The default, so nobody's data changes
+  under them unless they ask.
+- **Every browser** (`on`) - every session shares one set of changes, the same
+  set joined browsers use.
+- **By room** (`room`) - sessions in the same named room share changes. A
+  session in no room keeps its own.
+
+The mode starts from the `SHARED_DATA_MODE` environment variable (`off`, `on`
+or `room`; set it on the Heroku app for user research), and `/settings` can
+change it until the server restarts. Room names are fixed in `sharedData.rooms`
+in [app/config.js](../app/config.js). A browser joins a room from `/settings`,
+or by adding `?room=` and the room name to any address (`?room=research-1`;
+`?room=none` leaves). The room is stored per session in
+`data.settings.sharedData.room`.
+
+When this browser is sharing, or the mode is By room, the footer says so
+(“Shared data: on”, the room's name, or “not in a room”), linking to the
+setting.
+
+Starting to share is like a reset for that browser: changes it made on its own
+are dropped, not merged into the shared ones. Leaving a room, stopping
+sharing, or the mode changing so it no longer shares, starts it afresh too.
+
+Change `data.settings.sharedData` with `setSharedDataSetting`, which copies
+rather than writing in place: a new session's `settings` is the session
+defaults' own object, so a write on its first request would change the
+defaults for every session after.
+
+What stays per session: the current user, settings, filters and every temp
+working copy (`data.appointment`, `data.participant`, `imageReadingTemp`,
+`issueTemp`).
+
+The current user, the room and whether the browser has joined are also kept
+in a long-lived cookie
+([app/lib/middleware/remembered-sign-in.js](../app/lib/middleware/remembered-sign-in.js)),
+so a browser keeps them through a server restart or a data reset. Nothing else
+in the session is kept.
+
+Every browser starts signed in as the same user, so two browsers sharing data
+are easily the same person. The server notes which user each sharing browser is
+signed in as (`recordPresence`), and the choose user page tags users signed in
+on other browsers on the same channel. Choosing one of them shows a warning
+first, with the option to continue anyway. Each tag is a live region: joining,
+switching user, leaving and resetting send a notice for `users.signedIn`, so it
+updates in place. A browser counts until 30 minutes after its last request,
+kept fresh by the live update heartbeat while a page is open, and is forgotten
+straight away when it resets its data. Like the shared changes, this is in
+memory only.
+
+“Start shared data” on the index joins this browser (when the mode is Browsers
+that join) and goes to the choose user page, so the person starting picks who
+they are. “Stop sharing” on the index, or “Not sharing” in `/settings`, leaves.
+
+Shared changes live in memory only. They reset on restart, and on regenerate.
+"Reset data" in the footer clears the shared changes for everyone sharing them
+(the whole server in On mode, the room in By room mode), and brings a browser in
+a room back to the same room. With JavaScript, `main.js` does this without a
+page. Without, the link goes to `/shared-data/reset`, a confirmation page like
+the kit's own, whose form clears the shared changes and then hands on to the
+kit's reset.
+
+**Writes must go through the update helpers.** They all record changes with
+`recordChange`, which is also the one place that tells other browsers something
+changed. A write into `data._changes` directly would be shared but nobody would
+hear about it.
+
+**Live updates.** Pages listen on `/shared-data/events` (server-sent events,
+loaded only when the browser is sharing). Each notice names the changed record
+and the ids it links to (`clinicId`, `participantId` and so on, or an issue's
+`links`), plus the record's top-level fields that changed. It is not sent back
+to the session that made it. On the page:
+
+- an element with `data-live-region`, an `id`, and `data-live-ids` listing the
+  ids it shows is refreshed in place when one of them changes. The clinic list
+  (`#clinic-appointments` in [clinics/show.html](../app/views/clinics/show.html))
+  is one
+- a live region can also list the fields it shows in `data-live-fields`, as
+  `collection.field` (for example `appointments.status`). It then refreshes
+  only when one of those fields changed. The appointment header (with its tabs)
+  and the appointment tab's details card do this with `appointmentLiveFields`
+  (`APPOINTMENT_LIVE_FIELDS` in
+  [app/routes/appointments/index.js](../app/routes/appointments/index.js)), so
+  a check-in, start or pause elsewhere shows straight away. That list also
+  names the episode fields a status change moves, so the change to the episode
+  doesn't show the banner. The workflow status bar uses the same list plus
+  `issues.status`, so an issue raised elsewhere shows its tag. The clinic
+  header and the clinics list refresh for `clinics.status`, when a clinic is
+  closed
+- if the page shows the changed record, and no refreshed region shows
+  everything that changed, a banner says the page has been updated, with a link
+  to refresh. It never reloads by itself, so nothing typed is lost. The records
+  a page shows are its appointment, participant and episode, or its clinic when
+  it isn't an appointment page, so a change to another appointment in the same
+  clinic doesn't show the banner on an appointment page
+- screen reader users hear what changed, through a status element in the page.
+  A region can give its message in `data-live-announcement`, worded for the new
+  state (the appointment header says “Appointment status: Checked in”).
+  Otherwise the message is generic
+
+To make another page update live, mark the part that changes as a live region.
+No server change is needed. Keep form inputs out of live regions: a refresh
+resets any input that isn't being typed in.
+
+Each open tab holds one connection to the stream, and browsers allow about six
+connections to one address. With six or more prototype tabs open while sharing,
+pages can stall until a tab is closed. Keep to a few tabs per browser.
+
+Pages reconnect by themselves when the server restarts. Locally, the kit's
+proxy never answers a request it can't pass on to the app, so a reconnect made
+mid-restart would hang and use up a connection. The server asks browsers to
+wait 10 seconds before reconnecting, and a page replaces any connection that
+has gone 40 seconds without a heartbeat.
+
+**Working copies go stale.** A browser's working copy of an appointment
+(`data.appointment`) is taken when it first opens that appointment. The
+appointment context middleware in
+[app/routes/appointments/index.js](../app/routes/appointments/index.js) keeps
+its status, status history, session details and screening order in step with
+the saved record, since only the update helpers change those. Anything else
+another browser saves, such as medical information, is not picked up until
+the working copy is taken again. Last save wins.
+
 ## Episodes
 
 An **episode** is one screening round for a participant - the container the
@@ -76,7 +209,8 @@ appointment(s) for that round sit in. Every appointment has an `episodeId`, and
 every episode lists its `appointmentIds`. Accessors live in
 [app/lib/utils/episodes.js](../app/lib/utils/episodes.js) (and so are
 available as Nunjucks filters): `getEpisode`, `getEpisodesForParticipant`,
-`getCurrentEpisode`, `getEpisodeAppointments`, `getEpisodeReadingStatus`.
+`getCurrentEpisode`, `getEpisodeAppointments`. `getEpisodeReadingStatus` lives in
+[app/lib/utils/reading.js](../app/lib/utils/reading.js).
 
 ### Open or closed
 
@@ -105,13 +239,21 @@ the round found, not the detail of how it got there:
 Why there was no result (did not attend, cancelled, attended but not screened)
 lives on the **appointment**, not the episode - it isn't stored twice.
 
+An appointment ended because of a bilateral mastectomy with no images has
+`appointmentStopped.needsReschedule: 'permanent-exclusion'`,
+`appointmentStopped.stoppedReason: ['Other reason']`, and
+`appointmentStopped.otherDetails: 'Bilateral mastectomy'`. Its appointment
+medical history records a mastectomy on both breasts and
+`mastectomyImagingSide: 'None'`. This outcome means the participant will not be
+invited to future screening episodes; it is not an opt-out request.
+
 ### Mammograms
 
 An episode carries its own record of the images its round produced:
 `episode.mammograms`, one entry per image set, oldest first:
 
 ```js
-{ takenDate, appointmentId, breastScreeningUnitId, locationId, viewCount }
+{ takenDate, appointmentId, breastScreeningUnitId, locationId, viewCount, operatorId? }
 ```
 
 `updateAppointmentStatus` writes an entry the moment an appointment reaches a
@@ -122,10 +264,38 @@ Read this - via `getEpisodeMammogramDate` / `getLastMammogram` - rather than
 deriving "were they screened" from appointment timing: a missed appointment
 still has timing, and must never look like someone's last mammogram.
 
-Historic episodes hold one entry with no `appointmentId` or `locationId` - where
-the round was screened is all a summary round knows. A technical recall adds
-a second entry when the re-screen happens; one entry per image set is also
-the skeleton the reading-cases model (a future piece of work) hangs off.
+Historic episodes hold one entry with no `appointmentId` or `locationId`. They
+also carry the `operatorId` for the mammographer who took the images, since
+there is no appointment record to look it up from. A technical recall adds a
+second entry when the re-screen happens; one entry per image set is also the
+skeleton the reading-cases model (a future piece of work) hangs off.
+
+### Expected views
+
+Which of the four standard views (`RCC`, `RMLO`, `LCC`, `LMLO`) an appointment
+is expected to produce is **derived, not stored**. Use `getExpectedViews(appointment)`
+([app/lib/utils/expected-views.js](../app/lib/utils/expected-views.js)), which
+works it out in this order:
+
+1. `appointment.requestedViews`, for a technical recall (not yet created by
+   anything - the recall appointment work will copy it from the reading outcome)
+2. The mastectomy imaging answers (`mastectomyImagingSide`) in the
+   appointment's medical history. Several mastectomies combine to the breasts
+   all of them allow. A lumpectomy doesn't change anything
+3. Otherwise all four
+
+The views in `mammogramData.views` are always the record. Compare them with
+the plan using `getExpectedViewStates`, which gives each standard view a state:
+`taken` (whether expected or not), `missing` (expected, no images) or
+`notExpected` (not expected, no images - not a problem). Status is
+`partially_screened` only when a view is `missing` (`hasMissingExpectedViews`),
+and reading's "Incomplete" flag needs the mammographer's "Not all mammograms
+taken" answer as well as a missing view (`hasIncompleteMammography`).
+
+There is no override: if the mammographer takes something different from the
+plan, the images taken say so, and "Not all mammograms taken" and notes for
+readers explain why. Seed data generates medical information before images, so
+the generator only takes expected views.
 
 ### Advancing an episode
 
@@ -175,7 +345,7 @@ sets `episode.mammograms` records, from the other side:
 {
   id, appointmentId, openedDate,
   reads: [{ readerId, readerType, readType, readNumber, timestamp, opinion, ... }],
-  deferral, deferralHistory
+  arbitration   // { releasedAt, releasedBy } once released into arbitration
 }
 ```
 
@@ -188,14 +358,14 @@ case, and the episode's reading state comes from the **latest** one.
 Reads are an ordered array, and each records its own `readType` (`first`,
 `second`, `arbitration`). The type is settled when the read is written, from
 where the case had got to at the time — which is not recoverable later, because
-reads can be withdrawn (deferring after giving an opinion does exactly that).
+reads can be withdrawn (raising an issue after giving an opinion does exactly that).
 
 Two functions answer the two different questions, and the split matters:
 
 | | |
 |---|---|
-| `getReadingCaseState(case, settings, now)` | where the case has got to: `awaiting_first_read`, `awaiting_second_read`, `awaiting_finalisation`, `awaiting_arbitration`, `in_arbitration`, `concluded` |
-| `getReadingCaseOutcome(case, settings, now)` | what it found — `normal` / `technical_recall` / `recall_for_assessment`, or **null** while reading is still under way |
+| `getReadingCaseState(case, settings, issuePeriods)` | where the case has got to: `awaiting_first_read`, `awaiting_second_read`, `awaiting_finalisation`, `awaiting_arbitration`, `in_arbitration`, `concluded` |
+| `getReadingCaseOutcome(case, settings, issuePeriods)` | what it found — `normal` / `technical_recall` / `recall_for_assessment`, or **null** while reading is still under way |
 
 Two reads are not a result by themselves — the result becomes real once the
 reads are finalised, explicitly (`read.finalisedAt` / `finalisedBy`) or
@@ -204,22 +374,19 @@ automatically when the finalisation delay passes
 `'never'` manual only — see `isReadFinalised`). Until then the case sits in
 `awaiting_finalisation`. Whether it is heading for arbitration is a **fact
 about the case, not a separate state**: `getReadingCaseStatus(case, settings,
-now)` returns `{ state, finalised, willArbitrate, provisionalOutcome }`, so
+issuePeriods)` returns `{ state, finalised, willArbitrate, provisionalOutcome }`, so
 "awaiting finalisation, then arbitration" is one state with a destination.
 
 `awaiting_arbitration` and `in_arbitration` are deliberately different:
 finalised discordant reads put a case in the arbitration backlog, but
 `in_arbitration` is reserved for a future claim/lock while someone actively
 arbitrates it — nothing sets it yet. The state exists so the vocabulary is
-whole rather than growing a value later across every call site. Deferral works
-the same way already: the act is recorded
-(`deferral: { deferredAt, deferredBy, reason }`) and `isCaseDeferred` reads the
+whole rather than growing a value later across every call site. Arbitration
+release works the same way already: the act is recorded
+(`arbitration: { releasedAt, releasedBy }`) and `isCaseInArbitration` reads the
 state back from its presence.
 
-Priors are the exception that stays on the appointment
-(`appointment.previousMammograms`), so `canUserReadAppointment` combines the two.
-Deferral and outstanding priors are **states, not outcomes** — both hold a case
-up, and a case held up still owes an outcome once it is released.
+Two things hold a case up from outside it. Outstanding priors live on the appointment (`appointment.previousMammograms`), and open issues live in their own collection and are asked of the episode (see [Issues](#issues)), so `canUserReadAppointment` combines all three. An open issue and outstanding priors are **states, not outcomes**: both hold a case up, and a case held up still owes an outcome once it is released.
 
 **Where the code lives.** `reading-cases.js` holds the case logic and is
 deliberately pure — everything there takes a case. `episodes.js` owns getting
@@ -294,6 +461,18 @@ fidelity for the round being worked on; a summary for everything before it.
 This is why `getLastMammogram` and `getNextAppointment`
 ([episodes.js](../app/lib/utils/episodes.js)) read across episodes rather than
 scanning old appointments - a past round may have no appointment record at all.
+
+## Issues
+
+An **issue** records that something is wrong with a participant's record or images. Issues are a top-level collection, `data.issues`, rather than a field on another record, because one issue can name any mix of participant, episode, appointment and reading case. [issues.md](issues.md) covers the model and where issues appear; this section is how the collection behaves as data.
+
+- **Shared like the others.** `issues` is in `STORE_COLLECTIONS` in [app/routes.js](../app/routes.js), loaded into the store with an `issuesById` index, and changes go to `data._changes.issues`.
+- **Records created in a session.** Most collections only ever change records the store already has. Issues are also created, and a new issue exists only in `_changes.issues`, so the attach middleware appends any change whose id the store does not know after the overlaid shared records. `createIssue`, `updateIssue` and `resolveIssue` ([app/lib/utils/issues.js](../app/lib/utils/issues.js)) write there and update `data.issues` for the rest of the request.
+- **Stamped with their generation.** `issues.json` carries the `generatedAt` of the run that wrote it, and the store loads it only when that matches `generation-info.json`. Issues link to records by id, so issues from an older generation would point at records that no longer exist; a mismatch loads as no issues rather than broken links.
+- **Nothing is deleted.** An issue is open until it has a `resolved` object. A mistaken one is resolved as `raised_in_error`.
+- **Lookups are plain filters.** Issues are few, so `getIssuesFor(data, record)` filters the array on each issue's `links` rather than keeping another index.
+
+The seed generator ([issue-generator.js](../app/lib/generators/issue-generator.js)) seeds a handful of open and resolved issues after episodes, and `checkIssues` warns if any link does not resolve.
 
 ## Escape hatch
 

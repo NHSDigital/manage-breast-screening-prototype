@@ -1,3 +1,4 @@
+{# app/views/appointments/images-manual-details.html #}
 {% extends 'layout-appointment.html' %} 
 
 {% set showNavigation = true %}
@@ -26,321 +27,183 @@
   {# Get count values - prefer temp data, fall back to structured mammogramData #}
   {% set mammogramTemp = appointment.mammogramDataTemp or {} %}
   {% set mammogramViews = appointment.mammogramData.views or {} %}
-  
-  {% set viewsRightBreastCCCount = mammogramTemp.viewsRightBreastCCCount or mammogramViews.rightCraniocaudal.count or "1" %}
-  {% set viewsRightBreastMLOCount = mammogramTemp.viewsRightBreastMLOCount or mammogramViews.rightMediolateralOblique.count or "1" %}
-  {% set viewsRightBreastCCIDCount = mammogramTemp.viewsRightBreastCCIDCount or mammogramViews.rightCCID.count or "0" %}
-  {% set viewsRightBreastMLOIDCount = mammogramTemp.viewsRightBreastMLOIDCount or mammogramViews.rightMLOID.count or "0" %}
-  {% set viewsLeftBreastCCCount = mammogramTemp.viewsLeftBreastCCCount or mammogramViews.leftCraniocaudal.count or "1" %}
-  {% set viewsLeftBreastMLOCount = mammogramTemp.viewsLeftBreastMLOCount or mammogramViews.leftMediolateralOblique.count or "1" %}
-  {% set viewsLeftBreastCCIDCount = mammogramTemp.viewsLeftBreastCCIDCount or mammogramViews.leftCCID.count or "0" %}
-  {% set viewsLeftBreastMLOIDCount = mammogramTemp.viewsLeftBreastMLOIDCount or mammogramViews.leftMLOID.count or "0" %}
-  {% set additionalDetails = mammogramTemp.additionalDetails or appointment.mammogramData.additionalDetails or "" %}
-  {% set notesForReader = mammogramTemp.notesForReader or appointment.mammogramData.notesForReader or "" %}
-  
+
   {# Set mammogramSource for incomplete mammography question - prefer temp data, fall back to final data #}
   {% set mammogramSource = mammogramTemp or appointment.mammogramData or {} %}
+
+  {# Counts are grouped by what's expected:
+     - expected: standard views the appointment expects, shown first
+     - notExpectedBreast: every view of a breast with no expected images, behind a placeholder
+     - other: implant displaced views, and standard views that aren't expected of an expected breast
+     Views that aren't expected start at 0 #}
+  {% set expectedViews = appointment | getExpectedViews %}
+  {% set viewTypes = ["MLO", "CC", "MLOID", "CCID"] if data.settings.mammogramViewOrder == "mlo-first" else ["CC", "MLO", "CCID", "MLOID"] %}
+  {% set viewKeyNames = {
+    CC: "Craniocaudal",
+    MLO: "MediolateralOblique",
+    CCID: "CCID",
+    MLOID: "MLOID"
+  } %}
+  {% set breastSides = [
+    {
+      side: "right",
+      label: "Right",
+      code: "R"
+    },
+    {
+      side: "left",
+      label: "Left",
+      code: "L"
+    }
+  ] %}
+  {% set breasts = [] %}
+  {% for breast in breastSides %}
+    {% set breasts = breasts | push({
+      side: breast.side,
+      label: breast.label,
+      code: breast.code,
+      isExpected: (breast.code + "CC") in expectedViews.views or (breast.code + "MLO") in expectedViews.views
+    }) %}
+  {% endfor %}
+
+  {% set viewsQuestionText %}
+    How many images were taken
+  {%- endset %}
+
+  {% set inputs = [] %}
+  {% set totalCount = 0 %}
+  {% set hasOtherViewData = false %}
+  {% for breast in breasts %}
+    {% for viewType in viewTypes %}
+      {% set viewCode = breast.code + viewType %}
+      {% set isImplantDisplaced = viewType in ["CCID", "MLOID"] %}
+      {% set isExpected = not isImplantDisplaced and viewCode in expectedViews.views %}
+      {% set count = mammogramTemp["views" + breast.label + "Breast" + viewType + "Count"] or mammogramViews[breast.side + viewKeyNames[viewType]].count or ("1" if isExpected else "0") %}
+      {% set totalCount = totalCount + (count | int(0)) %}
+
+      {% if isExpected %}
+        {% set group = "expected" %}
+      {% elseif not breast.isExpected %}
+        {% set group = "notExpectedBreast" %}
+      {% else %}
+        {% set group = "other" %}
+        {% if (count | int(0)) > 0 %}
+          {% set hasOtherViewData = true %}
+        {% endif %}
+      {% endif %}
+
+      {% set stepperHtml %}
+        {{ appStepperInput({
+          label: {
+            text: viewCode
+          },
+          hint: {
+            text: "Not expected: " + (expectedViews.shortReason | lower)
+          } if (group == "other" and not isImplantDisplaced and expectedViews.shortReason),
+          name: "appointment[mammogramDataTemp][views" + breast.label + "Breast" + viewType + "Count]",
+          value: count,
+          id: "views-" + breast.side + "-breast-" + (viewType | lower) + "-count",
+          min: 0,
+          max: 9
+        }) }}
+      {% endset %}
+
+      {% set inputs = inputs | push({
+        side: breast.side,
+        group: group,
+        count: count | int(0),
+        html: stepperHtml
+      }) %}
+    {% endfor %}
+  {% endfor %}
 
   {{ appHiddenInput({
     name: "appointment[mammogramDataTemp][uiVersion]",
     value: "inputs"
   }) }}
 
-  {% set viewsQuestionText %}
-    How many images were taken
-  {%- endset %}
-
   {# H2 hidden from AT as it's included in the fieldset legend of each set of inputs #}
   <h2 aria-hidden="true">{{ viewsQuestionText }}?</h2>
 
-    <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-one-half">
-        <fieldset class="nhsuk-fieldset">
-          <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s">
-            {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Right breast
-          </legend>
-          
-          {% if data.settings.mammogramViewOrder == 'mlo-first' %}
-            {{ appStepperInput({
-              label: {
-                text: "RMLO"
-              },
-              _hint: {
-                text: "Mediolateral oblique view"
-              },
-              name: "appointment[mammogramDataTemp][viewsRightBreastMLOCount]",
-              value: viewsRightBreastMLOCount | default("1"),
-              id: "views-right-breast-mlo-count",
-              min: 0,
-              max: 9
-            }) }}
-            
-            {{ appStepperInput({
-              label: {
-                text: "RCC"
-              },
-              _hint: {
-                text: "Craniocaudal view"
-              },
-              name: "appointment[mammogramDataTemp][viewsRightBreastCCCount]",
-              value: viewsRightBreastCCCount | default("1"),
-              id: "views-right-breast-cc-count",
-              min: 0,
-              max: 9
-            }) }}
-          {% else %}
-            {{ appStepperInput({
-              label: {
-                text: "RCC"
-              },
-              _hint: {
-                text: "Craniocaudal view"
-              },
-              name: "appointment[mammogramDataTemp][viewsRightBreastCCCount]",
-              value: viewsRightBreastCCCount | default("1"),
-              id: "views-right-breast-cc-count",
-              min: 0,
-              max: 9
-            }) }}
-            
-            {{ appStepperInput({
-              label: {
-                text: "RMLO"
-              },
-              _hint: {
-                text: "Mediolateral oblique view"
-              },
-              name: "appointment[mammogramDataTemp][viewsRightBreastMLOCount]",
-              value: viewsRightBreastMLOCount | default("1"),
-              id: "views-right-breast-mlo-count",
-              min: 0,
-              max: 9
-            }) }}
-          {% endif %}
-        </fieldset>
-      </div>
+  {% include "_includes/images/expected-views-inset.njk" %}
 
+  <div class="nhsuk-grid-row">
+    {% for breast in breasts %}
       <div class="nhsuk-grid-column-one-half">
-        <fieldset class="nhsuk-fieldset">
-          <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s">
-            {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Left breast
-          </legend>
-          
-          {% if data.settings.mammogramViewOrder == 'mlo-first' %}
-            {{ appStepperInput({
-              label: {
-                text: "LMLO"
-              },
-              _hint: {
-                text: "Mediolateral oblique view"
-              },
-              name: "appointment[mammogramDataTemp][viewsLeftBreastMLOCount]",
-              value: viewsLeftBreastMLOCount | default("1"),
-              id: "views-left-breast-mlo-count",
-              min: 0,
-              max: 9
-            }) }}
-            
-            {{ appStepperInput({
-              label: {
-                text: "LCC"
-              },
-              _hint: {
-                text: "Craniocaudal view"
-              },
-              name: "appointment[mammogramDataTemp][viewsLeftBreastCCCount]",
-              value: viewsLeftBreastCCCount | default("1"),
-              id: "views-left-breast-cc-count",
-              min: 0,
-              max: 9
-            }) }}
-          {% else %}
-            {{ appStepperInput({
-              label: {
-                text: "LCC"
-              },
-              _hint: {
-                text: "Craniocaudal view"
-              },
-              name: "appointment[mammogramDataTemp][viewsLeftBreastCCCount]",
-              value: viewsLeftBreastCCCount | default("1"),
-              id: "views-left-breast-cc-count",
-              min: 0,
-              max: 9
-            }) }}
-            
-            {{ appStepperInput({
-              label: {
-                text: "LMLO"
-              },
-              _hint: {
-                text: "Mediolateral oblique view"
-              },
-              name: "appointment[mammogramDataTemp][viewsLeftBreastMLOCount]",
-              value: viewsLeftBreastMLOCount | default("1"),
-              id: "views-left-breast-mlo-count",
-              min: 0,
-              max: 9
-            }) }}
-          {% endif %}
-        </fieldset>
-      </div>
-    </div>
+        {% if breast.isExpected %}
+          <fieldset class="nhsuk-fieldset">
+            <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s">
+              {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} {{ breast.label }} breast
+            </legend>
+            {% for input in inputs | where("side", breast.side) | where("group", "expected") %}
+              {{ input.html | safe }}
+            {% endfor %}
+          </fieldset>
+        {% else %}
+          <h3 class="nhsuk-heading-xs">{{ breast.label }} breast</h3>
+          {% set notExpectedViewsText = "No images expected" %}
+          {% include "_includes/images/not-expected-views.njk" %}
 
-  {# Implant displaced (Eklund) views – collapsible, open if any data already present #}
-  {% set hasImplantDisplacedData = (viewsRightBreastCCIDCount | int) > 0 or (viewsRightBreastMLOIDCount | int) > 0 or (viewsLeftBreastCCIDCount | int) > 0 or (viewsLeftBreastMLOIDCount | int) > 0 %}
-  {% call details({
-    summaryText: "Other views",
-    open: hasImplantDisplacedData
-  }) %}
+          {# Hidden while the design is reconsidered: counters for a breast no images were expected of
+          {% set breastInputs = inputs | where("side", breast.side) | where("group", "notExpectedBreast") %}
+          {% set hasBreastData = false %}
+          {% for input in breastInputs %}
+            {% if input.count > 0 %}
+              {% set hasBreastData = true %}
+            {% endif %}
+          {% endfor %}
+
+          {% call details({
+            summary: "Add images for this breast",
+            open: hasBreastData
+          }) %}
+            <fieldset class="nhsuk-fieldset">
+              <legend class="nhsuk-fieldset__legend nhsuk-u-visually-hidden">
+                {{ viewsQuestionText }} for the {{ breast.label | lower }} breast
+              </legend>
+              {% for input in breastInputs %}
+                {{ input.html | safe }}
+              {% endfor %}
+            </fieldset>
+          {% endcall %}
+          #}
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  {# Implant displaced (Eklund) views, and views that aren't expected of an expected breast – open if any data already present #}
+  {% if inputs | where("group", "other") | length %}
+    {% call details({
+      summary: "Other views",
+      open: hasOtherViewData
+    }) %}
       <div class="nhsuk-grid-row">
-        <div class="nhsuk-grid-column-one-half">
-          <fieldset class="nhsuk-fieldset">
-            <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s">
-              {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Right breast
-            </legend>
-
-            {% if data.settings.mammogramViewOrder == 'mlo-first' %}
-              {{ appStepperInput({
-                label: {
-                  text: "RMLOID"
-                },
-                _hint: {
-                  text: "Eklund RMLO"
-                },
-                name: "appointment[mammogramDataTemp][viewsRightBreastMLOIDCount]",
-                value: viewsRightBreastMLOIDCount | default("0"),
-                id: "views-right-breast-mloid-count",
-                min: 0,
-                max: 9
-              }) }}
-
-              {{ appStepperInput({
-                label: {
-                  text: "RCCID"
-                },
-                _hint: {
-                  text: "Eklund RCC"
-                },
-                name: "appointment[mammogramDataTemp][viewsRightBreastCCIDCount]",
-                value: viewsRightBreastCCIDCount | default("0"),
-                id: "views-right-breast-ccid-count",
-                min: 0,
-                max: 9
-              }) }}
-            {% else %}
-              {{ appStepperInput({
-                label: {
-                  text: "RCCID"
-                },
-                _hint: {
-                  text: "Eklund RCC"
-                },
-                name: "appointment[mammogramDataTemp][viewsRightBreastCCIDCount]",
-                value: viewsRightBreastCCIDCount | default("0"),
-                id: "views-right-breast-ccid-count",
-                min: 0,
-                max: 9
-              }) }}
-
-              {{ appStepperInput({
-                label: {
-                  text: "RMLOID"
-                },
-                _hint: {
-                  text: "Eklund RMLO"
-                },
-                name: "appointment[mammogramDataTemp][viewsRightBreastMLOIDCount]",
-                value: viewsRightBreastMLOIDCount | default("0"),
-                id: "views-right-breast-mloid-count",
-                min: 0,
-                max: 9
-              }) }}
+        {% for breast in breasts %}
+          {% set otherInputs = inputs | where("side", breast.side) | where("group", "other") %}
+          <div class="nhsuk-grid-column-one-half">
+            {% if otherInputs | length %}
+              <fieldset class="nhsuk-fieldset">
+                <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s">
+                  {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} {{ breast.label }} breast
+                </legend>
+                {% for input in otherInputs %}
+                  {{ input.html | safe }}
+                {% endfor %}
+              </fieldset>
+            {% elseif not breast.isExpected %}
+              <h3 class="nhsuk-heading-xs">{{ breast.label }} breast</h3>
+              {% set notExpectedViewsText = "No images expected" %}
+              {% include "_includes/images/not-expected-views.njk" %}
             {% endif %}
-          </fieldset>
-        </div>
-
-        <div class="nhsuk-grid-column-one-half">
-          <fieldset class="nhsuk-fieldset">
-            <legend class="nhsuk-fieldset__legend nhsuk-fieldset__legend--s">
-              {{ (viewsQuestionText + " for the") | asVisuallyHiddenText }} Left breast
-            </legend>
-
-            {% if data.settings.mammogramViewOrder == 'mlo-first' %}
-              {{ appStepperInput({
-                label: {
-                  text: "LMLOID"
-                },
-                _hint: {
-                  text: "Eklund LMLO"
-                },
-                name: "appointment[mammogramDataTemp][viewsLeftBreastMLOIDCount]",
-                value: viewsLeftBreastMLOIDCount | default("0"),
-                id: "views-left-breast-mloid-count",
-                min: 0,
-                max: 9
-              }) }}
-
-              {{ appStepperInput({
-                label: {
-                  text: "LCCID"
-                },
-                _hint: {
-                  text: "Eklund LCC"
-                },
-                name: "appointment[mammogramDataTemp][viewsLeftBreastCCIDCount]",
-                value: viewsLeftBreastCCIDCount | default("0"),
-                id: "views-left-breast-ccid-count",
-                min: 0,
-                max: 9
-              }) }}
-            {% else %}
-              {{ appStepperInput({
-                label: {
-                  text: "LCCID"
-                },
-                _hint: {
-                  text: "Eklund LCC"
-                },
-                name: "appointment[mammogramDataTemp][viewsLeftBreastCCIDCount]",
-                value: viewsLeftBreastCCIDCount | default("0"),
-                id: "views-left-breast-ccid-count",
-                min: 0,
-                max: 9
-              }) }}
-
-              {{ appStepperInput({
-                label: {
-                  text: "LMLOID"
-                },
-                _hint: {
-                  text: "Eklund LMLO"
-                },
-                name: "appointment[mammogramDataTemp][viewsLeftBreastMLOIDCount]",
-                value: viewsLeftBreastMLOIDCount | default("0"),
-                id: "views-left-breast-mloid-count",
-                min: 0,
-                max: 9
-              }) }}
-            {% endif %}
-          </fieldset>
-        </div>
+          </div>
+        {% endfor %}
       </div>
-  {% endcall %}
-
-  {# Calculate initial total count from form data #}
-  {% set initialTotalCount = 0 %}
-  {% set initialTotalCount = initialTotalCount + (viewsRightBreastCCCount | int(0)) %}
-  {% set initialTotalCount = initialTotalCount + (viewsRightBreastMLOCount | int(0)) %}
-  {% set initialTotalCount = initialTotalCount + (viewsRightBreastCCIDCount | int(0)) %}
-  {% set initialTotalCount = initialTotalCount + (viewsRightBreastMLOIDCount | int(0)) %}
-  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastCCCount | int(0)) %}
-  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastMLOCount | int(0)) %}
-  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastCCIDCount | int(0)) %}
-  {% set initialTotalCount = initialTotalCount + (viewsLeftBreastMLOIDCount | int(0)) %}
+    {% endcall %}
+  {% endif %}
 
   <p class="_nhsuk-u-font-weight-bold app-js-only nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-4 nhsuk-u-font-size-22" id="total-images-count">
-    Images taken: <span data-total-count>{{ initialTotalCount }}</span>
+    Images taken: <span data-total-count>{{ totalCount }}</span>
   </p>
 
   {% set insetTextHtml %}

@@ -1,4 +1,4 @@
-
+{# app/views/participants/questionnaire/summary.html #}
 {% extends 'layout.html' %}
 
 {% set pageHeading = "Summary" %}
@@ -14,7 +14,7 @@
 
     {% if flash.error %}
       {{ errorSummary({
-        "titleText": "There is a problem",
+        "heading": "There is a problem",
         "errorList": flash.error
       }) }}
     {% endif %}
@@ -29,15 +29,12 @@
 
       {% include "summary-lists/questionnaire.njk" %}
 
-      {{ button({
-        text: "Confirm and submit"
-      }) }}
-
-      <p>
-        <a href="/clinics/{{clinicId}}/participants/{{participantId}}/questionnaire/health-status">
-          Back and make changes
-        </a>
-      </p>
+      <div class="nhsuk-button-group">
+        {{ button({
+          text: "Confirm and submit"
+        }) }}
+        <a href="/clinics/{{ clinicId }}/participants/{{ participantId }}/questionnaire/health-status" class="nhsuk-link nhsuk-link--no-visited-state">Back and make changes</a>
+      </div>
 
     </form>
   </div>

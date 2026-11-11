@@ -3,10 +3,7 @@
 // Medical information beyond the CRUD sections: recording breast
 // features, and the has-relevant-information / review answers.
 
-const {
-  getReturnUrl,
-  modalBreakout
-} = require('../../lib/utils/referrers')
+const { getReturnUrl, modalBreakout } = require('../../lib/utils/referrers')
 
 module.exports = (router) => {
   // Auto-save the HRT answer as it's changed
@@ -62,7 +59,8 @@ module.exports = (router) => {
       // Convert breast features raw data
       if (data.appointment?.medicalInformation?.breastFeaturesRaw) {
         try {
-          const rawFeatures = data.appointment.medicalInformation.breastFeaturesRaw
+          const rawFeatures =
+            data.appointment.medicalInformation.breastFeaturesRaw
           if (typeof rawFeatures === 'string') {
             data.appointment.medicalInformation.breastFeatures =
               JSON.parse(rawFeatures)
@@ -81,11 +79,13 @@ module.exports = (router) => {
 
       // Saving breast features resolves any 'review at imaging' reminder
       if (
-        data.appointment?.workflowStatus?.['review-breast-features-after-imaging'] ===
-        'yes'
+        data.appointment?.workflowStatus?.[
+          'review-breast-features-after-imaging'
+        ] === 'yes'
       ) {
-        data.appointment.workflowStatus['review-breast-features-after-imaging'] =
-          'answered'
+        data.appointment.workflowStatus[
+          'review-breast-features-after-imaging'
+        ] = 'answered'
       }
 
       // Flash error message if needed
@@ -124,7 +124,9 @@ module.exports = (router) => {
           `/clinics/${clinicId}/appointments/${appointmentId}/review-medical-information`
         )
       } else {
-        res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/awaiting-images`)
+        res.redirect(
+          `/clinics/${clinicId}/appointments/${appointmentId}/awaiting-images`
+        )
       }
     }
   )
@@ -135,14 +137,17 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
-      const imagingCanProceed = data?.appointment?.appointment?.imagingCanProceed
+      const imagingCanProceed =
+        data?.appointment?.appointment?.imagingCanProceed
 
       if (!imagingCanProceed) {
         res.redirect(
           `/clinics/${clinicId}/appointments/${appointmentId}/review-medical-information`
         )
       } else if (imagingCanProceed === 'yes') {
-        res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/awaiting-images`)
+        res.redirect(
+          `/clinics/${clinicId}/appointments/${appointmentId}/awaiting-images`
+        )
       } else {
         res.redirect(
           `/clinics/${clinicId}/appointments/${appointmentId}/attended-not-screened-reason`

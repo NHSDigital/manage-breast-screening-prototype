@@ -16,6 +16,7 @@
   <h1>{{ pageHeading }}</h1>
 
   {{ radios({
+    small: true,
     idPrefix: "type",
     name: "type",
     fieldset: {
@@ -45,6 +46,7 @@
   }) }}
 
   {{ radios({
+    small: true,
     idPrefix: "limit",
     name: "limit",
     fieldset: {
@@ -70,15 +72,14 @@
       {
         value: "400",
         text: "400 cases",
-        hint: {
-          text: "Debug mode only"
-        }
+        hint: "Debug mode only"
       } if data.settings.debugMode | falsify
     ]
   }) }}
 
   {% if data.settings.debugMode | falsify %}
     {{ checkboxes({
+      small: true,
       idPrefix: "filters",
       name: "filters",
       fieldset: {
@@ -91,14 +92,13 @@
         {
           value: "complexOnly",
           text: "Only complex cases",
-          hint: {
-            text: "Symptoms, additional images, incomplete or imperfect images, or implants"
-          }
+          hint: "Symptoms, additional images, incomplete or imperfect images, or implants"
         }
       ]
     }) }}
 
     {{ radios({
+      small: true,
       idPrefix: "lazy",
       name: "lazy",
       fieldset: {
@@ -107,9 +107,7 @@
           size: "m"
         }
       },
-      hint: {
-        text: "Lazy sessions start with one case and grow as you read. Eager sessions are fully populated upfront."
-      },
+      hint: "Lazy sessions start with one case and grow as you read. Eager sessions are fully populated upfront.",
       items: [
         {
           value: "true",

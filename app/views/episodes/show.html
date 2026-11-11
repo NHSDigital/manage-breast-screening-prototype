@@ -13,6 +13,10 @@
 
 {% extends 'layout-app.html' %}
 
+{% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
+{% from "_includes/issues/resolved-issues.njk" import resolvedIssuesCard with context %}
+
 {% set pageHeading = episode | getEpisodeLabel %}
 {% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 {% set hideBackLink = true %}
@@ -48,6 +52,8 @@
     NHS Number: {{ participant.medicalInformation.nhsNumber | formatNhsNumber }}
   </p>
 
+  {{ openIssuesCallout(episode) }}
+
   {# A past round is a summary, not the live record - say so, and point at
      the round in progress where there is one #}
   {% if episode.isHistoric or (currentEpisode and currentEpisode.id !== episode.id) %}
@@ -67,13 +73,23 @@
   {% if episode.isHistoric %}
     {% set mammogram = episode.mammograms | last %}
     {% set screeningUnit = data.breastScreeningUnits | findById(mammogram.breastScreeningUnitId) if mammogram else null %}
+    {% if mammogram %}
+      {% set mammogramTakenHtml %}
+        {{ mammogram.takenDate | formatDate }}
+        {% if mammogram.operatorId %}
+          <br>by {{ mammogram.operatorId | getUsername | escape }}
+        {% endif %}
+      {% endset %}
+    {% endif %}
   {% endif %}
 
   {# Outcome leads, as it is what anyone opening a finished round came for #}
   {% if episode.outcome %}
     {% call card({
-      heading: "Outcome",
-      headingLevel: "2",
+      heading: {
+        text: "Outcome",
+        level: 2
+      },
       feature: true
     }) %}
       {{ appSummaryList({
@@ -96,8 +112,10 @@
   {% endif %}
 
   {% call card({
-    heading: "Episode details",
-    headingLevel: "2"
+    heading: {
+      text: "Episode details",
+      level: 2
+    }
   }) %}
 
     {# No stage row - the header tag carries it #}
@@ -118,7 +136,7 @@
     {% if episode.isHistoric %}
       {% set episodeRows = episodeRows | push({
         key: { text: "Mammograms taken" },
-        value: { text: mammogram.takenDate | formatDate if mammogram else "Not screened" }
+        value: { html: mammogramTakenHtml } if mammogram else { text: "Not screened" }
       }) %}
       {% if mammogram %}
         {% set episodeRows = episodeRows | push({
@@ -159,8 +177,10 @@
   {% endif %}
 
   {% call card({
-    heading: "Appointments",
-    headingLevel: "2"
+    heading: {
+      text: "Appointments",
+      level: 2
+    }
   }) %}
     {% if appointmentRows | length %}
       {% include "_includes/episodes/appointments-table.njk" %}
@@ -177,8 +197,10 @@
      one owes a reading state #}
   {% if episode.readingCases.length or episode.stage != 'closed' %}
     {% call card({
-      heading: "Image reading",
-      headingLevel: "2"
+      heading: {
+        text: "Image reading",
+        level: 2
+      }
     }) %}
       {% if episode.readingCases.length %}
         {% include "_includes/episodes/reading-cases-table.njk" %}
@@ -199,11 +221,15 @@
     {% endcall %}
   {% endif %}
 
+  {{ resolvedIssuesCard(episode) }}
+
   {# How the round moved through its stages - the live round's own record #}
   {% if episode.stageHistory | length %}
     {% call card({
-      heading: "Episode history",
-      headingLevel: "2"
+      heading: {
+        text: "Episode history",
+        level: 2
+      }
     }) %}
       {% set historyRows = [] %}
       {% for entry in episode.stageHistory %}
@@ -215,6 +241,10 @@
       {{ appSummaryList({ rows: historyRows, lastRowBorder: false }) }}
     {% endcall %}
   {% endif %}
+
+  {# Last on the page before the step to other rounds, where it will sit on
+     every page that has it #}
+  {{ raiseIssueLink("episode") }}
 
   {# Step between this participant's rounds without going back to their record #}
   {% if previousEpisode or nextEpisode %}

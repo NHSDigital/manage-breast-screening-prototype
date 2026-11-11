@@ -9,6 +9,7 @@
 // back, because that means going through the episode.
 
 const dataStore = require('../data-store')
+const { recordChange } = require('../shared-data')
 const { getAppointment } = require('./appointment-data.js')
 const { getClinic } = require('./clinics.js')
 const { formatMonthYear } = require('./dates.js')
@@ -106,7 +107,10 @@ const EPISODE_STAGE_BY_READING_OUTCOME = {
  * @returns {boolean} True if this appointment produced images
  */
 const appointmentProducedImages = (appointment) => {
-  return EPISODE_STAGE_BY_APPOINTMENT_STATUS[appointment?.status]?.stage === 'reading'
+  return (
+    EPISODE_STAGE_BY_APPOINTMENT_STATUS[appointment?.status]?.stage ===
+    'reading'
+  )
 }
 
 /**
@@ -126,7 +130,10 @@ const buildMammogramEntry = (appointment, clinic) => {
   const views = appointment.mammogramData?.views || {}
 
   return {
-    takenDate: appointment.timing?.actualStartTime || appointment.timing?.startTime || null,
+    takenDate:
+      appointment.timing?.actualStartTime ||
+      appointment.timing?.startTime ||
+      null,
     appointmentId: appointment.id,
     breastScreeningUnitId: clinic?.breastScreeningUnitId || null,
     locationId: clinic?.locationId || null,
@@ -135,7 +142,7 @@ const buildMammogramEntry = (appointment, clinic) => {
 }
 
 /**
- * Record a changed episode so it persists for this session
+ * Record a changed episode so it persists across requests
  *
  * Mirrors recordAppointmentChange: the episodes array attached to `data` is rebuilt
  * from the shared store every request, so only records written into
@@ -145,9 +152,7 @@ const buildMammogramEntry = (appointment, clinic) => {
  * @param {object} episode - Whole replacement episode record
  */
 const recordEpisodeChange = (data, episode) => {
-  if (data._changes?.episodes) {
-    data._changes.episodes[episode.id] = episode
-  }
+  recordChange(data, 'episodes', episode)
 }
 
 /**
@@ -170,6 +175,29 @@ const getEpisode = (data, episodeId) => {
     null
   )
 }
+
+/**
+ * Whether an appointment's episode is the participant's first screening -
+ * shown as the "New" tag and "New to screening" filter on the clinic list
+ *
+ * @param {object} appointment - Appointment with an episodeId
+ * @param {object} data - Session data
+ * @returns {boolean} True if the appointment's episode is a first screening
+ */
+const isFirstScreening = (appointment, data) =>
+  Boolean(getEpisode(data, appointment?.episodeId)?.isFirstScreening)
+
+/**
+ * Whether an appointment's episode is the participant's last routine
+ * screening - shown as the "Final" tag and "Final screening invite" filter on
+ * the clinic list
+ *
+ * @param {object} appointment - Appointment with an episodeId
+ * @param {object} data - Session data
+ * @returns {boolean} True if the appointment's episode is a last screening
+ */
+const isLastScreening = (appointment, data) =>
+  Boolean(getEpisode(data, appointment?.episodeId)?.isLastScreening)
 
 /**
  * Get all of a participant's episodes, oldest first
@@ -273,7 +301,9 @@ const getReadingCaseById = (data, caseId) => {
   const episode = episodeId
     ? getEpisode(data, episodeId)
     : Object.values(data._changes?.episodes || {}).find((candidate) =>
-        getReadingCases(candidate).some((readingCase) => readingCase.id === caseId)
+        getReadingCases(candidate).some(
+          (readingCase) => readingCase.id === caseId
+        )
       )
 
   if (!episode) return null
@@ -313,11 +343,19 @@ const getEpisodeReadingCase = (episode) => {
  *
  * @param {object} episode - Episode object
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Array} [issuePeriods] - When the episode had an open issue (see
+ *   getOpenIssuePeriods in issues.js)
  * @returns {string | null} The outcome, or null while reading is under way
  */
-const getEpisodeReadingOutcome = (episode, settings = {}) => {
+const getEpisodeReadingOutcome = (
+  episode,
+  settings = {},
+  issuePeriods = []
+) => {
   const latestCase = getLatestReadingCase(episode)
-  return latestCase ? getReadingCaseOutcome(latestCase, settings) : null
+  return latestCase
+    ? getReadingCaseOutcome(latestCase, settings, issuePeriods)
+    : null
 }
 
 /**
@@ -551,7 +589,7 @@ const getEpisodeOutcomeTagColour = (outcome) => {
 }
 
 /**
- * Update an episode, persisting the change for this session.
+ * Update an episode, persisting the change across requests.
  *
  * Build a whole replacement record - never mutate the one you read, it's
  * frozen (see docs/data-conventions.md).
@@ -656,7 +694,9 @@ const syncEpisodeMammogramsForAppointment = (data, appointment) => {
   if (!episode) return null
 
   const existing = episode.mammograms || []
-  const otherEntries = existing.filter((entry) => entry.appointmentId !== appointment.id)
+  const otherEntries = existing.filter(
+    (entry) => entry.appointmentId !== appointment.id
+  )
 
   if (!appointmentProducedImages(appointment)) {
     // No images from this appointment - drop its entry if it had one
@@ -694,7 +734,8 @@ const advanceEpisodeForAppointmentStatus = (data, appointment) => {
   const episode = getEpisode(data, appointment.episodeId)
   if (!episode) return null
 
-  const latestAppointmentId = episode.appointmentIds?.[episode.appointmentIds.length - 1]
+  const latestAppointmentId =
+    episode.appointmentIds?.[episode.appointmentIds.length - 1]
   if (latestAppointmentId && latestAppointmentId !== appointment.id) return null
 
   const destination = EPISODE_STAGE_BY_APPOINTMENT_STATUS[appointment.status]
@@ -740,6 +781,8 @@ module.exports = {
   appointmentProducedImages,
   buildMammogramEntry,
   getEpisode,
+  isFirstScreening,
+  isLastScreening,
   getEpisodesForParticipant,
   getCurrentEpisode,
   getEpisodeAppointments,

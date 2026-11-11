@@ -2,9 +2,11 @@
 {# Navigation controls for reading workflow - prev/next case #}
 
 {# Still to do on this case, so skipping past it is meaningful. In
-   arbitration that's whether it has been arbitrated - a panel member
-   may have read it originally and still owe the arbitration #}
-{% set stillToDo = (not (data | appointmentHasBeenArbitrated(appointment))) if isArbitration else (data | canUserReadAppointment(appointment)) %}
+   arbitration that's whether it can be arbitrated - a panel member
+   may have read it originally and still owe the arbitration. An ended
+   session has nothing to skip back to #}
+{% set stillToDo = (data | canArbitrateAppointment(appointment)) if isArbitration else (data | canUserReadAppointment(appointment)) %}
+{% set stillToDo = stillToDo and not (session | isSessionEnded) %}
 
 {# The first case in a session has nothing to go back to. An empty grid column
    is zero height, and a zero-height float takes no width, so the forward link

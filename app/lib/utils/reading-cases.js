@@ -53,8 +53,8 @@ const READING_CASE_STATES = [
 // episode outcome - a recall for assessment concludes the reading but leaves
 // the episode open, because the result comes from the assessment.
 //
-// Deferral and outstanding priors are deliberately not outcomes: both are
-// temporary states that hold a case up, and a case held up still owes an
+// An open issue and outstanding priors are deliberately not outcomes: both
+// are temporary states that hold a case up, and a case held up still owes an
 // outcome once it is released.
 const READING_CASE_OUTCOMES = [
   'normal',
@@ -66,7 +66,7 @@ const READING_CASE_OUTCOMES = [
  * How overdue a case's images are for reading.
  *
  * The thresholds live in `config.reading` so every surface that flags an
- * ageing case - the backlog list, the deferred and priors dashboards, the
+ * ageing case - the backlog list, the priors dashboard, the
  * case header - agrees on when "due soon" becomes "urgent".
  *
  * @param {string | Date} imagesTakenDate - When the images were taken
@@ -292,19 +292,6 @@ const withArbitrationRelease = (readingCase, userId) => {
 }
 
 /**
- * Whether a case has been deferred from reading.
- *
- * Deferral is recorded as an act (who deferred it and when), and the state is
- * read back from its presence - the same shape arbitration release takes.
- *
- * @param {object} readingCase - Reading case
- * @returns {boolean}
- */
-const isCaseDeferred = (readingCase) => {
-  return Boolean(readingCase?.deferral?.deferredAt)
-}
-
-/**
  * Whether a case has been released into arbitration.
  *
  * Two things perform the release: finalising reads the rules send to
@@ -410,47 +397,22 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
 }
 
 /**
- * Whether a read is finalised.
+ * When a read's finalisation delay runs out, in milliseconds, or null if it
+ * never will by itself.
  *
- * Finalisation happens two ways: the reader finalises it (finalisedAt is
- * written), or the finalisation delay passes and it finalises itself. The
- * delay comes from settings.reading.finalisationDelay - minutes as a string,
- * '0' meaning immediately, 'never' meaning only ever manually.
- *
- * @param {object} read - The read
- * @param {object} [settings] - Site settings object (data.settings)
- * @param {Date | string} [now] - The time to judge auto-finalisation against;
- *   defaults to the real now
- * @returns {boolean}
- */
-const isReadFinalised = (read, settings = {}, now = null) => {
-  if (!read) return false
-  if (read.finalisedAt) return true
-
-  const delay = settings?.reading?.finalisationDelay ?? '60'
-  if (delay === 'never') return false
-  if (!read.timestamp) return false
-
-  const delayMinutes = parseInt(delay, 10)
-  if (Number.isNaN(delayMinutes)) return false
-
-  const finalisesAt = new Date(read.timestamp).getTime() + delayMinutes * 60000
-  const judgedAt = now ? new Date(now).getTime() : Date.now()
-  return judgedAt >= finalisesAt
-}
-
-/**
- * When a read will finalise itself, or null if it won't.
- *
- * Null covers both ends: an already-finalised read has no pending moment, and
- * a 'never' delay means it only ever finalises by hand.
+ * Time the case's episode spent with an open issue doesn't count toward the
+ * delay: each period of it that falls inside the read's window pushes the
+ * deadline back by its length, so a read with 20 minutes left when an issue
+ * is raised still has 20 minutes once it is resolved. A period still open
+ * when the window would otherwise end leaves the deadline at Infinity.
  *
  * @param {object} read - The read
- * @param {object} [settings] - Site settings object (data.settings)
- * @returns {string | null} ISO timestamp, or null
+ * @param {object} settings - Site settings object (data.settings)
+ * @param {Array<{start: string, end: string | null}>} issuePeriods - Merged, oldest first
+ * @returns {number | null} Epoch milliseconds, Infinity while paused, or null
  */
-const getAutoFinaliseTime = (read, settings = {}) => {
-  if (!read?.timestamp || read.finalisedAt) return null
+const getFinalisationDeadline = (read, settings, issuePeriods) => {
+  if (!read?.timestamp) return null
 
   const delay = settings?.reading?.finalisationDelay ?? '60'
   if (delay === 'never') return null
@@ -458,21 +420,86 @@ const getAutoFinaliseTime = (read, settings = {}) => {
   const delayMinutes = parseInt(delay, 10)
   if (Number.isNaN(delayMinutes)) return null
 
-  return new Date(
-    new Date(read.timestamp).getTime() + delayMinutes * 60000
-  ).toISOString()
+  const readAt = new Date(read.timestamp).getTime()
+  let deadline = readAt + delayMinutes * 60000
+
+  for (const period of issuePeriods || []) {
+    // Time before the read was made isn't part of its window
+    const pausedFrom = Math.max(new Date(period.start).getTime(), readAt)
+
+    // Periods are oldest first, so once one starts after the deadline none
+    // of the rest can reach it
+    if (pausedFrom >= deadline) break
+    if (period.end === null) return Infinity
+
+    const pausedUntil = new Date(period.end).getTime()
+    if (pausedUntil > pausedFrom) {
+      deadline += pausedUntil - pausedFrom
+    }
+  }
+
+  return deadline
+}
+
+/**
+ * Whether a read is finalised.
+ *
+ * Finalisation happens two ways: the reader finalises it (finalisedAt is
+ * written), or the finalisation delay passes and it finalises itself. The
+ * delay comes from settings.reading.finalisationDelay - minutes as a string,
+ * '0' meaning immediately, 'never' meaning only ever manually. Time the
+ * episode spends with an open issue doesn't count toward the delay.
+ *
+ * @param {object} read - The read
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
+ *   (see getOpenIssuePeriods in issues.js)
+ * @returns {boolean}
+ * @example
+ * {{ read | isReadFinalised(data.settings, data | getOpenIssuePeriods(episode)) }}
+ */
+const isReadFinalised = (read, settings = {}, issuePeriods = []) => {
+  if (!read) return false
+  if (read.finalisedAt) return true
+
+  const deadline = getFinalisationDeadline(read, settings, issuePeriods)
+  return deadline !== null && Date.now() >= deadline
+}
+
+/**
+ * When a read finalises itself, or did, or null if that can't be said.
+ *
+ * Null for a read finalised by hand, for a 'never' delay (it only ever
+ * finalises by hand), and while an open issue has paused its window - the
+ * time isn't known until the issue is resolved.
+ *
+ * @param {object} read - The read
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
+ *   (see getOpenIssuePeriods in issues.js)
+ * @returns {string | null} ISO timestamp, or null
+ */
+const getAutoFinaliseTime = (read, settings = {}, issuePeriods = []) => {
+  if (read?.finalisedAt) return null
+
+  const deadline = getFinalisationDeadline(read, settings, issuePeriods)
+  if (deadline === null || deadline === Infinity) return null
+
+  return new Date(deadline).toISOString()
 }
 
 /**
  * When a read finalised, or will: its explicit stamp, else the moment the
- * delay ran out or runs out. Null for a read that only finalises by hand.
+ * delay ran out or runs out. Null for a read that only finalises by hand, or
+ * whose window an open issue has paused.
  *
  * @param {object} read - The read
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
  * @returns {string | null} ISO timestamp, or null
  */
-const getReadFinalisedTime = (read, settings = {}) => {
-  return read?.finalisedAt || getAutoFinaliseTime(read, settings)
+const getReadFinalisedTime = (read, settings = {}, issuePeriods = []) => {
+  return read?.finalisedAt || getAutoFinaliseTime(read, settings, issuePeriods)
 }
 
 /**
@@ -482,9 +509,10 @@ const getReadFinalisedTime = (read, settings = {}) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
  * @returns {object | null} The deciding read, or null
  */
-const getDecidingRead = (readingCase, settings = {}) => {
+const getDecidingRead = (readingCase, settings = {}, issuePeriods = []) => {
   const arbitrationRead = getArbitrationRead(readingCase)
   if (arbitrationRead) return arbitrationRead
 
@@ -492,8 +520,8 @@ const getDecidingRead = (readingCase, settings = {}) => {
   if (reads.length < 2) return null
 
   return [...reads].sort((a, b) =>
-    (getReadFinalisedTime(b, settings) || '').localeCompare(
-      getReadFinalisedTime(a, settings) || ''
+    (getReadFinalisedTime(b, settings, issuePeriods) || '').localeCompare(
+      getReadFinalisedTime(a, settings, issuePeriods) || ''
     )
   )[0]
 }
@@ -504,11 +532,20 @@ const getDecidingRead = (readingCase, settings = {}) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
  * @returns {string | null} ISO timestamp, or null
  */
-const getReadingCaseOutcomeDate = (readingCase, settings = {}) => {
-  if (!getReadingCaseOutcome(readingCase, settings)) return null
-  return getReadFinalisedTime(getDecidingRead(readingCase, settings), settings)
+const getReadingCaseOutcomeDate = (
+  readingCase,
+  settings = {},
+  issuePeriods = []
+) => {
+  if (!getReadingCaseOutcome(readingCase, settings, issuePeriods)) return null
+  return getReadFinalisedTime(
+    getDecidingRead(readingCase, settings, issuePeriods),
+    settings,
+    issuePeriods
+  )
 }
 
 /**
@@ -516,28 +553,32 @@ const getReadingCaseOutcomeDate = (readingCase, settings = {}) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
- * @param {Date | string} [now] - The time to judge auto-finalisation against
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
  * @returns {boolean}
  */
-const areAllReadsFinalised = (readingCase, settings = {}, now = null) => {
+const areAllReadsFinalised = (
+  readingCase,
+  settings = {},
+  issuePeriods = []
+) => {
   return getReadsAsArray(readingCase).every((read) =>
-    isReadFinalised(read, settings, now)
+    isReadFinalised(read, settings, issuePeriods)
   )
 }
 
 /**
  * Where a case has got to.
  *
- * Deferral and outstanding priors are not states here - both hold a case up
+ * An open issue and outstanding priors are not states here - both hold a case up
  * without changing how far through reading it is, so they belong alongside the
  * state as flags rather than replacing it.
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
- * @param {Date | string} [now] - The time to judge auto-finalisation against
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
  * @returns {string} One of READING_CASE_STATES
  */
-const getReadingCaseState = (readingCase, settings = {}, now = null) => {
+const getReadingCaseState = (readingCase, settings = {}, issuePeriods = []) => {
   const reads = getReadsAsArray(readingCase)
 
   if (reads.length === 0) return 'awaiting_first_read'
@@ -546,7 +587,7 @@ const getReadingCaseState = (readingCase, settings = {}, now = null) => {
   // An arbitration read settles the case whatever the first two said - but
   // like any read it is not a result until finalised
   if (getArbitrationRead(readingCase)) {
-    return areAllReadsFinalised(readingCase, settings, now)
+    return areAllReadsFinalised(readingCase, settings, issuePeriods)
       ? 'concluded'
       : 'awaiting_finalisation'
   }
@@ -560,7 +601,7 @@ const getReadingCaseState = (readingCase, settings = {}, now = null) => {
   }
 
   // Agreeing opinions are the outcome, but not a result until finalised
-  if (!areAllReadsFinalised(readingCase, settings, now)) {
+  if (!areAllReadsFinalised(readingCase, settings, issuePeriods)) {
     return 'awaiting_finalisation'
   }
 
@@ -575,11 +616,17 @@ const getReadingCaseState = (readingCase, settings = {}, now = null) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
- * @param {Date | string} [now] - The time to judge auto-finalisation against
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
  * @returns {string | null} One of READING_CASE_OUTCOMES, or null
  */
-const getReadingCaseOutcome = (readingCase, settings = {}, now = null) => {
-  if (getReadingCaseState(readingCase, settings, now) !== 'concluded') {
+const getReadingCaseOutcome = (
+  readingCase,
+  settings = {},
+  issuePeriods = []
+) => {
+  if (
+    getReadingCaseState(readingCase, settings, issuePeriods) !== 'concluded'
+  ) {
     return null
   }
 
@@ -606,10 +653,14 @@ const getReadingCaseOutcome = (readingCase, settings = {}, now = null) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
- * @param {Date | string} [now] - The time to judge auto-finalisation against
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
  * @returns {{state: string, finalised: boolean, willArbitrate: boolean, provisionalOutcome: string | null}}
  */
-const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
+const getReadingCaseStatus = (
+  readingCase,
+  settings = {},
+  issuePeriods = []
+) => {
   const reads = getReadsAsArray(readingCase)
   const arbitrationRead = getArbitrationRead(readingCase)
 
@@ -624,9 +675,10 @@ const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
     (reads.length >= 2 && !willArbitrate ? reads[0]?.opinion || null : null)
 
   return {
-    state: getReadingCaseState(readingCase, settings, now),
+    state: getReadingCaseState(readingCase, settings, issuePeriods),
     finalised:
-      reads.length >= 2 && areAllReadsFinalised(readingCase, settings, now),
+      reads.length >= 2 &&
+      areAllReadsFinalised(readingCase, settings, issuePeriods),
     willArbitrate,
     provisionalOutcome
   }
@@ -637,9 +689,10 @@ const getReadingCaseStatus = (readingCase, settings = {}, now = null) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
  * @returns {object} Reading metadata
  */
-const getReadingMetadata = (readingCase, settings = {}) => {
+const getReadingMetadata = (readingCase, settings = {}, issuePeriods = []) => {
   const reads = getReadsAsArray(readingCase)
   const uniqueReaderCount = new Set(reads.flatMap(getReadAuthorIds)).size
   const opinions = [...new Set(reads.map((read) => read.opinion))].filter(
@@ -658,8 +711,8 @@ const getReadingMetadata = (readingCase, settings = {}) => {
     secondReadComplete: reads.length >= 2,
     isDiscordant,
     opinions,
-    state: getReadingCaseState(readingCase, settings),
-    outcome: getReadingCaseOutcome(readingCase, settings)
+    state: getReadingCaseState(readingCase, settings, issuePeriods),
+    outcome: getReadingCaseOutcome(readingCase, settings, issuePeriods)
   }
 }
 
@@ -689,9 +742,14 @@ const caseNeedsSecondRead = (readingCase) => {
  *
  * @param {object} readingCase - Reading case
  * @param {object} [settings] - Site settings object (data.settings)
+ * @param {Array} [issuePeriods] - When the case's episode had an open issue
  * @returns {boolean}
  */
-const caseNeedsArbitration = (readingCase, settings = {}) => {
+const caseNeedsArbitration = (
+  readingCase,
+  settings = {},
+  issuePeriods = []
+) => {
   // A case already released into arbitration belongs to the backlog until it
   // has been arbitrated, whatever its derived state says
   if (isCaseInArbitration(readingCase)) {
@@ -702,30 +760,38 @@ const caseNeedsArbitration = (readingCase, settings = {}) => {
   // exists, but only become arbitrable once the reads behind it are finalised
   return (
     getReadingCaseState(readingCase, settings) === 'awaiting_arbitration' &&
-    areAllReadsFinalised(readingCase, settings)
+    areAllReadsFinalised(readingCase, settings, issuePeriods)
   )
 }
 
 /**
  * Whether a user can read a case.
  *
- * Only covers what the case itself knows. Outstanding priors also block
- * reading, but those live on the appointment, so callers working from an
- * appointment combine the two (see canUserReadAppointment in reading.js).
+ * Only covers what the case itself knows, plus whether its episode has an
+ * open issue, which the caller passes in because issues live outside the
+ * case. Outstanding priors also block reading, but those live on the
+ * appointment, so callers working from an appointment combine the two (see
+ * canUserReadAppointment in reading.js).
  *
  * @param {object} readingCase - Reading case
  * @param {string} userId - User ID
  * @param {object} [options] - Options
  * @param {number} [options.maxReadsPerCase] - Reads needed before it's complete
+ * @param {boolean} [options.panelArbitration] - Whether a panel is arbitrating
+ * @param {boolean} [options.episodeHasOpenIssue] - Whether the case's episode has an open issue (see hasOpenIssue)
  * @returns {boolean}
  */
 const canUserReadCase = (readingCase, userId, options = {}) => {
-  const { maxReadsPerCase = 2, panelArbitration = false } = options
+  const {
+    maxReadsPerCase = 2,
+    panelArbitration = false,
+    episodeHasOpenIssue = false
+  } = options
 
   if (!userId) return false
 
-  // A deferred case is out of the queue until someone reviews it
-  if (isCaseDeferred(readingCase)) return false
+  // An open issue holds the case out of the queue until it is resolved
+  if (episodeHasOpenIssue) return false
 
   // A case released to arbitration takes one more read - the arbitration
   // read - from someone who hasn't read it already. Panel arbitrators may
@@ -951,18 +1017,30 @@ const withReadFinalised = (readingCase, userId, options = {}) => {
 /**
  * Remove a user's read from a case, returning a new case record.
  *
- * Deferring after giving an opinion withdraws that opinion - the reader is
- * saying they can't judge this case after all.
+ * Raising an issue after giving an opinion withdraws that opinion - the
+ * reader is saying they can't judge this case after all. Only the read the
+ * user is working on goes: in arbitration that is the case's arbitration
+ * read, otherwise their own original read. A panel arbitrator may also have
+ * read the case first or second, and that read stays.
  *
  * @param {object} readingCase - The case
  * @param {string} userId - Whose read to remove
+ * @param {object} [options] - Options
+ * @param {boolean} [options.arbitration] - Remove the arbitration read rather than the user's original read
  * @returns {object} A new case record without that read
+ * @example
+ * withoutRead(readingCase, userId, { arbitration: session.type === 'arbitration' })
  */
-const withoutRead = (readingCase, userId) => {
+const withoutRead = (readingCase, userId, options = {}) => {
+  const isReadBeingWithdrawn = (read) =>
+    options.arbitration
+      ? read.readType === 'arbitration'
+      : read.readType !== 'arbitration' && read.readerId === userId
+
   return {
     ...readingCase,
     reads: getReadsAsArray(readingCase).filter(
-      (read) => read.readerId !== userId
+      (read) => !isReadBeingWithdrawn(read)
     )
   }
 }
@@ -986,7 +1064,6 @@ module.exports = {
   userHasReadCase,
   caseHasReads,
   withArbitrationRelease,
-  isCaseDeferred,
   isCaseInArbitration,
   areReadsDiscordant,
   willGoToArbitration,

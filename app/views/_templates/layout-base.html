@@ -22,7 +22,7 @@
 {% endblock %}
 
 {% block header %}
-  {{ appEnvironment(environment) if environment and data.settings.showEnvironmentBanner == 'true' }}
+  {{ environmentBanner(environment) if environment and data.settings.showEnvironmentBanner == 'true' }}
   {% set useMinimalNav = useMinimalNav | default(false) %}
 
   {% set rootHref = "/" %}
@@ -32,10 +32,17 @@
   {% set appointmentWorkflow = appointment and appointment | isAppointmentWorkflow %}
   {% if appointmentWorkflow %}
     {# Exit appointment with discard action, returning to root #}
-    {% set exitAppointmentHref = appointmentUrl ~ "/exit-appointment-answer?exitAction=discard&returnTo=/" %}
+    {% set exitAppointmentHref = appointmentUrl ~ "/exit-appointment-answer?_exitAction=discard&returnTo=/" %}
     {# Override rootHref to exit appointment and return to root #}
     {% set rootHref = exitAppointmentHref %}
   {% endif %}
+
+  {# Review counts what needs attention in the user's BSU - only open issues
+     so far. No space before the count: the link underline would run under it #}
+  {% set reviewCount = data | getOpenIssueCount(currentUser.breastScreeningUnit) %}
+  {% set reviewNavHtml %}
+    Review{% if reviewCount > 0 %}{{ appCount(reviewCount, { classes: "app-count--reverse" }) }}{% endif %}
+  {% endset %}
 
   {% set navItems = [
     {
@@ -63,6 +70,11 @@
       text: "Participants",
       current: true if navActive == "participants"
     } if data.settings.appointment.showParticipantSection != 'false' else {},
+    {
+      href: "/review",
+      html: reviewNavHtml | trim,
+      current: true if navActive == "review"
+    },
     {
       href: "#",
       text: "Messages",

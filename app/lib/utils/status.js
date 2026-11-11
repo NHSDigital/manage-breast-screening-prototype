@@ -1,6 +1,8 @@
 // app/lib/utils/status.js
 
 const dayjs = require('dayjs')
+const config = require('../../config')
+const { getAppointmentRunnerId } = require('./roles-and-permissions')
 
 /**
  * Define status groups for easier checking
@@ -151,10 +153,10 @@ const isAppointmentWorkflow = function (appointment, currentUser) {
   // Get currentUser from context if not provided
   currentUser = currentUser || this?.ctx?.data?.currentUser
 
-  const startedBy = appointment?.sessionDetails?.startedBy
-  if (!currentUser || !startedBy) {
+  const runnerId = getAppointmentRunnerId(appointment)
+  if (!currentUser || !runnerId) {
     console.log(
-      `User or appointment not found: currentuser: ${currentUser?.id || currentUser}, startedBy: ${startedBy}`
+      `User or appointment not found: currentuser: ${currentUser?.id || currentUser}, runner: ${runnerId}`
     )
     return false
   }
@@ -164,10 +166,10 @@ const isAppointmentWorkflow = function (appointment, currentUser) {
     typeof currentUser === 'string' ? currentUser : currentUser.id
   if (!currentUserId) return false
 
-  // Check if appointment is in progress (not paused) and started by current user
+  // Check if appointment is in progress (not paused) and run by current user
   const appointmentInProgressNotPaused = isInProgressNotPaused(appointment)
 
-  return appointmentInProgressNotPaused && startedBy === currentUserId
+  return appointmentInProgressNotPaused && runnerId === currentUserId
 }
 
 /**
@@ -233,28 +235,28 @@ const STATUS_TAGS = {
     // Reading case states (READING_CASE_STATES in reading-cases.js) - where one
     // set of images has got to. The entries below them are the older
     // appointment- and group-level vocabulary.
-    'awaiting_first_read': { label: 'Awaiting 1st read', colour: 'grey' },
-    'awaiting_second_read': { label: 'Awaiting 2nd read', colour: 'grey' },
-    'awaiting_finalisation': {
+    awaiting_first_read: { label: 'Awaiting 1st read', colour: 'grey' },
+    awaiting_second_read: { label: 'Awaiting 2nd read', colour: 'grey' },
+    awaiting_finalisation: {
       label: 'Awaiting finalisation',
       colour: 'grey'
     },
-    'awaiting_arbitration': { label: 'Awaiting arbitration', colour: 'purple' },
-    'in_arbitration': { label: 'In arbitration', colour: 'purple' },
-    'concluded': { label: 'Concluded', colour: 'green' },
-    'not_started': { colour: 'grey' },
-    'skipped': { colour: 'grey' },
-    'previously_skipped': { colour: 'grey' },
-    'not_read': { colour: 'white' },
-    'not_arbitrated': { colour: 'white' },
-    'complete': { colour: 'green' },
-    'partial_first_read': { colour: 'blue' },
-    'first_read_complete': { colour: 'blue' },
-    'partial_second_read': { colour: 'blue' },
-    'mixed_reads': { colour: 'blue' },
-    'no_appointments': { colour: 'grey' },
-    'first_read': { colour: 'blue' },
-    'second_read': { colour: 'blue' }
+    awaiting_arbitration: { label: 'Awaiting arbitration', colour: 'purple' },
+    in_arbitration: { label: 'In arbitration', colour: 'purple' },
+    concluded: { label: 'Concluded', colour: 'green' },
+    not_started: { colour: 'grey' },
+    skipped: { colour: 'grey' },
+    previously_skipped: { colour: 'grey' },
+    not_read: { colour: 'white' },
+    not_arbitrated: { colour: 'white' },
+    complete: { colour: 'green' },
+    partial_first_read: { colour: 'blue' },
+    first_read_complete: { colour: 'blue' },
+    partial_second_read: { colour: 'blue' },
+    mixed_reads: { colour: 'blue' },
+    no_appointments: { colour: 'grey' },
+    first_read: { colour: 'blue' },
+    second_read: { colour: 'blue' }
   },
   // External prior mammogram request tracking (episode.priors)
   priorsRequest: {
@@ -283,7 +285,16 @@ const STATUS_TAGS = {
     // so readers and admin staff see one status rather than two
     priors_required: { colour: 'yellow' },
     awaiting_priors: { colour: 'yellow' },
-    deferred: { colour: 'yellow' }
+    // Any open issue (see issues.js), shown wherever the issue's episode or
+    // participant is
+    has_issue: { label: 'Issue raised', colour: 'yellow' }
+  },
+  // An issue's own status (getIssueStatus in issues.js). Open shares has_issue's
+  // yellow; closed issues are done, whichever way they were closed
+  issue: {
+    open: { label: 'Open', colour: 'yellow' },
+    resolved: { label: 'Resolved', colour: 'green' },
+    raised_in_error: { label: 'Raised in error', colour: 'grey' }
   }
 }
 
@@ -393,10 +404,10 @@ const describeReadingCaseStatus = (status) => {
 }
 
 /**
- * Filter appointments by status category
+ * Filter appointments by status category; Remaining includes in-progress and paused appointments
  *
  * @param {Array} appointments - Appointments to filter
- * @param {string} filter - Category: 'scheduled', 'checked-in', 'in-progress', 'complete', or 'remaining'
+ * @param {string} filter - Category: 'scheduled', 'checked-in', 'in-progress', 'complete', or 'remaining' (scheduled, checked-in, in-progress and paused appointments)
  * @returns {Array} Filtered appointments
  */
 const filterAppointmentsByStatus = (appointments, filter) => {
@@ -410,15 +421,13 @@ const filterAppointmentsByStatus = (appointments, filter) => {
         (appointment) => appointment.status === 'checked_in'
       )
     case 'in-progress':
-      return appointments.filter(
-        (appointment) =>
-          appointment.status === 'in_progress' ||
-          appointment.status === 'paused'
-      )
+      return appointments.filter((appointment) => isInProgress(appointment))
     case 'complete':
       return appointments.filter((appointment) => isFinal(appointment))
     case 'remaining':
-      return appointments.filter((appointment) => hasNotStarted(appointment))
+      return appointments.filter(
+        (appointment) => hasNotStarted(appointment) || isInProgress(appointment)
+      )
     default:
       return appointments
   }
@@ -471,6 +480,159 @@ const hasStoppedDetails = (appointment) => {
   return Boolean(appointment?.appointmentStopped?.stoppedReason?.length)
 }
 
+/**
+ * When an appointment last moved to a status, taken from its status history.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @param {string} status - Status to look for, such as 'cancelled'
+ * @returns {string | null} ISO timestamp of the latest change to it, or null
+ * @example
+ * {{ appointment | getStatusTime('cancelled') | formatTimeString }}
+ */
+const getStatusTime = (appointment, status) => {
+  const history = appointment?.statusHistory
+  if (!history) return null
+
+  const entry = [...history].reverse().find((item) => item.status === status)
+  return entry ? entry.timestamp : null
+}
+
+/**
+ * The timestamp an appointment was checked in, taken from its status history.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {string | null} ISO timestamp of the latest check-in, or null
+ */
+const getCheckInTime = (appointment) => getStatusTime(appointment, 'checked_in')
+
+/**
+ * Whether an appointment that has ended was attended: screened, attended not
+ * screened, or started and then rescheduled or cancelled. An attended
+ * appointment keeps its place in the order of screening.
+ *
+ * Stopping an appointment can end in a reschedule or cancellation rather than
+ * attended not screened, so having been started is what counts for those.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {boolean} Whether the appointment was attended
+ */
+const wasAttended = (appointment) => {
+  const status = appointment?.status
+
+  if (
+    ['complete', 'partially_screened', 'attended_not_screened'].includes(status)
+  ) {
+    return true
+  }
+
+  return (
+    ['cancelled', 'rescheduled'].includes(status) &&
+    Boolean(appointment.sessionDetails?.startedAt)
+  )
+}
+
+/**
+ * When an appointment reached its outcome, for the clinic list's Time
+ * completed column: when the session ended for an attended appointment (see
+ * wasAttended), or when one that never started was cancelled.
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {string | null} ISO timestamp, or null for any other status
+ */
+const getCompletedTime = (appointment) => {
+  if (wasAttended(appointment)) {
+    return appointment.sessionDetails?.endedAt || null
+  }
+
+  if (appointment?.status === 'cancelled') {
+    return getStatusTime(appointment, 'cancelled')
+  }
+
+  return null
+}
+
+/**
+ * The prototype's simulated "now" (config.clinics.simulatedTime on today's
+ * date), so every timestamp and duration is measured against one clock rather
+ * than the real time of viewing. Status changes made at runtime stamp this too,
+ * so a live check-in lines up with the seed data's simulated times.
+ *
+ * @returns {object} dayjs instance for the simulated current time
+ */
+const getSimulatedNow = () => {
+  const [hours, minutes] = config.clinics.simulatedTime.split(':')
+  return dayjs()
+    .hour(parseInt(hours, 10))
+    .minute(parseInt(minutes, 10))
+    .second(0)
+    .millisecond(0)
+}
+
+/**
+ * Whole minutes from a timestamp to the prototype's simulated "now"
+ * (config.clinics.simulatedTime), so the figure stays stable whatever the real
+ * time of viewing.
+ *
+ * @param {string} timestamp - ISO timestamp
+ * @returns {number | null} Whole minutes since, or null if no timestamp
+ * @example
+ * {{ appointment.sessionDetails.startedAt | getMinutesSince | formatWaitingTime }} ago
+ */
+const getMinutesSince = (timestamp) => {
+  if (!timestamp) return null
+
+  return Math.max(0, getSimulatedNow().diff(dayjs(timestamp), 'minute'))
+}
+
+/**
+ * A real-time anchor for an elapsed time: real now minus the minutes since the
+ * timestamp. The clinic page's elapsed-time script counts up from this, so the
+ * "N mins ago" ticks over while the page stays open. Anchored to real now (not
+ * the simulated clinic time) precisely so it advances.
+ *
+ * @param {string} timestamp - ISO timestamp
+ * @returns {string | null} ISO timestamp to count up from, or null
+ */
+const getElapsedSince = (timestamp) => {
+  const minutes = getMinutesSince(timestamp)
+  if (minutes === null) return null
+
+  return dayjs().subtract(minutes, 'minute').toISOString()
+}
+
+/**
+ * How long a checked-in participant has been waiting, in whole minutes
+ * against the simulated "now" (see getMinutesSince).
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {number | null} Whole minutes waited, or null if not checked in
+ */
+const getWaitingMinutes = (appointment) =>
+  getMinutesSince(getCheckInTime(appointment))
+
+/**
+ * A real-time anchor for the waiting figure (see getElapsedSince).
+ *
+ * @param {object} appointment - Appointment object to check
+ * @returns {string | null} ISO timestamp to count up from, or null
+ */
+const getWaitingSince = (appointment) =>
+  getElapsedSince(getCheckInTime(appointment))
+
+/**
+ * Format an elapsed time, such as a wait or time since screening started, as
+ * whole minutes, e.g. "1 min", "75 mins". Always minutes, never hours. The
+ * elapsed-time client script ticks it up in the same format.
+ *
+ * @param {number | null} totalMinutes - Whole minutes elapsed
+ * @returns {string} Human-readable duration, or empty string if not a number
+ */
+const formatWaitingTime = (totalMinutes) => {
+  if (typeof totalMinutes !== 'number' || isNaN(totalMinutes)) return ''
+
+  return `${totalMinutes} min${totalMinutes === 1 ? '' : 's'}`
+}
+
 module.exports = {
   hasNotStarted,
   isCompleted,
@@ -489,6 +651,16 @@ module.exports = {
   hasAppointmentNote,
   hasSymptoms,
   hasStoppedDetails,
+  getCheckInTime,
+  getWaitingMinutes,
+  getWaitingSince,
+  getMinutesSince,
+  getElapsedSince,
+  getStatusTime,
+  getCompletedTime,
+  wasAttended,
+  getSimulatedNow,
+  formatWaitingTime,
   // Export groups and display vocabularies for testing/reference
   STATUS_GROUPS,
   STATUS_TAGS

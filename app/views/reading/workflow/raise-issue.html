@@ -1,0 +1,37 @@
+{# app/views/reading/workflow/raise-issue.html
+
+   Raise an issue on the case being read. It is the reader's outcome for the
+   case: any opinion they gave is withdrawn and the session moves on. The
+   route (routes/reading.js) passes answers. #}
+
+{% extends parentLayout or 'layout-reading.html' %}
+
+{% set pageHeading = "Raise an issue" %}
+{% set formAction = './raise-issue-answer' %}
+{% set back = {
+  href: "./" + decisionStep,
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-two-thirds">
+
+      <h1 class="nhsuk-heading-l">
+        <span class="nhsuk-caption-l">{{ participant | getFullNameReversed }}</span>
+        {{ pageHeading }}
+      </h1>
+
+      {% set raisedFrom = "reading" %}
+      {% set recordId = readingCase.id %}
+      {% include "_includes/issues/raise-fields.njk" %}
+
+      {{ button({
+        text: "Confirm and continue"
+      }) }}
+
+    </div>
+  </div>
+
+{% endblock %}

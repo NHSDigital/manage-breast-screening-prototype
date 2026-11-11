@@ -50,7 +50,7 @@
     
     <div class="nhsuk-u-margin-top-3">
       {{ details({
-        summaryText: "Additional image details",
+        summary: "Additional image details",
         html: additionalDetailsHtml
       }) }}
     </div>
@@ -79,16 +79,20 @@
 
     {% if viewItem.isMissing or not allPaths %}
       {# Missing view placeholder #}
-      {# <h3 class="nhsuk-u-margin-bottom-2 nhsuk-u-secondary-text-color">
+      {# <h3 class="nhsuk-u-margin-bottom-2 nhsuk-u-secondary-text-colour">
         0× {{ viewItem.viewShortWithSide }}
       </h3> #}
 
       <div class="app-mammogram-thumbnail app-mammogram-thumbnail--{{ viewItem.side }}" data-view="{{ viewItem.viewShortWithSide }}">
-        <div class="app-mammogram-thumbnail__image-wrapper{{ ' app-mammogram-thumbnail__image-wrapper--' + thumbnailSize if thumbnailSize }}">
+        <div class="app-mammogram-thumbnail__image-wrapper app-mammogram-thumbnail__image-wrapper--placeholder{{ ' app-mammogram-thumbnail__image-wrapper--' + thumbnailSize if thumbnailSize }}">
           <span class="app-mammogram-thumbnail__label">{{ viewItem.viewShortWithSide }}</span>
-          <div class="app-mammogram-thumbnail__missing">
-            <span class="app-mammogram-thumbnail__missing-text">No image</span>
-          </div>
+          {% if viewItem.isNotExpected %}
+            {% include "_includes/images/not-expected-thumbnail.njk" %}
+          {% else %}
+            <div class="app-mammogram-thumbnail__missing">
+              <span class="app-mammogram-thumbnail__missing-text">No image</span>
+            </div>
+          {% endif %}
         </div>
       </div>
 

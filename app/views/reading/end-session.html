@@ -50,6 +50,7 @@
     {% endset %}
 
     {{ radios({
+      small: true,
       idPrefix: "finalise-reads",
       name: "endSessionTemp[finalise]",
       fieldset: {
@@ -67,7 +68,7 @@
         {
           value: "no",
           text: "Wait for " + ("them" if unfinalisedReadCount > 1 else "it") + " to automatically finalise",
-          hint: { text: leaveHint | trim },
+          hint: leaveHint | trim,
           checked: data.endSessionTemp.finalise == "no"
         }
       ]
@@ -76,10 +77,10 @@
 
   <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
     {{ button({ text: "End session", classes: "nhsuk-u-margin-bottom-0" }) }}
-    {{ appLink({
+    {{ link({
       text: "Cancel",
       href: "/reading/session/" + session.id,
-      classes: "nhsuk-link--no-visited-state nhsuk-button-group__item",
+      classes: "nhsuk-link--no-visited-state",
       attributes: { "data-modal-action": "close" }
     }) }}
   </div>

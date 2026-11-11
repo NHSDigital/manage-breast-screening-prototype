@@ -1,3 +1,4 @@
+// app/assets/sass/_typography.scss
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
 h1 {
@@ -48,4 +49,11 @@ h3 {
     color: $nhsuk-link-hover-colour;
     text-decoration: none;
   }
+}
+
+// The monospace stack sits a couple of pixels high against the body text, so
+// nudge it back onto the same optical baseline without affecting layout
+.nhsuk-u-font-code {
+  position: relative;
+  top: 1px;
 }

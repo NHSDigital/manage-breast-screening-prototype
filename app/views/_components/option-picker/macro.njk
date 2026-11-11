@@ -1,4 +1,41 @@
 {# app/views/_components/option-picker/macro.njk #}
+{#
+  Purpose: A row of radio or checkbox options styled as buttons.
+  Use when: a few short options should all be visible and quick to select, such as in image reading.
+  NHS equivalent: `radios` and `checkboxes`. Use those on ordinary question pages.
+
+  Params, mirroring the NHS radios and checkboxes API:
+
+  name          {string}   - Required. Shared name attribute for all inputs.
+  idPrefix      {string}   - Prefix for generated input ids. Defaults to name.
+  items         {array}    - Required. Each item:
+    value         {string}   - Input value attribute.
+    text          {string}   - Label text. Use html for richer content.
+    html          {string}   - Label HTML. Overrides text.
+    id            {string}   - Override the generated input id.
+    checked       {boolean}  - Override checked state.
+    disabled      {boolean}  - Disable this item.
+    classes       {string}   - Extra classes on the input.
+    attributes    {object}   - Extra attributes on the input.
+    label.id      {string}   - Override id on the label element.
+    label.classes {string}   - Extra classes on the label element.
+    label.attributes {object} - Extra attributes on the label element.
+    conditional   {object}   - Content revealed when this item is checked: { html, inline }.
+    newLine       {boolean}  - Start a new row at this item.
+  fieldset      {object}   - Wraps items in a fieldset. Same API as nhsuk fieldset.
+  hint          {object}   - Hint text/html. Rendered inside the fieldset before items.
+  errorMessage  {object}   - Error message. text or html. Triggers error state on form group.
+  id            {string}   - Id on the items wrapper div.
+  classes       {string}   - Extra classes on the wrapper div.
+  attributes    {object}   - Extra attributes on the items wrapper div.
+
+  value         {string}   - Pre-select this value (radio). Matched against item.value.
+  values        {array}    - Pre-select these values (checkbox). Matched against item.value.
+
+  allowMultiple {boolean}  - Use checkboxes (true) instead of radios (false). Default false.
+  joined        {boolean}  - Remove gap between items, flush borders. Default false.
+  showIcons     {boolean}  - Show a radio dot or checkmark indicator. Default true.
+#}
 
 {% macro appOptionPicker(params) %}
   {%- include "_components/option-picker/template.njk" -%}

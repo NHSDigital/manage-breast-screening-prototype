@@ -1,4 +1,4 @@
-{# /app/views/appointments/reading/confirm-abnormal.html #}
+{# app/views/reading/workflow/confirm-abnormal.html #}
 
 {% extends 'layout-reading.html' %}
 
@@ -69,6 +69,8 @@
     <h3>PACS annotations</h3>
 
     {{ table({
+      compact: true,
+      striped: true,
       responsive: false,
       panel: false,
       firstCellIsHeader: true,
@@ -112,8 +114,10 @@
 
 
   {{ card({
-    heading: "Right breast",
-    headingLevel: "2",
+    heading: {
+      text: "Right breast",
+      level: 2
+    },
     feature: true,
     descriptionHtml: rightBreastHtml
   }) }}
@@ -155,8 +159,10 @@
 
 
   {{ card({
-    heading: "Left breast",
-    headingLevel: "2",
+    heading: {
+      text: "Left breast",
+      level: 2
+    },
     feature: true,
     descriptionHtml: leftBreastHtml
   }) }}

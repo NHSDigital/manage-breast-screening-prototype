@@ -144,7 +144,6 @@ const INVESTIGATION_DETAILS = [
   'Specialist examined, ordered further tests'
 ]
 
-
 const LOCATION_DESCRIPTIONS = {
   'right breast': [
     'Upper outer area',
@@ -255,7 +254,9 @@ const generateSymptom = (options = {}) => {
   if (symptom.hasStopped) {
     // Stopped 1-6 months ago, formatted as month/year
     const monthsAgo = faker.number.int({ min: 1, max: 6 })
-    symptom.approximateDateStopped = dayjs().subtract(monthsAgo, 'month').format('MMMM YYYY')
+    symptom.approximateDateStopped = dayjs()
+      .subtract(monthsAgo, 'month')
+      .format('MMMM YYYY')
   }
 
   // 25% chance the symptom is intermittent
@@ -313,30 +314,40 @@ const generateSymptom = (options = {}) => {
   // Add location for symptoms that need it (not Nipple change)
   if (typeData.requiresLocation) {
     const locationChoice = weighted.select({
-      'right': 0.4,
-      'left': 0.4,
-      'both': 0.15,
-      'other': 0.05
+      right: 0.4,
+      left: 0.4,
+      both: 0.15,
+      other: 0.05
     })
 
     // Location is stored as an array to match the checkboxes UI
     switch (locationChoice) {
       case 'right':
         symptom.location = ['right breast']
-        symptom.rightBreastDescription = faker.helpers.arrayElement(LOCATION_DESCRIPTIONS['right breast'])
+        symptom.rightBreastDescription = faker.helpers.arrayElement(
+          LOCATION_DESCRIPTIONS['right breast']
+        )
         break
       case 'left':
         symptom.location = ['left breast']
-        symptom.leftBreastDescription = faker.helpers.arrayElement(LOCATION_DESCRIPTIONS['left breast'])
+        symptom.leftBreastDescription = faker.helpers.arrayElement(
+          LOCATION_DESCRIPTIONS['left breast']
+        )
         break
       case 'both':
         symptom.location = ['right breast', 'left breast']
-        symptom.rightBreastDescription = faker.helpers.arrayElement(LOCATION_DESCRIPTIONS['right breast'])
-        symptom.leftBreastDescription = faker.helpers.arrayElement(LOCATION_DESCRIPTIONS['left breast'])
+        symptom.rightBreastDescription = faker.helpers.arrayElement(
+          LOCATION_DESCRIPTIONS['right breast']
+        )
+        symptom.leftBreastDescription = faker.helpers.arrayElement(
+          LOCATION_DESCRIPTIONS['left breast']
+        )
         break
       case 'other':
         symptom.location = ['other']
-        symptom.otherLocationDescription = faker.helpers.arrayElement(LOCATION_DESCRIPTIONS['other'])
+        symptom.otherLocationDescription = faker.helpers.arrayElement(
+          LOCATION_DESCRIPTIONS['other']
+        )
         break
     }
   }

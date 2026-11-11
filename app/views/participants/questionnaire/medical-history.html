@@ -1,4 +1,4 @@
-
+{# app/views/participants/questionnaire/medical-history.html #}
 {% extends 'layout.html' %}
 
 {% set pageHeading = "Medical history" %}
@@ -15,7 +15,7 @@
 
     {% if flash.error %}
       {{ errorSummary({
-        "titleText": "There is a problem",
+        "heading": "There is a problem",
         "errorList": flash.error
       }) }}
     {% endif %}
@@ -37,9 +37,7 @@
               size: "s"
             }
           },
-          hint: {
-            text: "For example, 15 3 2020"
-          },
+          hint: "For example, 15 3 2020",
           items: [
             {
               name: "day",
@@ -57,24 +55,21 @@
         }) }}
 
         {{ input({
-          label: {
-            text: "What was the diagnosis?"
-          },
+          label: "What was the diagnosis?",
           classes: "nhsuk-input--width-20",
           id: "diagnosis",
           name: "questionnaire[diagnosis]"
         }) }}
 
         {{ input({
-          label: {
-            text: "Where was the cancer located?"
-          },
+          label: "Where was the cancer located?",
           classes: "nhsuk-input--width-20",
           id: "position",
           name: "questionnaire[position]"
         }) }}
 
         {{ checkboxes({
+          small: true,
           name: "questionnaire[treatments]",
           fieldset: {
             legend: {
@@ -103,9 +98,7 @@
         }) }}
 
         {{ input({
-          label: {
-            text: "Which hospital provided your treatment?"
-          },
+          label: "Which hospital provided your treatment?",
           classes: "nhsuk-input--width-20",
           id: "treatmentHospital",
           name: "questionnaire[treatmentHospital]"
@@ -114,13 +107,13 @@
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "previousCancer",
         name: "questionnaire[previousCancer]",
         fieldset: {
           legend: {
             text: "Have you been diagnosed with breast cancer before?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [
@@ -140,6 +133,7 @@
 
       {# Current hormone therapy #}
       {{ radios({
+        small: true,
         idPrefix: "hormoneTherapy",
         name: "questionnaire[hormoneTherapy]",
         fieldset: {
@@ -165,13 +159,12 @@
         {{ textarea({
           name: "questionnaire[familyHistoryDetails]",
           id: "familyHistoryDetails",
-          label: {
-            text: "Please tell us about your family history of breast cancer"
-          }
+          label: "Please tell us about your family history of breast cancer"
         }) }}
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "familyHistory",
         name: "questionnaire[familyHistory]",
         fieldset: {
@@ -206,9 +199,7 @@
               size: "s"
             }
           },
-          hint: {
-            text: "For example, 15 3 2020"
-          },
+          hint: "For example, 15 3 2020",
           items: [
             {
               name: "day",
@@ -226,15 +217,14 @@
         }) }}
 
         {{ input({
-          label: {
-            text: "Where was it located?"
-          },
+          label: "Where was it located?",
           classes: "nhsuk-input--width-20",
           id: "benignLumpPosition",
           name: "questionnaire[benignLumpPosition]"
         }) }}
 
         {{ radios({
+          small: true,
           idPrefix: "benignLumpExcision",
           name: "questionnaire[benignLumpExcision]",
           fieldset: {
@@ -258,13 +248,12 @@
         {{ textarea({
           name: "questionnaire[benignLumpOutcome]",
           id: "benignLumpOutcome",
-          label: {
-            text: "What was the outcome/pathology?"
-          }
+          label: "What was the outcome/pathology?"
         }) }}
       {% endset -%}
 
       {{ checkboxes({
+        small: true,
         name: "questionnaire[previousProcedures]",
         fieldset: {
           legend: {
@@ -272,9 +261,7 @@
             size: "s"
           }
         },
-        hint: {
-          text: "Select all that apply"
-        },
+        hint: "Select all that apply",
         items: [
           {
             value: "benign_lump",

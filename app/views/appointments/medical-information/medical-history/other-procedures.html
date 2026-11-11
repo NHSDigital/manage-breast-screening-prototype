@@ -8,6 +8,7 @@
 {% block formContent %}
 
   {{ radios({
+    small: true,
     name: "appointment[medicalHistoryTemp][type]",
     value: appointment.medicalHistoryTemp.type,
     fieldset: {
@@ -24,9 +25,7 @@
           html: input({
             name: "appointment[medicalHistoryTemp][breastReductionDetails]",
             value: appointment.medicalHistoryTemp.breastReductionDetails,
-            label: {
-              text: "Provide details"
-            }
+            label: "Provide details"
           })
         }
       },
@@ -37,9 +36,7 @@
           html: input({
             name: "appointment[medicalHistoryTemp][breastSymmetrisationDetails]",
             value: appointment.medicalHistoryTemp.breastSymmetrisationDetails,
-            label: {
-              text: "Provide details"
-            }
+            label: "Provide details"
           })
         }
       },
@@ -50,9 +47,7 @@
           html: input({
             name: "appointment[medicalHistoryTemp][nippleCorrectionDetails]",
             value: appointment.medicalHistoryTemp.nippleCorrectionDetails,
-            label: {
-              text: "Provide details"
-            }
+            label: "Provide details"
           })
         }
       },
@@ -63,9 +58,7 @@
           html: input({
             name: "appointment[medicalHistoryTemp][typeOtherDetails]",
             value: appointment.medicalHistoryTemp.typeOtherDetails,
-            label: {
-              text: "Provide details"
-            }
+            label: "Provide details"
           })
         }
       }

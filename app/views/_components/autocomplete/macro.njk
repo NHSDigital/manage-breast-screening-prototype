@@ -1,4 +1,63 @@
 {# app/views/_components/autocomplete/macro.njk #}
+{#
+  Purpose: A select or text input enhanced by autocomplete.js into an accessible autocomplete.
+  Use when: a list is too long for radios or a select, or suggestions should help free-text entry.
+  NHS equivalent: `select` or `input`. Use those when the list is short or suggestions add nothing.
+
+  Params:
+    - id (string): id for the input. Defaults to name if not provided.
+    - name (string, required): name attribute for form submission.
+    - value (string): currently selected value (matched against item.value).
+    - type (string): "select" (default) or "input". Controls which element
+        is rendered. Use "input" for free-text with suggestions.
+    - label (object, required):
+        text (string): label text
+        html (string): label HTML
+        classes (string): extra classes on the label
+        size (string): "s", "m", "l", or "xl"
+        isPageHeading (boolean): wrap label in an <h1>
+    - hint (object):
+        text (string): hint text
+        html (string): hint HTML
+    - errorMessage (object): works with | populateErrors
+        text (string): error message text
+        html (string): error message HTML
+    - formGroup (object):
+        classes (string): extra classes on the form group wrapper
+    - classes (string): extra classes on the select or input element
+    - attributes (object): additional HTML attributes on the select or input
+
+  Display options:
+    - showAllValues (boolean): show all options on focus, like a dropdown.
+        Adds a dropdown arrow. Default false.
+
+  Autocomplete behaviour options (map to accessible-autocomplete API):
+    - autoselect (boolean): highlight the first result as you type.
+        Default false. Consider disabling when using showAllValues.
+    - minLength (number): minimum characters before suggestions appear.
+        Default 0.
+    - confirmOnBlur (boolean): confirm selected option when clicking outside.
+        Default true.
+    - showNoOptionsFound (boolean): show "No results found" message.
+        Default true.
+
+  Select variant params (type: "select", the default):
+    - items (array, required): options for the select.
+        Each item:
+          value (string): option value submitted with the form
+          text (string): option display text
+          synonyms (array of strings): alternative search terms
+          hint (string): extra text shown below the option in the dropdown
+          append (string): text appended after the option name in the dropdown
+          boost (number): relevance boost multiplier (default 1)
+          disabled (boolean): disable this option
+
+  Input variant params (type: "input"):
+    - source (array): list of suggestions. Each item can be a plain string,
+        or an object with: text, hint, append, synonyms, boost.
+        Submitted value is whatever the user types or selects — not
+        constrained to the list.
+#}
 
 {% macro appAutocomplete(params) %}
   {%- include "./template.njk" -%}

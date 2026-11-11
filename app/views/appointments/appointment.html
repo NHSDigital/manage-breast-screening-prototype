@@ -2,6 +2,9 @@
 
 {% extends 'layout-appointment.html' %}
 
+{% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
+{% from "_includes/appointment-stopped-reason.njk" import appointmentStoppedReasonText %}
+
 {% set pageHeading = "Screening appointment" %}
 {% set showNavigation = true %}
 {% set activeTab = 'appointment' %}
@@ -53,36 +56,23 @@
       })}}
     {% endif %}
 
-    {% if appointment | isFinal and appointment.sessionDetails %}
+    {% if appointment | isFinal and appointment.sessionDetails.startedAt %}
       {% set durationMinutes = appointment.sessionDetails.startedAt | calculateDurationMinutes(appointment.sessionDetails.endedAt) %}
       <p class="nhsuk-u-margin-top-2">
         Started at {{ appointment.sessionDetails.startedAt | formatDate('h:mma') }} and ended at {{ appointment.sessionDetails.endedAt | formatDate('h:mma') }}<br>({{ durationMinutes }} minutes)
       </p>
     {% endif %}
 
-    {% if appointment.status === "attended_not_screened" and appointment.appointmentStopped %}
+    {% if appointment.status === "attended_not_screened" and appointment | hasStoppedDetails %}
       <p class="nhsuk-u-margin-top-2">
-        <strong>Reason for stopping:</strong> {% for reason in appointment.appointmentStopped.stoppedReason -%}
-          {{ reason }}
-          {%- if reason === "Failed identity check" and appointment.appointmentStopped.failedIdentityDetails %} ({{ appointment.appointmentStopped.failedIdentityDetails }})
-          {%- elif reason === "Pain during screening" and appointment.appointmentStopped.painDetails %} ({{ appointment.appointmentStopped.painDetails }})
-          {%- elif reason === "Has a symptomatic appointment" and appointment.appointmentStopped.symptomaticDetails %} ({{ appointment.appointmentStopped.symptomaticDetails }})
-          {%- elif reason === "Consent withdrawn" and appointment.appointmentStopped.consentDetails %} ({{ appointment.appointmentStopped.consentDetails }})
-          {%- elif reason === "Physical health issue" and appointment.appointmentStopped.physicalHealthDetails %} ({{ appointment.appointmentStopped.physicalHealthDetails }})
-          {%- elif reason === "Mental health issue" and appointment.appointmentStopped.mentalHealthDetails %} ({{ appointment.appointmentStopped.mentalHealthDetails }})
-          {%- elif reason === "Language difficulties" and appointment.appointmentStopped.languageDetails %} ({{ appointment.appointmentStopped.languageDetails }})
-          {%- elif reason === "No qualified mammographer available" and appointment.appointmentStopped.mammographerDetails %} ({{ appointment.appointmentStopped.mammographerDetails }})
-          {%- elif reason === "Technical issues at clinic" and appointment.appointmentStopped.technicalDetails %} ({{ appointment.appointmentStopped.technicalDetails }})
-          {%- elif reason === "Other reason" and appointment.appointmentStopped.otherDetails %} ({{ appointment.appointmentStopped.otherDetails }})
-          {%- endif -%}
-          {%- if not loop.last %}, {% endif -%}
-        {% endfor %}
+        {{ appointmentStoppedReasonText(appointment) }}
       </p>
       <p class="nhsuk-u-margin-top-2">
         <strong>Reschedule requested:</strong>
         {%- if appointment.appointmentStopped.needsReschedule === "yes" %} Yes
-        {%- elif appointment.appointmentStopped.needsReschedule === "no-invite" %} No
-        {%- elif appointment.appointmentStopped.needsReschedule === "no-opt-out" %} No, opting out
+        {%- elseif appointment.appointmentStopped.needsReschedule === "no-invite" %} No
+        {%- elseif appointment.appointmentStopped.needsReschedule === "permanent-exclusion" %} No, not invited to future screening episodes
+        {%- elseif appointment.appointmentStopped.needsReschedule === "no-opt-out" %} No, opting out
           {%- if appointment.appointmentStopped.optOutDetails %} ({{ appointment.appointmentStopped.optOutDetails }})
           {%- endif -%}
         {%- endif %}
@@ -94,16 +84,16 @@
         <strong>Cancellation reason:</strong> {% for reason in appointment.cancellation.reason -%}
           {{ reason }}
           {%- if reason === "Unable to attend" and appointment.cancellation.availabilityDetails %} ({{ appointment.cancellation.availabilityDetails }})
-          {%- elif reason === "Moving outside England" and appointment.cancellation.movingDetails %} ({{ appointment.cancellation.movingDetails }})
-          {%- elif reason === "Breast implant concerns" and appointment.cancellation.implantDetails %} ({{ appointment.cancellation.implantDetails }})
-          {%- elif reason === "Bilateral mastectomy" and appointment.cancellation.mastectomyDetails %} ({{ appointment.cancellation.mastectomyDetails }})
-          {%- elif reason === "Recent mammogram" and appointment.cancellation.mammogramDetails %} ({{ appointment.cancellation.mammogramDetails }})
-          {%- elif reason === "Medical reasons" and appointment.cancellation.medicalDetails %} ({{ appointment.cancellation.medicalDetails }})
-          {%- elif reason === "Has a symptomatic appointment" and appointment.cancellation.symptomaticDetails %} ({{ appointment.cancellation.symptomaticDetails }})
-          {%- elif reason === "No qualified mammographer available" and appointment.cancellation.mammographerDetails %} ({{ appointment.cancellation.mammographerDetails }})
-          {%- elif reason === "Technical issues at clinic" and appointment.cancellation.technicalDetails %} ({{ appointment.cancellation.technicalDetails }})
-          {%- elif reason === "Mammogram room unavailable" and appointment.cancellation.mammogramRoomDetails %} ({{ appointment.cancellation.mammogramRoomDetails }})
-          {%- elif reason === "Other reason" and appointment.cancellation.otherReasonDetails %} ({{ appointment.cancellation.otherReasonDetails }})
+          {%- elseif reason === "Moving outside England" and appointment.cancellation.movingDetails %} ({{ appointment.cancellation.movingDetails }})
+          {%- elseif reason === "Breast implant concerns" and appointment.cancellation.implantDetails %} ({{ appointment.cancellation.implantDetails }})
+          {%- elseif reason === "Bilateral mastectomy" and appointment.cancellation.mastectomyDetails %} ({{ appointment.cancellation.mastectomyDetails }})
+          {%- elseif reason === "Recent mammogram" and appointment.cancellation.mammogramDetails %} ({{ appointment.cancellation.mammogramDetails }})
+          {%- elseif reason === "Medical reasons" and appointment.cancellation.medicalDetails %} ({{ appointment.cancellation.medicalDetails }})
+          {%- elseif reason === "Has a symptomatic appointment" and appointment.cancellation.symptomaticDetails %} ({{ appointment.cancellation.symptomaticDetails }})
+          {%- elseif reason === "No qualified mammographer available" and appointment.cancellation.mammographerDetails %} ({{ appointment.cancellation.mammographerDetails }})
+          {%- elseif reason === "Technical issues at clinic" and appointment.cancellation.technicalDetails %} ({{ appointment.cancellation.technicalDetails }})
+          {%- elseif reason === "Mammogram room unavailable" and appointment.cancellation.mammogramRoomDetails %} ({{ appointment.cancellation.mammogramRoomDetails }})
+          {%- elseif reason === "Other reason" and appointment.cancellation.otherReasonDetails %} ({{ appointment.cancellation.otherReasonDetails }})
           {%- endif -%}
           {%- if not loop.last %}, {% endif -%}
         {% endfor %}
@@ -111,8 +101,8 @@
       <p class="nhsuk-u-margin-top-2">
         <strong>Reschedule requested:</strong>
         {%- if appointment.cancellation.reschedule === "yes" %} Yes
-        {%- elif appointment.cancellation.reschedule === "no-invite" %} No
-        {%- elif appointment.cancellation.reschedule === "no-opt-out" %} No, opting out
+        {%- elseif appointment.cancellation.reschedule === "no-invite" %} No
+        {%- elseif appointment.cancellation.reschedule === "no-opt-out" %} No, opting out
           {%- if appointment.cancellation.optOutDetails %} ({{ appointment.cancellation.optOutDetails }})
           {%- endif -%}
         {%- endif %}
@@ -125,16 +115,16 @@
           {% for reason in appointment.cancellation.reason -%}
             {{ reason }}
             {%- if reason === "Unable to attend" and appointment.cancellation.availabilityDetails %} ({{ appointment.cancellation.availabilityDetails }})
-            {%- elif reason === "Moving outside England" and appointment.cancellation.movingDetails %} ({{ appointment.cancellation.movingDetails }})
-            {%- elif reason === "Breast implant concerns" and appointment.cancellation.implantDetails %} ({{ appointment.cancellation.implantDetails }})
-            {%- elif reason === "Bilateral mastectomy" and appointment.cancellation.mastectomyDetails %} ({{ appointment.cancellation.mastectomyDetails }})
-            {%- elif reason === "Recent mammogram" and appointment.cancellation.mammogramDetails %} ({{ appointment.cancellation.mammogramDetails }})
-            {%- elif reason === "Medical reasons" and appointment.cancellation.medicalDetails %} ({{ appointment.cancellation.medicalDetails }})
-            {%- elif reason === "Has a symptomatic appointment" and appointment.cancellation.symptomaticDetails %} ({{ appointment.cancellation.symptomaticDetails }})
-            {%- elif reason === "No qualified mammographer available" and appointment.cancellation.mammographerDetails %} ({{ appointment.cancellation.mammographerDetails }})
-            {%- elif reason === "Technical issues at clinic" and appointment.cancellation.technicalDetails %} ({{ appointment.cancellation.technicalDetails }})
-            {%- elif reason === "Mammogram room unavailable" and appointment.cancellation.mammogramRoomDetails %} ({{ appointment.cancellation.mammogramRoomDetails }})
-            {%- elif reason === "Other reason" and appointment.cancellation.otherReasonDetails %} ({{ appointment.cancellation.otherReasonDetails }})
+            {%- elseif reason === "Moving outside England" and appointment.cancellation.movingDetails %} ({{ appointment.cancellation.movingDetails }})
+            {%- elseif reason === "Breast implant concerns" and appointment.cancellation.implantDetails %} ({{ appointment.cancellation.implantDetails }})
+            {%- elseif reason === "Bilateral mastectomy" and appointment.cancellation.mastectomyDetails %} ({{ appointment.cancellation.mastectomyDetails }})
+            {%- elseif reason === "Recent mammogram" and appointment.cancellation.mammogramDetails %} ({{ appointment.cancellation.mammogramDetails }})
+            {%- elseif reason === "Medical reasons" and appointment.cancellation.medicalDetails %} ({{ appointment.cancellation.medicalDetails }})
+            {%- elseif reason === "Has a symptomatic appointment" and appointment.cancellation.symptomaticDetails %} ({{ appointment.cancellation.symptomaticDetails }})
+            {%- elseif reason === "No qualified mammographer available" and appointment.cancellation.mammographerDetails %} ({{ appointment.cancellation.mammographerDetails }})
+            {%- elseif reason === "Technical issues at clinic" and appointment.cancellation.technicalDetails %} ({{ appointment.cancellation.technicalDetails }})
+            {%- elseif reason === "Mammogram room unavailable" and appointment.cancellation.mammogramRoomDetails %} ({{ appointment.cancellation.mammogramRoomDetails }})
+            {%- elseif reason === "Other reason" and appointment.cancellation.otherReasonDetails %} ({{ appointment.cancellation.otherReasonDetails }})
             {%- endif -%}
             {%- if not loop.last %}, {% endif -%}
           {% endfor -%}
@@ -143,7 +133,7 @@
       <p class="nhsuk-u-margin-top-2">
         <strong>Reschedule requested:</strong>
         {%- if appointment.reschedule.timing === "within-6-weeks" %} Yes, within 6 weeks
-        {%- elif appointment.reschedule.timing === "more-than-6-weeks" %} Yes, more than 6 weeks away
+        {%- elseif appointment.reschedule.timing === "more-than-6-weeks" %} Yes, more than 6 weeks away
         {%- endif -%}
         {%- if appointment.reschedule.note %} ({{ appointment.reschedule.note }})
         {%- endif %}
@@ -167,6 +157,28 @@
     {% endif %}
   {% endset %}
 
+  {% set accessionNumberHtml %}
+    {{ appCopyToClipboard({
+      text: appointment.accessionNumber,
+      type: "value",
+      html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (appointment.accessionNumber | formatAccessionNumber) + '</span>',
+      label: "accession number"
+    }) }}
+  {% endset %}
+
+  {% set mammographerSummary = appointment | getAppointmentMammographerSummary %}
+
+  {% set mammographersHtml %}
+    {% include "_includes/appointment-mammographers.njk" %}
+  {% endset %}
+
+  {% set screeningProtocolHtml %}
+    {{ tag({
+      text: participant | getScreeningProtocolName,
+      colour: "blue"
+    }) }}
+  {% endset %}
+
   {% set appointmentHtml %}
     {{ summaryList({
       rows: [
@@ -187,6 +199,17 @@
           },
           value: {
             text: clinic.clinicType | formatWords | sentenceCase
+          },
+          actions: {
+            items: []
+          }
+        },
+        {
+          key: {
+            text: "Appointment type"
+          },
+          value: {
+            html: screeningProtocolHtml
           },
           actions: {
             items: []
@@ -229,25 +252,10 @@
         },
         {
           key: {
-            text: "Run by"
+            text: mammographerSummary.label
           },
           value: {
-            html: (appointment.sessionDetails.endedBy | getUsername({ format: "reversed" })) + 
-                  ((" and " + ((appointment.sessionDetails.authors | last).userId | getUsername({ format: "reversed" }))) 
-                   if appointment.sessionDetails.authors and appointment.sessionDetails.authors.length > 0 
-                   and (appointment.sessionDetails.authors | last).userId != appointment.sessionDetails.endedBy
-                   else "")
-          },
-          actions: {
-            items: []
-          }
-        } if appointment.status == "complete" and appointment.sessionDetails.endedBy else {},
-        {
-          key: {
-            text: "Authorised mammographer"
-          },
-          value: {
-            html: (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (appointment.sessionDetails.endedBy | getUsername({ format: "reversed" })) or (appointment.sessionDetails.startedBy | getUsername({ format: "reversed" }))
+            html: mammographersHtml
           },
           actions: {
             items: []
@@ -275,7 +283,7 @@
             text: "Accession number"
           },
           value: {
-            html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (appointment.accessionNumber | formatAccessionNumber) + '</span>'
+            html: accessionNumberHtml
           },
           actions: {
             items: []
@@ -285,10 +293,16 @@
     } | handleSummaryListMissingInformation) }}
   {% endset %}
 
-  {% call card({
-    headingHtml: " "
-  }) %}
-    {{ appointmentHtml | safe }}
-  {% endcall %}
+  {# Refreshes in place with the header when the appointment moves on #}
+  <div id="appointment-details" data-live-region data-live-ids="{{ appointmentLiveIds }}" data-live-fields="{{ appointmentLiveFields }}">
+    {% call card({
+      headingHtml: " "
+    }) %}
+      {{ appointmentHtml | safe }}
+    {% endcall %}
+  </div>
+
+  {# Last on the page, where it sits on every page that has it #}
+  {{ raiseIssueLink("appointment") }}
 
 {% endblock %}

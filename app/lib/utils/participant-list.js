@@ -18,6 +18,7 @@ const {
   getNextAppointment
 } = require('./episodes')
 const { isSpecialAppointment } = require('./status')
+const { hasOpenIssue } = require('./issues')
 const { participantMatchesQuery } = require('./search')
 const { applyFilterGroups } = require('./filter-list')
 
@@ -191,6 +192,9 @@ const buildRow = (data, participant) => {
     nextAppointment,
     nextAppointmentDate: nextAppointment?.timing?.startTime || null,
     hasSpecialAppointment,
+    // Any open issue linked to the participant or one of their records -
+    // issues always link to the participant
+    hasOpenIssue: hasOpenIssue(data, participant),
     age,
     ageBand: getAgeBand(age),
     riskLevel: riskLevelValue
@@ -227,8 +231,9 @@ const rowMatchesQuery = (row, query) => {
   const needle = query.toLowerCase().replace(/\s+/g, '')
   if (!needle) return true
 
-  const postcode = (row.participant.demographicInformation?.address?.postcode ||
-    '')
+  const postcode = (
+    row.participant.demographicInformation?.address?.postcode || ''
+  )
     .toLowerCase()
     .replace(/\s+/g, '')
   const sxNumber = (row.participant.sxNumber || '')
@@ -247,6 +252,18 @@ const rowMatchesQuery = (row, query) => {
  * progress, and the stage within it isn't what this list is looked at for.
  */
 const PARTICIPANT_FILTER_GROUPS = [
+  {
+    name: 'issue',
+    legend: 'Issues',
+    options: [
+      {
+        value: 'open',
+        label: 'Has an open issue',
+        tagLabel: 'Has an open issue'
+      }
+    ],
+    matches: (row) => row.hasOpenIssue
+  },
   {
     name: 'appointment',
     legend: 'Next appointment',
@@ -283,9 +300,7 @@ const PARTICIPANT_FILTER_GROUPS = [
     ],
     matches: (row, values) =>
       values.some((value) =>
-        value === 'yes'
-          ? row.hasSpecialAppointment
-          : !row.hasSpecialAppointment
+        value === 'yes' ? row.hasSpecialAppointment : !row.hasSpecialAppointment
       )
   },
   {
@@ -373,7 +388,8 @@ const SORT_DEFINITIONS = [
     name: 'nextAppointment',
     labels: ['Next appointment (soonest)', 'Next appointment (latest)'],
     isMissing: (row) => !row.nextAppointmentDate,
-    compare: (a, b) => compareDates(a.nextAppointmentDate, b.nextAppointmentDate)
+    compare: (a, b) =>
+      compareDates(a.nextAppointmentDate, b.nextAppointmentDate)
   },
   {
     name: 'age',

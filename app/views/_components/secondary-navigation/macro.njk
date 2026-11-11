@@ -1,3 +1,14 @@
+{# app/views/_components/secondary-navigation/macro.njk #}
+{#
+  Purpose: Tab-style navigation between sections of a page or workflow.
+  Use when: moving between pages in a section, usually from the pageNavigation block so it spans the full width.
+
+  Params:
+    items — each: { text, href, current, active, disabled, html, classes }. current adds aria-current; active is bold only
+    visuallyHiddenTitle — accessible name (default: "Secondary menu")
+    labelledBy — id of an element naming the navigation, used instead of visuallyHiddenTitle
+    classes, attributes — as usual
+#}
 {% macro appSecondaryNavigation(params) %}
   {%- include "./template.njk" -%}
 {% endmacro %}

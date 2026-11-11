@@ -2,50 +2,56 @@
 
 // ES6 or Vanilla JavaScript
 
-import { swapFragment } from './fragment-actions.js'
+import { swapFragment } from './lib/fragments.js'
 
 document.addEventListener('DOMContentLoaded', () => {
   // Inline check-in without a page reload. The server responds with the
   // re-rendered appointment row (see the check-in route), which replaces the
-  // old one. Handled here rather than by fragment-actions.js directly because
-  // the trigger can be a button inside the confirm-identity modal, which
-  // lives inside the row being replaced.
-  const checkInLinks = document.querySelectorAll('.js-check-in-link')
+  // old one. Delegation keeps it working for rows inserted by live filtering.
+  // It also handles buttons inside the confirm-identity modal.
+  document.addEventListener('click', async (event) => {
+    if (!(event.target instanceof Element)) return
 
-  checkInLinks.forEach((link) => {
-    link.addEventListener('click', async (e) => {
-      e.preventDefault()
-      const { clinicId, appointmentId } = e.currentTarget.dataset
-      const url = `/clinics/${clinicId}/check-in/${appointmentId}`
+    const checkInLink = event.target.closest('.js-check-in-link')
+    if (!checkInLink) return
 
-      try {
-        const response = await fetch(url, {
-          headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        if (!response.ok) {
-          throw new Error('Failed to check in participant')
-        }
-        const html = await response.text()
+    event.preventDefault()
+    const { clinicId, appointmentId, currentFilter } = checkInLink.dataset
+    // Pass the current tab so the re-rendered row matches the table it sits
+    // in - the Remaining and Checked in tabs carry an extra Checked in column
+    const url = currentFilter
+      ? `/clinics/${clinicId}/check-in/${appointmentId}?currentFilter=${currentFilter}`
+      : `/clinics/${clinicId}/check-in/${appointmentId}`
 
-        // Close the confirm-identity modal before the swap - its markup
-        // lives inside the row that's about to be replaced
-        const openModal = document.querySelector('.app-modal:not([hidden])')
-        if (openModal && window.closeModal) {
-          window.closeModal(openModal.id)
-        }
-
-        const row = document.querySelector(`tr[data-fragment-id="${appointmentId}"]`)
-        if (!row) throw new Error('Appointment row not found')
-        const newRow = swapFragment(row, html)
-
-        // Set focus on the row for accessibility
-        newRow.setAttribute('tabindex', '-1')
-        newRow.focus()
-      } catch (error) {
-        console.error('Error checking in participant:', error)
-        window.location.href = url
+    try {
+      const response = await fetch(url, {
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+      })
+      if (!response.ok) {
+        throw new Error('Failed to check in participant')
       }
-    })
+      const html = await response.text()
+
+      // Close the confirm-identity modal before the swap - its markup
+      // lives inside the row that's about to be replaced
+      const openModal = document.querySelector('.app-modal:not([hidden])')
+      if (openModal && window.closeModal) {
+        window.closeModal(openModal.id)
+      }
+
+      const row = document.querySelector(
+        `tr[data-fragment-id="${appointmentId}"]`
+      )
+      if (!row) throw new Error('Appointment row not found')
+      const newRow = swapFragment(row, html)
+
+      // Set focus on the row for accessibility
+      newRow.setAttribute('tabindex', '-1')
+      newRow.focus()
+    } catch (error) {
+      console.error('Error checking in participant:', error)
+      window.location.href = url
+    }
   })
 
   // Handle reset data in background
@@ -61,9 +67,13 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
       opinionBanner.classList.add('app-reading-opinion-banner--fade-out')
       // Remove from DOM after the CSS transition (0.2s) completes
-      opinionBanner.addEventListener('transitionend', () => {
-        opinionBanner.remove()
-      }, { once: true })
+      opinionBanner.addEventListener(
+        'transitionend',
+        () => {
+          opinionBanner.remove()
+        },
+        { once: true }
+      )
     }, delay)
   }
 
@@ -147,7 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
 // The HRT answer is edited in place rather than on its own page, so there's no
 // submit button to save it - each change posts on its own.
 function setupBreastDensityFactorsAutosave() {
-  const container = document.querySelector('[data-breast-density-factors-save-url]')
+  const container = document.querySelector(
+    '[data-breast-density-factors-save-url]'
+  )
   if (!container) {
     return
   }
@@ -182,7 +194,9 @@ function setupBreastDensityFactorsAutosave() {
     }
 
     const factorCount = Number(container.dataset.breastDensityFactorCount) || 0
-    const hrtAnswered = !!container.querySelector(`input[name="${statusName}"]:checked`)
+    const hrtAnswered = !!container.querySelector(
+      `input[name="${statusName}"]:checked`
+    )
     const count = factorCount + (hrtAnswered ? 1 : 0)
 
     if (count === 0) {
@@ -201,7 +215,9 @@ function setupBreastDensityFactorsAutosave() {
   const saveHrt = () => {
     const formData = new URLSearchParams()
 
-    const selectedStatus = container.querySelector(`input[name="${statusName}"]:checked`)
+    const selectedStatus = container.querySelector(
+      `input[name="${statusName}"]:checked`
+    )
     if (selectedStatus) {
       formData.append(statusName, selectedStatus.value)
     }
@@ -247,7 +263,13 @@ function setupBreastDensityFactorsAutosave() {
 document.addEventListener('keydown', (e) => {
   // Ignore when typing in a form field
   const tag = e.target.tagName
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || e.target.isContentEditable) return
+  if (
+    tag === 'INPUT' ||
+    tag === 'TEXTAREA' ||
+    tag === 'SELECT' ||
+    e.target.isContentEditable
+  )
+    return
 
   // Ignore if a modal is already open
   const existingModal = document.querySelector('.app-modal--open')
@@ -287,7 +309,21 @@ function setupResetSessionLink() {
     e.preventDefault()
 
     try {
-      const returnPage = `${window.location.pathname}${window.location.search}`
+      // Clear shared changes for everyone sharing this browser's data. In a
+      // room, the reply names it so the browser can rejoin after the reset.
+      let room = null
+      const sharedResponse = await fetch('/shared-data/reset', {
+        method: 'POST'
+      })
+      if (sharedResponse.ok) {
+        ;({ room } = await sharedResponse.json())
+      }
+
+      const returnUrl = new URL(window.location.href)
+      if (room) {
+        returnUrl.searchParams.set('room', room)
+      }
+      const returnPage = `${returnUrl.pathname}${returnUrl.search}`
       const response = await fetch('/prototype-admin/reset-session-data', {
         method: 'POST',
         headers: {
@@ -306,8 +342,8 @@ function setupResetSessionLink() {
         throw new Error('Failed to clear data')
       }
 
-      // Refresh the page to reflect the cleared data
-      window.location.reload()
+      // Load the page again to reflect the cleared data
+      window.location.href = returnPage
     } catch (error) {
       console.error('Error clearing data:', error)
 

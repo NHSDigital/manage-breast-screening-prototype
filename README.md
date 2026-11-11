@@ -1,4 +1,4 @@
-# NHS Manage breast screening service (prototype)
+# NHS Run breast screening in England (Rubie) service (prototype)
 
 A prototype for managing breast screening, built using the [NHS.UK prototype kit](https://prototype-kit.service-manual.nhs.uk).
 
@@ -24,6 +24,8 @@ You can [read our design histories](https://design-history.prevention-services.n
 
 The prototype will generate example data on first run, and from then on once per day.
 
+If a copy of the prototype is left running after you quit, `npm run kill` stops it (macOS and Linux).
+
 ## Features
 
 - View all clinics or today's clinics
@@ -38,6 +40,7 @@ The prototype will generate example data on first run, and from then on once per
 - You can also run the generator directly with `node app/lib/generate-seed-data.js`
 - Uses NHS design system components and patterns
 - Use `tree app` to generate a tree diagram of the project
+- Documentation for the codebase, including how pages, forms, routes and data work, is in [docs/](docs/README.md). Instructions for coding assistants are in [.github/copilot-instructions.md](.github/copilot-instructions.md)
 
 ## Security
 

@@ -90,10 +90,7 @@ module.exports = (router) => {
     const outcomeCounts = appointments.reduce(
       (acc, appointment) => {
         const status = appointment.status
-        if (
-          status === 'complete' ||
-          status === 'partially_screened'
-        ) {
+        if (status === 'complete' || status === 'partially_screened') {
           acc.screened++
         } else if (status === 'did_not_attend') {
           acc.dna++

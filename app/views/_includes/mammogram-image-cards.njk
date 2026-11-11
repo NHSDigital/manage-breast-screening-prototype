@@ -5,6 +5,7 @@
   Requires parent to set:
   - mammogramViews: array from appointment.mammogramData.views | getObjectValues
   - mammogramImages: from getImagesForAppointment(...)
+  - appointment: used to mark views that weren't expected
 
   Optional:
   - thumbnailSize: "large" for bigger thumbnails (default is standard size)
@@ -28,7 +29,9 @@
   ] %}
 {% endif %}
 
-{# Build view lists with placeholders for missing views #}
+{# Build view lists with placeholders for missing and not expected views #}
+{% set expectedViews = appointment | getExpectedViews %}
+{% set viewStates = appointment | getExpectedViewStates(appointment.mammogramData) %}
 {% set rightViews = [] %}
 {% set leftViews = [] %}
 {% for standardView in standardViews %}
@@ -45,7 +48,8 @@
       viewShort: standardView.viewShort,
       viewShortWithSide: standardView.viewShortWithSide,
       images: [],
-      isMissing: true
+      isMissing: true,
+      isNotExpected: viewStates[standardView.viewShortWithSide].state == "notExpected"
     } %}
   {% endif %}
 
@@ -68,8 +72,10 @@
       </div>
     {% endset %}
     {{ card({
-      heading: "Right breast",
-      headingLevel: "2",
+      heading: {
+        text: "Right breast",
+        level: 2
+      },
       feature: true,
       descriptionHtml: rightViewsHtml
     }) }}
@@ -84,8 +90,10 @@
       </div>
     {% endset %}
     {{ card({
-      heading: "Left breast",
-      headingLevel: "2",
+      heading: {
+        text: "Left breast",
+        level: 2
+      },
       feature: true,
       descriptionHtml: leftViewsHtml
     }) }}

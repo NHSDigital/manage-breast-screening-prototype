@@ -1,4 +1,4 @@
-// app/filers/formatting.js
+// app/filters/formatting.js
 
 /**
  * Format a yes/no/not answered response with optional additional details
@@ -47,28 +47,30 @@ const formatAnswer = (value, options = {}) => {
  * getOrdinalName(1) // 'first'
  * getOrdinalName(3) // 'third'
  */
-const getOrdinalName = (integer) =>
-{
+const getOrdinalName = (integer) => {
   const ordinals = [
-    "zeroth", // shouldn't be possible
-    "first",
-    "second",
-    "third",
-    "fourth",
-    "fifth",
-    "sixth",
-    "seventh",
-    "eighth",
-    "ninth",
-    "tenth"
+    'zeroth', // shouldn't be possible
+    'first',
+    'second',
+    'third',
+    'fourth',
+    'fifth',
+    'sixth',
+    'seventh',
+    'eighth',
+    'ninth',
+    'tenth'
   ]
 
   const parsedInteger = Number(integer)
 
-  if (!Number.isInteger(parsedInteger) || parsedInteger < 1 || parsedInteger > 10)
-  {
-    console.warn("Error in getOrdinalName: input out of bounds")
-    return ""
+  if (
+    !Number.isInteger(parsedInteger) ||
+    parsedInteger < 1 ||
+    parsedInteger > 10
+  ) {
+    console.warn('Error in getOrdinalName: input out of bounds')
+    return ''
   }
 
   return ordinals[parsedInteger]
@@ -85,8 +87,33 @@ const getOrdinalName = (integer) =>
  */
 const getOrdinalNameIndex0 = (integer) => getOrdinalName(Number(integer) + 1)
 
+/**
+ * Convert a 1-based integer to its ordinal number with suffix
+ *
+ * @param {number} integer - Positive integer
+ * @returns {string} Ordinal number (e.g. '3rd'), or empty string if invalid
+ * @example
+ * getOrdinalNumber(1) // '1st'
+ * getOrdinalNumber(3) // '3rd'
+ */
+const getOrdinalNumber = (integer) => {
+  const parsedInteger = Number(integer)
+
+  if (!Number.isInteger(parsedInteger) || parsedInteger < 1) {
+    return ''
+  }
+
+  const suffixes = ['th', 'st', 'nd', 'rd']
+  const lastTwo = parsedInteger % 100
+  const suffix =
+    suffixes[(lastTwo - 20) % 10] || suffixes[lastTwo] || suffixes[0]
+
+  return `${parsedInteger}${suffix}`
+}
+
 module.exports = {
   formatAnswer,
   getOrdinalName,
-  getOrdinalNameIndex0
+  getOrdinalNameIndex0,
+  getOrdinalNumber
 }

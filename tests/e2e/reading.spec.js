@@ -2,7 +2,7 @@
 //
 // Journeys through image reading. Between them they cover the four ways a
 // reader can leave a case - normal, recall for assessment, technical recall,
-// and deferral - plus the second reader's comparison step, and a concordant
+// and raising an issue - plus the second reader's comparison step, and a concordant
 // second read taking a case to its concluded outcome.
 //
 // Sessions are created with an explicit limit so each test reads a known,
@@ -58,7 +58,9 @@ const recordNormal = async (page) => {
 
   // Symptoms have to be acknowledged before a normal opinion can be saved
   await detailsModal
-    .locator('input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]')
+    .locator(
+      'input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]'
+    )
     .check()
   await detailsModal.getByRole('button', { name: 'Continue' }).first().click()
 
@@ -96,14 +98,19 @@ const recordArbitrationNormal = async (page) => {
     )
 
     await detailsModal
-      .locator('input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]')
+      .locator(
+        'input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]'
+      )
       .check()
     await detailsModal.getByRole('button', { name: 'Continue' }).first().click()
     await expectModalClosed(detailsModal)
   }
 
   await expect(page).toHaveURL(/\/review/)
-  await page.getByRole('button', { name: 'Confirm and continue' }).first().click()
+  await page
+    .getByRole('button', { name: 'Confirm and continue' })
+    .first()
+    .click()
 }
 
 /**
@@ -129,6 +136,38 @@ const addTextAnnotation = async (page, abnormalityType) => {
   await revealInModal(saveAnnotation)
   await saveAnnotation.click()
   await expectModalClosed(annotationModal)
+}
+
+/**
+ * On the recall for assessment page, mark the first imaged breast abnormal and
+ * the other normal. A case can have one breast imaged, for example after a
+ * mastectomy, and that page asks no opinion of a breast with no images.
+ *
+ * @param {import('@playwright/test').Page} page - Playwright page
+ */
+const recordRecallOpinions = async (page) => {
+  const opinionInput = (side, value) =>
+    page.locator(
+      `input[name="imageReadingTemp[${side}][breastAssessment]"][value="${value}"]`
+    )
+
+  await page
+    .locator('input[name$="[breastAssessment]"]')
+    .first()
+    .waitFor({ state: 'attached' })
+
+  const imagedSides = []
+  for (const side of ['right', 'left']) {
+    if (await opinionInput(side, 'abnormal').count()) {
+      imagedSides.push(side)
+    }
+  }
+
+  const [abnormalSide, ...normalSides] = imagedSides
+  await opinionInput(abnormalSide, 'abnormal').check()
+  for (const side of normalSides) {
+    await opinionInput(side, 'normal').check()
+  }
 }
 
 /**
@@ -162,18 +201,106 @@ const recordTechnicalRecallDetails = async (modal, view, reason) => {
 }
 
 test.describe('Image reading', () => {
+  test('shows correctly pluralised backlog summary on the simple dashboard', async ({
+    page
+  }) => {
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][indexLayout]': 'simple'
+    })
+
+    await page.goto('/reading')
+    await expect(
+      page.locator('p').filter({
+        hasText:
+          /^(?:1 case is|(?:0|[2-9]|[1-9]\d+) cases are) awaiting an outcome$/
+      })
+    ).toBeVisible()
+  })
+
+  test('changes reading session size and dark mode from dashboard settings', async ({
+    page
+  }) => {
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[darkMode]': 'false',
+      'settings[reading][defaultSessionSize]': '25',
+      'settings[reading][indexLayout]': 'complex'
+    })
+
+    await page.goto('/reading')
+    await expect(page.getByText(/Read up to 25 cases/)).toBeVisible()
+    await expect(page.getByText(/Arbitrate up to 25 cases/)).toBeVisible()
+
+    const modal = await clickLinkToOpenModal(page, 'change')
+    await modal.getByLabel('Dark').check()
+    await modal.getByLabel('10', { exact: true }).check()
+    await modal.getByRole('button', { name: 'Save' }).click()
+    await expectModalClosed(modal)
+
+    await expect(page.getByText(/Read up to 10 cases/)).toBeVisible()
+    await expect(page.getByText(/Arbitrate up to 10 cases/)).toBeVisible()
+    await expect(page.locator('body')).toHaveClass(/app-dark-mode/)
+  })
+
   test('reads a session of cases as normal and recall', async ({ page }) => {
-    await pinSettings(page, readingSettings)
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][indexLayout]': 'complex'
+    })
+
+    await page.goto('/reading')
+    await expect(
+      page.getByRole('link', { name: 'View reading list' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'View reading list' })
+    ).toHaveAttribute(
+      'href',
+      '/reading/cases?status=awaiting_first_read&status=awaiting_second_read'
+    )
+    await expect(
+      page.getByRole('heading', { name: /cases? available for reading/ })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', {
+        name: 'Reading session in progress',
+        exact: true
+      })
+    ).toHaveCount(0)
 
     await page.goto(
       `/reading/create-session?type=all_reads&limit=${sessionSize}&lazy=false`
     )
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
 
     // Read all but the last case as normal
     for (let caseNumber = 1; caseNumber < sessionSize; caseNumber++) {
       await recordNormal(page)
     }
+
+    await page.goto('/reading')
+    await expect(
+      page.getByRole('heading', {
+        name: 'Reading session in progress',
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByText('Finish the session before starting a new one.')
+    ).toBeVisible()
+    const sessionProgress = page.getByText('2 of 3 cases read')
+    await expect(sessionProgress).toBeVisible()
+    await expect(sessionProgress).toHaveClass(/nhsuk-u-font-size-16/)
+
+    const resumeSessionLink = page.getByRole('link', {
+      name: 'Resume reading'
+    })
+    await resumeSessionLink.click()
+    await expect(page).toHaveURL(
+      new RegExp(`/reading/session/${sessionId}/appointments/`)
+    )
 
     // Recall the last case for assessment
     await expect(
@@ -187,16 +314,7 @@ test.describe('Image reading', () => {
       .click()
 
     await expect(page).toHaveURL(/\/recall-for-assessment-details/)
-    await page
-      .locator(
-        'input[name="imageReadingTemp[right][breastAssessment]"][value="abnormal"]'
-      )
-      .check()
-    await page
-      .locator(
-        'input[name="imageReadingTemp[left][breastAssessment]"][value="normal"]'
-      )
-      .check()
+    await recordRecallOpinions(page)
 
     // An abnormal breast needs at least one annotation before it can be saved
     await addTextAnnotation(page, 'Ill-defined mass')
@@ -208,6 +326,52 @@ test.describe('Image reading', () => {
       page.getByRole('heading', { name: 'Confirm your opinion' })
     ).toBeVisible()
     await expect(page.getByText('Recall for assessment').first()).toBeVisible()
+    await page.getByRole('button', { name: 'Confirm and continue' }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Session complete' })
+    ).toBeVisible()
+  })
+
+  test('moves on after changing a read from its confirmation page', async ({
+    page
+  }) => {
+    // The confirmation page's change links send the reader back through the
+    // detail pages with that page in the referrer chain. Returning to it must
+    // use the chain up - otherwise confirming follows it back to a case that
+    // is now settled, and lands on the existing read instead of moving on.
+    await pinSettings(page, readingSettings)
+
+    await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    await expect(
+      page.getByRole('heading', {
+        name: 'What is your opinion of these images?'
+      })
+    ).toBeVisible()
+    await page
+      .getByRole('button', { name: 'Recall for assessment (R)' })
+      .first()
+      .click()
+
+    await expect(page).toHaveURL(/\/recall-for-assessment-details/)
+    await recordRecallOpinions(page)
+    await addTextAnnotation(page, 'Ill-defined mass')
+    await page.getByRole('button', { name: 'Continue' }).first().click()
+
+    const confirmHeading = page.getByRole('heading', {
+      name: 'Confirm your opinion'
+    })
+    await expect(confirmHeading).toBeVisible()
+
+    // Change the annotations, adding a second one
+    await page.getByRole('link', { name: 'Change annotations' }).click()
+    await expect(page).toHaveURL(/\/recall-for-assessment-details/)
+    await addTextAnnotation(page, 'Ill-defined mass')
+    await page.getByRole('button', { name: 'Continue' }).first().click()
+
+    await expect(confirmHeading).toBeVisible()
     await page.getByRole('button', { name: 'Confirm and continue' }).click()
 
     await expect(
@@ -230,7 +394,9 @@ test.describe('Image reading', () => {
 
     await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
-    const caseUrl = page.url().match(/\/reading\/session\/[^/]+\/appointments\/[^/?]+/)[0]
+    const caseUrl = page
+      .url()
+      .match(/\/reading\/session\/[^/]+\/appointments\/[^/?]+/)[0]
 
     await recordNormal(page)
     await expect(
@@ -246,16 +412,14 @@ test.describe('Image reading', () => {
     await page.getByLabel('Recall for assessment (R)').check()
     await page.getByRole('button', { name: 'Update opinion' }).click()
     await expect(page).toHaveURL(/\/recall-for-assessment-details/)
-    await page
-      .locator(
-        'input[name="imageReadingTemp[right][breastAssessment]"][value="abnormal"]'
-      )
-      .check()
-    await page
-      .locator(
-        'input[name="imageReadingTemp[left][breastAssessment]"][value="normal"]'
-      )
-      .check()
+    await recordRecallOpinions(page)
+
+    // Continuing without an annotation fails validation, which must keep the
+    // chain back to the existing read
+    await page.getByRole('button', { name: 'Continue' }).first().click()
+    await expect(page).toHaveURL(
+      /\/recall-for-assessment-details\?referrerChain=/
+    )
 
     await addTextAnnotation(page, 'Ill-defined mass')
     await expect(page).toHaveURL(/\/recall-for-assessment-details/)
@@ -290,7 +454,9 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
 
     await expect(
-      page.getByRole('heading', { name: 'What is your opinion of these images?' })
+      page.getByRole('heading', {
+        name: 'What is your opinion of these images?'
+      })
     ).toBeVisible()
 
     const recallModal = await clickToOpenModal(page, 'Technical recall (T)')
@@ -310,55 +476,214 @@ test.describe('Image reading', () => {
     await expect(reviewPage.getByText('Technical recall').first()).toBeVisible()
     await expect(reviewPage.getByText('RMLO').first()).toBeVisible()
     await expect(reviewPage.getByText('Image blurred')).toBeVisible()
-    await reviewPage.getByRole('button', { name: 'Confirm and continue' }).click()
+    await reviewPage
+      .getByRole('button', { name: 'Confirm and continue' })
+      .click()
 
     await expect(
       page.getByRole('heading', { name: 'Session complete' })
     ).toBeVisible()
   })
 
-  test('defers a case and returns it to the reading queue', async ({ page }) => {
+  test('raises an issue on a case and returns it to reading once resolved', async ({
+    page
+  }) => {
     await pinSettings(page, readingSettings)
 
-    // The reason is the thing that identifies this deferral on the deferred
-    // cases page, so make it distinctive
-    const deferralReason = 'Prior images needed before an opinion can be given'
+    // Identifies this issue on its own page, so make it distinctive
+    const issueDescription = 'RMLO will not open in the viewer after reloading'
 
     await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const caseUrl = page.url().replace(/\/(opinion|outcome)$/, '')
 
-    const deferModal = await clickLinkToOpenModal(page, 'Defer this case')
-    await deferModal.locator('#modal-deferralReason').fill(deferralReason)
-    await deferModal
-      .getByRole('button', { name: 'Confirm deferral' })
+    const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
+    await raiseModal.getByLabel('Describe the issue').fill(issueDescription)
+    await raiseModal
+      .getByRole('button', { name: 'Confirm and continue' })
       .first()
       .click()
 
-    // Deferral takes the only case out of the session, so there is nothing
-    // left to read
+    // The issue holds the only case in the session, so there is nothing left
+    // to read
     await expect(page).toHaveURL(/\/no-more-cases/)
 
-    // The case now sits on the deferred list, waiting for manual review.
-    // Scope everything to its card - the seed data carries deferred cases of
-    // its own, so the page is never otherwise empty
-    await page.goto('/reading/deferred')
+    // The issue stands in place of the reader's opinion, linking to its page
+    await page.goto(`${caseUrl}/existing-read`)
     await expect(
-      page.getByRole('heading', { name: 'Deferred cases' })
+      page.getByRole('link', { name: 'Withdraw issue' })
     ).toBeVisible()
-    const deferralCard = page
-      .locator('.nhsuk-summary-card')
-      .filter({ hasText: deferralReason })
-    await expect(deferralCard).toBeVisible()
+    await page.getByRole('link', { name: 'View issue' }).click()
 
-    // Unflagging returns it to the queue, keeping a record of why it was held
-    await deferralCard.getByRole('button', { name: 'Unflag case' }).click()
+    await expect(page.getByText(issueDescription)).toBeVisible()
+    await page.getByRole('button', { name: 'Resolve issue' }).click()
+    await page
+      .getByLabel('Explain the solution')
+      .fill('Image re-sent from the mammography machine')
+    await page.getByLabel('Just me').check()
+    await page.getByRole('button', { name: 'Confirm and continue' }).click()
 
+    // Resolved, the case is readable again from its own page
     await expect(
-      page.getByRole('heading', { name: 'Recently resolved' })
+      page.getByText('Image re-sent from the mammography machine')
     ).toBeVisible()
+    await page.getByRole('link', { name: 'View reading case' }).click()
     await expect(
-      page.locator('.nhsuk-summary-card').filter({ hasText: deferralReason })
-    ).toContainText('Returned to queue')
+      page.getByRole('heading', { name: 'Issue raised' })
+    ).toHaveCount(0)
+    await expect(page.getByRole('button', { name: 'Read now' })).toBeVisible()
+  })
+
+  test('withdrawing an issue returns the case to reading', async ({ page }) => {
+    await pinSettings(page, readingSettings)
+
+    // Two cases, so the session is still open once the first is held
+    await page.goto('/reading/create-session?type=all_reads&limit=2&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const caseUrl = page.url().replace(/\/(opinion|outcome)$/, '')
+
+    const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
+    await raiseModal
+      .getByLabel('Describe the issue')
+      .fill('RMLO will not open in the viewer')
+    await raiseModal
+      .getByRole('button', { name: 'Confirm and continue' })
+      .first()
+      .click()
+    await expect(page).not.toHaveURL(new RegExp(caseUrl))
+
+    // Opening the opinion page directly doesn't offer a held case for reading
+    await page.goto(`${caseUrl}/opinion`)
+    await expect(page).toHaveURL(/\/existing-read/)
+
+    await page.getByRole('link', { name: 'Withdraw issue' }).click()
+    await expect(page).toHaveURL(/\/opinion$/)
+    await expect(
+      page.getByRole('heading', {
+        name: 'What is your opinion of these images?'
+      })
+    ).toBeVisible()
+  })
+
+  test('requires an issue description, and changes it on the issue page', async ({
+    page
+  }) => {
+    await pinSettings(page, readingSettings)
+
+    const issueDescription = 'LCC shows as blank in the viewer'
+    const changedDescription = 'LCC and RCC both show as blank in the viewer'
+
+    await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const caseUrl = page.url().replace(/\/(opinion|outcome)$/, '')
+
+    const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
+    await raiseModal
+      .getByRole('button', { name: 'Confirm and continue' })
+      .first()
+      .click()
+    await expect(
+      raiseModal.getByRole('link', { name: 'Enter a description of the issue' })
+    ).toBeVisible()
+
+    await raiseModal.getByLabel('Describe the issue').fill(issueDescription)
+    await raiseModal
+      .getByRole('button', { name: 'Confirm and continue' })
+      .first()
+      .click()
+    await expect(page).toHaveURL(/\/no-more-cases/)
+
+    await page.goto(`${caseUrl}/existing-read`)
+    await page.getByRole('link', { name: 'View issue' }).click()
+    await expect(page.getByText(issueDescription)).toBeVisible()
+
+    // An edit abandoned after an error does not prefill the next one. The
+    // modal dialog is labelled by the same heading, hence the textbox role.
+    const changeModal = await clickLinkToOpenModal(page, 'Change description')
+    const descriptionField = changeModal.getByRole('textbox', {
+      name: 'Describe the issue'
+    })
+    const saveButton = changeModal.getByRole('button', {
+      name: 'Save description'
+    })
+
+    await descriptionField.fill('')
+    await saveButton.click()
+    await expect(
+      changeModal.getByRole('link', {
+        name: 'Enter a description of the issue'
+      })
+    ).toBeVisible()
+    await changeModal.getByRole('button', { name: 'Close' }).click()
+    await expectModalClosed(changeModal)
+
+    await clickLinkToOpenModal(page, 'Change description')
+    await expect(descriptionField).toHaveValue(issueDescription)
+
+    await descriptionField.fill(changedDescription)
+    await saveButton.click()
+    await expectModalClosed(changeModal)
+    await expect(page.getByText('Description changed')).toBeVisible()
+    await expect(page.getByText(changedDescription)).toBeVisible()
+  })
+
+  test('offers no finalise action on a case held by an issue', async ({
+    page
+  }) => {
+    // A concordant second read waiting out the finalisation delay would
+    // normally be offered for finalising. Finalising would conclude the case
+    // and close its episode, which an open issue must prevent.
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][finalisationDelay]': '60',
+      'settings[reading][arbitration][policy]': 'discordant_only'
+    })
+
+    const { readingCase, appointment } = findCaseAwaitingSecondRead({
+      firstOpinion: 'normal'
+    })
+
+    await page.goto(
+      '/reading/create-session?type=second_reads&limit=100&lazy=false'
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const caseUrl = `/reading/session/${sessionId}/appointments/${appointment.id}`
+
+    await page.goto(caseUrl)
+    await recordNormal(page)
+    await expect(page).not.toHaveURL(new RegExp(appointment.id))
+
+    // Before the issue, the case page offers to finalise
+    await page.goto(`/reading/cases/${readingCase.id}`)
+    const finaliseAction = page.getByRole('link', {
+      name: 'Finalise outcome now'
+    })
+    await expect(finaliseAction).toBeVisible()
+
+    const raiseModal = await clickLinkToOpenModal(page, 'Raise an issue')
+    await raiseModal
+      .getByLabel('Describe the issue')
+      .fill('RMLO will not open in the viewer')
+    await raiseModal
+      .getByRole('button', { name: 'Confirm and continue' })
+      .first()
+      .click()
+    await expectModalClosed(raiseModal)
+
+    await page.goto(`/reading/cases/${readingCase.id}`)
+    await expect(page.getByText('Paused while an issue is open')).toBeVisible()
+    await expect(finaliseAction).toHaveCount(0)
+
+    // Nor does the reader's own read offer it, or any change to it
+    await page.goto(`${caseUrl}/existing-read`)
+    await expect(
+      page.getByText('cannot be changed or finalised while an issue is open')
+    ).toBeVisible()
+    await expect(page.getByRole('link', { name: 'Finalise now' })).toHaveCount(
+      0
+    )
+    await expect(page.getByRole('link', { name: /^Change/ })).toHaveCount(0)
   })
 
   test('keeps a lazy session lazy across a resume', async ({ page }) => {
@@ -367,9 +692,7 @@ test.describe('Image reading', () => {
     // every remaining case at once, which made the whole backlog look claimed.
     await pinSettings(page, readingSettings)
 
-    await page.goto(
-      '/reading/create-session?type=all_reads&limit=10&lazy=true'
-    )
+    await page.goto('/reading/create-session?type=all_reads&limit=10&lazy=true')
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
 
     const sessionId = page.url().split('/session/')[1].split('/')[0]
@@ -415,7 +738,10 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/appointments\//)
 
     // Skip the second case, which loads the third and moves the reader to it
-    const skippedAppointmentId = page.url().split('/appointments/')[1].split('/')[0]
+    const skippedAppointmentId = page
+      .url()
+      .split('/appointments/')[1]
+      .split('/')[0]
     await page.goto(
       `/reading/session/${sessionId}/appointments/${skippedAppointmentId}/skip`
     )
@@ -453,7 +779,10 @@ test.describe('Image reading', () => {
     )
 
     // Skip the first case, which loads the second and moves the reader to it
-    const skippedAppointmentId = page.url().split('/appointments/')[1].split('/')[0]
+    const skippedAppointmentId = page
+      .url()
+      .split('/appointments/')[1]
+      .split('/')[0]
     await page.goto(
       `/reading/session/${sessionId}/appointments/${skippedAppointmentId}/skip`
     )
@@ -472,6 +801,60 @@ test.describe('Image reading', () => {
     await expect(caseRows).toHaveCount(rowsBefore + 1)
   })
 
+  test('resumes an in-progress arbitration session from the dashboard', async ({
+    page
+  }) => {
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][indexLayout]': 'complex'
+    })
+
+    await page.goto('/reading')
+    await expect(
+      page.getByRole('heading', { name: /cases? requir(es|e) arbitration/ })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('heading', {
+        name: 'Arbitration session in progress',
+        exact: true
+      })
+    ).toHaveCount(0)
+    await expect(
+      page.getByRole('link', { name: 'View arbitration case list' })
+    ).toBeVisible()
+    await expect(
+      page.getByRole('link', { name: 'Start arbitration session' })
+    ).toBeVisible()
+
+    await page.goto('/reading/arbitration/start')
+    await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
+    await page
+      .getByRole('button', { name: /Continue/i })
+      .first()
+      .click()
+    await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    await recordArbitrationNormal(page)
+
+    await page.goto('/reading')
+    await expect(
+      page.getByRole('heading', {
+        name: 'Arbitration session in progress',
+        exact: true
+      })
+    ).toBeVisible()
+    await expect(
+      page.getByText('Finish the session before starting a new one.')
+    ).toBeVisible()
+    await expect(page.getByText(/1 of \d+ cases arbitrated/)).toBeVisible()
+
+    await page.getByRole('link', { name: 'Resume arbitration' }).click()
+    await expect(page).toHaveURL(
+      new RegExp(`/reading/session/${sessionId}/appointments/`)
+    )
+  })
+
   test('does not load an extra arbitration case when one is settled out of order', async ({
     page
   }) => {
@@ -486,7 +869,10 @@ test.describe('Image reading', () => {
     // Arbitrating alone rather than as a panel
     await page.goto('/reading/arbitration/start')
     await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
-    await page.getByRole('button', { name: /Continue/i }).first().click()
+    await page
+      .getByRole('button', { name: /Continue/i })
+      .first()
+      .click()
 
     await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
     const sessionId = page.url().split('/session/')[1].split('/')[0]
@@ -498,7 +884,10 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/appointments\//)
 
     // Skip the second case, which loads the third and moves the reader to it
-    const skippedAppointmentId = page.url().split('/appointments/')[1].split('/')[0]
+    const skippedAppointmentId = page
+      .url()
+      .split('/appointments/')[1]
+      .split('/')[0]
     await page.goto(
       `/reading/session/${sessionId}/appointments/${skippedAppointmentId}/skip`
     )
@@ -532,7 +921,10 @@ test.describe('Image reading', () => {
 
     await page.goto('/reading/arbitration/start')
     await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
-    await page.getByRole('button', { name: /Continue/i }).first().click()
+    await page
+      .getByRole('button', { name: /Continue/i })
+      .first()
+      .click()
     await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
 
     const sessionId = page.url().split('/session/')[1].split('/')[0]
@@ -547,9 +939,7 @@ test.describe('Image reading', () => {
     const outstanding = page.url().split('/appointments/')[1].split('/')[0]
 
     // Back to the case just settled, which shows its recorded outcome
-    await page.goto(
-      `/reading/session/${sessionId}/appointments/${settled[2]}`
-    )
+    await page.goto(`/reading/session/${sessionId}/appointments/${settled[2]}`)
     await expect(page).toHaveURL(/\/existing-read/)
 
     await page.getByRole('link', { name: 'Next case' }).first().click()
@@ -571,7 +961,10 @@ test.describe('Image reading', () => {
 
     await page.goto('/reading/arbitration/start')
     await page.locator('input[name="arbitrationTemp[mode]"]').first().check()
-    await page.getByRole('button', { name: /Continue/i }).first().click()
+    await page
+      .getByRole('button', { name: /Continue/i })
+      .first()
+      .click()
     await expect(page).toHaveURL(/\/session\/[^/]+\/appointments\//)
 
     const sessionId = page.url().split('/session/')[1].split('/')[0]
@@ -614,7 +1007,9 @@ test.describe('Image reading', () => {
 
     // Go straight to the chosen case rather than whichever the session leads
     // with - the appointment routes resolve any readable case by id
-    await page.goto(`/reading/session/${sessionId}/appointments/${appointment.id}`)
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${appointment.id}`
+    )
     await recordNormal(page)
 
     // Saving moves on to another case (or session complete) - wait for that
@@ -637,6 +1032,47 @@ test.describe('Image reading', () => {
     await expect(summaryRow('Reads')).toContainText(
       'First and second reads complete'
     )
+  })
+
+  test('steps through a completed session with "Next case"', async ({
+    page
+  }) => {
+    // Once every case is read there is nothing to move on to, so "Next case"
+    // walks the session in order rather than returning to the
+    // session-complete page each time
+    await pinSettings(page, readingSettings)
+
+    await page.goto(
+      `/reading/create-session?type=all_reads&limit=${sessionSize}&lazy=false`
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+    const readCases = []
+
+    for (let caseNumber = 0; caseNumber < sessionSize; caseNumber++) {
+      await expect(page).toHaveURL(/\/appointments\//)
+      readCases.push(page.url().split('/appointments/')[1].split('/')[0])
+      await recordNormal(page)
+    }
+
+    await expect(page).toHaveURL(/\/no-more-cases/)
+
+    await page.goto(
+      `/reading/session/${sessionId}/appointments/${readCases[0]}`
+    )
+    await expect(page).toHaveURL(/\/existing-read/)
+
+    for (const nextCaseId of readCases.slice(1)) {
+      await page.getByRole('link', { name: 'Next case' }).first().click()
+      await expect(page).toHaveURL(
+        new RegExp(`/appointments/${nextCaseId}/existing-read`)
+      )
+    }
+
+    // Past the last case, back to the session overview
+    await page.getByRole('link', { name: 'Next case' }).first().click()
+    await expect(page).toHaveURL(new RegExp(`/session/${sessionId}/your-reads`))
   })
 
   test('finalises reads from the session overview', async ({ page }) => {
@@ -714,12 +1150,17 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
 
     await expect(
-      page.getByRole('heading', { name: 'What is your opinion of these images?' })
+      page.getByRole('heading', {
+        name: 'What is your opinion of these images?'
+      })
     ).toBeVisible()
 
     // Unlike the details pages, the comparison breaks out of the modal and
     // takes over the page, so this is a plain click rather than clickToOpenModal
-    await page.getByRole('button', { name: 'Technical recall (T)' }).first().click()
+    await page
+      .getByRole('button', { name: 'Technical recall (T)' })
+      .first()
+      .click()
 
     await expect(page).toHaveURL(/\/compare/)
     // Exact, because the page heading ("The first reader had a different
@@ -732,7 +1173,10 @@ test.describe('Image reading', () => {
     ).toBeVisible()
 
     // Standing by the second opinion continues to its details page
-    await page.getByRole('button', { name: 'Keep your opinion' }).first().click()
+    await page
+      .getByRole('button', { name: 'Keep your opinion' })
+      .first()
+      .click()
 
     await expect(page).toHaveURL(/\/technical-recall/)
   })

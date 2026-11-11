@@ -50,13 +50,12 @@
   {{ input({
     name: "appointment[medicalHistoryTemp][locationUnknownLocationDetails]",
     value: appointment.medicalHistoryTemp.locationUnknownLocationDetails,
-    label: {
-      text: treatmentLocationUnknownDetailsLabel or "Provide details"
-    }
+    label: treatmentLocationUnknownDetailsLabel or "Provide details"
   }) }}
 {% endset %}
 
 {{ radios({
+  small: true,
   idPrefix: "location",
   name: "appointment[medicalHistoryTemp][location]",
   value: appointment.medicalHistoryTemp.location,

@@ -1,4 +1,18 @@
-{# app/views/_includes/check-in/macro.njk #}
+{# app/views/_components/check-in/macro.njk #}
+{#
+  Purpose: The “Check in” link for a scheduled appointment, opening the confirm identity modal when that is switched on.
+  Use when: offering check-in. Renders nothing for an appointment that is not scheduled, apart from the modal.
+
+  Params:
+    appointment — the appointment (required)
+    clinicId    — id of the appointment's clinic (required)
+    participant — adds their name to the link as visually hidden text
+    confirmIdentityOnCheckIn — boolean, check in through the confirm identity modal
+    statusTagId   — id of the status tag to update after check-in
+    currentFilter — the clinic list's current filter, for client-side updates
+    currentUser   — the signed-in user, for the confirm identity modal
+    referrerChain, participantUrl — read by the confirm identity modal
+#}
 
 {% macro appCheckIn(params) %}
   {%- include './template.njk' -%}

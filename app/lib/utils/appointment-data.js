@@ -2,9 +2,10 @@
 const { getParticipant } = require('./participants.js')
 const { getClinic } = require('./clinics.js')
 const dataStore = require('../data-store')
+const { recordChange } = require('../shared-data')
 
 /**
- * Record a changed appointment so it persists for this session
+ * Record a changed appointment so it persists across requests
  *
  * The appointments array attached to `data` is rebuilt from the shared data store
  * on every request; only records in data._changes survive across requests
@@ -15,9 +16,7 @@ const dataStore = require('../data-store')
  * @param {object} appointment - Whole replacement appointment record
  */
 const recordAppointmentChange = (data, appointment) => {
-  if (data._changes?.appointments) {
-    data._changes.appointments[appointment.id] = appointment
-  }
+  recordChange(data, 'appointments', appointment)
 }
 
 /**
@@ -35,7 +34,9 @@ const getAppointment = (data, appointmentId) => {
   return (
     data._changes?.appointments?.[appointmentId] ??
     dataStore.state.appointmentsById.get(appointmentId) ??
-    data.appointments?.find((appointment) => appointment.id === appointmentId) ??
+    data.appointments?.find(
+      (appointment) => appointment.id === appointmentId
+    ) ??
     null
   )
 }
@@ -73,7 +74,9 @@ const getAppointmentData = (data, clinicId, appointmentId) => {
  * @returns {object | null} Updated appointment or null if not found
  */
 const updateAppointment = (data, appointmentId, updatedAppointment) => {
-  const appointmentIndex = data.appointments.findIndex((appointment) => appointment.id === appointmentId)
+  const appointmentIndex = data.appointments.findIndex(
+    (appointment) => appointment.id === appointmentId
+  )
   if (appointmentIndex === -1) return null
 
   // Update in the attached array (same-request reads) and record the change
@@ -93,7 +96,9 @@ const updateAppointment = (data, appointmentId, updatedAppointment) => {
  * @returns {object | null} Updated appointment or null if not found
  */
 const updateAppointmentData = (data, appointmentId, updates) => {
-  const appointmentIndex = data.appointments.findIndex((appointment) => appointment.id === appointmentId)
+  const appointmentIndex = data.appointments.findIndex(
+    (appointment) => appointment.id === appointmentId
+  )
   if (appointmentIndex === -1) return null
 
   // Use temp appointment if it exists and matches, otherwise use the array appointment
@@ -141,7 +146,11 @@ const saveTempAppointmentToAppointment = (data) => {
   const appointmentId = data.appointment.id
 
   // Use updateAppointment to save the temp data
-  const updatedAppointment = updateAppointment(data, appointmentId, data.appointment)
+  const updatedAppointment = updateAppointment(
+    data,
+    appointmentId,
+    data.appointment
+  )
 
   // Clear temp data
   delete data.appointment
@@ -160,12 +169,18 @@ const saveTempAppointmentToAppointment = (data) => {
 const getStoppedReasons = () => [
   { value: 'Failed identity check', detailsField: 'failedIdentityDetails' },
   { value: 'Pain during screening', detailsField: 'painDetails' },
-  { value: 'Has a symptomatic appointment', detailsField: 'symptomaticDetails' },
+  {
+    value: 'Has a symptomatic appointment',
+    detailsField: 'symptomaticDetails'
+  },
   { value: 'Consent withdrawn', detailsField: 'consentDetails' },
   { value: 'Physical health issue', detailsField: 'physicalHealthDetails' },
   { value: 'Mental health issue', detailsField: 'mentalHealthDetails' },
   { value: 'Language difficulties', detailsField: 'languageDetails' },
-  { value: 'No qualified mammographer available', detailsField: 'mammographerDetails' },
+  {
+    value: 'No qualified mammographer available',
+    detailsField: 'mammographerDetails'
+  },
   { value: 'Technical issues at clinic', detailsField: 'technicalDetails' }
 ]
 

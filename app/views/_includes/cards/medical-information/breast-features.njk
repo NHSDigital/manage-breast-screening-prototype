@@ -1,4 +1,4 @@
-
+{# app/views/_includes/cards/medical-information/breast-features.njk #}
 
 {% set breastFeaturesHtml %}
   {# {% if useFakeBreastFeaturesCard %}
@@ -59,8 +59,10 @@
 {% endset %}
 
 {{ card({
-  heading: "Breast features",
-  headingLevel: "2",
+  heading: {
+    text: "Breast features",
+    level: 2
+  },
   feature: false,
   descriptionHtml: breastFeaturesHtml
 }) }}

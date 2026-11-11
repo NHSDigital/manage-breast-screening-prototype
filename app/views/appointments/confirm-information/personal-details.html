@@ -37,8 +37,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Personal information",
-    headingLevel: "2",
+    heading: {
+      text: "Personal information",
+      level: 2
+    },
     feature: true,
     descriptionHtml: participantDetailsHtml
   }) }}

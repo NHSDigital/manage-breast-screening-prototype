@@ -1,3 +1,4 @@
+{# app/views/appointments/images-room-selection.html #}
 {% extends 'layout-appointment.html' %}
 
 {% set showNavigation = false %}
@@ -49,18 +50,16 @@
   {% endif %}
 
   {{ radios({
+    small: true,
     idPrefix: "screening-room",
     name: "currentScreeningRoom",
     fieldset: {
       legend: {
-        text: pageHeading,
-        size: "l",
-        isPageHeading: true
+        heading: pageHeading,
+        size: "l"
       }
     },
-    hint: {
-      text: "We'll remember this for your next screening"
-    },
+    hint: "We'll remember this for your next screening",
     items: radioItems
   }) }}
 

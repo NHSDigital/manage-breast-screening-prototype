@@ -1,0 +1,9 @@
+// app/assets/sass/components/_button.scss
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// Button size is set through NHS Frontend settings in main.scss
+// Loaded before other app styles so their button spacing rules still win
+
+.nhsuk-button {
+  @include nhsuk-responsive-margin(4, "bottom", $adjustment: $nhsuk-button-shadow-size);
+}

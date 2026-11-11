@@ -26,6 +26,7 @@ const getChannel = () => {
  * @param {object} data.images - Image paths (rcc, lcc, rmlo, lmlo) - latest images
  * @param {object} data.allPaths - All image paths including additional images
  * @param {boolean} data.hasAdditionalImages - Whether there are additional images
+ * @param {Array<string>} data.notExpected - Views that weren't expected, left blank (e.g. ['rcc', 'rmlo'])
  */
 const broadcastShowParticipant = (data) => {
   const ch = getChannel()
@@ -41,6 +42,7 @@ const broadcastShowParticipant = (data) => {
     images: data.images || null,
     allPaths: data.allPaths || null,
     hasAdditionalImages: data.hasAdditionalImages || false,
+    notExpected: data.notExpected || null,
     setId: data.setId || null,
     setDescription: data.setDescription || null,
     setTag: data.setTag || null,
@@ -157,7 +159,9 @@ const isViewerOpen = () => {
 
 // Auto-broadcast on page load if we have participant data in meta tags
 document.addEventListener('DOMContentLoaded', () => {
-  const appointmentIdMeta = document.querySelector('meta[name="mammogram-appointment-id"]')
+  const appointmentIdMeta = document.querySelector(
+    'meta[name="mammogram-appointment-id"]'
+  )
   const participantNameMeta = document.querySelector(
     'meta[name="mammogram-participant-name"]'
   )
@@ -224,6 +228,17 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelector('meta[name="mammogram-has-additional"]')
         ?.getAttribute('content') === 'true'
 
+    // Views that weren't expected, for example after a mastectomy
+    const notExpectedRaw = document
+      .querySelector('meta[name="mammogram-not-expected"]')
+      ?.getAttribute('content')
+    let notExpected = null
+    try {
+      notExpected = notExpectedRaw ? JSON.parse(notExpectedRaw) : null
+    } catch (e) {
+      // Invalid JSON, ignore
+    }
+
     // Get context info for debugging
     const contextRaw = document
       .querySelector('meta[name="mammogram-context"]')
@@ -244,6 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
       images,
       allPaths,
       hasAdditionalImages,
+      notExpected,
       setId,
       setDescription,
       setTag,

@@ -1,4 +1,25 @@
-{# /app/views/_components/modal/macro.njk #}
+{# app/views/_components/modal/macro.njk #}
+{#
+  Purpose: A modal dialog for confirmations and other inline decisions, opened from JavaScript with openModal(id).
+  Use when: asking for a quick decision in place. appConfirmationModal is a preset with confirm and cancel buttons. For forms opening in a modal, see docs/modal-system.md instead.
+
+  Params for appModal:
+    id      — id of the modal (default: "app-modal")
+    title   — the heading
+    content — the body, as HTML
+    data    — object output as data attributes on the modal
+    showCloseButton — boolean, show a close button
+    actions — buttons or links: { text, element, variant, action, href, method, closeOnSuccess, classes, attributes }.
+              Buttons only pass on these attributes: data-clinic-id, data-appointment-id, data-current-filter,
+              data-status-tag-id, data-show-appointment-link. Links ignore attributes
+
+  Params for appConfirmationModal:
+    id, title, content, data — as appModal
+    confirmText, cancelText  — button text (default: "Confirm" and "Cancel")
+    confirmAction  — what the confirm button does (default: "close")
+    confirmHref, confirmMethod, closeOnSuccess — passed to the confirm button
+    includeTemplate — passed through, but the template does not read it
+#}
 
 {% macro appModal(params) %}
   {%- include "./template.njk" -%}

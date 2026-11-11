@@ -9,6 +9,7 @@
 {% block formContent %}
 
   {{ radios({
+    small: true,
     name: "appointment[medicalHistoryTemp][type]",
     value: appointment.medicalHistoryTemp.type,
     fieldset: {
@@ -46,9 +47,7 @@
 
   {% set conditionalDetails %}
     {{ input({
-      label: {
-        text: "Year removed"
-      },
+      label: "Year removed",
       name: "appointment[medicalHistoryTemp][yearRemoved]",
       value: appointment.medicalHistoryTemp.yearRemoved,
       id: "yearRemoved",
@@ -58,6 +57,7 @@
   {% endset %}
 
   {{ checkboxes({
+    small: true,
     name: "appointment[medicalHistoryTemp][deviceRemoved]",
     values: appointment.medicalHistoryTemp.deviceRemoved,
     items: [

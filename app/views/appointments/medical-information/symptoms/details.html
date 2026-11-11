@@ -1,4 +1,4 @@
-{# app/views/appointments/mammography/medical-information/symptoms/details.html #}
+{# app/views/appointments/medical-information/symptoms/details.html #}
 
 {% extends parentLayout or '_templates/layout-appointment.html' %}
 
@@ -63,6 +63,7 @@
 
   {# Whether this is a sign noted by the mammographer rather than a symptom reported by the participant #}
   {{ checkboxes({
+    small: true,
     idPrefix: "isMammographerObserved",
     name: "appointment[symptomTemp][isMammographerObserved]",
     fieldset: {
@@ -99,6 +100,7 @@
         <div class="nhsuk-grid-row">
           <div class="nhsuk-grid-column-one-half">
             {{ checkboxes({
+              small: true,
               name: "appointment[symptomTemp][nippleChangeLocation]",
               values: appointment.symptomTemp.nippleChangeLocation,
               idPrefix: "nippleChangeLocationRight",
@@ -115,6 +117,7 @@
           </div>
           <div class="nhsuk-grid-column-one-half">
             {{ checkboxes({
+              small: true,
               name: "appointment[symptomTemp][nippleChangeLocation]",
               values: appointment.symptomTemp.nippleChangeLocation,
               idPrefix: "nippleChangeLocationLeft",
@@ -168,6 +171,7 @@
         <div class="nhsuk-grid-row">
           <div class="nhsuk-grid-column-one-half">
             {{ checkboxes({
+              small: true,
               name: "appointment[symptomTemp][location]",
               values: appointment.symptomTemp.location,
               idPrefix: "locationRightBreast",
@@ -182,9 +186,7 @@
                     html: input({
                       id: "rightBreastDescription",
                       name: "appointment[symptomTemp][rightBreastDescription]",
-                      label: {
-                        text: "Describe the specific area (optional)"
-                      },
+                      label: "Describe the specific area (optional)",
                       value: appointment.symptomTemp.rightBreastDescription
                     })
                   }
@@ -194,6 +196,7 @@
           </div>
           <div class="nhsuk-grid-column-one-half">
             {{ checkboxes({
+              small: true,
               name: "appointment[symptomTemp][location]",
               values: appointment.symptomTemp.location,
               idPrefix: "locationLeftBreast",
@@ -208,9 +211,7 @@
                     html: input({
                       id: "leftBreastDescription",
                       name: "appointment[symptomTemp][leftBreastDescription]",
-                      label: {
-                        text: "Describe the specific area (optional)"
-                      },
+                      label: "Describe the specific area (optional)",
                       value: appointment.symptomTemp.leftBreastDescription
                     })
                   }
@@ -221,6 +222,7 @@
         </div>
 
         {{ checkboxes({
+          small: true,
           name: "appointment[symptomTemp][location]",
           values: appointment.symptomTemp.location,
           idPrefix: "locationOther",
@@ -235,12 +237,8 @@
                 html: input({
                   id: "otherLocationDescription",
                   name: "appointment[symptomTemp][otherLocationDescription]",
-                  label: {
-                    text: "Describe the specific area"
-                  },
-                  hint: {
-                    text: "For example, the left armpit"
-                  },
+                  label: "Describe the specific area",
+                  hint: "For example, the left armpit",
                   value: appointment.symptomTemp.otherLocationDescription,
                   classes: "nhsuk-u-width-two-thirds"
                 } | populateErrors)
@@ -271,14 +269,14 @@
   {# Nipple change type #}
   {% elseif appointment.symptomTemp.type == "Nipple change" %}
     {{ radios({
+      small: true,
       idPrefix: "nippleChangeType",
       name: "appointment[symptomTemp][nippleChangeType]",
       value: appointment.symptomTemp.nippleChangeType,
       fieldset: {
         legend: {
           text: "Describe the change",
-          size: "m",
-          isPageHeading: false
+          size: "m"
         }
       },
       items: [
@@ -313,9 +311,7 @@
             html: input({
               id: "nippleChangeDescription",
               name: "appointment[symptomTemp][nippleChangeDescription]",
-              label: {
-                text: "Provide details"
-              },
+              label: "Provide details",
               value: appointment.symptomTemp.nippleChangeDescription,
               classes: "nhsuk-u-width-two-thirds"
             } | populateErrors)
@@ -328,14 +324,14 @@
   {% elseif appointment.symptomTemp.type == "Skin change" %}
 
     {{ radios({
+      small: true,
       idPrefix: "skinChangeType",
       name: "appointment[symptomTemp][skinChangeType]",
       value: appointment.symptomTemp.skinChangeType,
       fieldset: {
         legend: {
           text: "How has the skin changed?",
-          size: "m",
-          isPageHeading: false
+          size: "m"
         }
       },
       items: [
@@ -362,9 +358,7 @@
             html: input({
               id: "skinChangeDescription",
               name: "appointment[symptomTemp][skinChangeDescription]",
-              label: {
-                text: "Describe the change"
-              },
+              label: "Describe the change",
               value: appointment.symptomTemp.skinChangeDescription,
               classes: "nhsuk-u-width-two-thirds"
             } | populateErrors)
@@ -382,13 +376,10 @@
         fieldset: {
           legend: {
             text: "Date symptom started",
-            classes: "nhsuk-u-visually-hidden",
-            isPageHeading: false
+            classes: "nhsuk-u-visually-hidden"
           }
         },
-        hint: {
-          text: "For example, 3 2025"
-        },
+        hint: "For example, 3 2025",
         items: [
           {
             name: "month",
@@ -412,9 +403,7 @@
           text: "Enter an approximate date",
           classes: "nhsuk-u-visually-hidden"
         },
-        hint: {
-          text: "For example, 9 months ago"
-        },
+        hint: "For example, 9 months ago",
         classes: "nhsuk-u-width-two-thirds",
         value: appointment.symptomTemp.approximateDateStarted
       }) }}
@@ -469,16 +458,16 @@
 
     {# Radios for when were they taken - choices 'Date known' and 'Enter approximate date' and 'Not known'  #}
     {{ radios({
+      small: true,
       idPrefix: "dateType",
       name: "appointment[symptomTemp][dateType]",
       fieldset: {
         legend: {
           text: "How long has this symptom existed?",
-          size: "m",
-          isPageHeading: false
+          size: "m"
         }
       },
-      value: symptomDateTypeValue,
+      value: appointment.symptomTemp.dateType,
       items: dateRadioItems
     } | populateErrors) }}
 
@@ -486,12 +475,8 @@
       {{ input({
         id: "approximateDateStopped",
         name: "appointment[symptomTemp][approximateDateStopped]",
-        label: {
-          text: "Approximate date symptom stopped"
-        },
-        hint: {
-          text: "For example, " ~ (now() | remove(1, "months") | formatDate("MMMM YYYY"))
-        },
+        label: "Approximate date symptom stopped",
+        hint: "For example, " ~ (now() | remove(1, "months") | formatDate("MMMM YYYY")),
         value: appointment.symptomTemp.approximateDateStopped,
         classes: "nhsuk-u-width-two-thirds"
       } | populateErrors) }}
@@ -501,12 +486,8 @@
     {{ textarea({
       id: "investigatedDescription",
       name: "appointment[symptomTemp][investigatedDescription]",
-      label: {
-        text: "Provide details"
-      },
-      hint: {
-        text: "Include where, when and the outcome"
-      },
+      label: "Provide details",
+      hint: "Include where, when and the outcome",
       value: appointment.symptomTemp.investigatedDescription
     } | populateErrors) }}
   {% endset %}
@@ -514,12 +495,12 @@
   {% call fieldset({
     legend: {
       text: "Additional symptom information",
-      size: "m",
-      isPageHeading: false
+      size: "m"
     }
   }) %}
 
     {{ checkboxes({
+      small: true,
       idPrefix: "isIntermittent",
       name: "appointment[symptomTemp][isIntermittent]",
       formGroup: {
@@ -535,6 +516,7 @@
     }) }}
 
     {{ checkboxes({
+      small: true,
       idPrefix: "hasStopped",
       name: "appointment[symptomTemp][hasStopped]",
       formGroup: {
@@ -553,6 +535,7 @@
     }) }}
 
     {{ checkboxes({
+      small: true,
       idPrefix: "hasBeenInvestigated",
       name: "appointment[symptomTemp][hasBeenInvestigated]",
       values: appointment.symptomTemp.hasBeenInvestigated,
@@ -583,6 +566,7 @@
       {% endif %}
 
       {{ radios({
+        small: true,
         idPrefix: "isSignificant",
         name: "appointment[symptomTemp][isSignificant]",
         fieldset: {
@@ -591,9 +575,7 @@
             size: "m"
           }
         },
-        hint: {
-          text: isSignificantHint
-        },
+        hint: isSignificantHint,
         items: [
           {
             value: "yes",
@@ -642,19 +624,13 @@
 
     {# Button menu disabled for now until we have a prod component #}
     {# {% include "add-symptom-button-menu.njk" %} #}
-  </div>
 
-  {# Only show link if this is a previously saved symptom #}
-  {% if appointment.symptomTemp.id %}
-    {% set deleteHref %}
-      ./delete/{{ appointment.symptomTemp.id }}{{ "" | urlWithReferrer(referrerChain, query.scrollTo) }}
-    {% endset %}
-    <p class="nhsuk-u-margin-top-4">
-      <a href="{{ deleteHref }}" class="nhsuk-link app-link--warning">
-        Delete this symptom
-      </a>
-    </p>
-  {% endif %}
+    {# Only show link if this is a previously saved symptom #}
+    {% if appointment.symptomTemp.id %}
+      {% set deleteHref = ("./delete/" + appointment.symptomTemp.id) | urlWithReferrer(referrerChain, query.scrollTo) %}
+      <a href="{{ deleteHref }}" class="nhsuk-link nhsuk-link--no-visited-state app-link--warning">Delete this symptom</a>
+    {% endif %}
+  </div>
   {# {% include "screening-cannot-proceed-link.njk" %} #}
 
 {% endblock %}

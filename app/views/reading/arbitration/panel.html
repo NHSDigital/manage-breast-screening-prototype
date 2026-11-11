@@ -28,9 +28,7 @@
       id: "panel-other-name",
       name: "arbitrationTemp[otherArbitratorNames]",
       classes: "nhsuk-u-width-two-thirds",
-      label: {
-        text: "Name"
-      }
+      label: "Name"
     }) }}
     <p class="nhsuk-u-margin-top-2">
       <a href="#" class="nhsuk-link--no-visited-state">Add another</a>
@@ -46,18 +44,16 @@
   }) %}
 
   {{ checkboxes({
+    small: true,
     idPrefix: "panel-users",
     name: "arbitrationTemp[panelUserIds]",
     fieldset: {
       legend: {
-        text: pageHeading,
-        size: "l",
-        isPageHeading: true
+        heading: pageHeading,
+        size: "l"
       }
     },
-    hint: {
-      text: "For clinical assurance, you must document everyone who will be present during all decisions"
-    },
+    hint: "For clinical assurance, you must document everyone who will be present during all decisions",
     items: userItems
   } | populateErrors) }}
 

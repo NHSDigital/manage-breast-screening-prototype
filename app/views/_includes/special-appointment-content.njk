@@ -14,21 +14,21 @@
       {# Get the details for each support type #}
       {% if supportType == "Breast implants" and specialAppointmentData.implantDetails %}
         {% set details = specialAppointmentData.implantDetails %}
-      {% elif supportType == "Implanted medical devices" and specialAppointmentData.implantedMedicalDevicesDetails %}
+      {% elseif supportType == "Implanted medical devices" and specialAppointmentData.implantedMedicalDevicesDetails %}
         {% set details = specialAppointmentData.implantedMedicalDevicesDetails %}
-      {% elif supportType == "Vision" and specialAppointmentData.visionDetails %}
+      {% elseif supportType == "Vision" and specialAppointmentData.visionDetails %}
         {% set details = specialAppointmentData.visionDetails %}
-      {% elif supportType == "Hearing" and specialAppointmentData.hearingDetails %}
+      {% elseif supportType == "Hearing" and specialAppointmentData.hearingDetails %}
         {% set details = specialAppointmentData.hearingDetails %}
-      {% elif supportType == "Physical restriction" and specialAppointmentData.physicalRestrictionDetails %}
+      {% elseif supportType == "Physical restriction" and specialAppointmentData.physicalRestrictionDetails %}
         {% set details = specialAppointmentData.physicalRestrictionDetails %}
-      {% elif supportType == "Social, emotional, and mental health" and specialAppointmentData.socialEmotionalMentalHealthDetails %}
+      {% elseif supportType == "Social, emotional, and mental health" and specialAppointmentData.socialEmotionalMentalHealthDetails %}
         {% set details = specialAppointmentData.socialEmotionalMentalHealthDetails %}
-      {% elif supportType == "Language" and specialAppointmentData.languageDetails %}
+      {% elseif supportType == "Language" and specialAppointmentData.languageDetails %}
         {% set details = specialAppointmentData.languageDetails %}
-      {% elif supportType == "Gender identity" and specialAppointmentData.genderIdentityDetails %}
+      {% elseif supportType == "Gender identity" and specialAppointmentData.genderIdentityDetails %}
         {% set details = specialAppointmentData.genderIdentityDetails %}
-      {% elif supportType == "Other" and specialAppointmentData.otherDetails %}
+      {% elseif supportType == "Other" and specialAppointmentData.otherDetails %}
         {% set details = specialAppointmentData.otherDetails %}
       {% endif %}
 

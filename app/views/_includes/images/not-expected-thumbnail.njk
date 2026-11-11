@@ -1,0 +1,14 @@
+{# app/views/_includes/images/not-expected-thumbnail.njk #}
+{#
+  Placeholder for a mammogram view that wasn't expected, for example after a
+  mastectomy. Goes inside an app-mammogram-thumbnail__image-wrapper, in place
+  of the "No image" placeholder.
+
+  Set before including:
+  - notExpectedText: the text (optional, default "Not expected"). Reading
+    uses "Not imaged", as by then the images are the record
+#}
+
+<div class="app-mammogram-thumbnail__missing app-mammogram-thumbnail__missing--not-expected" data-not-expected>
+  <span class="app-mammogram-thumbnail__missing-text">{{ notExpectedText or "Not expected" }}</span>
+</div>

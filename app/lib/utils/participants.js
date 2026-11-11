@@ -3,6 +3,7 @@
 const { safe: nunjucksSafe } = require('nunjucks/src/filters')
 const riskLevels = require('../../data/risk-levels.js')
 const dataStore = require('../data-store')
+const { recordChange } = require('../shared-data')
 
 /**
  * Get a participant by ID
@@ -63,7 +64,9 @@ const getFullNameReversed = (participant) => {
   if (!participant?.demographicInformation) return ''
   const { firstName, middleName, lastName } = participant.demographicInformation
   return nunjucksSafe(
-    [`${lastName.toUpperCase()},`, firstName, middleName].filter(Boolean).join(' ')
+    [`${lastName.toUpperCase()},`, firstName, middleName]
+      .filter(Boolean)
+      .join(' ')
   )
 }
 
@@ -156,6 +159,17 @@ const getCurrentRiskLevel = (participant, referenceDate = new Date()) => {
   return 'routine'
 }
 
+/**
+ * Get the display name of a participant's current screening protocol
+ *
+ * @param {object} participant - Participant object
+ * @param {Date} [referenceDate] - Date to work out their age at
+ * @returns {string} Protocol name, such as 'Routine' or 'Family history: moderate risk'
+ */
+const getScreeningProtocolName = (participant, referenceDate = new Date()) => {
+  return riskLevels[getCurrentRiskLevel(participant, referenceDate)].name
+}
+
 // Saving data
 
 /**
@@ -176,9 +190,7 @@ const updateParticipant = (data, participantId, updatedParticipant) => {
   // in data._changes (persistence - the attached array is rebuilt from the
   // shared data store on every request; see middleware in app/routes.js)
   data.participants[participantIndex] = updatedParticipant
-  if (data._changes?.participants) {
-    data._changes.participants[participantId] = updatedParticipant
-  }
+  recordChange(data, 'participants', updatedParticipant)
   return updatedParticipant
 }
 
@@ -221,6 +233,7 @@ module.exports = {
   getAge,
   sortBySurname,
   getCurrentRiskLevel,
+  getScreeningProtocolName,
   updateParticipant,
   saveTempParticipantToParticipant
 }

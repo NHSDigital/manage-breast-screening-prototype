@@ -1,4 +1,4 @@
-{# app/views/appointments/previous-mammograms/appointment-should-not-begin.html #}
+{# app/views/appointments/previous-mammograms/appointment-should-not-take-place.html #}
 
 {% extends parentLayout or 'layout-appointment.html' %}
 
@@ -30,13 +30,13 @@
 {% endset %}
 
   {{ radios({
+    small: true,
     name: "appointment[appointmentStopped][needsReschedule]",
     value: appointment.appointmentStopped.needsReschedule,
     fieldset: {
       legend: {
         text: "Should the appointment be rescheduled?",
-        size: "m",
-        isPageHeading: false
+        size: "m"
       }
     },
     items: [
@@ -61,6 +61,6 @@
   </div>
 
   <p>
-    <a href="{{ './proceed-anyway' | urlWithReferrer(referrerChain, query.scrollTo) }}" class="app-link--warning">Proceed with this appointment</a>
+    <a href="{{ './proceed-anyway' | urlWithReferrer(referrerChain, query.scrollTo) }}" class="nhsuk-link nhsuk-link--no-visited-state app-link--warning">Proceed with this appointment</a>
   </p>
 {% endblock %}

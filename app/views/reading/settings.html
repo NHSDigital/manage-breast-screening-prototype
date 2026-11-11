@@ -1,0 +1,72 @@
+{# app/views/reading/settings.html #}
+
+{% extends parentLayout or 'layout-app.html' %}
+
+{% set pageHeading = "Reading settings" %}
+{% set formAction = "/reading/settings/save" %}
+
+{% block pageContent %}
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {{ radios({
+    small: true,
+    idPrefix: "readingDarkMode",
+    name: "_readingDarkMode",
+    value: data.settings.darkMode or "false",
+    fieldset: {
+      legend: "Colour mode"
+    },
+    items: [
+      {
+        value: "false",
+        text: "Light"
+      },
+      {
+        value: "true",
+        text: "Dark"
+      }
+    ]
+  } | populateErrors) }}
+
+  {{ radios({
+    small: true,
+    idPrefix: "readingSessionSize",
+    name: "_readingSessionSize",
+    value: data.settings.reading.defaultSessionSize or "25",
+    fieldset: {
+      legend: "Cases per image reading or arbitration session"
+    },
+    items: [
+      {
+        value: "10",
+        text: "10"
+      },
+      {
+        value: "25",
+        text: "25"
+      },
+      {
+        value: "50",
+        text: "50"
+      },
+      {
+        value: "100",
+        text: "100"
+      }
+    ]
+  } | populateErrors) }}
+
+  <div class="nhsuk-button-group">
+    {{ button({
+      text: "Save"
+    }) }}
+    {{ link({
+      text: "Cancel",
+      href: "/reading",
+      classes: "nhsuk-link--no-visited-state",
+      attributes: {
+        "data-modal-action": "close"
+      }
+    }) | trim | safe }}
+  </div>
+{% endblock %}

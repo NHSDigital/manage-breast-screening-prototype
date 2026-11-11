@@ -33,6 +33,7 @@ const log = (a, description = null) => {
  * join(['a', 'b', 'c'], ', ') // 'a, b, c'
  * join([{name: 'John'}, {name: 'Jane'}], ', ', 'name') // 'John, Jane'
  * join(['a', null, 'b'], ', ') // 'a, b' (filters nulls by default)
+ * join('single value', ', ') // 'single value' (a string is one value, not characters)
  * join(null) // ''
  * join(undefined) // ''
  */
@@ -48,6 +49,9 @@ const join = (input, delimiter = '', attribute = null, options = {}) => {
   let array
   if (Array.isArray(input)) {
     array = input
+  } else if (typeof input === 'string') {
+    // A plain string is a single value, not a list of characters to split
+    array = [input]
   } else if (input.length !== undefined) {
     // Array-like object (NodeList, etc.)
     array = Array.from(input)
@@ -156,33 +160,26 @@ const getContext = function () {
  * @param {*} value - The value to parse (string) or return (object/array)
  * @returns {*} The parsed object, original structured data, or null if parsing failed
  */
-function parseJsonString(value)
-{
+function parseJsonString(value) {
   // Handle null, undefined, or empty string
-  if (value === null || value === undefined || value === '')
-  {
+  if (value === null || value === undefined || value === '') {
     return null
   }
 
   // If it's already structured data (object or array), return it as-is
-  if (typeof value === 'object')
-  {
+  if (typeof value === 'object') {
     return value
   }
 
   // If it's not a string, convert to string first (for numbers, booleans, etc.)
-  if (typeof value !== 'string')
-  {
+  if (typeof value !== 'string') {
     value = String(value)
   }
 
   // Only attempt JSON.parse on strings
-  try
-  {
+  try {
     return JSON.parse(value)
-  }
-  catch (error)
-  {
+  } catch (error) {
     console.warn('Failed to parse JSON string:', value, error)
     return null
   }

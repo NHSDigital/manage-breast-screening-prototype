@@ -4,6 +4,7 @@ const { faker } = require('@faker-js/faker')
 const dayjs = require('dayjs')
 const weighted = require('weighted')
 const REPEAT_REASONS = require('../../data/repeat-reasons')
+const { STANDARD_VIEW_CODES } = require('../utils/expected-views')
 
 // Reasons for incomplete mammography - matches the options in additional-image-details.njk
 const INCOMPLETE_MAMMOGRAPHY_REASONS = [
@@ -18,7 +19,7 @@ const INCOMPLETE_MAMMOGRAPHY_REASONS = [
 
 // Follow-up appointment options
 const INCOMPLETE_MAMMOGRAPHY_FOLLOW_UP_OPTIONS = [
-  "Yes, record as 'to be recalled'",
+  "Yes, record as 'more images due'",
   "No, record as 'partial mammography'"
 ]
 
@@ -152,6 +153,7 @@ const generateViewImages = ({
  * @param {string[]} [options.config.repeatViews] - Array of views to repeat (e.g. ['RMLO', 'LCC'])
  * @param {string[]} [options.config.missingViews] - Array of views to omit (e.g. ['RMLO'])
  * @param {boolean} [options.config.allViewsExtra] - If true, all views get extra images
+ * @param {string[]} [options.expectedViews] - View codes the appointment expects, from getExpectedViews. Others are not taken
  * @returns {object} Complete mammogram data
  */
 const generateMammogramImages = ({
@@ -159,14 +161,15 @@ const generateMammogramImages = ({
   accessionNumber = null,
   isSeedData = false,
   config = {},
+  expectedViews = STANDARD_VIEW_CODES,
   scenarioWeights = null,
   imperfectChanceForTechnicalOrIncomplete = 0.15,
   notesForReaderChanceWithoutImperfect = 0.05
 } = {}) => {
   // Use the provided accession number as base, or fall back to a random number
-  const accessionBase = accessionNumber || faker.number
-    .int({ min: 100000000, max: 999999999 })
-    .toString()
+  const accessionBase =
+    accessionNumber ||
+    faker.number.int({ min: 100000000, max: 999999999 }).toString()
   let currentIndex = 1
   let currentTime = dayjs(startTime)
   const views = {}
@@ -175,6 +178,11 @@ const generateMammogramImages = ({
   const scenario =
     config.scenario ||
     weighted.select(scenarioWeights || IMAGE_SCENARIO_WEIGHTS)
+
+  // An empty plan means the appointment should have stopped, so take a full set
+  const viewsToTake = expectedViews?.length
+    ? expectedViews
+    : STANDARD_VIEW_CODES
 
   // Determine view configuration based on scenario
   let viewsToRepeat = config.repeatViews || []
@@ -191,20 +199,18 @@ const generateMammogramImages = ({
       // 1-2 views get a repeat
       if (!config.repeatViews) {
         const repeatCount = faker.number.int({ min: 1, max: 2 })
-        viewsToRepeat = faker.helpers.arrayElements(
-          ['RMLO', 'RCC', 'LCC', 'LMLO'],
-          { min: repeatCount, max: repeatCount }
-        )
+        viewsToRepeat = faker.helpers.arrayElements(viewsToTake, {
+          min: Math.min(repeatCount, viewsToTake.length),
+          max: Math.min(repeatCount, viewsToTake.length)
+        })
       }
       break
 
     case 'incomplete':
     case 'incompleteImperfect':
-      // 1 view is missing
-      if (!config.missingViews) {
-        viewsMissing = [
-          faker.helpers.arrayElement(['RMLO', 'RCC', 'LCC', 'LMLO'])
-        ]
+      // 1 expected view is missing, as long as another is still taken
+      if (!config.missingViews && viewsToTake.length > 1) {
+        viewsMissing = [faker.helpers.arrayElement(viewsToTake)]
       }
       break
 
@@ -219,8 +225,11 @@ const generateMammogramImages = ({
     const viewKey = generateViewKey(side, view)
     const viewShortWithSide = `${side === 'right' ? 'R' : 'L'}${view === 'mediolateral oblique' ? 'MLO' : 'CC'}`
 
-    // Skip if this view is in missingViews
-    if (viewsMissing.includes(viewShortWithSide)) {
+    // Skip if this view is in missingViews or not expected
+    if (
+      viewsMissing.includes(viewShortWithSide) ||
+      !viewsToTake.includes(viewShortWithSide)
+    ) {
       return
     }
 
@@ -281,15 +290,18 @@ const generateMammogramImages = ({
     return extraCount > 0
   })
 
-  // Check if any views are missing
-  const hasMissingViews = Object.keys(views).length < 4
+  // Check if any expected views are missing. Views that weren't expected don't count
+  const hasMissingViews = viewsToTake.some(
+    (code) =>
+      !Object.values(views).some((view) => view.viewShortWithSide === code)
+  )
 
   // Generate incomplete mammography data if views are missing and this is seed data
   let incompleteMammographyData = {}
   if (isSeedData && hasMissingViews) {
     const reason = faker.helpers.arrayElement(INCOMPLETE_MAMMOGRAPHY_REASONS)
     const followUp = weighted.select({
-      "Yes, record as 'to be recalled'": 0.4,
+      "Yes, record as 'more images due'": 0.4,
       "No, record as 'partial mammography'": 0.6
     })
 
@@ -312,7 +324,7 @@ const generateMammogramImages = ({
     }
 
     // Add details if follow-up is YES
-    if (followUp === "Yes, record as 'to be recalled'") {
+    if (followUp === "Yes, record as 'more images due'") {
       incompleteMammographyData.incompleteMammographyFollowUpAppointmentDetails =
         faker.helpers.arrayElement([
           'Participant has a shoulder injury that should heal in 4-6 weeks.',
@@ -368,7 +380,6 @@ const generateMammogramImages = ({
     ...notesData,
     metadata: {
       totalImages,
-      standardViewsCompleted: Object.keys(views).length === 4,
       startTime: allTimestamps[0],
       endTime: allTimestamps[allTimestamps.length - 1],
       hasAdditionalImages,

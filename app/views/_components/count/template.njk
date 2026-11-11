@@ -1,6 +1,6 @@
-<span class="app-count">
-  <span class="nhsuk-u-visually-hidden">(</span>
+{# app/views/_components/count/template.njk -#}
+<span class="app-count {%- if params.classes %} {{ params.classes }}{% endif %}">
+  <span class="nhsuk-u-visually-hidden"> (</span>
   {{- number -}}
   <span class="nhsuk-u-visually-hidden">)</span>
 </span>
-

@@ -1,3 +1,4 @@
+{# app/views/_includes/cards/medical-information/medical-information.njk #}
 {% set medicalInformationCardHtml %}
   {{ summaryList({
     rows: [
@@ -57,8 +58,10 @@
 {% endset %}
 
 {{ card({
-  heading: "Medical history",
-  headingLevel: "2",
+  heading: {
+    text: "Medical history",
+    level: 2
+  },
   feature: false,
   descriptionHtml: medicalInformationCardHtml
 }) }}

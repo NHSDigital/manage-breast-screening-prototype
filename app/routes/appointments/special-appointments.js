@@ -22,8 +22,10 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
-      const supportTypes = data.appointment?.specialAppointment?.supportTypes || []
-      const temporaryReasons = data.appointment?.specialAppointment?.temporaryReasons
+      const supportTypes =
+        data.appointment?.specialAppointment?.supportTypes || []
+      const temporaryReasons =
+        data.appointment?.specialAppointment?.temporaryReasons
 
       // Validate that temporaryReasons was answered
       // if (!temporaryReasons && supportTypes) {
@@ -107,7 +109,8 @@ module.exports = (router) => {
       const data = req.session.data
 
       const supportTypes = data.appointment?.specialAppointment?.supportTypes
-      const temporaryReasons = data.appointment?.specialAppointment?.temporaryReasons
+      const temporaryReasons =
+        data.appointment?.specialAppointment?.temporaryReasons
       const temporaryReasonsList =
         data.appointment?.specialAppointment?.temporaryReasonsList
 

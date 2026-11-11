@@ -1,4 +1,4 @@
-{# app/views/_includes/mammogram-data-display.njk #}
+{# app/views/_includes/summary-lists/medical-information/mammogram-image-data.njk #}
 {# Display captured mammogram information - works for both manual and automated #}
 
 {% set allowEdits = allowEdits | default(true) %}
@@ -100,15 +100,20 @@
     
     {# Add repeat reasons if present #}
     {% if view.repeatReasons and view.repeatReasons | length > 0 %}
-      {% set reasonsList = "<ul class='nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-0'>" %}
-      {% for reason in view.repeatReasons %}
-        {% set reasonsList = reasonsList + "<li>" + reason + "</li>" %}
-      {% endfor %}
-      {% set reasonsList = reasonsList + "</ul>" %}
-      {% set viewDescription = viewDescription + "<br>Repeat " + ("reason" | pluralise(view.repeatReasons | length)) + ":" + reasonsList %}
+      {% set viewDescription %}
+        {{ viewDescription | safe }}<br>Repeat {{ "reason" | pluralise(view.repeatReasons | length) }}:
+        <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-0">
+          {% for reason in view.repeatReasons %}
+            <li>{{ reason }}</li>
+          {% endfor %}
+        </ul>
+      {% endset %}
     {% endif %}
     
-    {% set extraImagesHtml = extraImagesHtml + "<p class='nhsuk-u-margin-bottom-2'><strong>" + view.viewShortWithSide + ":</strong> " + viewDescription + "</p>" %}
+    {% set extraImagesHtml %}
+      {{ extraImagesHtml | safe }}
+      <p class="nhsuk-u-margin-bottom-2"><strong>{{ view.viewShortWithSide }}:</strong> {{ viewDescription | safe }}</p>
+    {% endset %}
   {% endif %}
 {% endfor %}
 
@@ -168,14 +173,7 @@
 
 {# Authorised mammographer - whoever was nominated to take the images, falling
    back to whoever ran the appointment #}
-{% set authorisedMammographerName = appointment | getAuthorisedMammographerName({ format: "reversed" }) %}
-{% if not authorisedMammographerName %}
-  {% if appointment.sessionDetails.endedBy %}
-    {% set authorisedMammographerName = appointment.sessionDetails.endedBy | getUsername({ format: "reversed" }) %}
-  {% else %}
-    {% set authorisedMammographerName = appointment.sessionDetails.startedBy | getUsername({ format: "reversed" }) %}
-  {% endif %}
-{% endif %}
+{% set authorisedMammographerName = (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (appointment | getScreenedByName({ format: "reversed" })) %}
 
 {% if authorisedMammographerName %}
   {% set authorisedMammographerActions = [] %}
@@ -184,14 +182,14 @@
       ({
         href: authorisedMammographerChangeHref,
         text: "Change",
-        visuallyHiddenText: "authorised mammographer"
+        visuallyHiddenText: "operator"
       } | openInModal)
     ] %}
   {% endif %}
 
   {% set summaryRows = summaryRows | push({
     key: {
-      text: "Authorised mammographer"
+      text: "Operator"
     },
     value: {
       text: authorisedMammographerName
@@ -252,21 +250,42 @@
     
     {# Add repeat reasons if present #}
     {% if view.repeatReasons and view.repeatReasons | length > 0 %}
-      {% set reasonsList = "<ul class='nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-0'>" %}
-      {% for reason in view.repeatReasons %}
-        {% set reasonsList = reasonsList + "<li>" + reason + "</li>" %}
-      {% endfor %}
-      {% set reasonsList = reasonsList + "</ul>" %}
-      {% set viewDescription = viewDescription + "<br>Repeat " + ("reason" | pluralise(view.repeatReasons | length)) + ":" + reasonsList %}
+      {% set viewDescription %}
+        {{ viewDescription | safe }}<br>Repeat {{ "reason" | pluralise(view.repeatReasons | length) }}:
+        <ul class="nhsuk-list nhsuk-list--bullet nhsuk-u-margin-bottom-0">
+          {% for reason in view.repeatReasons %}
+            <li>{{ reason }}</li>
+          {% endfor %}
+        </ul>
+      {% endset %}
     {% endif %}
   {% endif %}
   
   {% if viewDescription %}
-    {% set combinedViewsHtml = combinedViewsHtml + "<p class='nhsuk-u-margin-bottom-2'><strong>" + viewLabel + ":</strong> " + viewDescription + "</p>" %}
+    {% set combinedViewsHtml %}
+      {{ combinedViewsHtml | safe }}
+      <p class="nhsuk-u-margin-bottom-2"><strong>{{ viewLabel }}:</strong> {{ viewDescription | safe }}</p>
+    {% endset %}
   {% else %}
-    {% set combinedViewsHtml = combinedViewsHtml + "<p class='nhsuk-u-margin-bottom-2'><strong>" + viewLabel + "</strong></p>" %}
+    {% set combinedViewsHtml %}
+      {{ combinedViewsHtml | safe }}
+      <p class="nhsuk-u-margin-bottom-2"><strong>{{ viewLabel }}</strong></p>
+    {% endset %}
   {% endif %}
 {% endfor %}
+
+{# Expected images, only when the plan isn't a standard set #}
+{% set expectedViews = appointment | getExpectedViews %}
+{% if not expectedViews.isStandardSet %}
+  {% set summaryRows = summaryRows | push({
+    key: {
+      text: "Expected images"
+    },
+    value: {
+      text: expectedViews.description
+    }
+  }) %}
+{% endif %}
 
 {% set summaryRows = summaryRows | push({
   key: {

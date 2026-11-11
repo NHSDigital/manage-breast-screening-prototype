@@ -1,15 +1,6 @@
 {# app/views/_components/notification-banner/_compact-template.njk #}
 {%- from "_components/icon/macro.njk" import appIcon -%}
 
-{#
-  Compact notification banner, inspired by the MOJ alert component.
-  Supports the same params as the standard notificationBanner:
-  - type/variant: "success", "warning", "error", or unset (important/info)
-  - text or html
-  - titleText or titleHtml (optional for compact)
-  - classes, attributes
-#}
-
 {%- set variant = params.variant or params.type -%}
 
 {%- set modifierClass = "" -%}
@@ -52,7 +43,7 @@
         <div class="app-notification-banner--compact__content {{ "app-notification-banner--compact__content--no-title" if not titleContent }}">
           {%- if params.html %}
             {{ params.html | safe }}
-          {%- elif params.text %}
+          {%- elseif params.text %}
             {{ params.text }}
           {%- endif %}
         </div>

@@ -39,8 +39,8 @@
   {%- if progress.sessionAwaitingPriorsCount > 0 -%}
     , {{ progress.sessionAwaitingPriorsCount }} awaiting priors
   {%- endif -%}
-  {%- if progress.deferredCount > 0 -%}
-    , {{ progress.deferredCount }} deferred
+  {%- if progress.openIssueCount > 0 -%}
+    , {{ progress.openIssueCount }} with an issue
   {%- endif -%}
   , {{ progress.targetRemaining }} remaining
   {%- if progress.skippedAppointments | length > 0 %}
@@ -91,18 +91,32 @@
   }) %}
 
   {# NHS Number #}
+  {% set nhsNumberHtml %}
+    {{ appCopyToClipboard({
+      text: participant.medicalInformation.nhsNumber,
+      type: "value",
+      html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>',
+      label: "NHS number"
+    }) }}
+  {% endset %}
   {% set participantRowItems = participantRowItems | push({
     key: "NHS:",
-    value: participant.medicalInformation.nhsNumber | formatNhsNumber
+    value: nhsNumberHtml
   }) %}
 
   {# SX Number #}
+  {% set sxNumberHtml %}
+    {{ appCopyToClipboard({
+      text: participant.sxNumber,
+      type: "value",
+      html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + participant.sxNumber + '</span>',
+      label: "SX number"
+    }) }}
+  {% endset %}
   {% set participantRowItems = participantRowItems | push({
     key: "SX:",
-    value: participant.sxNumber
+    value: sxNumberHtml
   }) %}
-
-
 
   {% set statusBarRows = statusBarRows | push({
     items: participantRowItems

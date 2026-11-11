@@ -23,8 +23,32 @@ if (configEl) {
   }
 }
 
+// Progress is kept per appointment start (the key includes when it was
+// started), so that coming back to the page (for example after adding a
+// symptom) carries on where it left off, counting images that would have
+// arrived while the user was away. Starting the appointment again, such as
+// after resetting data, streams from the beginning
+function getStorageKey(progressKey) {
+  return `image-streaming-progress-${progressKey}`
+}
+
+function loadProgress(progressKey) {
+  try {
+    return JSON.parse(sessionStorage.getItem(getStorageKey(progressKey)))
+  } catch (e) {
+    return null
+  }
+}
+
+function saveProgress(progressKey, revealedCount, lastRevealedAt) {
+  sessionStorage.setItem(
+    getStorageKey(progressKey),
+    JSON.stringify({ revealedCount, lastRevealedAt })
+  )
+}
+
 function initStreaming(config) {
-  const { intervalMs = 3000, images = [], totalImages = images.length } = config
+  const { intervalMs = 3000, images = [], progressKey } = config
 
   // Find all view slots rendered by mammogram-image-display.njk
   const slots = document.querySelectorAll('[data-view]')
@@ -39,30 +63,53 @@ function initStreaming(config) {
     }
   })
 
-  // Set all slots to awaiting state before any images arrive
-  slots.forEach((slot) => setSlotAwaiting(slot))
+  // Set slots to awaiting state before any images arrive. Views that aren't
+  // expected keep their placeholder, as nothing will arrive for them
+  slots.forEach((slot) => {
+    if (!slot.querySelector('[data-not-expected]')) {
+      setSlotAwaiting(slot)
+    }
+  })
 
   let nextIndex = 0
   let timer = null
 
-  const revealNext = (immediate = false) => {
+  const revealNext = (immediate = false, revealedAt = Date.now()) => {
     if (nextIndex >= images.length) return
     const image = images[nextIndex]
     nextIndex++
     revealImage(image, slotMap, immediate)
+    if (progressKey) {
+      saveProgress(progressKey, nextIndex, revealedAt)
+    }
   }
 
-  const scheduleNext = () => {
+  const scheduleNext = (delay = intervalMs) => {
     if (nextIndex >= images.length) return
     timer = setTimeout(() => {
       revealNext()
       scheduleNext()
-    }, intervalMs)
+    }, delay)
   }
 
-  // First image arrives immediately — we navigated to this page because one was received
-  revealNext(true)
-  scheduleNext()
+  const progress = progressKey ? loadProgress(progressKey) : null
+  if (progress && progress.revealedCount > 0) {
+    const elapsed = Date.now() - progress.lastRevealedAt
+    const arrivedWhileAway = Math.floor(elapsed / intervalMs)
+    const arrivedCount = Math.min(
+      images.length,
+      progress.revealedCount + arrivedWhileAway
+    )
+    while (nextIndex < arrivedCount) {
+      const arrivalsSoFar = nextIndex - progress.revealedCount + 1
+      revealNext(true, progress.lastRevealedAt + arrivalsSoFar * intervalMs)
+    }
+    scheduleNext(intervalMs - (elapsed % intervalMs))
+  } else {
+    // First image arrives immediately — we navigated to this page because one was received
+    revealNext(true)
+    scheduleNext()
+  }
 
   // Right arrow key immediately advances to the next image (useful for demos)
   document.addEventListener('keydown', (e) => {
@@ -98,13 +145,11 @@ function setSlotAwaiting(slot) {
     ? labelEl.textContent.trim()
     : slot.dataset.view || ''
 
-  // Give the slot a preferred width so the wrapper's width: 100% can resolve.
-  // Keep max-width at 100% so placeholders still shrink on smaller screens.
-  const isLarge = firstWrapper.classList.contains(
-    'app-mammogram-thumbnail__image-wrapper--large'
+  // Style the wrapper as a placeholder (sized like an image, without the
+  // black background and border) until the image arrives
+  firstWrapper.classList.add(
+    'app-mammogram-thumbnail__image-wrapper--placeholder'
   )
-  slot.style.width = isLarge ? '200px' : '120px'
-  slot.style.maxWidth = '100%'
 
   // Show a spinner on every placeholder from the start — images may load too fast
   // for a spinner added only at reveal time to be visible
@@ -138,9 +183,9 @@ function revealImage(imageData, slotMap, immediate = false) {
     // Skip the spinner for the first image (already received when we arrived on this page).
     const showImage = () => {
       wrapper.innerHTML = `<span class="app-mammogram-thumbnail__label">${labelText}</span>`
-      // Reset placeholder-only sizing once a real image is shown.
-      slot.style.width = ''
-      slot.style.maxWidth = ''
+      wrapper.classList.remove(
+        'app-mammogram-thumbnail__image-wrapper--placeholder'
+      )
 
       const img = document.createElement('img')
       img.className =

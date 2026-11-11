@@ -1,0 +1,54 @@
+{# app/views/_includes/medical-information/symptoms-and-breast-features-expander.njk #}
+{# Collapsed expander for adding symptoms or breast features from outside the
+   medical information section, such as while images are being taken.
+   Forms return here with `scrollTo` set to the expander's id, which opens it.
+   Breast features open as a full page: the diagram's own feature popover
+   doesn't work inside a modal. #}
+
+{% set expanderId = "symptoms-and-breast-features" %}
+{% set scrollTo = expanderId %}
+{% set allowEdits = true %}
+
+{% set symptomsCount = appointment.medicalInformation.symptoms | length %}
+
+{% set rawBreastFeatures = appointment.medicalInformation.breastFeaturesRaw | parseJsonString %}
+{% set breastFeatures = appointment.medicalInformation.breastFeatures or rawBreastFeatures %}
+{% set breastFeaturesCount = breastFeatures | length %}
+
+{% set symptomsSummary = symptomsCount ~ " " ~ ("symptom" | pluralise(symptomsCount)) %}
+{% set breastFeaturesSummary = breastFeaturesCount ~ " breast " ~ ("feature" | pluralise(breastFeaturesCount)) %}
+
+{% if symptomsCount > 0 and breastFeaturesCount > 0 %}
+  {% set contentsSummary = symptomsSummary ~ " and " ~ breastFeaturesSummary ~ " added" %}
+{% elseif symptomsCount > 0 %}
+  {% set contentsSummary = symptomsSummary ~ " added" %}
+{% elseif breastFeaturesCount > 0 %}
+  {% set contentsSummary = breastFeaturesSummary ~ " added" %}
+{% else %}
+  {% set contentsSummary = "No symptoms or breast features added" %}
+{% endif %}
+
+{% set expanderHtml %}
+<div class="app-summary-list-container">
+  <h2 class="nhsuk-heading-s">Symptoms</h2>
+
+  {% include "summary-lists/medical-information/symptoms/summary.njk" %}
+
+  <h3 class="nhsuk-heading-xs">Add a symptom</h3>
+
+  {% include "_includes/medical-information/add-symptom-buttons.njk" %}
+
+  <h2 class="nhsuk-heading-s">Breast features</h2>
+
+  {% include "_includes/medical-information/breast-features.njk" %}
+</div>
+{% endset %}
+
+{{ appDetails({
+  id: expanderId,
+  classes: "nhsuk-expander nhsuk-u-margin-bottom-3",
+  summaryText: "Add symptoms or breast features",
+  contentsSummary: contentsSummary,
+  html: expanderHtml,
+  open: query.scrollTo == expanderId
+}) }}

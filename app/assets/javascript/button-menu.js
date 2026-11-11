@@ -1,3 +1,4 @@
+// app/assets/javascript/button-menu.js
 // Button Menu Component - adapted from MOJ Frontend
 // https://github.com/ministryofjustice/moj-frontend/blob/main/src/moj/components/button-menu/button-menu.mjs
 // Provides a dropdown menu for multiple button actions

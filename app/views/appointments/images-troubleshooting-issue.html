@@ -1,0 +1,34 @@
+{# app/views/appointments/images-troubleshooting-issue.html
+
+   Raise an issue for a problem on the automatic images page before
+   continuing in manual image mode. The description starts as the problem the
+   mammographer picked. The route (routes/appointments/imaging-automatic.js)
+   passes answers and problem. #}
+
+{% extends 'layout-appointment.html' %}
+
+{% set activeWorkflowStep = 'take-images' %}
+{% set activeTab = 'images' %}
+
+{% set pageHeading = "Raise an issue" %}
+{% set formAction = "./images-troubleshooting-issue-answer?issue=" + problem %}
+{% set back = {
+  href: "./images-automatic",
+  text: "Back"
+} %}
+
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
+
+  {% set raisedFrom = "appointment" %}
+  {% set recordId = appointment.id %}
+  {% include "_includes/issues/raise-fields.njk" %}
+
+  {{ button({
+    text: "Confirm and continue in manual mode"
+  }) }}
+
+{% endblock %}

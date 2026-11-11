@@ -1,3 +1,11 @@
-{% macro appCount(number) -%}
+{# app/views/_components/count/macro.njk #}
+{#
+  Purpose: A small badge showing a number beside a label, with visually hidden brackets for screen readers.
+  Use when: showing a count in a heading, tab or navigation item. Called as appCount(number, params).
+
+  Params:
+    classes (optional) - for example "app-count--reverse" on a blue background
+#}
+{% macro appCount(number, params) -%}
   {%- include './template.njk' -%}
 {%- endmacro %}

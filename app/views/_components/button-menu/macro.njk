@@ -1,4 +1,15 @@
+{# app/views/_components/button-menu/macro.njk #}
+{#
+  Purpose: A toggle button that reveals a group of secondary action buttons.
+  Use when: a page has several secondary actions that would crowd it as separate buttons.
 
+  Params:
+    button     — toggle button: { text, classes }
+    items      — menu buttons: { text, html, href, element, name, type, value, disabled, classes, attributes }
+    alignMenu  — "right" aligns the menu to the right edge of the button
+    classes    — additional classes on the wrapper
+    attributes — additional HTML attributes on the wrapper
+#}
 {% macro buttonMenu(params) %}
   {%- include "./template.njk" -%}
 {% endmacro %}

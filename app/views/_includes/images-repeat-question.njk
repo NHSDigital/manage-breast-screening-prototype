@@ -20,6 +20,7 @@
 
   {% set repeatReasonsHtml %}
     {{ checkboxes({
+      small: true,
       idPrefix: "repeatReasons-" + viewItem.code,
       name: namePrefix + "[repeatReasons-" + viewItem.code + "]",
       fieldset: {
@@ -28,22 +29,20 @@
           size: "s"
         }
       },
-      hint: {
-        text: "Select all that apply"
-      },
+      hint: "Select all that apply",
       values: dataSource["repeatReasons-" + viewItem.code],
       items: repeatReasonItems
     }) }}
   {% endset %}
 
   {{ radios({
+    small: true,
     idPrefix: "repeatNeeded-" + viewItem.code,
     name: namePrefix + "[repeatNeeded-" + viewItem.code + "]",
     fieldset: {
       legend: {
         text: viewItem.count + " " + viewItem.code + " images were taken. Was the additional image a repeat?",
-        size: "s" if radioQuestionSize == "s" else "m",
-        isPageHeading: false
+        size: "s" if radioQuestionSize == "s" else "m"
       }
     },
     value: dataSource["repeatNeeded-" + viewItem.code],
@@ -69,12 +68,8 @@
     {{ input({
       id: "repeatCount-" + viewItem.code,
       name: namePrefix + "[repeatCount-" + viewItem.code + "]",
-      label: {
-        text: "How many were repeats?"
-      },
-      hint: {
-        text: "Out of " + extraImageCount + " extra images"
-      },
+      label: "How many were repeats?",
+      hint: "Out of " + extraImageCount + " extra images",
       classes: "nhsuk-input--width-3",
       value: dataSource["repeatCount-" + viewItem.code],
       inputmode: "numeric"
@@ -88,6 +83,7 @@
 
   {% set repeatReasonsAllHtml %}
     {{ checkboxes({
+      small: true,
       idPrefix: "repeatReasons-all-" + viewItem.code,
       name: namePrefix + "[repeatReasonsAll-" + viewItem.code + "]",
       fieldset: {
@@ -96,9 +92,7 @@
           size: "s"
         }
       },
-      hint: {
-        text: "Select all that apply"
-      },
+      hint: "Select all that apply",
       values: dataSource["repeatReasons-" + viewItem.code],
       items: repeatReasonItems
     }) }}
@@ -106,6 +100,7 @@
 
   {% set repeatReasonsSomeHtml %}
     {{ checkboxes({
+      small: true,
       idPrefix: "repeatReasons-some-" + viewItem.code,
       name: namePrefix + "[repeatReasonsSome-" + viewItem.code + "]",
       fieldset: {
@@ -114,22 +109,20 @@
           size: "s"
         }
       },
-      hint: {
-        text: "Select all that apply"
-      },
+      hint: "Select all that apply",
       values: dataSource["repeatReasons-" + viewItem.code],
       items: repeatReasonItems
     }) }}
   {% endset %}
 
   {{ radios({
+    small: true,
     idPrefix: "repeatNeeded-" + viewItem.code,
     name: namePrefix + "[repeatNeeded-" + viewItem.code + "]",
     fieldset: {
       legend: {
         text: viewItem.count + " " + viewItem.code + " images were taken. Were the additional images repeats?",
-        size: "m",
-        isPageHeading: false
+        size: "m"
       }
     },
     value: dataSource["repeatNeeded-" + viewItem.code],

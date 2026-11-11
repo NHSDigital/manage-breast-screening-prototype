@@ -8,7 +8,8 @@ function initializeBreastFeatures() {
   const config = window.breastFeaturesConfig || {}
   const readOnly = config.readOnly || false
   const hiddenFieldName =
-    config.hiddenFieldName || 'appointment[medicalInformation][breastFeaturesRaw]'
+    config.hiddenFieldName ||
+    'appointment[medicalInformation][breastFeaturesRaw]'
   const hiddenFieldId = config.hiddenFieldId || 'breastFeaturesRaw'
   const existingFeatures = config.existingFeatures || []
   const featureTypes = config.featureTypes || [
@@ -1017,11 +1018,11 @@ function initializeBreastFeatures() {
     }
 
     if (allFeatures.length === 0) {
-      featuresListContainer.style.display = 'none'
+      featuresListContainer.hidden = true
       return
     }
 
-    featuresListContainer.style.display = 'block'
+    featuresListContainer.hidden = false
     featuresList.innerHTML = ''
 
     allFeatures.sort((a, b) => a.number - b.number)
@@ -1235,8 +1236,7 @@ function initializeBreastFeatures() {
   // Initialize: Load any existing features
   loadExistingFeatures()
 
-  // Handle window resize to reposition markers
-  window.addEventListener('resize', function () {
+  function repositionMarkers() {
     allFeatures.forEach((feature) => {
       if (
         feature.element &&
@@ -1250,7 +1250,20 @@ function initializeBreastFeatures() {
         )
       }
     })
-  })
+  }
+
+  window.addEventListener('resize', repositionMarkers)
+
+  // A diagram inside a closed expander has no size when markers are first
+  // placed in some browsers, so place them again when it opens
+  const parentDetails = diagramContainer?.closest('details')
+  if (parentDetails) {
+    parentDetails.addEventListener('toggle', () => {
+      if (parentDetails.open) {
+        repositionMarkers()
+      }
+    })
+  }
 
   // Prevent form submission on Enter key in popover
   if (popover) {

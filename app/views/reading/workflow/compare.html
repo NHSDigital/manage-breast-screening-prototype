@@ -142,7 +142,7 @@
 
   {% set keepActionHtml %}
     <div class="app-reading-compare-card__action app-reading-compare-card__action--{{ sideBySideCardActionPosition }}">
-      <form action="./compare-answer" method="post" class="app-reading-compare-card__action-form">
+      <form action="{{ './compare-answer' | urlWithReferrer(referrerChain) }}" method="post" class="app-reading-compare-card__action-form">
         <input type="hidden" name="compareDecision" value="keep">
         {% if secondOpinion == "normal" %}
           <input type="hidden" name="imageReadingTemp[wantsNormalDetails]" value="{{ "true" if secondOpinionNeedsDetails else "false" }}">
@@ -170,7 +170,7 @@
 
   {% set adoptActionHtml %}
     <div class="app-reading-compare-card__action app-reading-compare-card__action--{{ sideBySideCardActionPosition }}">
-      <form action="./compare-answer" method="post" class="app-reading-compare-card__action-form">
+      <form action="{{ './compare-answer' | urlWithReferrer(referrerChain) }}" method="post" class="app-reading-compare-card__action-form">
         <input type="hidden" name="compareDecision" value="adopt">
         {{ button({
           text: "Use their details" if comparisonType == "agreeing" else "Change to this opinion",
@@ -210,8 +210,10 @@
       <div class="nhsuk-grid-column-one-half">
         <h2 class="nhsuk-u-margin-bottom-0">First read</h2>
         {{ card({
-          heading: firstOpinionLabel,
-          headingLevel: "2",
+          heading: {
+            text: firstOpinionLabel,
+            level: 2
+          },
           feature: true,
           classes: "app-reading-compare-card " + firstOpinionCardClass,
           descriptionHtml: firstReadCardContentHtml
@@ -220,8 +222,10 @@
       <div class="nhsuk-grid-column-one-half">
         <h2 class="nhsuk-u-margin-bottom-0">Your read</h2>
         {{ card({
-          heading: secondOpinionLabel,
-          headingLevel: "2",
+          heading: {
+            text: secondOpinionLabel,
+            level: 2
+          },
           feature: true,
           classes: "app-reading-compare-card " + secondOpinionCardClass,
           descriptionHtml: secondReadCardContentHtml
@@ -233,16 +237,20 @@
     <div class="nhsuk-grid-row">
       <div class="nhsuk-grid-column-full">
         {{ card({
-          heading: "First read",
-          headingLevel: "2",
+          heading: {
+            text: "First read",
+            level: 2
+          },
           feature: true,
           classes: "app-reading-compare-card " + firstOpinionCardClass,
           descriptionHtml: firstReadSummaryHtml
         }) }}
 
         {{ card({
-          heading: "Your read",
-          headingLevel: "2",
+          heading: {
+            text: "Your read",
+            level: 2
+          },
           feature: true,
           classes: "app-reading-compare-card " + secondOpinionCardClass,
           descriptionHtml: secondReadSummaryHtml
@@ -256,7 +264,7 @@
 
       {% if cardLayout == 'stacked' %}
 
-      <form action="./compare-answer" method="POST">
+      <form action="{{ './compare-answer' | urlWithReferrer(referrerChain) }}" method="POST">
 
         {# Build radio options based on comparison type and detail state #}
         {% set radioItems = [] %}
@@ -278,12 +286,12 @@
         }) %}
 
         {{ radios({
+          small: true,
           name: "compareDecision",
           fieldset: {
             legend: {
               text: "What would you like to do?",
-              size: "m",
-              isPageHeading: false
+              size: "m"
             }
           },
           items: radioItems

@@ -1,3 +1,4 @@
+{# app/views/_includes/images/image-troubleshooting.njk #}
 {% from "details/macro.njk" import details %}
 {% from "button/macro.njk" import button %}
 {% from "textarea/macro.njk" import textarea %}
@@ -12,38 +13,38 @@
         <h2>Troubleshoot issues with images</h2>
 
         {% call details({
-          summaryText: "A different participant's images are displayed"
+          summary: "A different participant's images are displayed"
         }) %}
 
         <p>Check the correct participant has been selected on the worklist.</p>
         
         <p>If this needs to be changed, update the mammogram machine and wait a few seconds for the image details to refresh.</p>
 
-        <p>If the issue is not resolved, <a href="./images-manual?issue=worklist-participant" class="nhsuk-link">enable manual image mode</a>.</p>
+        <p>If the issue is not resolved, <a href="./images-troubleshooting-issue?issue=worklist-participant" class="nhsuk-link">enable manual image mode</a>.</p>
 
-        <p>Images details will be reconciled after the appointment.</p>
+        <p>You’ll then raise an issue so the images can be reconciled after the appointment.</p>
 
         {% endcall %}
 
         {% call details({
-          summaryText: "The wrong number of images are displayed"
+          summary: "The wrong number of images are displayed"
         }) %}
 
-        <p><a href="./images-manual?issue=wrong-image-count" class="nhsuk-link">Enable manual image mode</a>.</p>
+        <p><a href="./images-troubleshooting-issue?issue=wrong-image-count" class="nhsuk-link">Enable manual image mode</a>.</p>
 
-        <p>Images details will be reconciled after the appointment.</p>
+        <p>You’ll then raise an issue so the images can be reconciled after the appointment.</p>
 
         {% endcall %}
 
         {% call details({
-          summaryText: "Images have incorrect labels"
+          summary: "Images have incorrect labels"
         }) %}
           
         <p>Update image information on the mammogram machine and wait a few seconds for the image details to refresh.</p>
 
-        <p>If the issue is not resolved, <a href="./images-manual?issue=incorrect-image-labels" class="nhsuk-link">enable manual image mode</a>.</p>
+        <p>If the issue is not resolved, <a href="./images-troubleshooting-issue?issue=incorrect-image-labels" class="nhsuk-link">enable manual image mode</a>.</p>
 
-        <p>Images details will be reconciled after the appointment.</p>
+        <p>You’ll then raise an issue so the images can be reconciled after the appointment.</p>
 
         {% endcall %}
 

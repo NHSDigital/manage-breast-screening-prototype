@@ -24,12 +24,8 @@
       type: "number",
       value: field.value | round(3),
       classes: "nhsuk-input--width-5",
-      label: {
-        text: field.label
-      },
-      hint: {
-        text: field.hint
-      } if field.hint,
+      label: field.label,
+      hint: field.hint if field.hint,
       suffix: {
         text: "%"
       },
@@ -58,12 +54,8 @@
       type: "number",
       value: formProfile.reading.backlogLimit,
       classes: "nhsuk-input--width-5",
-      label: {
-        text: "Backlog limit"
-      },
-      hint: {
-        text: "Maximum number of cases left unread. Leave blank for no limit (default behaviour)"
-      },
+      label: "Backlog limit",
+      hint: "Maximum number of cases left unread. Leave blank for no limit (default behaviour)",
       attributes: {
         "min": "0",
         "step": "1",
@@ -86,6 +78,7 @@
     {{ seedProfilePercentageInput({ id: "probabilityOfBreastFeatures", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfBreastFeatures]", label: "Breast features", value: formProfile.medicalInformation.probabilityOfBreastFeatures * 100 }) }}
     {{ seedProfilePercentageInput({ id: "probabilityOfMultipleBreastFeatures", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfMultipleBreastFeatures]", label: "Multiple breast features", value: formProfile.medicalInformation.probabilityOfMultipleBreastFeatures * 100 }) }}
     {{ seedProfilePercentageInput({ id: "probabilityOfMedicalHistory", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfMedicalHistory]", label: "Medical history", value: formProfile.medicalInformation.probabilityOfMedicalHistory * 100 }) }}
+    {{ seedProfilePercentageInput({ id: "probabilityOfMastectomy", name: "settings[seedProfiles][customForm][medicalInformation][probabilityOfMastectomy]", label: "Mastectomy", hint: "Of breast surgery in medical history, percentage that is a mastectomy rather than a lumpectomy", value: formProfile.medicalInformation.probabilityOfMastectomy * 100 }) }}
 
     <h2>Special appointments and previous mammograms</h2>
     {{ seedProfilePercentageInput({ id: "specialAppointmentProbability", name: "settings[seedProfiles][customForm][specialAppointment][probability]", label: "Special appointment requirements", value: formProfile.specialAppointment.probability * 100 }) }}

@@ -14,12 +14,12 @@
   <form method="post" action="/choose-user">
     
     {{ radios({
+      small: true,
       name: "cis2LoginMethod",
       fieldset: {
         legend: {
-          text: pageHeading,
-          size: "l",
-          isPageHeading: true
+          heading: pageHeading,
+          size: "l"
         }
       },
       items: [
@@ -63,15 +63,14 @@
     }) }}
 
     {{ checkboxes({
+      small: true,
       idPrefix: "remember",
       name: "cis2LoginMethodRemember",
       items: [
         {
           value: "yes",
           text: "Remember my selection",
-          hint: {
-            text: "Do not check this box if you are on a shared computer."
-          }
+          hint: "Do not check this box if you are on a shared computer."
         }
       ]
      

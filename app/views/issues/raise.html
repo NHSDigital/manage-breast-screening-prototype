@@ -1,0 +1,29 @@
+{# app/views/issues/raise.html
+
+   Raise an issue on a reading case, appointment, episode or participant. Opens in a modal
+   where modal forms are on. The route (routes/issues.js) sets raisedFrom,
+   participant, answers, raiseUrl and returnFallbackUrl. #}
+
+{% extends parentLayout or 'layout-app.html' %}
+
+{% set pageHeading = "Raise an issue" %}
+{% set formAction = (raiseUrl + "/answer") | urlWithReferrer(referrerChain) %}
+{% set back = {
+  href: returnFallbackUrl | getReturnUrl(referrerChain),
+  text: "Back"
+} %}
+
+{% block pageContent %}
+
+  <h1 class="nhsuk-heading-l">
+    <span class="nhsuk-caption-l">{{ participant | getFullNameReversed }}</span>
+    {{ pageHeading }}
+  </h1>
+
+  {% include "_includes/issues/raise-fields.njk" %}
+
+  {{ button({
+    text: "Confirm and continue"
+  }) }}
+
+{% endblock %}

@@ -4,6 +4,7 @@ const dayjs = require('dayjs')
 
 const config = require('../../config')
 const dataStore = require('../data-store')
+const { recordChange } = require('../shared-data')
 
 /**
  * Get a clinic by ID
@@ -97,6 +98,48 @@ const getClinicAppointments = (appointments, clinicId) => {
 }
 
 /**
+ * The next order-of-screening number for a clinic: one more than the highest
+ * already assigned, or 1 if none. Numbers are never reused, so a removed or
+ * changed appointment leaves a gap rather than renumbering the rest.
+ *
+ * @param {object} data - Session data
+ * @param {string} clinicId - Clinic ID
+ * @returns {number} The next screening order number
+ */
+const getNextScreeningOrder = (data, clinicId) => {
+  const clinicAppointments = getClinicAppointments(data.appointments, clinicId)
+  const highest = clinicAppointments.reduce((max, appointment) => {
+    const order = appointment.screeningOrder
+    return typeof order === 'number' && order > max ? order : max
+  }, 0)
+  return highest + 1
+}
+
+/**
+ * Which broken-out columns the clinic appointments table shows for a tab.
+ * Shared by the table header, the row macro and the sort logic so the three
+ * never fall out of step.
+ *
+ * @param {string} filter - The tab id (e.g. 'remaining', 'complete', 'all')
+ * @returns {{checkedIn: boolean, screenedBy: boolean, completed: boolean, actions: boolean}}
+ */
+const getClinicTableColumns = (filter) => {
+  return {
+    // Remaining and Checked in show the check-in time as its own column
+    checkedIn: filter === 'remaining' || filter === 'checked-in',
+    // In progress, Complete and All show the mammographer and screening order
+    screenedBy:
+      filter === 'in-progress' || filter === 'complete' || filter === 'all',
+    // In progress shows when screening started
+    startedAt: filter === 'in-progress',
+    // Complete and All show when each appointment finished
+    completed: filter === 'complete' || filter === 'all',
+    // Completed appointments are all final, so there is nothing to action
+    actions: filter !== 'complete'
+  }
+}
+
+/**
  * Format clinic time slot
  *
  * @param {string} dateTime - ISO date string
@@ -159,8 +202,9 @@ const getFilteredClinics = (clinics, filter = 'all') => {
 
   switch (filter) {
     case 'today':
-      return recentClinics.filter((clinic) =>
-        dayjs(clinic.date).isSame(today, 'day') && clinic.status !== 'closed'
+      return recentClinics.filter(
+        (clinic) =>
+          dayjs(clinic.date).isSame(today, 'day') && clinic.status !== 'closed'
       )
 
     case 'upcoming':
@@ -170,9 +214,11 @@ const getFilteredClinics = (clinics, filter = 'all') => {
 
     case 'completed':
       return recentClinics
-        .filter((clinic) =>
-          dayjs(clinic.date).isBefore(today, 'day') ||
-          (dayjs(clinic.date).isSame(today, 'day') && clinic.status === 'closed')
+        .filter(
+          (clinic) =>
+            dayjs(clinic.date).isBefore(today, 'day') ||
+            (dayjs(clinic.date).isSame(today, 'day') &&
+              clinic.status === 'closed')
         )
         .sort((a, b) => new Date(b.date) - new Date(a.date)) // Most recent first
 
@@ -201,9 +247,7 @@ const updateClinic = (data, clinicId, updates) => {
   // shared data store on every request; see middleware in app/routes.js)
   const updatedClinic = { ...data.clinics[clinicIndex], ...updates }
   data.clinics[clinicIndex] = updatedClinic
-  if (data._changes?.clinics) {
-    data._changes.clinics[clinicId] = updatedClinic
-  }
+  recordChange(data, 'clinics', updatedClinic)
   return updatedClinic
 }
 
@@ -214,6 +258,8 @@ module.exports = {
   getTodaysClinics,
   getFilteredClinics,
   getClinicAppointments,
+  getNextScreeningOrder,
+  getClinicTableColumns,
   formatTimeSlot,
   getClinicHours,
   updateClinic

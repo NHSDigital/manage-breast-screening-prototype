@@ -1,0 +1,31 @@
+// app/assets/sass/components/_action-link.scss
+@use "sass:math";
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+////
+/// Action link overrides
+///
+/// Small variant for dense places such as dashboard links: drops the text to
+/// 19 and holds the arrow at its compact size rather than scaling it up on
+/// wider screens, so the icon matches the smaller text.
+///
+/// @group components/action-link
+////
+
+.app-action-link--small {
+  @include nhsuk-font(19, $weight: bold);
+
+  @media #{nhsuk-from-breakpoint(tablet)} {
+    $_icon-size: nhsuk-px-to-rem($nhsuk-icon-size);
+    $_icon-spacing: math.div($_icon-size, 10);
+
+    padding-left: $_icon-size + $_icon-spacing;
+    line-height: nhsuk-line-height($_icon-size, $font-size: 19px);
+
+    .nhsuk-icon {
+      left: -$_icon-spacing;
+      width: $_icon-size;
+      height: $_icon-size;
+    }
+  }
+}

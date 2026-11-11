@@ -2,63 +2,71 @@
 //
 // Manual imaging: entering image details and repeats by hand.
 
-const { getImageSetForAppointment } = require('../../lib/utils/mammogram-images')
+const {
+  getImageSetForAppointment
+} = require('../../lib/utils/mammogram-images')
+const { getExpectedViews } = require('../../lib/utils/expected-views')
 
 module.exports = (router) => {
   // Initialize or edit manual imaging - clears temp or prepopulates from existing data
-  router.get('/clinics/:clinicId/appointments/:appointmentId/images-manual', (req, res) => {
-    const { clinicId, appointmentId } = req.params
-    const data = req.session.data
-    const validTroubleshootingIssues = [
-      'worklist-participant',
-      'wrong-image-count',
-      'incorrect-image-labels'
-    ]
-    const troubleshootingIssue = req.query.issue
+  router.get(
+    '/clinics/:clinicId/appointments/:appointmentId/images-manual',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const validTroubleshootingIssues = [
+        'worklist-participant',
+        'wrong-image-count',
+        'incorrect-image-labels'
+      ]
+      const troubleshootingIssue = req.query.issue
 
-    // If mammogramData exists and is manual entry, prepopulate temp for editing
-    if (data.appointment?.mammogramData?.isManualEntry) {
-      const formData = convertMammogramFormatToFormData(
-        data.appointment.mammogramData
-      )
-      if (formData) {
-        data.appointment.mammogramDataTemp = formData
+      // If mammogramData exists and is manual entry, prepopulate temp for editing
+      if (data.appointment?.mammogramData?.isManualEntry) {
+        const formData = convertMammogramFormatToFormData(
+          data.appointment.mammogramData
+        )
+        if (formData) {
+          data.appointment.mammogramDataTemp = formData
+        }
+      } else {
+        // Clear any existing temp data for fresh start
+        delete data.appointment.mammogramDataTemp
+
+        // Check if this is a failover from automatic mode (appointment was switched
+        // to manual via the retry-connection page, or user navigated here from
+        // the troubleshooting link on the automatic images page).
+        const isGlobalManualSetting =
+          data.settings?.appointment?.manualImageCollection === 'true'
+        const hadAutomaticData =
+          !!data.appointment?.mammogramData &&
+          !data.appointment?.mammogramData?.isManualEntry
+
+        // Set failover flag if switching from automatic to manual
+        if (!isGlobalManualSetting || hadAutomaticData) {
+          if (!data.appointment.mammogramDataTemp) {
+            data.appointment.mammogramDataTemp = {}
+          }
+          data.appointment.mammogramDataTemp.isManualFailover = true
+        }
       }
-    } else {
-      // Clear any existing temp data for fresh start
-      delete data.appointment.mammogramDataTemp
 
-      // Check if this is a failover from automatic mode (appointment was switched
-      // to manual via the retry-connection page, or user navigated here from
-      // the troubleshooting link on the automatic images page).
-      const isGlobalManualSetting =
-        data.settings?.appointment?.manualImageCollection === 'true'
-      const hadAutomaticData =
-        !!data.appointment?.mammogramData && !data.appointment?.mammogramData?.isManualEntry
-
-      // Set failover flag if switching from automatic to manual
-      if (!isGlobalManualSetting || hadAutomaticData) {
+      // Persist troubleshooting issue context when navigating from troubleshooting links
+      if (validTroubleshootingIssues.includes(troubleshootingIssue)) {
         if (!data.appointment.mammogramDataTemp) {
           data.appointment.mammogramDataTemp = {}
         }
-        data.appointment.mammogramDataTemp.isManualFailover = true
+        data.appointment.mammogramDataTemp.troubleshootingIssue =
+          troubleshootingIssue
+      } else if (data.appointment?.mammogramDataTemp?.troubleshootingIssue) {
+        // Clear stale issue context for non-troubleshooting entry points
+        delete data.appointment.mammogramDataTemp.troubleshootingIssue
       }
-    }
 
-    // Persist troubleshooting issue context when navigating from troubleshooting links
-    if (validTroubleshootingIssues.includes(troubleshootingIssue)) {
-      if (!data.appointment.mammogramDataTemp) {
-        data.appointment.mammogramDataTemp = {}
-      }
-      data.appointment.mammogramDataTemp.troubleshootingIssue = troubleshootingIssue
-    } else if (data.appointment?.mammogramDataTemp?.troubleshootingIssue) {
-      // Clear stale issue context for non-troubleshooting entry points
-      delete data.appointment.mammogramDataTemp.troubleshootingIssue
+      // Let the dynamic routing handle the actual rendering
+      res.render('appointments/images-manual')
     }
-
-    // Let the dynamic routing handle the actual rendering
-    res.render('appointments/images-manual')
-  })
+  )
 
   // Direct link to details page - also prepopulates if editing
   router.get(
@@ -174,7 +182,16 @@ module.exports = (router) => {
       notesForReader: mammogramData.notesForReader,
       viewsRightBreast: [],
       viewsLeftBreast: []
-    } // Convert views back to checkbox/input format
+    }
+
+    // A view with no saved images was not taken, so reopens as zero
+    for (const breastKey of ['viewsRightBreast', 'viewsLeftBreast']) {
+      for (const viewShort of ['CC', 'MLO', 'CCID', 'MLOID']) {
+        formData[`${breastKey}${viewShort}Count`] = '0'
+      }
+    }
+
+    // Convert views back to checkbox/input format
     for (const [viewKey, viewData] of Object.entries(mammogramData.views)) {
       const breastKey =
         viewData.side === 'right' ? 'viewsRightBreast' : 'viewsLeftBreast'
@@ -351,15 +368,6 @@ module.exports = (router) => {
       }
     }
 
-    // Check if standard views completed (4 standard views: RCC, RMLO, LCC, LMLO)
-    const standardViews = [
-      'rightCraniocaudal',
-      'rightMediolateralOblique',
-      'leftCraniocaudal',
-      'leftMediolateralOblique'
-    ]
-    const standardViewsCompleted = standardViews.every((view) => views[view])
-
     // Handle incomplete mammography
     const hasIncompleteMammography =
       formData.isIncompleteMammography?.includes('yes')
@@ -404,7 +412,6 @@ module.exports = (router) => {
       notesForReader: formData.notesForReader,
       metadata: {
         totalImages,
-        standardViewsCompleted,
         hasAdditionalImages,
         hasRepeat,
         hasExtraImages,
@@ -431,19 +438,28 @@ module.exports = (router) => {
         )
       }
 
-      // If standard 4 images, preset the data
+      // If the expected images were taken (a standard set, unless a mastectomy
+      // or recall says otherwise), preset one image of each expected view
       if (isStandardSet === 'yes') {
         if (!data.appointment.mammogramDataTemp) {
           data.appointment.mammogramDataTemp = {}
         }
 
-        // Preset standard views in temp
-        data.appointment.mammogramDataTemp.viewsRightBreast = ['CC', 'MLO']
-        data.appointment.mammogramDataTemp.viewsRightBreastCCCount = '1'
-        data.appointment.mammogramDataTemp.viewsRightBreastMLOCount = '1'
-        data.appointment.mammogramDataTemp.viewsLeftBreast = ['CC', 'MLO']
-        data.appointment.mammogramDataTemp.viewsLeftBreastCCCount = '1'
-        data.appointment.mammogramDataTemp.viewsLeftBreastMLOCount = '1'
+        const { views: expectedViews } = getExpectedViews(data.appointment)
+        const mammogramDataTemp = data.appointment.mammogramDataTemp
+        for (const [breast, sideCode] of [
+          ['Right', 'R'],
+          ['Left', 'L']
+        ]) {
+          const viewTypes = ['CC', 'MLO'].filter((viewType) =>
+            expectedViews.includes(`${sideCode}${viewType}`)
+          )
+          mammogramDataTemp[`views${breast}Breast`] = viewTypes
+          for (const viewType of ['CC', 'MLO']) {
+            mammogramDataTemp[`views${breast}Breast${viewType}Count`] =
+              viewTypes.includes(viewType) ? '1' : '0'
+          }
+        }
 
         // Convert to final format
         const mammogramData = convertManualDataToMammogramFormat(
@@ -482,7 +498,9 @@ module.exports = (router) => {
       }
 
       // Fallback - shouldn't reach here
-      res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/images-manual`)
+      res.redirect(
+        `/clinics/${clinicId}/appointments/${appointmentId}/images-manual`
+      )
     }
   )
 
@@ -541,7 +559,8 @@ module.exports = (router) => {
       }
 
       // Convert to final format and save directly to mammogramData
-      data.appointment.mammogramData = convertManualDataToMammogramFormat(formData)
+      data.appointment.mammogramData =
+        convertManualDataToMammogramFormat(formData)
 
       // Clear temp data
       delete data.appointment.mammogramDataTemp
@@ -553,7 +572,9 @@ module.exports = (router) => {
       data.appointment.workflowStatus['take-images'] = 'completed'
 
       // Redirect to check information
-      res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/check-information`)
+      res.redirect(
+        `/clinics/${clinicId}/appointments/${appointmentId}/check-information`
+      )
     }
   )
 
@@ -610,7 +631,8 @@ module.exports = (router) => {
         })
 
         // Convert form data (including repeat information) to final format and save
-        data.appointment.mammogramData = convertManualDataToMammogramFormat(formData)
+        data.appointment.mammogramData =
+          convertManualDataToMammogramFormat(formData)
 
         // Clear temp data
         delete data.appointment.mammogramDataTemp
@@ -718,7 +740,9 @@ module.exports = (router) => {
       data.appointment.workflowStatus['take-images'] = 'completed'
 
       // Redirect to check information
-      res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/check-information`)
+      res.redirect(
+        `/clinics/${clinicId}/appointments/${appointmentId}/check-information`
+      )
     }
   )
 

@@ -1,4 +1,23 @@
 {# app/views/_components/annotation-images/macro.njk #}
+{#
+  Purpose: Mammogram image panels for one breast, with optional numbered annotation markers.
+  Use when: showing annotated views in image reading. Panels are bookmatched at a fixed 4:5 ratio, so a pair of calls lines up.
+
+  Params:
+    side          — "right" or "left" (required)
+    imagePaths    — object of image paths keyed by view (e.g. { rcc: "/path.jpg", rmlo: "/path.jpg" })
+                    Values can be a string (single image) or array (multiple images per view)
+    viewOrder     — "cc-first" (default) or "mlo-first"
+    annotations   — array of annotation objects for this side (optional, for rendering markers)
+    startNumber   — number to start annotation badge numbering from (default: 1)
+    mode          — "readonly" (default) or "interactive"
+    size          — "full" (default), "medium", or "thumbnail"
+    showLabels    — boolean, show view labels on images (default: true)
+    showOnlyAnnotated — boolean, only show images that have markers (default: false)
+    highlightAnnotationId — id of a single annotation to highlight (others greyed out)
+    classes       — additional CSS classes on the wrapper
+    id            — id attribute for the wrapper (useful for JS targeting)
+#}
 
 {% macro appAnnotationImages(params) %}
   {%- include "./template.njk" -%}

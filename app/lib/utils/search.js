@@ -82,9 +82,10 @@ const participantMatchesQuery = (participant, query) => {
   if (!participant) return false
 
   const names = getSearchableNames(participant)
-  const nhsNumber = (
-    participant.medicalInformation?.nhsNumber || ''
-  ).replace(/\s/g, '')
+  const nhsNumber = (participant.medicalInformation?.nhsNumber || '').replace(
+    /\s/g,
+    ''
+  )
 
   return needles.some((needle) => {
     if (names.some((name) => name.includes(needle))) return true

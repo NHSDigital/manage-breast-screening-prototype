@@ -26,20 +26,12 @@ pids
 *.sublime-workspace
 
 # IDE - VSCode
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.vscode/
 
 # misc
 .sass-cache
 connect.lock
 typings
-
-# LLMs
-.github/copilot-instructions.md
-*.instructions.md
 
 # Logs
 logs
@@ -75,8 +67,7 @@ coverage
 # ESlint cache
 .cache
 
-# LLM instructions
-.github
+# Personal LLM config (the shared instructions live in .github/ and docs/)
 CLAUDE.md
 
 # Reference assets (local only, not for committing)

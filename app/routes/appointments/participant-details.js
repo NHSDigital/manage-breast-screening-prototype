@@ -103,15 +103,19 @@ module.exports = (router) => {
     return null // Return null if no match found
   }
 
-
   // Save participant data when contact details are updated from the participant tab.
   // The contact-details form posts back to the participant tab URL via referrerChain,
   // so we need this POST handler to persist the temp participant to the participants array.
-  router.post('/clinics/:clinicId/appointments/:appointmentId/participant', (req, res) => {
-    const { clinicId, appointmentId } = req.params
-    const data = req.session.data
-    saveTempParticipantToParticipant(data)
-    req.flash('success', 'Participant details updated')
-    res.redirect(`/clinics/${clinicId}/appointments/${appointmentId}/participant`)
-  })
+  router.post(
+    '/clinics/:clinicId/appointments/:appointmentId/participant',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      saveTempParticipantToParticipant(data)
+      req.flash('success', 'Participant details updated')
+      res.redirect(
+        `/clinics/${clinicId}/appointments/${appointmentId}/participant`
+      )
+    }
+  )
 }

@@ -13,11 +13,10 @@ const {
   getAppointment,
   saveTempAppointmentToAppointment
 } = require('../../lib/utils/appointment-data')
-const { updateAppointmentStatus } = require('../../lib/utils/appointment-status')
 const {
-  getReturnUrl,
-  modalBreakout
-} = require('../../lib/utils/referrers')
+  updateAppointmentStatus
+} = require('../../lib/utils/appointment-status')
+const { getReturnUrl, modalBreakout } = require('../../lib/utils/referrers')
 const { captureSessionEndTime } = require('./shared')
 
 module.exports = (router) => {
@@ -57,7 +56,9 @@ module.exports = (router) => {
           captureSessionEndTime(data, appointmentId, data.currentUser.id)
         }
 
-        // Save the cancellation data
+        // Save the cancellation data, with who cancelled. When is in the
+        // status history
+        data.appointment.cancellation.cancelledBy = data.currentUser.id
         saveTempAppointmentToAppointment(data)
         saveTempParticipantToParticipant(data)
 
@@ -127,32 +128,35 @@ module.exports = (router) => {
   )
 
   // Handle undo cancel appointment
-  router.get('/clinics/:clinicId/appointments/:appointmentId/undo-cancel', (req, res) => {
-    const { clinicId, appointmentId } = req.params
-    const data = req.session.data
-    const appointment = getAppointment(data, appointmentId)
+  router.get(
+    '/clinics/:clinicId/appointments/:appointmentId/undo-cancel',
+    (req, res) => {
+      const { clinicId, appointmentId } = req.params
+      const data = req.session.data
+      const appointment = getAppointment(data, appointmentId)
 
-    if (appointment && appointment.status === 'cancelled') {
-      // Clear cancellation data
-      delete data.appointment.cancellation
-      delete data.appointment.reschedule
+      if (appointment && appointment.status === 'cancelled') {
+        // Clear cancellation data
+        delete data.appointment.cancellation
+        delete data.appointment.reschedule
 
-      // Save changes
-      saveTempAppointmentToAppointment(data)
+        // Save changes
+        saveTempAppointmentToAppointment(data)
 
-      // Revert to scheduled status
-      updateAppointmentStatus(data, appointmentId, 'scheduled')
+        // Revert to scheduled status
+        updateAppointmentStatus(data, appointmentId, 'scheduled')
 
-      req.flash('success', 'Appointment cancellation undone')
+        req.flash('success', 'Appointment cancellation undone')
+      }
+
+      // Use referrer system to return to originating page
+      const returnUrl = getReturnUrl(
+        `/clinics/${clinicId}/appointments/${appointmentId}/appointment`,
+        req.query.referrerChain
+      )
+      res.redirect(returnUrl)
     }
-
-    // Use referrer system to return to originating page
-    const returnUrl = getReturnUrl(
-      `/clinics/${clinicId}/appointments/${appointmentId}/appointment`,
-      req.query.referrerChain
-    )
-    res.redirect(returnUrl)
-  })
+  )
 
   // Handle undo reschedule appointment
   router.get(

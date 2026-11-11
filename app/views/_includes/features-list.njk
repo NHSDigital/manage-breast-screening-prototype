@@ -16,7 +16,7 @@
 {% set clearLinkId = clearLinkId or "clearAllFeaturesLink" %}
 {% set headerText = headerText or "Key" %}
 
-<div id="{{ listContainerId }}" style="display: none;" class="breast-features__list">
+<div id="{{ listContainerId }}" class="breast-features__list" hidden>
   <div class="breast-features__list-header">
     <h3 class="nhsuk-heading-xs breast-features__list-title">{{ headerText }}</h3>
     {% if allowEdits and not suppressClearLink %}

@@ -1,4 +1,4 @@
-
+{# app/views/participants/questionnaire/current-symptoms.html #}
 {% extends 'layout.html' %}
 
 {% set pageHeading = "Current symptoms" %}
@@ -14,7 +14,7 @@
 
     {% if flash.error %}
       {{ errorSummary({
-        "titleText": "There is a problem",
+        "heading": "There is a problem",
         "errorList": flash.error
       }) }}
     {% endif %}
@@ -28,6 +28,7 @@
       {# Skin changes question #}
       {% set skinChangesYesHtml %}
         {{ checkboxes({
+          small: true,
           name: "questionnaire[skinChangeTypes]",
           items: [
             {
@@ -48,20 +49,18 @@
         {{ textarea({
           name: "questionnaire[skinChangeDetails]",
           id: "skinChangeDetails",
-          label: {
-            text: "Please provide details of location and how long you’ve noticed these"
-          }
+          label: "Please provide details of location and how long you’ve noticed these"
         }) }}
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "skinChanges",
         name: "questionnaire[skinChanges]",
         fieldset: {
           legend: {
             text: "Have you noticed any skin changes on your breasts recently?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [
@@ -84,23 +83,19 @@
         {{ textarea({
           name: "questionnaire[lumpDetails]",
           id: "lumpDetails",
-          label: {
-            text: "Please describe the location and how long you've noticed the lump"
-          },
-          hint: {
-            text: "For example: 'Upper right breast, noticed 2 weeks ago'"
-          }
+          label: "Please describe the location and how long you've noticed the lump",
+          hint: "For example: 'Upper right breast, noticed 2 weeks ago'"
         }) }}
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "lumpsNoticed",
         name: "questionnaire[lumpsNoticed]",
         fieldset: {
           legend: {
             text: "Have you noticed any lumps in your breasts?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [
@@ -123,20 +118,18 @@
         {{ textarea({
           name: "questionnaire[shapeChangeDetails]",
           id: "shapeChangeDetails",
-          label: {
-            text: "Please describe the changes you've noticed and when you first noticed them"
-          }
+          label: "Please describe the changes you've noticed and when you first noticed them"
         }) }}
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "shapeChanges",
         name: "questionnaire[shapeChanges]",
         fieldset: {
           legend: {
             text: "Have you noticed a change in the shape of your breasts recently?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [
@@ -158,13 +151,12 @@
   {{ textarea({
     name: "questionnaire[nippleSymptomDetails]",
     id: "nippleSymptomDetails",
-    label: {
-      text: "Please provide details of which nipple and how long you've noticed this"
-    }
+    label: "Please provide details of which nipple and how long you've noticed this"
   }) }}
 {% endset -%}
 
 {{ checkboxes({
+  small: true,
   idPrefix: "nippleSymptoms",
   name: "questionnaire[nippleSymptoms]",
   fieldset: {
@@ -173,9 +165,7 @@
       size: "s"
     }
   },
-  hint: {
-    text: "Select all that apply"
-  },
+  hint: "Select all that apply",
   items: [
     {
       value: "distortion",
@@ -212,31 +202,25 @@
         {{ textarea({
           name: "questionnaire[scarLocation]",
           id: "scarLocation",
-          label: {
-            text: "Where are the scars located?"
-          }
+          label: "Where are the scars located?"
         }) }}
 
         {{ textarea({
           name: "questionnaire[scarReason]",
           id: "scarReason",
-          label: {
-            text: "What was the reason for the scarring?"
-          },
-          hint: {
-            text: "For example: surgery, injury, etc."
-          }
+          label: "What was the reason for the scarring?",
+          hint: "For example: surgery, injury, etc."
         }) }}
       {% endset -%}
 
       {{ radios({
+        small: true,
         idPrefix: "breastScars",
         name: "questionnaire[breastScars]",
         fieldset: {
           legend: {
             text: "Do you have any scars on your breasts?",
-            size: "s",
-            isPageHeading: false
+            size: "s"
           }
         },
         items: [

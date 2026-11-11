@@ -1,4 +1,4 @@
-{# app/views/appointments/_includes/partial-mammography-question.njk #}
+{# app/views/_includes/partial-mammography-question.njk #}
 
 {# 
   Include for partial mammography question
@@ -40,9 +40,7 @@
   {{ select({
     id: "partialMammographyReasonSelect",
     name: namePrefix + "[partialMammographyReasonSelect]",
-    label: {
-      text: "Reason"
-    },
+    label: "Reason",
     value: mammogramSource.partialMammographyReasonSelect,
     items: selectItems
   }) }}
@@ -52,17 +50,14 @@
       name: namePrefix + "[partialMammographyReasonComment]",
       value: mammogramSource.partialMammographyReasonComment,
       id: "partialMammographyReasonComment",
-      label: {
-        text: "Follow-up appointment information"
-      },
-      hint: {
-        text: "Provide information to help arrange the appointment and complete the mammogram"
-      },
+      label: "Follow-up appointment information",
+      hint: "Provide information to help arrange the appointment and complete the mammogram",
       rows: 3
     }) }}
   {% endset %}
 
   {{ checkboxes({
+    small: true,
     idPrefix: "partialMammographyShouldReinvite",
     name: namePrefix + "[partialMammographyShouldReinvite]",
     values: mammogramSource.partialMammographyShouldReinvite,
@@ -80,14 +75,14 @@
 {% endset %}
 
 {{ checkboxes({
+  small: true,
   idPrefix: "isPartialMammography",
   name: namePrefix + "[isPartialMammography]",
   values: mammogramSource.isPartialMammography,
   fieldset: {
     legend: {
       text: "Record as partial mammography?",
-      size: "m",
-      isPageHeading: false
+      size: "m"
     }
   },
   items: [

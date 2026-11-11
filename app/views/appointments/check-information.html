@@ -1,3 +1,4 @@
+{# app/views/appointments/check-information.html #}
 {% extends 'layout-appointment.html' %}
 
 {% from '_components/notification-banner/macro.njk' import appNotificationBanner %}
@@ -60,8 +61,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Personal information",
-    headingLevel: "2",
+    heading: {
+      text: "Personal information",
+      level: 2
+    },
     feature: true,
     descriptionHtml: participantDetailsHtml
   }) }}
@@ -72,8 +75,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Medical information",
-    headingLevel: "2",
+    heading: {
+      text: "Medical information",
+      level: 2
+    },
     feature: true,
     descriptionHtml: medicalInfoSummaryHtml,
     attributes: {
@@ -100,8 +105,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Personal information",
-    headingLevel: "2",
+    heading: {
+      text: "Personal information",
+      level: 2
+    },
     feature: true,
     descriptionHtml: participantDetailsHtml
   }) }}
@@ -111,8 +118,10 @@
   {% endset %}
   {# Medical history card #}
   {{ card({
-    heading: "Medical history",
-    headingLevel: "2",
+    heading: {
+      text: "Medical history",
+      level: 2
+    },
     feature: true,
     descriptionHtml: medicalHistoryHtml
   }) }}
@@ -123,8 +132,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Symptoms",
-    headingLevel: "2",
+    heading: {
+      text: "Symptoms",
+      level: 2
+    },
     feature: true,
     descriptionHtml: symptomsCardContent
   }) }}
@@ -136,8 +147,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Breast features",
-    headingLevel: "2",
+    heading: {
+      text: "Breast features",
+      level: 2
+    },
     feature: true,
     descriptionHtml: breastFeaturesHtml,
     attributes: {
@@ -151,8 +164,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Breast density factors",
-    headingLevel: "2",
+    heading: {
+      text: "Breast density factors",
+      level: 2
+    },
     feature: true,
     descriptionHtml: breastDensityFactorsHtml
   }) }}
@@ -163,8 +178,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Other medical information",
-    headingLevel: "2",
+    heading: {
+      text: "Other medical information",
+      level: 2
+    },
     feature: true,
     descriptionHtml: otherMedicalInformationHtml
   }) }}
@@ -221,8 +238,10 @@
   {% endset %}
 
   {{ card({
-    heading: imageCount ~ " images taken",
-    headingLevel: "2",
+    heading: {
+      text: imageCount ~ " images taken",
+      level: 2
+    },
     feature: true,
     descriptionHtml: imagesCardHtml
   }) }}
@@ -284,8 +303,10 @@
   {% endset %}
 
   {{ card({
-    heading: "Appointment details",
-    headingLevel: "2",
+    heading: {
+      text: "Appointment details",
+      level: 2
+    },
     feature: true,
     descriptionHtml: otherDetailsCardHtml
   }) }}

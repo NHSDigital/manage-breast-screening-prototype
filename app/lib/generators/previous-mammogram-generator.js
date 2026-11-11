@@ -253,7 +253,11 @@ const generatePreviousMammogram = ({
 
 // Generate previous mammograms for an appointment
 // Returns an array, or null if none generated
-const generatePreviousMammograms = ({ appointmentDate, addedByUserId, rate }) => {
+const generatePreviousMammograms = ({
+  appointmentDate,
+  addedByUserId,
+  rate
+}) => {
   const effectiveRate =
     rate !== undefined
       ? rate
@@ -276,7 +280,11 @@ const generatePreviousMammograms = ({ appointmentDate, addedByUserId, rate }) =>
       latestAllowedDate = previousDate.subtract(6, 'month')
     }
     mammograms.push(
-      generatePreviousMammogram({ appointmentDate, addedByUserId, latestAllowedDate })
+      generatePreviousMammogram({
+        appointmentDate,
+        addedByUserId,
+        latestAllowedDate
+      })
     )
   }
 

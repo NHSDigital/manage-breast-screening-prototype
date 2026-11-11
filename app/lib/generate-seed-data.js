@@ -13,18 +13,29 @@ const { generateParticipant } = require('./generators/participant-generator')
 const { generateClinicsForBSU } = require('./generators/clinic-generator')
 const { generateAppointment } = require('./generators/appointment-generator')
 const {
+  generateMastectomyLumpectomyItem
+} = require('./generators/medical-information/medical-history-generator')
+const {
   generateEpisode,
   generateHistoricEpisodes,
   syncEpisodeReadingCases,
   finaliseEpisodeStage,
   checkEpisodes
 } = require('./generators/episode-generator')
+const { generateIssues, checkIssues } = require('./generators/issue-generator')
 const { getCurrentRiskLevel } = require('./utils/participants')
+const { isInProgress, isCompleted } = require('./utils/status')
 const {
   generateReadingData,
   generateSingleRead
 } = require('./generators/reading-generator')
 const { getSeedDataProfile } = require('./generators/seed-profiles')
+const {
+  OTHER_REASON,
+  BILATERAL_MASTECTOMY,
+  PERMANENT_EXCLUSION,
+  hasBilateralMastectomyWithoutImages
+} = require('./utils/mastectomy')
 const {
   buildRead,
   getLatestReadingCase,
@@ -40,6 +51,46 @@ const users = require('../data/users')
 
 // Hardcoded scenarios for user research
 const testScenarios = require('../data/test-scenarios')
+
+// Make sure at least one appointment shows the bilateral mastectomy outcome,
+// where no images were needed and the participant is permanently excluded
+const ensurePermanentExclusionExample = (appointments) => {
+  const alreadyHasExample = appointments.some(
+    (appointment) =>
+      appointment.appointmentStopped?.needsReschedule === PERMANENT_EXCLUSION &&
+      hasBilateralMastectomyWithoutImages(
+        appointment.medicalInformation?.medicalHistory
+      )
+  )
+  const appointment = appointments.find(
+    (candidate) => candidate.status === 'attended_not_screened'
+  )
+
+  if (alreadyHasExample || !appointment) {
+    return
+  }
+
+  appointment.appointmentStopped = {
+    stoppedReason: [OTHER_REASON],
+    otherDetails: BILATERAL_MASTECTOMY,
+    needsReschedule: PERMANENT_EXCLUSION
+  }
+
+  const medicalHistory = appointment.medicalInformation?.medicalHistory || {}
+  appointment.medicalInformation = {
+    ...appointment.medicalInformation,
+    medicalHistory: {
+      ...medicalHistory,
+      mastectomyLumpectomy: [
+        ...(medicalHistory.mastectomyLumpectomy || []),
+        generateMastectomyLumpectomyItem({
+          addedByUserId: appointment.sessionDetails?.startedBy,
+          bilateralMastectomyWithoutImages: true
+        })
+      ]
+    }
+  }
+}
 
 // Index the age-eligible participants by risk level, so filling a clinic slot
 // is a lookup rather than a scan
@@ -121,7 +172,10 @@ const generateClinicsForDay = (
       appointmentDate: appointmentOptions.slot.dateTime
     })
 
-    const appointment = generateAppointment({ ...appointmentOptions, episodeId: episode.id })
+    const appointment = generateAppointment({
+      ...appointmentOptions,
+      episodeId: episode.id
+    })
     episode.appointmentIds.push(appointment.id)
 
     episodes.push(episode)
@@ -147,6 +201,19 @@ const generateClinicsForDay = (
   const newClinics = generateClinicsForBSU({
     date: date.toDate(),
     breastScreeningUnit: unit
+  })
+
+  // Staff each clinic with a small team of two or three mammographers, so its
+  // screened list shows just a couple of names with the order numbers
+  // interleaved between them, rather than a different name on every row.
+  const clinicians = users.filter((user) => user.role.includes('clinician'))
+  const mammographersByClinic = new Map()
+  newClinics.forEach((clinic) => {
+    const teamSize = Math.random() < 0.5 ? 2 : 3
+    const shuffled = [...clinicians].sort(() => Math.random() - 0.5)
+    const mammographers = shuffled.slice(0, teamSize)
+    clinic.staffing.mammographers = mammographers.map((user) => user.id)
+    mammographersByClinic.set(clinic.id, mammographers)
   })
 
   // Track if we've created an in-progress appointment for today
@@ -177,13 +244,17 @@ const generateClinicsForDay = (
         return
       }
 
+      const scheduling = scenario.participant.config.scheduling
       addAppointmentToNewEpisode(participant, {
         slot,
         participant,
         clinic: firstClinic,
         id: scenario?.participant?.config?.appointmentId,
         outcomeWeights: config.screening.outcomes[firstClinic.clinicType],
-        forceStatus: scenario.participant.config.scheduling.status,
+        forceStatus: scheduling.status,
+        checkInTime: scheduling.checkInTime,
+        screenedAt: scheduling.screenedAt,
+        mammographers: mammographersByClinic.get(firstClinic.id),
         specialAppointmentOverride:
           scenario?.participant?.config?.specialAppointment,
         seedDataProfile
@@ -195,8 +266,27 @@ const generateClinicsForDay = (
 
   // Handle regular clinic slot allocation for all clinics
   newClinics.forEach((clinic) => {
+    const episodesBefore = episodes.length
+    const availableFinalInviteSlots =
+      clinic.clinicType === 'screening'
+        ? clinic.slots.filter((slot) => {
+            const bookedCount = appointments.filter(
+              (appointment) => appointment.slotId === slot.id
+            ).length
+            return bookedCount < slot.capacity
+          })
+        : []
+    const reserveCandidates =
+      availableFinalInviteSlots.length > 1
+        ? availableFinalInviteSlots.slice(1)
+        : availableFinalInviteSlots
+    const reservedFinalInviteSlot = reserveCandidates.length
+      ? reserveCandidates[Math.floor(Math.random() * reserveCandidates.length)]
+      : null
+
     const remainingSlots = clinic.slots
       .filter(() => Math.random() < config.generation.bookingProbability)
+      .filter((slot) => slot.id !== reservedFinalInviteSlot?.id)
       .filter((slot) => !appointments.some((e) => e.slotId === slot.id))
 
     remainingSlots.forEach((slot) => {
@@ -246,6 +336,7 @@ const generateClinicsForDay = (
           clinic,
           outcomeWeights: config.screening.outcomes[clinic.clinicType],
           forceInProgress: shouldBeInProgress,
+          mammographers: mammographersByClinic.get(clinic.id),
           seedDataProfile
         })
 
@@ -259,6 +350,201 @@ const generateClinicsForDay = (
         usedParticipantsInPeriod.add(participant.id)
         availableParticipants.splice(randomIndex, 1)
       }
+    })
+
+    // Flag one or two of this clinic's participants as attending screening for
+    // the first time. Prefer the youngest, since first invitations land at the
+    // start of the screening age range; generateHistoricEpisodesForParticipants
+    // then gives them no past rounds, so the flag stays true.
+    const clinicEpisodes = episodes.slice(episodesBefore)
+    if (clinic.clinicType === 'screening') {
+      const youngestFirst = [...clinicEpisodes].sort((a, b) => {
+        const dobA = participants.find((p) => p.id === a.participantId)
+          ?.demographicInformation.dateOfBirth
+        const dobB = participants.find((p) => p.id === b.participantId)
+          ?.demographicInformation.dateOfBirth
+        return new Date(dobB) - new Date(dobA)
+      })
+      const firstTimeCount = Math.min(
+        youngestFirst.length,
+        Math.random() < 0.5 ? 1 : 2
+      )
+      youngestFirst.slice(0, firstTimeCount).forEach((episode) => {
+        episode.isFirstScreening = true
+      })
+
+      // Routine invitations stop at the 71st birthday, so a participant is on
+      // their last screening when the next one, 3 years on, would fall on or
+      // after it. They must also be within the routine age range today.
+      const isLastScreeningAge = (episode) => {
+        const dateOfBirth = participants.find(
+          (participant) => participant.id === episode.participantId
+        ).demographicInformation.dateOfBirth
+        const age = dayjs(clinic.date).diff(dayjs(dateOfBirth), 'year')
+
+        return (
+          age >= riskLevels.routine.ageRange.lower &&
+          age <= riskLevels.routine.ageRange.upper &&
+          !dayjs(clinic.date)
+            .add(3, 'year')
+            .isBefore(
+              dayjs(dateOfBirth).add(
+                riskLevels.routine.ageRange.upper + 1,
+                'year'
+              ),
+              'day'
+            )
+        )
+      }
+      const lastScreeningEpisode = clinicEpisodes
+        .filter((episode) => !episode.isFirstScreening)
+        .filter(isLastScreeningAge)
+        .at(0)
+
+      if (lastScreeningEpisode) {
+        lastScreeningEpisode.isLastScreening = true
+      } else if (!reservedFinalInviteSlot) {
+        console.warn(
+          `No free slot for a final screening invite in clinic ${clinic.id}, so it has none`
+        )
+      } else {
+        const finalInviteParticipant = generateParticipant({
+          ethnicities,
+          breastScreeningUnits: [unit],
+          riskLevel: 'routine',
+          overrides: {
+            demographicInformation: {
+              dateOfBirth: dayjs(clinic.date).subtract(69, 'year').toISOString()
+            }
+          }
+        })
+
+        const finalInviteAppointment = addAppointmentToNewEpisode(
+          finalInviteParticipant,
+          {
+            slot: reservedFinalInviteSlot,
+            participant: finalInviteParticipant,
+            clinic,
+            outcomeWeights: config.screening.outcomes[clinic.clinicType],
+            mammographers: mammographersByClinic.get(clinic.id),
+            seedDataProfile
+          }
+        )
+        const finalInviteEpisode = episodes.find(
+          (episode) => episode.id === finalInviteAppointment.episodeId
+        )
+
+        finalInviteEpisode.isLastScreening = true
+        participants.push(finalInviteParticipant)
+        usedParticipantsInPeriod.add(finalInviteParticipant.id)
+      }
+    }
+
+    // Today's screening clinics each get one paused appointment, to show
+    // claiming an appointment someone else paused. Made before the order of
+    // screening is assigned, as it was started too.
+    if (isToday && clinic.clinicType === 'screening') {
+      // An unused slot that is already due, so the participant could have
+      // been started and paused by now
+      const usedSlotIds = new Set(appointments.map((a) => a.slotId))
+      const [simulatedHours, simulatedMinutes] =
+        config.clinics.simulatedTime.split(':')
+      const simulatedNow = dayjs()
+        .hour(parseInt(simulatedHours, 10))
+        .minute(parseInt(simulatedMinutes, 10))
+      const dueSlots = clinic.slots.filter(
+        (slot) =>
+          !usedSlotIds.has(slot.id) &&
+          dayjs(slot.dateTime).isBefore(simulatedNow.subtract(15, 'minute'))
+      )
+      const unusedSlot = dueSlots.length
+        ? dueSlots[Math.floor(Math.random() * dueSlots.length)]
+        : null
+
+      if (!unusedSlot) {
+        console.warn(
+          `No free slot for a paused appointment in clinic ${clinic.id}, so it has none`
+        )
+      } else {
+        // Get or create a participant for the paused appointment
+        const availableRiskLevels = clinic.riskLevels
+        const selectedRiskLevel = weighted.select(
+          Object.fromEntries(
+            availableRiskLevels.map((level) => [
+              level,
+              riskLevels[level].weight
+            ])
+          )
+        )
+
+        let pausedParticipant = indices.riskLevelIndex[selectedRiskLevel].find(
+          (participant) =>
+            !usedParticipantsInPeriod.has(participant.id) &&
+            !testScenarioParticipantIds.has(participant.id)
+        )
+
+        if (!pausedParticipant) {
+          pausedParticipant = generateParticipant({
+            ethnicities,
+            breastScreeningUnits: [unit],
+            riskLevel: selectedRiskLevel
+          })
+          participants.push(pausedParticipant)
+        }
+
+        // Create episode for paused appointment
+        const pausedEpisode = generateEpisode({
+          participant: pausedParticipant,
+          type: getCurrentRiskLevel(
+            pausedParticipant,
+            dayjs(clinic.date).toDate()
+          ),
+          appointmentDate: unusedSlot.dateTime
+        })
+
+        // Create the paused appointment
+        const pausedAppointment = generateAppointment({
+          slot: unusedSlot,
+          participant: pausedParticipant,
+          clinic,
+          episodeId: pausedEpisode.id,
+          outcomeWeights: config.screening.outcomes[clinic.clinicType],
+          forceStatus: 'paused',
+          mammographers: mammographersByClinic.get(clinic.id),
+          seedDataProfile
+        })
+
+        pausedEpisode.appointmentIds.push(pausedAppointment.id)
+        episodes.push(pausedEpisode)
+        appointments.push(pausedAppointment)
+        usedParticipantsInPeriod.add(pausedParticipant.id)
+
+        console.log(
+          `Created paused appointment for participant ${pausedParticipant.demographicInformation.firstName} ${pausedParticipant.demographicInformation.lastName}`
+        )
+      }
+    }
+
+    // Assign the order of screening for this clinic: a single 1 to N sequence
+    // across all its mammographers, in the order appointments were started.
+    // This mirrors what the running app does the moment an appointment starts.
+    const screenedAppointments = appointments
+      .filter((appointment) => appointment.clinicId === clinic.id)
+      .filter(
+        (appointment) =>
+          isInProgress(appointment) ||
+          isCompleted(appointment) ||
+          appointment.status === 'attended_not_screened'
+      )
+      .sort((a, b) => {
+        const aStart =
+          a.timing?.actualStartTime || a.sessionDetails?.startedAt || 0
+        const bStart =
+          b.timing?.actualStartTime || b.sessionDetails?.startedAt || 0
+        return new Date(aStart) - new Date(bStart)
+      })
+    screenedAppointments.forEach((appointment, index) => {
+      appointment.screeningOrder = index + 1
     })
 
     clinics.push(clinic)
@@ -291,13 +577,15 @@ const generateSnapshotPeriod = (startDate, numberOfDays) => {
  * @param {Array} participants - All participants
  * @param {object} seedDataProfile - Active seed profile
  * @param {Array} readers - Users who could have read these past rounds
+ * @param {Array} mammographers - Users who could have taken the images
  * @returns {Array} Historic episodes
  */
 const generateHistoricEpisodesForParticipants = (
   episodes,
   participants,
   seedDataProfile,
-  readers
+  readers,
+  mammographers
 ) => {
   const max = config.generation.maxHistoricEpisodesPerParticipant
   const outcomeWeights = seedDataProfile?.episodes?.historicOutcomeWeights
@@ -320,6 +608,9 @@ const generateHistoricEpisodesForParticipants = (
     const participant = participantsById.get(participantId)
     if (!participant) return
 
+    // A first-time participant has no past screening rounds
+    if (earliest.isFirstScreening) return
+
     historic.push(
       ...generateHistoricEpisodes({
         participant,
@@ -328,6 +619,7 @@ const generateHistoricEpisodesForParticipants = (
         max,
         outcomeWeights,
         readers,
+        mammographers,
         seedProfile: seedDataProfile
       })
     )
@@ -372,9 +664,13 @@ const seedTechnicalRecallRescreen = ({
   const participantsById = new Map(
     participants.map((participant) => [participant.id, participant])
   )
-  const appointmentsById = new Map(appointments.map((appointment) => [appointment.id, appointment]))
+  const appointmentsById = new Map(
+    appointments.map((appointment) => [appointment.id, appointment])
+  )
   const clinicsById = new Map(clinics.map((clinic) => [clinic.id, clinic]))
-  const usedSlotIds = new Set(appointments.map((appointment) => appointment.slotId))
+  const usedSlotIds = new Set(
+    appointments.map((appointment) => appointment.slotId)
+  )
   const today = dayjs().startOf('day')
 
   // Where the re-screen could be booked: a future screening clinic with a
@@ -595,6 +891,8 @@ const generateData = async (options = {}) => {
   const allEpisodes = [].concat(...allData.map((d) => d.episodes))
   const allNewParticipants = [].concat(...allData.map((d) => d.newParticipants))
 
+  ensurePermanentExclusionExample(allAppointments)
+
   // Combine initial and new participants
   const finalParticipants = [...participants, ...allNewParticipants]
 
@@ -656,7 +954,8 @@ const generateData = async (options = {}) => {
     allEpisodes,
     finalParticipants,
     selectedSeedDataProfile,
-    users
+    users,
+    users.filter((user) => user.role.includes('clinician'))
   )
 
   const episodesWithHistory = [...allEpisodes, ...historicEpisodes]
@@ -671,7 +970,9 @@ const generateData = async (options = {}) => {
   )
 
   // The re-screen appointment was added after the appointments map was built
-  sortedAppointments.forEach((appointment) => appointmentsById.set(appointment.id, appointment))
+  sortedAppointments.forEach((appointment) =>
+    appointmentsById.set(appointment.id, appointment)
+  )
 
   const episodeProblems = checkEpisodes(episodesWithHistory, appointmentsById)
   if (episodeProblems.length) {
@@ -684,6 +985,27 @@ const generateData = async (options = {}) => {
     if (episodeProblems.length > 10) {
       console.warn(`  ...and ${episodeProblems.length - 10} more`)
     }
+  }
+
+  console.log('Generating issues...')
+  const issues = generateIssues({
+    episodes: allEpisodes,
+    appointments: sortedAppointments,
+    clinics: allClinics,
+    participants: finalParticipants,
+    users
+  })
+
+  const issueProblems = checkIssues(issues, {
+    episodes: episodesWithHistory,
+    appointments: sortedAppointments,
+    participants: finalParticipants
+  })
+  if (issueProblems.length) {
+    console.warn(
+      `\nWarning: ${issueProblems.length} issue links do not resolve:`
+    )
+    issueProblems.forEach((problem) => console.warn(`  - ${problem}`))
   }
 
   const writeData = (filename, data) => {
@@ -704,14 +1026,19 @@ const generateData = async (options = {}) => {
   })
   writeData('appointments.json', { appointments: sortedAppointments })
   writeData('episodes.json', { episodes: episodesWithHistory })
+  // Issues carry the generation they belong to, so a store reading them
+  // alongside another generation's records can tell and ignore them
+  const generatedAt = new Date().toISOString()
+  writeData('issues.json', { generatedAt, issues })
   writeData('generation-info.json', {
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     seedDataProfile: selectedSeedDataProfile.key,
     stats: {
       participants: finalParticipants.length,
       clinics: allClinics.length,
       appointments: sortedAppointments.length,
-      episodes: episodesWithHistory.length
+      episodes: episodesWithHistory.length,
+      issues: issues.length
     }
   })
 
@@ -723,6 +1050,10 @@ const generateData = async (options = {}) => {
   console.log(
     `- ${episodesWithHistory.length} episodes ` +
       `(${allEpisodes.length} current, ${historicEpisodes.length} historic)`
+  )
+  console.log(
+    `- ${issues.length} issues ` +
+      `(${issues.filter((issue) => !issue.resolved).length} open)`
   )
 }
 

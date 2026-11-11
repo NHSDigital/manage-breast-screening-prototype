@@ -5,7 +5,7 @@ const path = require('path')
 
 module.exports = {
   // Service name
-  serviceName: 'Manage breast screening',
+  serviceName: 'Run breast screening in England',
 
   // Port to run nodemon on locally
   port: 3000,
@@ -18,6 +18,18 @@ module.exports = {
 
   paths: {
     generatedData: path.join(__dirname, 'data/generated')
+  },
+
+  // Sharing changes between browsers, for testing with several users at once.
+  // See docs/data-conventions.md.
+  sharedData: {
+    // 'off' (Browsers that join: a browser shares only once it starts shared
+    // data, the rest keep their own changes), 'on' (every browser shares) or
+    // 'room' (browsers in the same room share). Can be changed from /settings
+    // until the server restarts.
+    mode: (process.env.SHARED_DATA_MODE || 'off').trim().toLowerCase(),
+    // Rooms browsers can join in 'room' mode. Their data resets on restart.
+    rooms: ['Research 1', 'Research 2']
   },
 
   // Clinic settings

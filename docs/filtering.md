@@ -1,6 +1,6 @@
 # Filtering an index page
 
-Index pages filter with checkboxes in a left-hand column. The setup is generic: a page declares its filters as **data** and passes them through one set of helpers and one component. Reading cases (`app/routes/reading-cases.js`, `app/views/reading/cases.html`) is the worked example; the participant index (`app/routes/participants.js`, `app/views/participants/index.html`) is the second, with the same parts arranged for a different job.
+Index pages filter with checkboxes in a left-hand column. The setup is generic: a page declares its filters as **data** and passes them through one set of helpers and one component. Reading cases (`app/routes/reading-cases.js`, `app/views/reading/cases.html`) is the worked example; the participant index (`app/routes/participants.js`, `app/views/participants/index.html`) is the second, with the same parts arranged for a different job. A clinic's appointment list (`app/routes/clinics.js`, `getClinicFilterGroups` in `app/lib/utils/clinic-appointment-list.js`) uses the same groups and helpers, but renders its checkboxes in a "Filter appointments" expander above the list rather than in `appFilterPanel`, and shows no counts.
 
 ## 1. Declare the filter groups
 
@@ -16,7 +16,7 @@ A filter group is plain data plus one function that knows the page's row shape:
 }
 ```
 
-Multi-select within a group is OR; groups combine with AND. A group with `style: 'radios'` renders NHS radios instead of checkboxes and holds a single value: `parseFilterQuery` keeps the first valid one, so a hand-written URL offering several still resolves. Keep the array next to whatever builds the rows — reading cases keeps `READING_CASE_FILTER_GROUPS` in `app/lib/utils/reading-case-list.js`, participants keep `PARTICIPANT_FILTER_GROUPS` in `app/lib/utils/participant-list.js`.
+Multi-select within a group is OR; groups combine with AND. A group with `style: 'radios'` renders NHS radios instead of checkboxes and holds a single value: `parseFilterQuery` keeps the first valid one, so a hand-written URL offering several still resolves. Keep the array next to whatever builds the rows — reading cases builds its groups with `getReadingCaseFilterGroups()` in `app/lib/utils/reading-case-list.js`, participants keep `PARTICIPANT_FILTER_GROUPS` in `app/lib/utils/participant-list.js`.
 
 ## 2. Wire the route
 
@@ -89,7 +89,7 @@ Filter pages use the wide container with a third/two-thirds split:
 </div>
 ```
 
-The selected-filters summary sits above the results in the right-hand column.
+The selected-filters summary sits above the results in the right-hand column. Render it with `{% include "_includes/selected-filters.njk" %}`, which reads `selectedFilters` and shows nothing when it is empty.
 
 ## 5. Live updating (optional)
 
@@ -109,6 +109,8 @@ That puts `data-live-filters` on the form, and `app/assets/javascript/live-filte
 The region must contain the form, and should wrap the results too — that way one update refreshes the panel counts, the selected filters, the view tabs and the table together. Links inside the region pointing at the form's own path — "Clear filters", the selected-filter pills, the view tabs — are intercepted and updated in place as well; links anywhere else (a case, a participant) navigate normally.
 
 The "Apply filters" button is hidden while the script is running, and the active view tab's text is announced in a visually hidden `role="status"` region. If a fetch fails the page falls back to a normal submission or navigation, and with JavaScript off none of this runs: the form is a plain GET and everything above behaves exactly as documented.
+
+A live update never opens or closes a `<details>` element in the region: it keeps whatever state the user left it in, and the server's `open` attribute only applies on a full page load. The clinic page relies on this to keep its "Filter appointments" expander open after "Clear filters". When a clicked link removes itself, such as "Clear filters" or a selected-filter pill, focus moves to the first field of the filter form.
 
 ## Search
 

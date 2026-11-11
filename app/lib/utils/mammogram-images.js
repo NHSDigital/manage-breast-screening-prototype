@@ -4,6 +4,7 @@ const path = require('path')
 const fs = require('fs')
 const config = require('../../config')
 const { isMedicalHistoryItemRemoved } = require('./medical-information')
+const { getImagedSides } = require('./expected-views')
 
 // Image sources
 const IMAGE_SOURCES = {
@@ -75,7 +76,7 @@ const seededRandom = (seed) => {
 /**
  * Extract context flags from appointment data for smart set selection
  * @param {object} appointment - The appointment object
- * @returns {object} - Context flags: hasSymptoms, symptomSides, hasImplants, isImperfect, hasRepeat, hasExtraImages, repeatViews
+ * @returns {object} - Context flags: hasSymptoms, symptomSides, hasImplants, isImperfect, hasRepeat, hasExtraImages, repeatViews, notImagedSides
  */
 const extractAppointmentContext = (appointment) => {
   if (!appointment) return {}
@@ -127,7 +128,8 @@ const extractAppointmentContext = (appointment) => {
   // Check for breast implants still in place - removed implants do not need
   // the implant image sets
   const implants =
-    appointment.medicalInformation?.medicalHistory?.breastImplantsAugmentation || []
+    appointment.medicalInformation?.medicalHistory
+      ?.breastImplantsAugmentation || []
   if (implants.length > 0) {
     context.hasImplants = implants.some(
       (implant) => !isMedicalHistoryItemRemoved(implant)
@@ -166,6 +168,14 @@ const extractAppointmentContext = (appointment) => {
   // Check for extra images (large breasts - not a problem)
   if (appointment.mammogramData?.metadata?.hasExtraImages) {
     context.hasExtraImages = true
+  }
+
+  // Breasts with no images, for example after a mastectomy
+  if (appointment.mammogramData?.views) {
+    const imagedSides = getImagedSides(appointment.mammogramData)
+    context.notImagedSides = ['right', 'left'].filter(
+      (side) => !imagedSides.includes(side)
+    )
   }
 
   return context
@@ -266,6 +276,15 @@ const filterSetsByContext = (sets, context) => {
     } else {
       // If appointment doesn't have repeats, exclude repeat sets
       if (set.hasRepeat) return false
+    }
+
+    // A breast with no images can't show a finding
+    if (
+      context.notImagedSides?.some((side) =>
+        ['abnormal', 'technical'].includes(set[side]?.status)
+      )
+    ) {
+      return false
     }
 
     return true
@@ -376,7 +395,11 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
  * @param {object} options.context - Context object directly (alternative to passing appointment)
  * @returns {object|null} - The selected set object or null if none available
  */
-const getImageSetForAppointment = (appointmentId, source = 'diagrams', options = {}) => {
+const getImageSetForAppointment = (
+  appointmentId,
+  source = 'diagrams',
+  options = {}
+) => {
   let allSets = getAvailableSets(source)
   if (allSets.length === 0) return null
 
@@ -393,7 +416,8 @@ const getImageSetForAppointment = (appointmentId, source = 'diagrams', options =
 
   // Use provided context, or extract from appointment if provided
   const context =
-    options.context || (options.appointment ? extractAppointmentContext(options.appointment) : {})
+    options.context ||
+    (options.appointment ? extractAppointmentContext(options.appointment) : {})
 
   // Apply hard filters based on context (e.g., implants)
   if (Object.keys(context).length > 0) {
@@ -819,6 +843,61 @@ const getResolvedAnnotations = (set, source = 'diagrams') => {
   return []
 }
 
+// Order of views within a breast, by the mammogramViewOrder setting. Implant
+// displaced views sit beside their regular counterpart.
+const VIEW_ORDERS = {
+  'cc-first': ['CC', 'CCID', 'MLO', 'MLOID'],
+  'mlo-first': ['MLO', 'MLOID', 'CC', 'CCID']
+}
+
+/**
+ * What an appointment's images are, in brief: when they were taken, how many
+ * there are and which views, right breast first.
+ *
+ * @param {object} appointment - Appointment with mammogramData
+ * @param {object} [options] - Options
+ * @param {string} [options.viewOrder] - 'cc-first' (default) or 'mlo-first', as data.settings.mammogramViewOrder
+ * @returns {object | null} { takenAt, imageCount, views }, where each view is a
+ *   label such as 'RCC', or 'RMLO ×2' when it has more than one image. Null
+ *   when the appointment has no images.
+ * @example
+ * summariseMammogramImages(appointment).views // ['RCC', 'RMLO', 'LCC', 'LMLO']
+ */
+const summariseMammogramImages = (appointment, options = {}) => {
+  const mammogramData = appointment?.mammogramData
+  const views = Object.values(mammogramData?.views || {}).filter(Boolean)
+  if (!views.length) return null
+
+  const order = VIEW_ORDERS[options.viewOrder] || VIEW_ORDERS['cc-first']
+  // Right breast first, then by view; a view not in the order goes last
+  const rank = (view) =>
+    (view.side === 'right' ? 0 : order.length) +
+    (order.includes(view.viewShort)
+      ? order.indexOf(view.viewShort)
+      : order.length - 1)
+
+  // Manual entry records a count per view; automatic entry the images themselves
+  const counted = views
+    .map((view) => ({
+      view,
+      count:
+        (mammogramData.isManualEntry ? view.count : view.images?.length) || 1
+    }))
+    .sort((a, b) => rank(a.view) - rank(b.view))
+
+  return {
+    takenAt:
+      mammogramData.metadata?.startTime ||
+      appointment.timing?.actualStartTime ||
+      appointment.timing?.startTime ||
+      null,
+    imageCount: counted.reduce((total, { count }) => total + count, 0),
+    views: counted.map(({ view, count }) =>
+      count > 1 ? `${view.viewShortWithSide} ×${count}` : view.viewShortWithSide
+    )
+  }
+}
+
 module.exports = {
   IMAGE_SOURCES,
   VIEWS,
@@ -831,5 +910,6 @@ module.exports = {
   getImagesForAppointment,
   hasImageSets,
   extractAppointmentContext,
-  getResolvedAnnotations
+  getResolvedAnnotations,
+  summariseMammogramImages
 }

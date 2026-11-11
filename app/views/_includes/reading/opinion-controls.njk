@@ -1,48 +1,59 @@
+{# app/views/_includes/reading/opinion-controls.njk #}
 {# Opinion buttons (first visit) or radios (updating) for the opinion pages.
    Expects in context: hasExistingOpinion, currentOpinion, existingRead,
    hasSymptoms, isArbitration, data #}
 
+{# Opinion labels with their keyboard shortcut #}
+{% set normalLabelHtml %}Normal <span class="app-shortcut-hint">(N)</span>{% endset %}
+{% set normalWithDetailsLabelHtml %}Normal, and add details <span class="app-shortcut-hint">(N)</span>{% endset %}
+{% set addDetailsLabelHtml %}Normal, but add details <span class="app-shortcut-hint">(D)</span>{% endset %}
+{% set technicalRecallLabelHtml %}Technical recall <span class="app-shortcut-hint">(T)</span>{% endset %}
+{% set recallForAssessmentLabelHtml %}Recall for assessment <span class="app-shortcut-hint">(R)</span>{% endset %}
+
 {% set questionText = "What is the outcome for this case?" if isArbitration else "What is your opinion of these images?" %}
 
 {% if hasExistingOpinion %}
-  {# Show radios when updating an existing or in-progress opinion #}
+  {# Show radios when updating an existing or in-progress opinion.
+     With symptoms, plain normal is not offered - normal needs details,
+     so both N and D select it, matching the first-visit buttons #}
   {{ radios({
+    small: true,
     name: "imageReadingTemp[opinion]",
     fieldset: {
       legend: {
         text: questionText,
-        size: "m",
-        isPageHeading: false
+        size: "m"
       }
     },
     items: [
       {
         value: "normal",
-        html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+        html: normalLabelHtml,
         checked: currentOpinion == 'normal' and not existingRead.normalDetails,
         attributes: { "data-shortcut-radio": "n" }
-      },
+      } if not hasSymptoms,
       {
         value: "normal_with_details",
-        text: "Normal, but add details",
-        checked: (currentOpinion == 'normal' and existingRead.normalDetails) or currentOpinion == 'normal_with_details'
+        html: normalWithDetailsLabelHtml if hasSymptoms else addDetailsLabelHtml,
+        checked: (currentOpinion == 'normal' and (existingRead.normalDetails or hasSymptoms)) or currentOpinion == 'normal_with_details',
+        attributes: { "data-shortcut-radio": "n d" if hasSymptoms else "d" }
       },
       {
         value: "technical_recall",
-        html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+        html: technicalRecallLabelHtml,
         attributes: { "data-shortcut-radio": "t" }
       },
       {
         value: "recall_for_assessment",
-        html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+        html: recallForAssessmentLabelHtml,
         attributes: { "data-shortcut-radio": "r" }
       }
-    ],
+    ] | removeEmpty,
     value: currentOpinion
   }) }}
 
   {{ button({
-    text: "Update opinion"
+    text: "Update outcome" if isArbitration else "Update opinion"
   } | openInModal) }}
 
 {% else %}
@@ -51,15 +62,15 @@
   {% set opinionButtonsStackedHtml %}
     {% if hasSymptoms %}
       {{ button({
-        html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
+        html: normalWithDetailsLabelHtml,
         value: "normal_with_details",
         name: "imageReadingTemp[opinion]",
         classes: "app-button-full-width nhsuk-u-margin-bottom-3",
-        attributes: { "data-shortcut": "n" }
+        attributes: { "data-shortcut": "n d" }
       } | openInModal) }}
     {% else %}
       {{ button({
-        html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+        html: normalLabelHtml,
         value: "normal",
         name: "imageReadingTemp[opinion]",
         classes: "app-button-full-width nhsuk-u-margin-bottom-3",
@@ -69,13 +80,13 @@
         {# Raw button element intentional — app-button-link styles it as a link,
           which doesn't work with the NHS button macro (adds conflicting styles).
           data-modal-submit added manually for modal support. #}
-        <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
-          Normal, but add details
+        <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link" data-shortcut="d"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
+          {{ addDetailsLabelHtml | safe }}
         </button>
       </p>
     {% endif %}
     {{ button({
-      html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+      html: technicalRecallLabelHtml,
       value: "technical_recall",
       name: "imageReadingTemp[opinion]",
       variant: "secondary",
@@ -83,7 +94,8 @@
       attributes: { "data-shortcut": "t" }
     } | openInModal) }}
     {{ button({
-      html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+      html: recallForAssessmentLabelHtml,
+      ariaLabel: "Recall for assessment (R)",
       value: "recall_for_assessment",
       name: "imageReadingTemp[opinion]",
       variant: "warning",
@@ -99,14 +111,14 @@
     <div class="app-button-group--equal">
       {% if hasSymptoms %}
         {{ button({
-          html: "Normal, and add details <span class='app-shortcut-hint'>(N)</span>",
+          html: normalWithDetailsLabelHtml,
           value: "normal_with_details",
           name: "imageReadingTemp[opinion]",
-          attributes: { "data-shortcut": "n" }
+          attributes: { "data-shortcut": "n d" }
         } | openInModal) }}
       {% else %}
         {{ button({
-          html: "Normal <span class='app-shortcut-hint'>(N)</span>",
+          html: normalLabelHtml,
           value: "normal",
           name: "imageReadingTemp[opinion]",
           attributes: { "data-shortcut": "n" }
@@ -117,20 +129,21 @@
           {# Raw button element intentional — app-button-link styles it as a link,
             which doesn't work with the NHS button macro (adds conflicting styles).
             data-modal-submit added manually for modal support. #}
-          <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
-            Normal, but add details
+          <button type="submit" name="imageReadingTemp[opinion]" value="normal_with_details" class="app-button-link" data-shortcut="d"{% if data.settings.modalForms == 'true' %} data-modal-submit="true" data-modal-id="app-form-modal"{% endif %}>
+            {{ addDetailsLabelHtml | safe }}
           </button>
         </p>
       {% endif %}
       {{ button({
-        html: "Technical recall <span class='app-shortcut-hint'>(T)</span>",
+        html: technicalRecallLabelHtml,
         value: "technical_recall",
         name: "imageReadingTemp[opinion]",
         variant: "secondary",
         attributes: { "data-shortcut": "t" }
       } | openInModal) }}
       {{ button({
-        html: "Recall for assessment <span class='app-shortcut-hint'>(R)</span>",
+        html: recallForAssessmentLabelHtml,
+        ariaLabel: "Recall for assessment (R)",
         value: "recall_for_assessment",
         name: "imageReadingTemp[opinion]",
         variant: "warning",

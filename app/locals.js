@@ -4,25 +4,50 @@ const environmentMiddleware = require('./lib/middleware/environment')
 module.exports = (req, res, next) => {
   environmentMiddleware(req, res, () => {})
 
-  const currentUser = req.session.data.currentUser
-  const currentBSU = currentUser
-    ? req.session.data.breastScreeningUnits?.find(
-        (unit) => unit.id === currentUser.breastScreeningUnit
-      )
-    : null
-
   const locals = {
     currentUrl: req.path,
-    flash: req.flash(),
     query: req.query,
     referrerChain: req.query.referrerChain,
-    currentUser: currentUser,
-    currentBSU: currentBSU,
     isAppointmentWorkflow: false
   }
 
   // Assign all local variables at once
   Object.assign(res.locals, locals)
+
+  // Read the user at render time, as the user swap and remembered sign-in in
+  // app/routes.js can change it after this runs
+  Object.defineProperty(res.locals, 'currentUser', {
+    enumerable: true,
+    configurable: true,
+    get: () => req.session.data.currentUser
+  })
+  Object.defineProperty(res.locals, 'currentBSU', {
+    enumerable: true,
+    configurable: true,
+    get: () =>
+    {
+      const currentUser = req.session.data.currentUser
+      return currentUser
+        ? req.session.data.breastScreeningUnits?.find(
+            (unit) => unit.id === currentUser.breastScreeningUnit
+          )
+        : null
+    }
+  })
+
+  // Read the flash only when something asks for it, usually a page rendering.
+  // Reading it here on every request would use up a message on a request that
+  // only redirects, before it reaches the page meant to show it. On render the
+  // kit's express-flash has already moved the messages to res.locals.messages
+  let flash
+  Object.defineProperty(res.locals, 'flash', {
+    enumerable: true,
+    configurable: true,
+    get: () => (flash ??= res.locals.messages ?? req.flash()),
+    set: (value) => {
+      flash = value
+    }
+  })
 
   next()
 }

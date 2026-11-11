@@ -1,4 +1,4 @@
-{# app/views/appointments/mammography/medical-information/symptoms/type.html #}
+{# app/views/appointments/medical-information/symptoms/type.html #}
 
 {% extends parentLayout or '_templates/layout-appointment.html' %}
 
@@ -26,19 +26,17 @@
   {% endfor %}
 
   {{ radios({
+    small: true,
     name: "appointment[symptomTemp][type]",
     idPrefix: "type",
     value: appointment.symptomTemp.type,
     fieldset: {
       legend: {
-        text: pageHeading,
-        size: "l",
-        isPageHeading: true
+        heading: pageHeading,
+        size: "l"
       }
     },
-    hint: {
-      text: "If the participant has multiple symptoms, record each one separately"
-    },
+    hint: "If the participant has multiple symptoms, record each one separately",
     items: radioItems
   }) }}
 
