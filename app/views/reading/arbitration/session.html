@@ -80,7 +80,7 @@
       }) %}
         <p>Outcome recorded for {{ arbitratedCount }} {{ "case" | pluralise(arbitratedCount) }}. {{ unfinalisedReadCount }} {{ "is" if unfinalisedReadCount == 1 else "are" }} not yet finalised.</p>
         {{ button({
-          text: "Finalise outcomes",
+          text: "Finalise all outcomes",
           href: "/reading/session/" + session.id + "/finalise-reads",
           classes: "nhsuk-u-margin-bottom-0"
         }) }}
@@ -97,7 +97,7 @@
         {% if unfinalisedReadCount > 0 %}
           <p class="nhsuk-body-m">Outcome recorded for {{ arbitratedCount }} {{ "case" | pluralise(arbitratedCount) }}.{% if autoFinaliseAt %} The first outcome will be finalised automatically at {{ autoFinaliseAt | formatTimeString }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise outcomes now</a></p>
         {% else %}
-          <p class="nhsuk-body-m">Outcome recorded for {{ arbitratedCount }} {{ "case" | pluralise(arbitratedCount) }}. All outcomes are finalised.</p>
+          <p class="nhsuk-body-m">Outcome recorded and finalised for {{ arbitratedCount }} {{ "case" | pluralise(arbitratedCount) }}.</p>
         {% endif %}
         <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
           {% if backlogTotal > 0 %}

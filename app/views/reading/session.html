@@ -87,7 +87,7 @@
       }) %}
         <p>Opinion recorded for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. {{ unfinalisedReadCount }} {{ "is" if unfinalisedReadCount == 1 else "are" }} not yet finalised.</p>
         {{ button({
-          text: "Finalise opinions",
+          text: "Finalise all opinions",
           href: "/reading/session/" + session.id + "/finalise-reads",
           classes: "nhsuk-u-margin-bottom-0"
         }) }}
@@ -105,7 +105,7 @@
         {% if unfinalisedReadCount > 0 %}
           <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}.{% if autoFinaliseAt %} The first opinion will be finalised automatically at {{ autoFinaliseAt | formatTimeString }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
         {% else %}
-          <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}. All opinions are finalised.</p>
+          <p class="nhsuk-body-m">Opinions recorded and finalised for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}.</p>
         {% endif %}
         <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
           {% if backlogTotal > 0 %}

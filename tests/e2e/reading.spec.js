@@ -376,7 +376,7 @@ test.describe('Image reading', () => {
         name: 'Finalise your opinions to complete this session'
       })
     ).toBeVisible()
-    await page.getByRole('button', { name: 'Finalise opinions' }).click()
+    await page.getByRole('button', { name: 'Finalise all opinions' }).click()
 
     await expect(
       page.getByRole('heading', { name: 'Session complete' })
