@@ -10,6 +10,15 @@ Once each breast screening appointment has been completed, any images taken will
 
 This guide walks you through giving an opinion on those images and how the reading process works.
 
+<details class="nhsuk-details">
+  <summary class="nhsuk-details__summary">
+    <span class="nhsuk-details__summary-text">Why are some cases excluded from a reading session?</span>
+  </summary>
+  <div class="nhsuk-details__text">
+    <p>Cases are held back when they need extra checks before they can be reviewed. This includes cases awaiting prior mammograms or those with issues that must be resolved first so the reader is not working on incomplete information.</p>
+  </div>
+</details>
+
 ## Starting an image reading session
 
 The image reading dashboard will show you a live count of how many cases are awaiting an opinion. When you select 'Start now', this will allocate 25 of those cases starting with those that have been waiting the longest since screening.
@@ -18,14 +27,12 @@ You may get less than 25 if there are fewer than that available (or another read
 
 To ease eye strain when looking at mammograms in a dark environment, a dark mode is available.
 
-[Read about setting up dark mode](/support/image-reading/article-one)
-
 ### Unavailable cases
 
 Some cases will not be included in a session. These are:
 
-- [**Awaiting priors**](/support/image-reading/article-one) - these are cases where another reader has requested to see images from a previous mammogram
-- [**Cases with issues**](/support/image-reading/article-two) - any cases where problems have been raised need to be resolved before they can be read
+- **Awaiting priors** - these are cases where another reader has requested to see images from a previous mammogram
+- **Cases with issues** - any cases where problems have been raised need to be resolved before they can be read
 
 ### Stopping and resuming a session
 
@@ -70,8 +77,6 @@ For those you deem to be abnormal, you are required to add an annotation (of con
 
 Select a location (one click per view) and add a level of concern (and comment if required) before clicking 'Save'. You can add multiple annotations, including those for normal or benign lesions if you want to indicate things that have been reviewed and dismissed.
 
-[Read about adding annotations](/support/image-reading/article-one)
-
 You will be asked to confirm a summary of your opinion before continuing to the next participant
 
 ## Completing a reading session
@@ -82,8 +87,6 @@ This includes cases split across two tabs:
 
 - Your opinion - review any cases again and change your opinion if necessary - opinions are not finialised until 2 hours after you give them (unless you actively choose to finialise them sooner)
 - All reads and outcomes - this shows the outcome for any cases with two reads - this may be 'awaiting arbitration' if the other image reader gave a differetn opinion to yours
-
-[Read about the arbitration process](/support/image-reading/article-one)
 
 Once an outcome has been reached for each case (either through two reads or arbitration) this will trigger the next step in the episode, which will either be closure (until their next routine appointment is due), an invite for technical repeats, or an invite to an assessment clinic.
 

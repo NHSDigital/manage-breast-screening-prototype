@@ -1,14 +1,21 @@
 ---
-title: Get started with breast screening appointments
-subtitle: Find out the various steps involved in running screening appointments 
+title: Get started with breast screening clinics
+subtitle: Find out the various steps involved in running screening appointments at a scheduled clinic
 published: 2026-09-08
-updated: 2026-09-14
+updated: 2026-11-13
 showContentsList: true
 ---
 
 This guide provides a walkthrough of the various steps required to begin and complete an appointment, and close a clinic.
 
-[Read about creating and managing clinics](/support/appointments/article-two)
+<details class="nhsuk-details">
+  <summary class="nhsuk-details__summary">
+    <span class="nhsuk-details__summary-text">Why a clinic is shown in a list</span>
+  </summary>
+  <div class="nhsuk-details__text">
+    <p>Clinic lists are grouped by the location and time of the appointment so you can quickly find the session you need. You can also switch between clinics happening today, those coming up later, and any that have already been completed.</p>
+  </div>
+</details>
 
 ## Opening a clinic
 
@@ -18,7 +25,10 @@ Selecting 'Clinics' from the main menu will show you any clinics taking place to
 
 You can also see any upcoming or completed clinics.
 
-Click the name of the clinic you want to view. This will show you details of all the appointments planned for that clinic organised by appointment time. These can be filtered by status (checked in, in progress, completed, etc).
+Select the clinic you want to view. This will show details of all the appointments planned for that clinic organised by appointment time. There are two ways to filter this:
+
+- Using the
+- using the status tabs (checked in, in progress, completed, etc)
 
 ## Checking in participants
 
@@ -50,7 +60,7 @@ Various forms are available to capture any information disclosed by the particip
 
 They are organised into the following areas:
 
-- [**Mammogram history**](/support/appointments/article-one) - see the most recent mammogram and record any that are not on the system
+- **Mammogram history** - see the most recent mammogram and record any that are not on the system
 - **Medical history** - such as breast cancer, implants, prior procedures and treatments
 - **Symptoms and signs** - including lumps, swelling, rashes or nipple changes
 - **Breast features** - such as non-surgical scars or moles
@@ -67,8 +77,6 @@ If this is the case, you will see 'On worklist' with a green tick in the appoint
 When you start taking images, thumbnails of each view will appear on Rubie. If they all appear as expected, click 'Confirm all images received' to continue.
 
 If there are issues with the images (or you see a red cross and 'Not on worklist' in the information bar) the appointment can still be completed by following some manual steps.
-
-Read about [raising issues when taking images](/support/appointments/article-two).
 
 #### Observations during mammogram
 
@@ -90,8 +98,6 @@ The final step of each appointment is confirming that the information collected 
 This provides an opportunity to check and change any details, as well as adding an appointment note if there's any necessary information to share with image readers.
 
 Once you're satisfied, click 'Complete screening and return to clinic'. This will make the images available for reading.
-
-[Read a guide to image reading](/support/getting-started/image-reading)
 
 ## Closing a clinic
 
