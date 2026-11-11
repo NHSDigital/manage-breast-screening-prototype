@@ -20,12 +20,7 @@
 
 {% endfor %}
 
-{# Margins end up doubling up when there's a warning card immeditely after secondary nav - selectively remove margin here if that's the case. This is hacky! #}
-{% set suppressMargin = true if (activeTab == 'appointment') and ((appointment | isSpecialAppointment) or (appointment | hasAppointmentNote)) %}
-
-
 {{ appSecondaryNavigation({
   visuallyHiddenTitle: "Secondary menu",
-  items: secondaryNavItems,
-  classes: "nhsuk-u-margin-bottom-0" if suppressMargin
+  items: secondaryNavItems
 }) }}
