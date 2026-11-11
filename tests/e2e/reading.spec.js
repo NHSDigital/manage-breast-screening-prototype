@@ -514,7 +514,16 @@ test.describe('Image reading', () => {
       recallModal.getByRole('heading', { name: 'Technical recall' })
     ).toBeVisible()
 
-    await recordTechnicalRecallDetails(recallModal, 'RMLO', 'Image blurred')
+    // Not every view is offered - views that weren't imaged (eg after a
+    // mastectomy) are left out - so retake whichever MLO view the case has
+    const offeredMlo = await recallModal
+      .locator(
+        'input[name="imageReadingTemp[technicalRecall][selectedViews]"][value$="MLO"]'
+      )
+      .first()
+      .getAttribute('value')
+
+    await recordTechnicalRecallDetails(recallModal, offeredMlo, 'Image blurred')
 
     // Continuing breaks out of the modal: the review step is a terminal
     // confirmation, so the route redirects via modalBreakout and the browser
@@ -524,7 +533,7 @@ test.describe('Image reading', () => {
       reviewPage.getByRole('heading', { name: 'Confirm your opinion' })
     ).toBeVisible()
     await expect(reviewPage.getByText('Technical recall').first()).toBeVisible()
-    await expect(reviewPage.getByText('RMLO').first()).toBeVisible()
+    await expect(reviewPage.getByText(offeredMlo).first()).toBeVisible()
     await expect(reviewPage.getByText('Image blurred')).toBeVisible()
     await reviewPage
       .getByRole('button', { name: 'Confirm and continue' })
@@ -1160,7 +1169,7 @@ test.describe('Image reading', () => {
     await page.getByRole('link', { name: 'Finalise opinions now' }).click()
 
     // Finalised: the prompt gives way to the settled state
-    await expect(page.getByText('All opinions are finalised')).toBeVisible()
+    await expect(page.getByText('Opinions recorded and finalised')).toBeVisible()
 
     // Both reads now finalised, so the case has settled. The case header shows
     // a single tag: the outcome once concluded (the agreed opinion), or
