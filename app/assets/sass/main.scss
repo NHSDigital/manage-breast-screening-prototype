@@ -75,7 +75,15 @@
       null: 48px,
       tablet: 56px
     )
-  )
+  ),
+
+  // Default buttons are a medium size, between the NHS default and
+  // nhsuk-button--small. Button height is derived from the large input height.
+  $nhsuk-button-padding-left-right: math.div(14px, 16px) * 1rem,
+  $nhsuk-button-search-icon-size-large: math.div(32px, 16px) * 1rem,
+
+  $nhsuk-input-height-large: math.div(48px, 16px) * 1rem,
+  $nhsuk-input-height-large-tablet: math.div(52px, 16px) * 1rem
 );
 
 // All app component and utility styles
