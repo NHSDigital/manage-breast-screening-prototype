@@ -265,7 +265,11 @@
         {% endif %}
       {% endset %}
 
-      {% set mammographerName = imagesAppointment | getScreenedByName({ identifyCurrentUser: true }) %}
+      {% set mammographerSummary = imagesAppointment | getAppointmentMammographerSummary({ identifyCurrentUser: true }) %}
+
+      {% set mammographersHtml %}
+        {% include "_includes/appointment-mammographers.njk" %}
+      {% endset %}
 
       {% set imageCountHtml %}
         {{ imagesSummary.imageCount }} {{ "image" | pluralise(imagesSummary.imageCount) }}
@@ -321,10 +325,10 @@
             key: { text: "Taken" },
             value: { html: takenHtml }
           }) }}
-          {% if mammographerName %}
+          {% if mammographerSummary.people | length %}
             {{ appSummaryListRow({
-              key: { text: "Mammographer" },
-              value: { text: mammographerName }
+              key: { text: mammographerSummary.label },
+              value: { html: mammographersHtml }
             }) }}
           {% endif %}
           {{ appSummaryListRow({

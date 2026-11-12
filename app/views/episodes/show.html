@@ -73,6 +73,14 @@
   {% if episode.isHistoric %}
     {% set mammogram = episode.mammograms | last %}
     {% set screeningUnit = data.breastScreeningUnits | findById(mammogram.breastScreeningUnitId) if mammogram else null %}
+    {% if mammogram %}
+      {% set mammogramTakenHtml %}
+        {{ mammogram.takenDate | formatDate }}
+        {% if mammogram.operatorId %}
+          <br>by {{ mammogram.operatorId | getUsername | escape }}
+        {% endif %}
+      {% endset %}
+    {% endif %}
   {% endif %}
 
   {# Outcome leads, as it is what anyone opening a finished round came for #}
@@ -128,7 +136,7 @@
     {% if episode.isHistoric %}
       {% set episodeRows = episodeRows | push({
         key: { text: "Mammograms taken" },
-        value: { text: mammogram.takenDate | formatDate if mammogram else "Not screened" }
+        value: { html: mammogramTakenHtml } if mammogram else { text: "Not screened" }
       }) %}
       {% if mammogram %}
         {% set episodeRows = episodeRows | push({

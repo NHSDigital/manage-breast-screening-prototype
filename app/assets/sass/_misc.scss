@@ -96,17 +96,17 @@ body.js-enabled .app-no-js-only {
 
 // Reduce space taken by card
 .nhsuk-card {
-  @include nhsuk-responsive-margin(4, "bottom");
+  @include nhsuk-responsive-margin(5, "bottom");
 }
 
 // NHS Frontend spaces cards with a top margin too, which would otherwise win
 .nhsuk-card:not(:first-child) {
-  @include nhsuk-responsive-margin(4, "top");
+  @include nhsuk-responsive-margin(5, "top");
 }
 
-// Includes first children, as a feature card's heading overhangs what is above it
-.nhsuk-card--feature:first-child,
-.nhsuk-card--feature:not(:first-child) {
+// Reduce margin taken by feature and warning cards. Larger than regular cards as they have a tag that overlaps the top of the card.
+.nhsuk-card--feature:not(:first-child),
+.nhsuk-card--warning:not(:first-child) {
   @include nhsuk-responsive-margin(7, "top");
 }
 

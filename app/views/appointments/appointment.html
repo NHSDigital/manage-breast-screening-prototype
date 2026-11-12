@@ -166,6 +166,19 @@
     }) }}
   {% endset %}
 
+  {% set mammographerSummary = appointment | getAppointmentMammographerSummary %}
+
+  {% set mammographersHtml %}
+    {% include "_includes/appointment-mammographers.njk" %}
+  {% endset %}
+
+  {% set screeningProtocolHtml %}
+    {{ tag({
+      text: participant | getScreeningProtocolName,
+      colour: "blue"
+    }) }}
+  {% endset %}
+
   {% set appointmentHtml %}
     {{ summaryList({
       rows: [
@@ -186,6 +199,17 @@
           },
           value: {
             text: clinic.clinicType | formatWords | sentenceCase
+          },
+          actions: {
+            items: []
+          }
+        },
+        {
+          key: {
+            text: "Appointment type"
+          },
+          value: {
+            html: screeningProtocolHtml
           },
           actions: {
             items: []
@@ -228,21 +252,10 @@
         },
         {
           key: {
-            text: "Run by"
+            text: mammographerSummary.label
           },
           value: {
-            html: appointment | getAppointmentRunByNames({ format: "reversed" }) | formatList
-          },
-          actions: {
-            items: []
-          }
-        } if appointment.status == "complete" and appointment.sessionDetails.endedBy else {},
-        {
-          key: {
-            text: "Authorised mammographer"
-          },
-          value: {
-            html: (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (appointment | getScreenedByName({ format: "reversed" }))
+            html: mammographersHtml
           },
           actions: {
             items: []

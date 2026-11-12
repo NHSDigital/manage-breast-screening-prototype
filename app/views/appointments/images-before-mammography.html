@@ -15,19 +15,15 @@
 
   <h1>{{ pageHeading }}</h1>
 
-  {% include "_includes/images/expected-views-inset.njk" %}
+  {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (currentUser.id | getUsername({ format: "reversed" })) %}
+  {% set authorisedMammographerChangeHref = (appointmentUrl + "/change-authorised-mammographer") | urlWithReferrer(referrerChain | appendReferrer(currentUrl)) %}
 
-  <div class="nhsuk-grid-row">
-    <div class="nhsuk-grid-column-two-thirds">
-      <h2>Observations during mammogram</h2>
-      {{ button({
-        text: "Add breast features",
-        href: appointmentUrl + "/medical-information/record-breast-features" | urlWithReferrer(currentUrl),
-        variant: "secondary",
-        small: true
-      }) }}
-    </div>
-  </div>
+  <p>
+    Operator: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span>
+    ({{ link({ text: "change", href: authorisedMammographerChangeHref } | openInModal) | trim | safe }})
+  </p>
+
+  {% include "_includes/images/expected-views-inset.njk" %}
 
   {% set insetHtml %}
     <p>
@@ -52,6 +48,11 @@
       <span class="">Loading images...</span>
     </a> #}
   </p>
+
+  <hr class="nhsuk-section-break nhsuk-section-break--m nhsuk-section-break--visible">
+
+
+  {% include "_includes/medical-information/symptoms-and-breast-features-expander.njk" %}
 
   {% include "_includes/images/image-troubleshooting.njk" %}
 

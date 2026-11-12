@@ -319,6 +319,54 @@ const getAppointmentRunByNames = function (appointment, options = {}) {
 }
 
 /**
+ * Get the people and roles to show for a completed appointment
+ *
+ * A nominated mammographer is the operator. If nobody was nominated, the
+ * person who ended the appointment is the operator. Everyone recorded as
+ * having run the appointment is a practitioner.
+ *
+ * @param {object} appointment - Appointment object
+ * @param {object} [options] - Display options, as accepted by getUsername
+ * @returns {{label: string, people: Array<{id: (string|null), name: string, roles: Array<string>}>}} Display label and people with their roles
+ * @example
+ * {{ appointment | getAppointmentMammographerSummary({ identifyCurrentUser: true }) }}
+ */
+const getAppointmentMammographerSummary = function (appointment, options = {}) {
+  const people = getAppointmentRunByIds(appointment).map((userId) => ({
+    id: userId,
+    name: getUsername.call(this, userId, options),
+    roles: ['Practitioner']
+  }))
+
+  const hasOtherNameOperator = Boolean(
+    appointment?.authorisedMammographerOtherName
+  )
+  const operatorId =
+    appointment?.authorisedMammographerId ||
+    (hasOtherNameOperator ? null : appointment?.sessionDetails?.endedBy) ||
+    null
+  const operatorName =
+    getAuthorisedMammographerName.call(this, appointment, options) ||
+    getScreenedByName.call(this, appointment, options)
+  const operator = people.find((person) => person.id === operatorId)
+
+  if (operator) {
+    operator.roles.push('Operator')
+  } else if (operatorName) {
+    people.push({
+      id: operatorId,
+      name: operatorName,
+      roles: ['Operator']
+    })
+  }
+
+  return {
+    label: people.length === 1 ? 'Mammographer' : 'Mammographers',
+    people
+  }
+}
+
+/**
  * Get the name of whoever screened an appointment, for showing one name in a
  * tight space. While it is running, that is whoever is running it. Once it
  * has ended, who took the images matters most: the nominated authorised
@@ -341,6 +389,51 @@ const getScreenedByName = function (appointment, options = {}) {
   )
 }
 
+/**
+ * Get the names of everyone who screened an appointment, for a list where
+ * the most relevant person should come first. The current user comes first
+ * if they were involved, then whoever screened it (see getScreenedByName),
+ * then everyone else who ran it. People are matched by id, so nobody is
+ * listed twice.
+ *
+ * @param {object} appointment - Appointment object
+ * @param {object} [options] - Display options, as accepted by getUsername
+ * @returns {Array<string>} Names in display order
+ * @example
+ * {{ appointment | getAppointmentScreenedByNames({ format: "short", identifyCurrentUser: true }) | join(", ") }}
+ */
+const getAppointmentScreenedByNames = function (appointment, options = {}) {
+  const runByIds = getAppointmentRunByIds(appointment)
+  const currentUser = this?.ctx?.data?.currentUser
+  const currentUserId =
+    typeof currentUser === 'string' ? currentUser : currentUser?.id
+  const hasEnded = Boolean(appointment?.sessionDetails?.endedBy)
+
+  // A nominated mammographer who isn't a user only has a name, no id
+  const otherName = hasEnded
+    ? !appointment?.authorisedMammographerId &&
+      appointment?.authorisedMammographerOtherName
+    : null
+  const screenedById = hasEnded
+    ? appointment?.authorisedMammographerId ||
+      (otherName ? null : appointment.sessionDetails.endedBy)
+    : getAppointmentRunnerId(appointment)
+
+  const leadingIds = runByIds.includes(currentUserId) ? [currentUserId] : []
+  const orderedIds = [
+    ...new Set([...leadingIds, screenedById, ...runByIds].filter(Boolean))
+  ]
+  const names = orderedIds.map((userId) =>
+    getUsername.call(this, userId, options)
+  )
+
+  if (otherName) {
+    names.splice(leadingIds.length, 0, otherName)
+  }
+
+  return names
+}
+
 module.exports = {
   hasRole,
   hasAnyRole,
@@ -352,6 +445,8 @@ module.exports = {
   hasNominatedAuthorisedMammographer,
   getAuthorisedMammographerName,
   canUserScreenAppointment,
+  getAppointmentMammographerSummary,
+  getAppointmentScreenedByNames,
   isClinician,
   isAdministrative,
   isHybridUser,

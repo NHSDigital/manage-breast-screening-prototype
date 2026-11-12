@@ -54,14 +54,16 @@ document.addEventListener('DOMContentLoaded', function () {
   sections.forEach(function (section, index) {
     const content = section.querySelector('.nhsuk-details__text')
     if (content) {
-      // Create HR element
+      // Divider between the content and the section's own buttons. Its
+      // spacing is in _expandable-section.scss
       const hr = document.createElement('hr')
       hr.className =
-        'nhsuk-section-break nhsuk-section-break--visible nhsuk-u-margin-bottom-2'
+        'nhsuk-section-break nhsuk-section-break--visible app-expandable-section__divider'
 
       // Create button container
       const buttonContainer = document.createElement('div')
-      buttonContainer.className = 'nhsuk-form-group nhsuk-button-group'
+      buttonContainer.className =
+        'nhsuk-button-group app-expandable-section__actions'
 
       const sectionId = section.getAttribute('id')
       const isBreastFeaturesSection = sectionId === BREAST_FEATURES_SECTION_ID
@@ -77,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Create button
       const button = document.createElement('button')
       button.className =
-        'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3 js-save-and-next'
+        'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-save-and-next'
       button.type = 'button'
       button.setAttribute('data-section-index', index)
 
@@ -89,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (isBreastFeaturesSection) {
         const reviewAfterImagingButton = document.createElement('button')
         reviewAfterImagingButton.className =
-          'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3'
+          'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0'
         reviewAfterImagingButton.type = 'button'
         reviewAfterImagingButton.textContent = 'Review at imaging'
 
@@ -123,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Initialize progress
   updateProgress(sections, completedSections)
 
-  // Handle "Complete all and continue" button
+  // Handle "Complete all and authorise imaging" button
   const completeAllButtons = document.querySelectorAll(
     '.js-complete-all-sections'
   )
@@ -311,32 +313,6 @@ function openNextIncompleteSection(currentIndex, sections, completedSections) {
 
       return // Exit once we've found and opened the incomplete section
     }
-  }
-
-  // If we get here, all sections are complete
-  // console.log('All sections are now complete!')
-  highlightCompletionButton()
-}
-
-// Function to highlight the completion button when all sections are done
-function highlightCompletionButton() {
-  const completeButton = document.querySelector(
-    'button:contains("Complete all and continue")'
-  )
-
-  if (!completeButton) {
-    // Try a more specific selector if the above doesn't work
-    const buttons = document.querySelectorAll('button')
-
-    buttons.forEach((btn) => {
-      if (btn.textContent.includes('Complete all and continue')) {
-        btn.classList.add('nhsuk-button--green') // Highlight in green
-        btn.style.animation = 'pulse 2s infinite' // Add a subtle animation
-      }
-    })
-  } else {
-    completeButton.classList.add('nhsuk-button--green')
-    completeButton.style.animation = 'pulse 2s infinite'
   }
 }
 

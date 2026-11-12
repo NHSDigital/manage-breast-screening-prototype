@@ -232,11 +232,11 @@
 
 {% switch displayFormat %}
   {% case 'flat' %}
-    <h2 id="{{ breastDensitySectionId }}">Breast density factors</h2>
+    <h2 id="{{ breastDensitySectionId }}">HRT, pregnancy and breastfeeding</h2>
     {{ breastDensityFactorsHtml | safe }}
   {% case 'card' %}
     {% call card({
-      heading: "Breast density factors",
+      heading: "HRT, pregnancy and breastfeeding",
       attributes: {
         id: breastDensitySectionId
       }
@@ -247,7 +247,8 @@
     {{ appDetails({
       id: breastDensitySectionId,
       classes: "nhsuk-expander js-expandable-section js-track-expanded",
-      summaryText: "Breast density factors",
+      summaryText: "HRT, pregnancy and breastfeeding",
+      subtitle: "Details of any factors that may affect the participant’s breast density",
       contentsSummary: breastDensityContentsSummary,
       html: breastDensityFactorsHtml,
       status: "To review"

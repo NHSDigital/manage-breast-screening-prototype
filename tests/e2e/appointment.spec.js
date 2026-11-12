@@ -8,8 +8,13 @@
 const { test, expect } = require('./helpers/fixtures')
 const { pinSettings, appointmentSettings } = require('./helpers/settings')
 const { findTodayAppointment } = require('./helpers/seed-data')
+const users = require('../../app/data/users')
+const {
+  getAppointmentMammographerSummary
+} = require('../../app/lib/utils/roles-and-permissions')
 const {
   clickToOpenModal,
+  clickLinkToOpenModal,
   openFormModal,
   revealInModal,
   expectModalClosed,
@@ -39,8 +44,9 @@ const checkIn = async (page, appointment) => {
  * Walk the imaging and completion steps that both journeys share
  *
  * @param {import('@playwright/test').Page} page - Playwright page
+ * @param {string} [operatorId] - Different mammographer to nominate as operator
  */
-const takeImagesAndComplete = async (page) => {
+const takeImagesAndComplete = async (page, operatorId) => {
   await expect(
     page.getByRole('heading', { name: 'Take mammogram images' })
   ).toBeVisible()
@@ -54,12 +60,60 @@ const takeImagesAndComplete = async (page) => {
   await expect(
     page.getByRole('heading', { name: 'Check information' })
   ).toBeVisible()
+
+  if (operatorId) {
+    const mammographerModal = await clickLinkToOpenModal(
+      page,
+      'Change operator'
+    )
+    const operatorRadio = mammographerModal.locator(
+      `input[name="appointment[authorisedMammographerTemp][userId]"][value="${operatorId}"]`
+    )
+    await revealInModal(operatorRadio)
+    await operatorRadio.check()
+    await mammographerModal.getByRole('button', { name: 'Save' }).click()
+    await expectModalClosed(mammographerModal)
+  }
+
   await page
     .getByRole('button', { name: 'Complete screening and return to clinic' })
     .click()
 }
 
 test.describe('Screening appointment', () => {
+  test('shows both roles when a practitioner also operates in a multi-person appointment', () => {
+    const [practitioner, operator] = users
+    const appointment = {
+      authorisedMammographerId: practitioner.id,
+      sessionDetails: {
+        startedBy: practitioner.id,
+        authors: [{ userId: practitioner.id }, { userId: operator.id }],
+        endedBy: operator.id
+      }
+    }
+
+    const summary = getAppointmentMammographerSummary.call(
+      { ctx: { data: { users } } },
+      appointment
+    )
+
+    expect(summary).toEqual({
+      label: 'Mammographers',
+      people: [
+        {
+          id: practitioner.id,
+          name: `${practitioner.firstName} ${practitioner.lastName}`,
+          roles: ['Practitioner', 'Operator']
+        },
+        {
+          id: operator.id,
+          name: `${operator.firstName} ${operator.lastName}`,
+          roles: ['Practitioner']
+        }
+      ]
+    })
+  })
+
   test('records medical history and a symptom, then completes', async ({
     page
   }) => {
@@ -176,7 +230,7 @@ test.describe('Screening appointment', () => {
     await expect(page.getByText('Lump').first()).toBeVisible()
 
     await page
-      .getByRole('button', { name: 'Complete all and continue' })
+      .getByRole('button', { name: 'Complete all and authorise imaging' })
       .first()
       .click()
 
@@ -185,12 +239,33 @@ test.describe('Screening appointment', () => {
     // Back on the clinic list, with the appointment finished
     await expect(page).toHaveURL(new RegExp(`/clinics/${clinic.id}`))
     await expect(page.getByText(`${fullName} has been screened`)).toBeVisible()
+    await page.goto(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`
+    )
+    const mammographerRow = page
+      .locator('.nhsuk-summary-list__row')
+      .filter({ has: page.getByText('Mammographer', { exact: true }) })
+    await expect(mammographerRow).toContainText('Mammographer')
+    await expect(mammographerRow).toContainText(
+      `${users[0].firstName} ${users[0].lastName}`
+    )
+    await expect(mammographerRow).not.toContainText('(Practitioner)')
+    await expect(mammographerRow).not.toContainText('(Operator)')
   })
 
   test('goes straight through with nothing to record', async ({ page }) => {
     // A different appointment to the journey above, so a failure points at one
     // journey rather than at the two interfering
     const { clinic, appointment, fullName } = findTodayAppointment({ index: 1 })
+    const operator = users.find(
+      (user) =>
+        user.id !== users[0].id && user.permissions.includes('implantImaging')
+    )
+    if (!operator) {
+      throw new Error(
+        'Seed data needs another mammographer with implant imaging permission'
+      )
+    }
 
     await pinSettings(page, appointmentSettings)
     await page.goto(
@@ -206,14 +281,114 @@ test.describe('Screening appointment', () => {
       page.getByRole('heading', { name: 'Review medical information' })
     ).toBeVisible()
     await page
-      .getByRole('button', { name: 'Complete all and continue' })
+      .getByRole('button', { name: 'Complete all and authorise imaging' })
       .first()
       .click()
 
-    await takeImagesAndComplete(page)
+    await takeImagesAndComplete(page, operator.id)
 
     await expect(page).toHaveURL(new RegExp(`/clinics/${clinic.id}`))
     await expect(page.getByText(`${fullName} has been screened`)).toBeVisible()
+    await page.goto(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`
+    )
+    const mammographersRow = page
+      .locator('.nhsuk-summary-list__row')
+      .filter({ has: page.getByText('Mammographers', { exact: true }) })
+    await expect(mammographersRow).toContainText(
+      `${users[0].firstName} ${users[0].lastName} (Practitioner)`
+    )
+    await expect(mammographersRow).toContainText(
+      `${operator.firstName} ${operator.lastName} (Operator)`
+    )
+
+    await page.goto(`/clinics/${clinic.id}/complete`)
+    const clinicRow = page.locator(`tr[data-fragment-id="${appointment.id}"]`)
+    const completedColumn = clinicRow.locator(
+      '.app-clinic-appointments-table__completed-column'
+    )
+    await expect(
+      completedColumn.locator('.app-clinic-appointments-table__completed-time')
+    ).toHaveCSS('display', 'block')
+    await expect(
+      completedColumn.locator('.app-clinic-appointments-table__completed-details')
+    ).toHaveCSS('display', 'block')
+    await expect(completedColumn).toContainText(
+      `${users[0].firstName.charAt(0)}. ${users[0].lastName} (you), ${operator.firstName.charAt(0)}. ${operator.lastName}`
+    )
+  })
+
+  test('adds a symptom and a breast feature while taking images', async ({
+    page
+  }) => {
+    const { clinic, appointment } = findTodayAppointment({ index: 4 })
+    const imagingUrl = `/clinics/${clinic.id}/appointments/${appointment.id}/take-images`
+
+    await pinSettings(page, appointmentSettings)
+    await page.goto(
+      `/clinics/${clinic.id}/appointments/${appointment.id}/start`
+    )
+    await page.getByRole('button', { name: 'Confirm identity' }).first().click()
+    await page
+      .getByRole('button', { name: 'Complete all and authorise imaging' })
+      .first()
+      .click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Take mammogram images' })
+    ).toBeVisible()
+
+    const expander = page.locator('#symptoms-and-breast-features')
+    await expect(expander).not.toHaveAttribute('open')
+    await expander.locator('summary').click()
+
+    // Symptom, in the modal
+    const symptomModal = await clickToOpenModal(page, 'Lump', { exact: true })
+    const symptomLocation = symptomModal.locator(
+      'input[name="appointment[symptomTemp][location]"][value="right breast"]'
+    )
+    await revealInModal(symptomLocation)
+    await symptomLocation.check()
+    await symptomModal
+      .locator(
+        'input[name="appointment[symptomTemp][dateType]"][value="Less than 3 months"]'
+      )
+      .check()
+    await symptomModal.getByRole('button', { name: 'Save symptom' }).click()
+    await expectModalClosed(symptomModal)
+
+    await expect(page).toHaveURL(new RegExp(imagingUrl))
+    await expect(expander).toHaveAttribute('open')
+    await expect(expander).toContainText('1 symptom added')
+
+    // Breast feature, on its own page - the diagram's popover can't work in
+    // a modal. Clicking anywhere on the body outline picks a region.
+    await expander.getByRole('button', { name: 'Add a feature' }).click()
+    await expect(
+      page.getByRole('heading', { name: 'Record breast features' })
+    ).toBeVisible()
+
+    // The diagram is a module script, so it can attach its click handler after
+    // the heading is already visible
+    await page.waitForFunction(() => window.breastFeaturesInitialized)
+    const diagram = page.locator('.breast-features__diagram svg')
+    const diagramBox = await diagram.boundingBox()
+    await diagram.click({
+      position: { x: diagramBox.width * 0.3, y: diagramBox.height * 0.6 }
+    })
+    const popover = page.locator('.breast-features__popover')
+    await expect(popover).toBeVisible()
+    await popover
+      .locator('input[name="feature"]')
+      .first()
+      .check({ force: true })
+    await popover.locator('[data-action="add"]').click()
+    await page.getByRole('button', { name: 'Save', exact: true }).click()
+
+    await expect(page).toHaveURL(new RegExp(imagingUrl))
+    await expect(page).not.toHaveURL(/_modal_breakout/)
+    await expect(expander).toHaveAttribute('open')
+    await expect(expander).toContainText('1 symptom and 1 breast feature added')
   })
 
   test('records why no images were needed after bilateral mastectomy', async ({

@@ -5,7 +5,7 @@
 {# Wording differs depending on whether images have already been taken #}
 {% set imagesTaken = appointment.workflowStatus['take-images'] == 'completed' %}
 
-{% set pageHeading = "Change mammographer" %}
+{% set pageHeading = "Change operator" %}
 {% set formAction = "./change-authorised-mammographer-answer" | urlWithReferrer(referrerChain) %}
 
 {% set legendText = "Who took the images for this appointment?" if imagesTaken else "Who is taking images for this appointment?" %}
@@ -47,7 +47,7 @@
       id: "authorisedMammographerOtherName",
       name: "appointment[authorisedMammographerTemp][otherName]",
       value: appointment.authorisedMammographerTemp.otherName or appointment.authorisedMammographerOtherName,
-      label: "Enter the mammographer's full name",
+      label: "Enter the operator's full name",
       autocomplete: "off"
     } | populateErrors) }}
   {% endset %}
