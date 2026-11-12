@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
       // Create button
       const button = document.createElement('button')
       button.className =
-        'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0 js-save-and-next'
+        'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1 js-save-and-next'
       button.type = 'button'
       button.setAttribute('data-section-index', index)
 
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
       if (isBreastFeaturesSection) {
         const reviewAfterImagingButton = document.createElement('button')
         reviewAfterImagingButton.className =
-          'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-0'
+          'nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-1'
         reviewAfterImagingButton.type = 'button'
         reviewAfterImagingButton.textContent = 'Review at imaging'
 

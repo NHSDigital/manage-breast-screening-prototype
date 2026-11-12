@@ -62,7 +62,7 @@ body.js-enabled .app-no-js-only {
   gap: nhsuk-spacing(3);
 
   .nhsuk-button {
-    margin-bottom: 0;
+    margin-bottom: $nhsuk-button-shadow-size;
     width: 100%;
   }
 }

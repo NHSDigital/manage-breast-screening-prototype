@@ -33,7 +33,7 @@
         {{ button({
           text: "Change operator",
           href: authorisedMammographerChangeHref,
-          classes: "nhsuk-u-margin-bottom-0"
+          classes: "nhsuk-u-margin-bottom-1"
         } | openInModal) }}
       </div>
     </div>
@@ -47,7 +47,7 @@
     <div class="nhsuk-grid-column-two-thirds">
       {{ button({
         text: continueButtonText,
-        classes: "nhsuk-u-margin-bottom-0 js-complete-all-sections"
+        classes: "nhsuk-u-margin-bottom-1 js-complete-all-sections"
       }) }}
       <p class="nhsuk-u-margin-top-2">Operator: <span class="nhsuk-u-font-weight-bold">{{ authorisedMammographerName }}</span> ({{ link({ text: "change", href: authorisedMammographerChangeHref } | openInModal) | trim | safe }})</p>
     </div>

@@ -42,7 +42,7 @@
           text: adoptButtonText or defaultAdoptButtonText or "Use this read as outcome",
           name: "agreedReaderId",
           value: read.readerId,
-          classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary",
+          classes: "nhsuk-u-margin-bottom-1 nhsuk-button--secondary",
           attributes: { formaction: "./arbitration-adopt-read" | urlWithReferrer(referrerChain) }
         }) }}
       {% else %}
@@ -51,7 +51,7 @@
             text: adoptButtonText or defaultAdoptButtonText or "Use this read as outcome",
             name: "agreedReaderId",
             value: read.readerId,
-            classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary"
+            classes: "nhsuk-u-margin-bottom-1 nhsuk-button--secondary"
           }) }}
         </form>
       {% endif %}

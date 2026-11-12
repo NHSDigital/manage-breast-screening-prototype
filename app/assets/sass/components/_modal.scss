@@ -153,6 +153,6 @@ body.app-modal-open {
   margin-bottom: 0;
 
   .nhsuk-button:last-of-type {
-    margin-bottom: 0;
+    margin-bottom: $nhsuk-button-shadow-size;
   }
 }
