@@ -201,31 +201,13 @@ const recordTechnicalRecallDetails = async (modal, view, reason) => {
 }
 
 test.describe('Image reading', () => {
-  test('shows correctly pluralised backlog summary on the simple dashboard', async ({
-    page
-  }) => {
-    await pinSettings(page, {
-      ...readingSettings,
-      'settings[reading][indexLayout]': 'simple'
-    })
-
-    await page.goto('/reading')
-    await expect(
-      page.locator('p').filter({
-        hasText:
-          /^(?:1 case is|(?:0|[2-9]|[1-9]\d+) cases are) awaiting an outcome$/
-      })
-    ).toBeVisible()
-  })
-
   test('changes reading session size and dark mode from dashboard settings', async ({
     page
   }) => {
     await pinSettings(page, {
       ...readingSettings,
       'settings[darkMode]': 'false',
-      'settings[reading][defaultSessionSize]': '25',
-      'settings[reading][indexLayout]': 'complex'
+      'settings[reading][defaultSessionSize]': '25'
     })
 
     await page.goto('/reading')
@@ -244,10 +226,7 @@ test.describe('Image reading', () => {
   })
 
   test('reads a session of cases as normal and recall', async ({ page }) => {
-    await pinSettings(page, {
-      ...readingSettings,
-      'settings[reading][indexLayout]': 'complex'
-    })
+    await pinSettings(page, readingSettings)
 
     await page.goto('/reading')
     await expect(
@@ -260,7 +239,7 @@ test.describe('Image reading', () => {
       '/reading/cases?status=awaiting_first_read&status=awaiting_second_read'
     )
     await expect(
-      page.getByRole('heading', { name: /cases? available for reading/ })
+      page.getByRole('heading', { name: /cases? require reading/ })
     ).toBeVisible()
     await expect(
       page.getByRole('heading', {
@@ -294,10 +273,17 @@ test.describe('Image reading', () => {
     await expect(sessionProgress).toBeVisible()
     await expect(sessionProgress).toHaveClass(/nhsuk-u-font-size-16/)
 
-    const resumeSessionLink = page.getByRole('link', {
+    const resumeSessionButton = page.getByRole('button', {
       name: 'Resume reading'
     })
-    await resumeSessionLink.click()
+    await resumeSessionButton.click()
+
+    // Resuming lands on the session overview, where the reader can carry on
+    // or end the session
+    await expect(page).toHaveURL(
+      new RegExp(`/reading/session/${sessionId}/your-reads`)
+    )
+    await page.getByRole('button', { name: 'Resume reading' }).first().click()
     await expect(page).toHaveURL(
       new RegExp(`/reading/session/${sessionId}/appointments/`)
     )
@@ -327,6 +313,70 @@ test.describe('Image reading', () => {
     ).toBeVisible()
     await expect(page.getByText('Recall for assessment').first()).toBeVisible()
     await page.getByRole('button', { name: 'Confirm and continue' }).click()
+
+    await expect(
+      page.getByRole('heading', { name: 'Session complete' })
+    ).toBeVisible()
+  })
+
+  test('sends a reader back to their open session rather than starting another', async ({
+    page
+  }) => {
+    await pinSettings(page, readingSettings)
+
+    await page.goto(
+      `/reading/create-session?type=all_reads&limit=${sessionSize}&lazy=false`
+    )
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const firstCaseUrl = page.url()
+    const sessionId = firstCaseUrl.split('/session/')[1].split('/')[0]
+
+    await recordNormal(page)
+    await expect(page).not.toHaveURL(firstCaseUrl)
+
+    await page.goto('/reading/create-session?type=all_reads')
+    await expect(page).toHaveURL(
+      new RegExp(`/reading/session/${sessionId}/your-reads`)
+    )
+    await expect(
+      page.getByText('Finish your current session before starting a new one')
+    ).toBeVisible()
+  })
+
+  test('holds a worked-through session open until its reads are finalised', async ({
+    page
+  }) => {
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][finalisationDelay]': 'never'
+    })
+
+    await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const sessionId = page.url().split('/session/')[1].split('/')[0]
+
+    await recordNormal(page)
+    await expect(page).toHaveURL(/\/no-more-cases/)
+    await expect(
+      page.getByRole('heading', {
+        name: 'You have read all cases in this session'
+      })
+    ).toBeVisible()
+
+    await page.goto('/reading')
+    await expect(
+      page.getByRole('heading', {
+        name: 'Reading session awaiting finalisation'
+      })
+    ).toBeVisible()
+
+    await page.goto(`/reading/session/${sessionId}`)
+    await expect(
+      page.getByRole('heading', {
+        name: 'Finalise your opinions to complete this session'
+      })
+    ).toBeVisible()
+    await page.getByRole('button', { name: 'Finalise all opinions' }).click()
 
     await expect(
       page.getByRole('heading', { name: 'Session complete' })
@@ -464,7 +514,16 @@ test.describe('Image reading', () => {
       recallModal.getByRole('heading', { name: 'Technical recall' })
     ).toBeVisible()
 
-    await recordTechnicalRecallDetails(recallModal, 'RMLO', 'Image blurred')
+    // Not every view is offered - views that weren't imaged (eg after a
+    // mastectomy) are left out - so retake whichever MLO view the case has
+    const offeredMlo = await recallModal
+      .locator(
+        'input[name="imageReadingTemp[technicalRecall][selectedViews]"][value$="MLO"]'
+      )
+      .first()
+      .getAttribute('value')
+
+    await recordTechnicalRecallDetails(recallModal, offeredMlo, 'Image blurred')
 
     // Continuing breaks out of the modal: the review step is a terminal
     // confirmation, so the route redirects via modalBreakout and the browser
@@ -474,7 +533,7 @@ test.describe('Image reading', () => {
       reviewPage.getByRole('heading', { name: 'Confirm your opinion' })
     ).toBeVisible()
     await expect(reviewPage.getByText('Technical recall').first()).toBeVisible()
-    await expect(reviewPage.getByText('RMLO').first()).toBeVisible()
+    await expect(reviewPage.getByText(offeredMlo).first()).toBeVisible()
     await expect(reviewPage.getByText('Image blurred')).toBeVisible()
     await reviewPage
       .getByRole('button', { name: 'Confirm and continue' })
@@ -804,10 +863,7 @@ test.describe('Image reading', () => {
   test('resumes an in-progress arbitration session from the dashboard', async ({
     page
   }) => {
-    await pinSettings(page, {
-      ...readingSettings,
-      'settings[reading][indexLayout]': 'complex'
-    })
+    await pinSettings(page, readingSettings)
 
     await page.goto('/reading')
     await expect(
@@ -823,7 +879,7 @@ test.describe('Image reading', () => {
       page.getByRole('link', { name: 'View arbitration case list' })
     ).toBeVisible()
     await expect(
-      page.getByRole('link', { name: 'Start arbitration session' })
+      page.getByRole('button', { name: 'Start arbitration session' })
     ).toBeVisible()
 
     await page.goto('/reading/arbitration/start')
@@ -849,7 +905,12 @@ test.describe('Image reading', () => {
     ).toBeVisible()
     await expect(page.getByText(/1 of \d+ cases arbitrated/)).toBeVisible()
 
-    await page.getByRole('link', { name: 'Resume arbitration' }).click()
+    await page.getByRole('button', { name: 'Resume arbitration' }).click()
+
+    // Resuming lands on the session overview, where the reader can carry on
+    // or end the session
+    await expect(page).toHaveURL(new RegExp(`/reading/session/${sessionId}$`))
+    await page.getByRole('button', { name: 'Resume session' }).first().click()
     await expect(page).toHaveURL(
       new RegExp(`/reading/session/${sessionId}/appointments/`)
     )
@@ -1099,7 +1160,9 @@ test.describe('Image reading', () => {
     // The only case is read, so the session is complete - the page notes the
     // unfinalised read but sends the reader to the overview to finalise it
     await expect(page).toHaveURL(/\/no-more-cases/)
-    await expect(page.getByText('not yet finalised')).toBeVisible()
+    await expect(
+      page.getByText('needs to be reviewed and finalised')
+    ).toBeVisible()
     await page.getByRole('button', { name: 'See session overview' }).click()
 
     // The session-complete panel carries the auto-finalisation time and the
@@ -1108,7 +1171,7 @@ test.describe('Image reading', () => {
     await page.getByRole('link', { name: 'Finalise opinions now' }).click()
 
     // Finalised: the prompt gives way to the settled state
-    await expect(page.getByText('All opinions are finalised')).toBeVisible()
+    await expect(page.getByText('Opinions recorded and finalised')).toBeVisible()
 
     // Both reads now finalised, so the case has settled. The case header shows
     // a single tag: the outcome once concluded (the agreed opinion), or

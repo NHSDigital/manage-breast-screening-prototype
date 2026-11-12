@@ -48,9 +48,7 @@
       {% for session in sessions %}
         {% set p = session.progress %}
         {% set sessionTotal = p.effectiveTargetSize if p else null %}
-        {# A session is done with once it has been ended - whether it was
-           worked through or stopped early #}
-        {% set isComplete = session.endedAt or (p and session.userCompletedCount >= sessionTotal) %}
+        {% set isComplete = session.state == "complete" %}
         {% set isArbitration = session.type === 'arbitration' %}
 
         {# When the session started leads the row, matching the reads tables -
@@ -108,8 +106,8 @@
           {% endif %}
         {% endset %}
 
-        {# Ending a session doesn't finalise what was recorded in it, so
-           outstanding records are noted under the status #}
+        {# Where reads finalise themselves, a session can be complete with some
+           still outstanding, so they are noted under the status #}
         {% set statusHtml %}
           {% if isComplete %}
             {{ "Complete" | toTag }}
@@ -119,6 +117,8 @@
                 Unfinalised {{ "outcomes" if isArbitration else "reads" }}
               </span>
             {% endif %}
+          {% elseif session.state == "awaiting_finalisation" %}
+            {{ "Awaiting finalisation" | toTag }}
           {% else %}
             {{ "Incomplete" | toTag }}
           {% endif %}

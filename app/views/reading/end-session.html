@@ -27,10 +27,16 @@
     </p>
   {% endif %}
 
-  {# Nothing is finalised by ending. Where reads are outstanding, the reader
-     gets the choice they'd otherwise have to make from the session overview. #}
-  {% if unfinalisedReadCount > 0 %}
-    {% set recordNoun = "outcome" if isArbitration else "opinion" %}
+  {% set recordNoun = "outcome" if isArbitration else "opinion" %}
+
+  {# Where reads only finalise by hand, a session can't be complete with any
+     outstanding, so ending finalises them. Otherwise the reader gets the
+     choice they'd otherwise have to make from the session overview. #}
+  {% if unfinalisedReadCount > 0 and manualFinalisation %}
+    <p>
+      {{ "The" if isArbitration else "Your" }} {{ unfinalisedReadCount }} {{ recordNoun | pluralise(unfinalisedReadCount) }} from this session will be finalised.
+    </p>
+  {% elseif unfinalisedReadCount > 0 %}
     {# Each record finalises on its own delay, so several of them finalise
        across a span of time rather than all at once #}
     {% set firstFinaliseTime = autoFinaliseAt | formatTimeString %}
@@ -76,7 +82,10 @@
   {% endif %}
 
   <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
-    {{ button({ text: "End session", classes: "nhsuk-u-margin-bottom-0" }) }}
+    {{ button({
+      text: "Finalise and end session" if (unfinalisedReadCount > 0 and manualFinalisation) else "End session",
+      classes: "nhsuk-u-margin-bottom-0"
+    }) }}
     {{ link({
       text: "Cancel",
       href: "/reading/session/" + session.id,

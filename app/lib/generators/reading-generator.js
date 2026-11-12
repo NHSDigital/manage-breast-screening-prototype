@@ -461,10 +461,11 @@ const addRead = (readingCase, appointment, reader, timestamp, options = {}) => {
     timestamp
   })
 
-  // A read old enough would have been finalised by now, so record it as such.
-  // Recent reads stay unfinalised - they are what the finalisation flow (and
-  // the awaiting_finalisation state) has to work on.
-  if (dayjs(timestamp).isBefore(dayjs().subtract(24, 'hour'))) {
+  // A read more than a couple of hours old would have been finalised by now -
+  // by hand at the end of its session, or by the finalisation delay - so
+  // record it as such. Recent reads stay unfinalised - they are what the
+  // finalisation flow (and the awaiting_finalisation state) has to work on.
+  if (dayjs(timestamp).isBefore(dayjs().subtract(2, 'hour'))) {
     read.finalisedAt = dayjs(timestamp)
       .add(faker.number.int({ min: 15, max: 45 }), 'minute')
       .toISOString()
@@ -1099,7 +1100,7 @@ const generateReadingData = (
           ? firstRead.opinion
           : pickSecondOpinion(firstRead, 0, getAppointmentSet(appointment))
 
-      addRead(
+      const secondRead = addRead(
         readingCase,
         appointment,
         thirdReader,
@@ -1107,57 +1108,31 @@ const generateReadingData = (
         { forceOpinion: opinion, alignmentProbability }
       )
 
+      // A disagreement only reaches arbitration once both reads are finalised -
+      // by hand, where reads don't finalise themselves. Finalising records the
+      // release into the backlog, as finaliseReadOnCase does. The issue
+      // generator raises issues on the oldest of these, so the backlog has
+      // blocked rows as well as ones an arbitration session can offer.
+      if (secondRead.opinion !== firstRead.opinion) {
+        const finalisedAt = dayjs(secondRead.timestamp)
+          .add(faker.number.int({ min: 2, max: 10 }), 'minute')
+          .toISOString()
+        readingCase.reads.forEach((read) => {
+          read.finalisedAt = read.finalisedAt || finalisedAt
+          read.finalisedBy = read.finalisedBy || read.readerId
+        })
+        readingCase.arbitration = {
+          releasedAt: finalisedAt,
+          releasedBy: thirdReader.id
+        }
+      }
+
       minutesAgo -= 3
       count++
     })
 
     console.log(
       `Added ${count} discordant second reads from clinics 5-6 for arbitration`
-    )
-  }
-
-  // A COUPLE OF RELEASED ARBITRATION CASES: discordant, finalised and released
-  // into the arbitration backlog before anyone arbitrated them. The issue
-  // generator raises issues on cases like these, so the backlog has blocked
-  // rows as well as ones an arbitration session can offer.
-  if (clinics.length >= 7) {
-    const releasedArbitrationCandidates = [clinics[5], clinics[6]]
-      .flatMap((clinic) => clinic.appointments)
-      .filter((appointment) => {
-        const readingCase = casesByAppointmentId.get(appointment.id)
-        if (!readingCase) return false
-        const reads = readingCase.reads || []
-        // Two discordant reads - the shape that sends a case to arbitration
-        return reads.length === 2 && reads[0].opinion !== reads[1].opinion
-      })
-      .slice(0, 2)
-
-    releasedArbitrationCandidates.forEach((appointment) => {
-      const readingCase = casesByAppointmentId.get(appointment.id)
-
-      // Everything here follows the later read - a case can't be finalised
-      // or released before it was read
-      const lastReadAt = readingCase.reads
-        .map((read) => dayjs(read.timestamp))
-        .sort((a, b) => b.valueOf() - a.valueOf())[0]
-
-      const releasedAt = lastReadAt.add(5, 'minute').toISOString()
-
-      // Both original reads must be finalised for the case to have reached
-      // arbitration in the first place
-      readingCase.reads.forEach((read) => {
-        read.finalisedAt = read.finalisedAt || releasedAt
-        read.finalisedBy = read.finalisedBy || read.readerId
-      })
-
-      readingCase.arbitration = {
-        releasedAt,
-        releasedBy: secondReader.id
-      }
-    })
-
-    console.log(
-      `Released ${releasedArbitrationCandidates.length} cases into arbitration`
     )
   }
 

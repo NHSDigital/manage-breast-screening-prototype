@@ -6,25 +6,36 @@
 {% set hideStatusBar = true %}
 {% set hideBackLink = true %}
 
-{% set pageHeading = "Session complete" %}
+{% set isArbitration = session.type == 'arbitration' %}
+
+{# Running out of cases doesn't always complete a session: reads may still
+   need finalising, or cases may be held up by other readers #}
+{% set isAwaitingFinalisation = sessionState == "awaiting_finalisation" %}
+{% if sessionState == "complete" %}
+  {% set pageHeading = "Session complete" %}
+{% elseif isAwaitingFinalisation %}
+  {% set pageHeading = "You have arbitrated all cases in this session" if isArbitration else "You have read all cases in this session" %}
+{% else %}
+  {% set pageHeading = "No more cases available" %}
+{% endif %}
 
 {% block pageContent %}
 
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-two-thirds">
 
-    {% set isArbitration = session.type == 'arbitration' %}
-
     <span class="nhsuk-caption-l">{{ "Arbitration" if isArbitration else "Image reading" }}</span>
     <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
-    <p>
-      {%- if isArbitration -%}
-        Every available case has been arbitrated.
-      {%- else -%}
-        You have given an opinion on all available cases.
-      {%- endif -%}
-    </p>
+    {% if not isAwaitingFinalisation %}
+      <p>
+        {%- if isArbitration -%}
+          You have given an outcome on all cases in this session.
+        {%- else -%}
+          You have given an opinion on all cases in this session.
+        {%- endif -%}
+      </p>
+    {% endif %}
 
     {% if unfinalisedReadCount > 0 %}
       {# Finalisation itself lives on the session overview, behind a chance to
@@ -32,11 +43,10 @@
       {% set unfinalisedNoun = "outcome" if isArbitration else "read" %}
       <p>
         {% if unfinalisedReadCount == 1 %}
-          {{ "The" if isArbitration else "Your" }} {{ unfinalisedNoun }} from this session is not yet finalised.
+          1 {{ unfinalisedNoun }} from this session needs to be reviewed and finalised before the session can be completed.
         {% else %}
-          {{ "The" if isArbitration else "Your" }} {{ unfinalisedReadCount }} {{ unfinalisedNoun }}s from this session are not yet finalised.
+          {{ unfinalisedReadCount }} {{ unfinalisedNoun }}s from this session need to be reviewed and finalised before the session can be completed.
         {% endif %}
-        Review and finalise them from the session overview.
       </p>
     {% endif %}
 
@@ -45,7 +55,10 @@
         text: "See session overview",
         href: "/reading/session/" + sessionId
       }) }}
-      <a href="/reading" class="nhsuk-link nhsuk-link--no-visited-state">Exit session</a>
+      {# Only let users exit if there's nothing to do #}
+      {% if unfinalisedReadCount == 0 %}
+        <a href="/reading" class="nhsuk-link nhsuk-link--no-visited-state">Exit session</a>
+      {% endif %}
     </div>
 
   </div>

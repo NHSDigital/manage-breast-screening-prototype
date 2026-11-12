@@ -50,21 +50,48 @@
 <div class="nhsuk-grid-row">
   <div class="nhsuk-grid-column-full">
 
+    {% include "_includes/reading/session-timing.njk" %}
+
     {% set readingActionText = "Resume reading" if sessionStarted else "Start reading" %}
 
-    {% if resumeAppointment %}
-      <div class="nhsuk-button-group">
-        <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button">
-          {{ readingActionText }}
-        </a>
-        {% if canEndSessionEarly %}
-          {{ link({
-            text: "End session",
-            href: "/reading/session/" + session.id + "/end",
-            classes: "nhsuk-link--no-visited-state"
-          } | openInModal) }}
-        {% endif %}
-      </div>
+    {% if sessionState == "in_progress" %}
+      {# Cases still to do can all be held up by other readers - priors they
+         asked for, say - leaving nothing to work on for now #}
+      {% if not resumeAppointment %}
+        <p>There are no cases you can read in this session right now.</p>
+      {% endif %}
+      {% if resumeAppointment or canEndSessionEarly %}
+        <div class="nhsuk-button-group">
+          {% if resumeAppointment %}
+            {{ button({
+              text: readingActionText,
+              href: "/reading/session/" + session.id + "/appointments/" + resumeAppointment.id
+            }) }}
+          {% endif %}
+          {% if canEndSessionEarly %}
+            {{ link({
+              text: "End session",
+              href: "/reading/session/" + session.id + "/end",
+              classes: "nhsuk-link--no-visited-state"
+            } | openInModal) }}
+          {% endif %}
+        </div>
+      {% endif %}
+    {% elseif sessionState == "awaiting_finalisation" %}
+      {# Reads only finalise by hand, so the session isn't complete until they are #}
+      {% call notificationBanner({
+        heading: {
+          text: "Finalise your opinions to complete this session"
+        },
+        classes: "nhsuk-u-margin-bottom-3"
+      }) %}
+        <p>Opinion recorded for {{ readingStatus.userReadCount }} {{ "case" | pluralise(readingStatus.userReadCount) }}. {{ unfinalisedReadCount }} {{ "is" if unfinalisedReadCount == 1 else "are" }} not yet finalised.</p>
+        {{ button({
+          text: "Finalise all opinions",
+          href: "/reading/session/" + session.id + "/finalise-reads",
+          classes: "nhsuk-u-margin-bottom-0"
+        }) }}
+      {% endcall %}
     {% else %}
       {# A session ended before its cases ran out didn't complete, and says so #}
       {% set unreadCount = sessionProgress.targetRemaining if sessionProgress else 0 %}
@@ -78,7 +105,7 @@
         {% if unfinalisedReadCount > 0 %}
           <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}.{% if autoFinaliseAt %} The first opinion will be finalised automatically at {{ autoFinaliseAt | formatTimeString }}.{% endif %} <a href="/reading/session/{{ session.id }}/finalise-reads" class="nhsuk-link nhsuk-link--reverse">Finalise opinions now</a></p>
         {% else %}
-          <p class="nhsuk-body-m">Opinion recorded for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}. All opinions are finalised.</p>
+          <p class="nhsuk-body-m">Opinions recorded and finalised for {{ panelDoneCount }} {{ "case" | pluralise(panelDoneCount) }}.</p>
         {% endif %}
         <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
           {% if backlogTotal > 0 %}
@@ -223,7 +250,7 @@
           <p class="nhsuk-u-font-size-16 app-reading-statistics-meta">{{ priorsRequestedCount }} cases</p>
         {% endset %}
 
-        {% if not resumeAppointment %}
+        {% if false and sessionState != "in_progress" %}
           <h2>Opinion summary</h2>
 
           <ul class="nhsuk-grid-row nhsuk-list app-reading-statistics-cards">
@@ -347,7 +374,12 @@
               </td>
               <td class="nhsuk-table__cell app-placeholder-action-cell">
                 {% if isNextCase %}
-                  <a href="/reading/session/{{ session.id }}/appointments/{{ resumeAppointment.id }}" class="nhsuk-button nhsuk-button--small app-placeholder-action-button">{{ readingActionText }}</a>
+                  {{ button({
+                    text: readingActionText,
+                    href: "/reading/session/" + session.id + "/appointments/" + resumeAppointment.id,
+                    small: true,
+                    classes: "app-placeholder-action-button"
+                  }) }}
                 {% else %}
                   {# The link says what opening the case will do, with the name
                      hidden for screen readers so each row's link is distinct #}

@@ -397,6 +397,18 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
 }
 
 /**
+ * Whether reads only finalise by hand - the 'never' finalisation delay. Where
+ * they do, a session isn't complete until every read in it is finalised; where
+ * they finalise themselves, nothing needs to wait for them.
+ *
+ * @param {object} [settings] - Site settings object (data.settings)
+ * @returns {boolean}
+ */
+const isManualFinalisation = (settings) => {
+  return settings?.reading?.finalisationDelay === 'never'
+}
+
+/**
  * When a read's finalisation delay runs out, in milliseconds, or null if it
  * never will by itself.
  *
@@ -414,7 +426,8 @@ const willGoToArbitration = (readA, readB, settings = {}) => {
 const getFinalisationDeadline = (read, settings, issuePeriods) => {
   if (!read?.timestamp) return null
 
-  const delay = settings?.reading?.finalisationDelay ?? '60'
+  // Matches the default in session-data-defaults.js: manual only
+  const delay = settings?.reading?.finalisationDelay ?? 'never'
   if (delay === 'never') return null
 
   const delayMinutes = parseInt(delay, 10)
@@ -1069,6 +1082,7 @@ module.exports = {
   willGoToArbitration,
   getComparisonInfo,
   shouldShowComparePage,
+  isManualFinalisation,
   isReadFinalised,
   getAutoFinaliseTime,
   getReadFinalisedTime,

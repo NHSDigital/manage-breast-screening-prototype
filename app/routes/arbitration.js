@@ -11,7 +11,9 @@
 const {
   getEligibleCandidatesForSession,
   createReadingSession,
-  getFirstReadableAppointmentInSession
+  getFirstReadableAppointmentInSession,
+  getOpenSessionForUser,
+  discardUntouchedSessions
 } = require('../lib/utils/reading')
 const {
   getArbitrationBacklogCounts
@@ -33,6 +35,9 @@ const startArbitrationSession = (data, res, arbitration) => {
   if (candidates.length === 0) {
     return res.redirect('/reading')
   }
+
+  // A session started and left without any work is replaced, not kept
+  discardUntouchedSessions(data, data.currentUser.id, 'arbitration')
 
   const session = createReadingSession(data, sessionOptions)
   session.arbitration = arbitration
@@ -61,12 +66,28 @@ const startArbitrationSession = (data, res, arbitration) => {
 }
 
 module.exports = (router) => {
+  // A reader works one arbitration session at a time, so setting up another
+  // goes back to the open one until it is complete. Everyone on a session's
+  // panel is held to it, since they arbitrate together.
+  router.use('/reading/arbitration', (req, res, next) => {
+    const data = req.session.data
+    const openSession = getOpenSessionForUser(
+      data,
+      data.currentUser?.id,
+      'arbitration'
+    )
+    if (!openSession) return next()
+
+    req.flash('info', 'Finish your current session before starting a new one')
+    res.redirect(`/reading/session/${openSession.id}`)
+  })
+
   // Setup: who is arbitrating - just the current user, or a panel
   router.get('/reading/arbitration/start', (req, res) => {
     const data = req.session.data
 
-    // The whole backlog, counted the way the reading index and case list count
-    // it, plus what's holding part of it up
+    // The cases that have reached arbitration, counted the way the reading
+    // index counts them, plus what's holding part of them up
     const backlog = getArbitrationBacklogCounts(data, { view: 'current' })
 
     // What arbitration would actually offer: the backlog minus blocked cases,
@@ -79,7 +100,7 @@ module.exports = (router) => {
     const ownReadsCount = backlog.available - soloCount
 
     res.render('reading/arbitration/start', {
-      backlogCount: backlog.total,
+      backlogCount: backlog.reached,
       backlog,
       ownReadsCount
     })

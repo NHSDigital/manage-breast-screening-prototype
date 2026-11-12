@@ -27,7 +27,14 @@ const {
   unskipAppointmentInSession,
   isSessionEnded,
   endSession,
+  wasWorkedInSession,
+  getSessionState,
+  getSessionKind,
+  isUsersSession,
+  getOpenSessionForUser,
+  discardUntouchedSessions,
   topUpSession,
+  topUpSessionUntilWorkable,
   getAppointmentReadingMetadata,
   appointmentHasBeenArbitrated,
   getNextCaseInSession,
@@ -49,6 +56,7 @@ const {
   getReadAuthorIds,
   caseHasBeenArbitrated,
   isReadFinalised,
+  isManualFinalisation,
   withoutRead,
   withArbitrationRelease
 } = require('../lib/utils/reading-cases')
@@ -87,15 +95,13 @@ module.exports = (router) => {
     next()
   })
 
-  // Reading index — choose layout based on setting
+  // Reading index
   router.get('/reading', (req, res) => {
     const data = req.session.data
     const currentUserId = data?.currentUser?.id
-    const layout = req.session.data?.settings?.reading?.indexLayout || 'simple'
-    const template =
-      layout === 'complex' ? 'reading/index-complex' : 'reading/index-simple'
 
     const sessionProgressById = {}
+    const sessionStateById = {}
     Object.values(data.readingSessions || {}).forEach((session) => {
       const progress = getSessionReadingProgress(
         data,
@@ -106,162 +112,119 @@ module.exports = (router) => {
       if (progress) {
         sessionProgressById[session.id] = progress
       }
+      sessionStateById[session.id] = getSessionState(
+        data,
+        session,
+        currentUserId,
+        progress
+      )
     })
 
-    const inProgressReadingSession =
-      layout === 'complex'
-        ? Object.values(data.readingSessions || {})
-            .map((session) => {
-              const progress = sessionProgressById[session.id]
-              const isFinished =
-                session.endedAt || (progress && progress.targetRemaining === 0)
+    // The user's open session of each kind - the one they have to complete
+    // before they can start another.
+    const summariseOpenSession = (session) => {
+      if (!session) return null
+      const progress = sessionProgressById[session.id]
+      return {
+        id: session.id,
+        createdAt: session.createdAt,
+        state: sessionStateById[session.id],
+        userReadCount: progress?.userReadCount || 0,
+        arbitratedCount: progress?.doneCount || 0,
+        targetSize:
+          progress?.effectiveTargetSize ||
+          session.targetSize ||
+          session.appointmentIds.length
+      }
+    }
 
-              if (
-                session.type === 'arbitration' ||
-                isFinished ||
-                !progress?.userReadCount
-              ) {
-                return null
-              }
+    const openReadingSession = summariseOpenSession(
+      getOpenSessionForUser(data, currentUserId, 'reading', sessionStateById)
+    )
 
-              return {
-                id: session.id,
-                createdAt: session.createdAt,
-                userReadCount: progress.userReadCount,
-                targetSize:
-                  progress.effectiveTargetSize ||
-                  session.targetSize ||
-                  session.appointmentIds.length
-              }
-            })
-            .filter(Boolean)
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] ||
-          null
-        : null
+    const openArbitrationSession = summariseOpenSession(
+      getOpenSessionForUser(
+        data,
+        currentUserId,
+        'arbitration',
+        sessionStateById
+      )
+    )
 
-    const inProgressArbitrationSession =
-      layout === 'complex'
-        ? Object.values(data.readingSessions || {})
-            .map((session) => {
-              const progress = sessionProgressById[session.id]
-              const isFinished =
-                session.endedAt || (progress && progress.targetRemaining === 0)
-              const arbitratorIds = session.arbitration?.arbitratorIds || []
-              const userIsOnPanel =
-                arbitratorIds.length === 0 ||
-                arbitratorIds.includes(currentUserId)
-
-              if (
-                session.type !== 'arbitration' ||
-                !progress ||
-                isFinished ||
-                !userIsOnPanel
-              ) {
-                return null
-              }
-
-              return {
-                id: session.id,
-                createdAt: session.createdAt,
-                arbitratedCount: progress.doneCount,
-                targetSize:
-                  progress.effectiveTargetSize ||
-                  session.targetSize ||
-                  session.appointmentIds.length
-              }
-            })
-            .filter(Boolean)
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0] ||
-          null
-        : null
-
-    // The arbitration backlog, counted the same way the case list and the
-    // arbitration setup page count it so the three agree. Only the complex
-    // layout shows the card, and the count walks every episode - don't pay
-    // for it otherwise
-    const arbitrationCount =
-      layout === 'complex'
-        ? getArbitrationBacklogCounts(data, { view: 'current' }).total
-        : null
+    // The cases that have reached arbitration, counted the same way the
+    // arbitration setup page counts them so the two agree
+    const arbitrationCount = getArbitrationBacklogCounts(data, {
+      view: 'current'
+    }).reached
 
     // Finished reading sessions the current user has worked in, for the reading
     // card preview. Merged with the display-only historic sessions below so the
     // card always has recent sessions, real ones pushing the stand-ins out.
-    const completedReadingSessions =
-      layout === 'complex'
-        ? Object.values(data.readingSessions || {})
-            .map((session) => {
-              if (session.type === 'arbitration') return null
+    const completedReadingSessions = Object.values(data.readingSessions || {})
+      .map((session) => {
+        if (session.type === 'arbitration') return null
 
-              const progress = sessionProgressById[session.id]
-              const isFinished =
-                session.endedAt || (progress && progress.targetRemaining === 0)
-              const userHasRead = session.appointmentIds.some((id) => {
-                const appointment = data.appointments.find((a) => a.id === id)
-                return (
-                  appointment &&
-                  userHasReadAppointment(data, appointment, currentUserId)
-                )
-              })
-              if (!isFinished || !userHasRead) return null
-              return {
-                id: session.id,
-                createdAt: session.createdAt,
-                caseCount:
-                  (progress && progress.effectiveTargetSize) ||
-                  session.targetSize ||
-                  session.appointmentIds.length
-              }
-            })
-            .filter(Boolean)
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        : null
+        const progress = sessionProgressById[session.id]
+        const isFinished = sessionStateById[session.id] === 'complete'
+        const userHasRead = session.appointmentIds.some((id) => {
+          const appointment = data.appointments.find((a) => a.id === id)
+          return (
+            appointment &&
+            userHasReadAppointment(data, appointment, currentUserId)
+          )
+        })
+        if (!isFinished || !userHasRead) return null
+        return {
+          id: session.id,
+          createdAt: session.createdAt,
+          caseCount:
+            (progress && progress.effectiveTargetSize) ||
+            session.targetSize ||
+            session.appointmentIds.length
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
     // Finished arbitration sessions the current user was on, for the
     // arbitration card preview. Merged with historic sessions as above.
-    const completedArbitrationSessions =
-      layout === 'complex'
-        ? Object.values(data.readingSessions || {})
-            .map((session) => {
-              if (session.type !== 'arbitration') return null
-              const progress = sessionProgressById[session.id]
-              const isFinished =
-                session.endedAt || (progress && progress.targetRemaining === 0)
-              const arbitratorIds = session.arbitration?.arbitratorIds || []
-              const userWasOnPanel =
-                arbitratorIds.length === 0 ||
-                arbitratorIds.includes(currentUserId)
-              if (!isFinished || !userWasOnPanel) return null
-              return {
-                id: session.id,
-                createdAt: session.createdAt,
-                caseCount:
-                  (progress && progress.effectiveTargetSize) ||
-                  session.targetSize ||
-                  session.appointmentIds.length
-              }
-            })
-            .filter(Boolean)
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-        : null
+    const completedArbitrationSessions = Object.values(
+      data.readingSessions || {}
+    )
+      .map((session) => {
+        if (session.type !== 'arbitration') return null
+        const progress = sessionProgressById[session.id]
+        const isFinished = sessionStateById[session.id] === 'complete'
+        if (!isFinished || !isUsersSession(session, currentUserId)) {
+          return null
+        }
+        return {
+          id: session.id,
+          createdAt: session.createdAt,
+          caseCount:
+            (progress && progress.effectiveTargetSize) ||
+            session.targetSize ||
+            session.appointmentIds.length
+        }
+      })
+      .filter(Boolean)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
     // The newest three finished sessions of one kind, real or historic. Historic
     // sessions have no id, so the dashboard links them nowhere
     const getRecentCompletedSessions = (realSessions, isOfKind) =>
-      layout === 'complex'
-        ? [
-            ...realSessions,
-            ...getHistoricReadingSessions(data)
-              .filter(isOfKind)
-              .map((historic) => ({
-                id: null,
-                createdAt: historic.createdAt,
-                caseCount: historic.progress.effectiveTargetSize
-              }))
-          ]
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, 3)
-        : null
+      [
+        ...realSessions,
+        ...getHistoricReadingSessions(data)
+          .filter(isOfKind)
+          .map((historic) => ({
+            id: null,
+            createdAt: historic.createdAt,
+            caseCount: historic.progress.effectiveTargetSize
+          }))
+      ]
+        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+        .slice(0, 3)
 
     const recentCompletedSessions = getRecentCompletedSessions(
       completedReadingSessions,
@@ -272,10 +235,11 @@ module.exports = (router) => {
       (session) => session.type === 'arbitration'
     )
 
-    res.render(template, {
+    res.render('reading/index', {
       sessionProgressById,
-      inProgressReadingSession,
-      inProgressArbitrationSession,
+      sessionStateById,
+      openReadingSession,
+      openArbitrationSession,
       arbitrationCount,
       recentCompletedSessions,
       recentCompletedArbitrationSessions
@@ -496,7 +460,6 @@ module.exports = (router) => {
     const returnTo = req.body.returnTo?.startsWith('/')
       ? req.body.returnTo
       : null
-
     // Fetch requests get the fragment the surface asked for re-rendered, so
     // the page can update in place - a table row on the priors dashboard, a
     // card on the case's priors tab
@@ -566,6 +529,24 @@ module.exports = (router) => {
       return
     }
 
+    // A reader works one session at a time: an open one has to be completed
+    // before another can start. Clinic sessions are shared work, not one
+    // reader's queue, so they sit outside this.
+    if (!clinicId) {
+      const kind = getSessionKind({ type })
+      const openSession = getOpenSessionForUser(data, currentUserId, kind)
+      if (openSession) {
+        req.flash(
+          'info',
+          'Finish your current session before starting a new one'
+        )
+        return res.redirect(sessionOverviewUrl(openSession))
+      }
+
+      // A session started and left without any work is replaced, not kept
+      discardUntouchedSessions(data, currentUserId, kind)
+    }
+
     // Create the session
     try {
       const session = createReadingSession(data, sessionOptions)
@@ -626,31 +607,9 @@ module.exports = (router) => {
       return res.redirect(`/reading/session/${sessionId}`)
     }
 
-    // A session can end up with nothing readable in it — every loaded case
-    // taken by other readers — while the backlog still has cases waiting. Top
-    // up until one readable case appears, and no further.
-    //
-    // Not "until topUpSession stops adding": it grows the session towards its
-    // target size, so running it to exhaustion here would load every remaining
-    // case at once and defeat lazy sessions. The bound is a backstop only.
-    const maxTopUps = session.targetSize || 25
-    for (let count = 0; count < maxTopUps; count++) {
-      const loadedAppointments = session.appointmentIds
-        .map((appointmentId) =>
-          data.appointments.find((e) => e.id === appointmentId)
-        )
-        .filter(Boolean)
-
-      const hasReadableCase = getFirstOutstandingCaseInSession(
-        data,
-        session,
-        loadedAppointments,
-        data.currentUser.id
-      )
-      if (hasReadableCase) break
-
-      if (!topUpSession(data, sessionId)) break
-    }
+    // A session can end up with nothing readable in it - every loaded case
+    // taken by other readers - while the backlog still has cases waiting
+    topUpSessionUntilWorkable(data, session, data.currentUser.id)
 
     // Rebuild after potential top-ups
     const sessionAppointments = session.appointmentIds
@@ -726,6 +685,12 @@ module.exports = (router) => {
     res.render('reading/no-more-cases', {
       sessionId,
       session,
+      sessionState: getSessionState(
+        data,
+        session,
+        data.currentUser?.id,
+        sessionProgress
+      ),
       unfinalisedReadCount: getUnfinalisedUserReadsForSession(
         data,
         sessionId,
@@ -880,29 +845,6 @@ module.exports = (router) => {
     return isSessionEndable(session) && !isSessionEnded(session)
   }
 
-  // Whether a case carries any of the work a session is judged by - what an
-  // ended session has to show for itself. Reading counts the user's own acts;
-  // arbitration counts the panel's, since a case is arbitrated once for
-  // everyone. A case worked when the session ended stays part of it, so
-  // resolving its issue or undoing a priors request afterwards doesn't drop it.
-  const wasWorkedInSession = (data, session, appointment, userId) => {
-    if (session.workedAppointmentIds?.includes(appointment.id)) return true
-
-    if (session.type === 'arbitration') {
-      return (
-        appointmentHasBeenArbitrated(data, appointment) ||
-        hasOpenIssueOnEpisode(data, appointment) ||
-        awaitingPriors(appointment)
-      )
-    }
-
-    return (
-      userHasReadAppointment(data, appointment, userId) ||
-      userRequestedPriors(appointment, userId) ||
-      hasOpenIssueOnEpisode(data, appointment)
-    )
-  }
-
   // End a session, recording the cases worked in it - once ended, those are
   // the cases it lists and still lets the reader into
   const endSessionWithWork = (data, session, userId) => {
@@ -935,7 +877,8 @@ module.exports = (router) => {
 
   // Ending a session early - the interstitial. Says what ending does, and where
   // reads are outstanding, offers finalising them now rather than leaving them
-  // to the finalisation delay.
+  // to the finalisation delay. Where reads only finalise by hand there is no
+  // delay to leave them to, so ending finalises them.
   router.get('/reading/session/:sessionId/end', (req, res) => {
     const data = req.session.data
     const { sessionId } = req.params
@@ -965,6 +908,7 @@ module.exports = (router) => {
       session,
       sessionId,
       sessionProgress,
+      manualFinalisation: isManualFinalisation(data.settings),
       unfinalisedReadCount: unfinalisedReads.length,
       autoFinaliseAt,
       lastAutoFinaliseAt
@@ -991,8 +935,12 @@ module.exports = (router) => {
       currentUserId
     )
 
-    // The choice only exists when there is something to finalise
-    const finaliseAnswer = data.endSessionTemp?.finalise
+    // The choice only exists when there is something to finalise, and reads
+    // that would otherwise finalise themselves. A session isn't complete with
+    // reads that never will, so ending one finalises them.
+    const finaliseAnswer = isManualFinalisation(data.settings)
+      ? 'yes'
+      : data.endSessionTemp?.finalise
     if (unfinalisedReads.length > 0 && !finaliseAnswer) {
       req.flash('error', {
         text: isArbitration
@@ -1074,6 +1022,10 @@ module.exports = (router) => {
     // session as it was before they worked any of it.
     res.set('Cache-Control', 'no-store, must-revalidate')
 
+    // A lazy session whose loaded cases were all taken by other readers would
+    // otherwise show nothing to resume while the backlog still has cases for it
+    topUpSessionUntilWorkable(data, session, data.currentUser.id)
+
     // Get enhanced appointments with reading metadata
     const enhancedAppointments = session.appointmentIds
       .map((appointmentId) =>
@@ -1138,6 +1090,12 @@ module.exports = (router) => {
     endSessionIfComplete(data, session, sessionProgress, data.currentUser.id)
 
     const sessionEnded = isSessionEnded(session)
+    const sessionState = getSessionState(
+      data,
+      session,
+      data.currentUser.id,
+      sessionProgress
+    )
 
     // Find where the user should resume — first readable after the furthest
     // point they've reached (reads or skips), falling back to first readable.
@@ -1198,6 +1156,7 @@ module.exports = (router) => {
         sessionStarted,
         unfinalisedReadCount: unconfirmedReads.length,
         sessionEnded,
+        sessionState,
         canEndSessionEarly: canEndSessionEarly(session),
         clinic,
         backlogTotal,
@@ -3481,6 +3440,7 @@ module.exports = (router) => {
         return {
           ...session,
           progress,
+          state: getSessionState(data, session, currentUserId, progress),
           userCompletedCount,
           unfinalisedReadCount
         }
