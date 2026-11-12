@@ -104,6 +104,32 @@ Two things that hold a case up are deliberately not issues:
 
 Small errors, such as a wrong address, are corrected in the service there and then rather than raised. See [issues.md](issues.md) for how issues work in the prototype.
 
+## Names
+
+How participant and staff names are shown. Use the helpers rather than building names by hand.
+
+**Participants**
+
+| Where                                                                | Format                             | Helper                 |
+| -------------------------------------------------------------------- | ---------------------------------- | ---------------------- |
+| Lists, tables, page headings, captions, breadcrumbs and the info bar | `LASTNAME, Firstname`              | `getShortNameReversed` |
+| In a sentence, such as a flash message, hint or heading              | `Firstname Lastname`               | `getShortName`         |
+| Rows labelled “Full name” on the record and identity checks          | `Firstname Middlename(s) Lastname` | `getFullName`          |
+
+- Middle names only appear under a “Full name” label
+- Question labels and legends do not use the participant’s name: “What procedures have they had?”, not “What procedures has Jane had?”. Implant consent is the exception: “Ask Jane Smith for their consent”
+- Lists of participants sort by surname, then first name, to match the reversed format
+
+**Staff**
+
+- Always `Firstname Lastname`, from `getUsername` (by id) or `formatUserName` (a user object)
+- Add “(you)” for the current user where it helps, with `getUsername({ identifyCurrentUser: true })`
+- Lists of staff, such as radios, selects and filters, sort by first name with `sortUsersByName`. A list can put the current user or “Me” first
+
+**Page titles**
+
+Never put a participant’s name in the page `<title>`. Titles can be picked up by analytics and browser history, so a real service would leak personal data there.
+
 ## User workflows
 
 The application supports the day-to-day running of clinics:

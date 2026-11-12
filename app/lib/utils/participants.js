@@ -41,18 +41,6 @@ const getFullName = (participant) => {
 }
 
 /**
- * Get first names (first + middle) of a participant as a Nunjucks-safe string
- *
- * @param {object} participant - Participant object
- * @returns {string} First names, or empty string if unavailable
- */
-const getFirstNames = (participant) => {
-  if (!participant?.demographicInformation) return ''
-  const { firstName, middleName } = participant.demographicInformation
-  return nunjucksSafe([firstName, middleName].filter(Boolean).join(' '))
-}
-
-/**
  * Get short name in reversed 'LASTNAME, Firstname' format, with no middle names
  *
  * For lists, page headings and captions.
@@ -224,7 +212,6 @@ const saveTempParticipantToParticipant = (data) => {
 module.exports = {
   getParticipant,
   getFullName,
-  getFirstNames,
   getShortNameReversed,
   getShortName,
   findBySXNumber,
