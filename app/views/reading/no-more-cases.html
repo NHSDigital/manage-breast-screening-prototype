@@ -14,7 +14,7 @@
 {% if sessionState == "complete" %}
   {% set pageHeading = "Session complete" %}
 {% elseif isAwaitingFinalisation %}
-  {% set pageHeading = "You have arbitrated every case in this session" if isArbitration else "You have read every case in this session" %}
+  {% set pageHeading = "You have arbitrated all cases in this session" if isArbitration else "You have read all cases in this session" %}
 {% else %}
   {% set pageHeading = "No more cases available" %}
 {% endif %}
@@ -30,9 +30,9 @@
     {% if not isAwaitingFinalisation %}
       <p>
         {%- if isArbitration -%}
-          Every available case has been arbitrated.
+          You have given an outcome on all cases in this session.
         {%- else -%}
-          You have given an opinion on all available cases.
+          You have given an opinion on all cases in this session.
         {%- endif -%}
       </p>
     {% endif %}
@@ -43,11 +43,10 @@
       {% set unfinalisedNoun = "outcome" if isArbitration else "read" %}
       <p>
         {% if unfinalisedReadCount == 1 %}
-          {{ "The" if isArbitration else "Your" }} {{ unfinalisedNoun }} from this session is not yet finalised.
+          1 {{ unfinalisedNoun }} from this session needs to be reviewed and finalised before the session can be completed.
         {% else %}
-          {{ "The" if isArbitration else "Your" }} {{ unfinalisedReadCount }} {{ unfinalisedNoun }}s from this session are not yet finalised.
+          {{ unfinalisedReadCount }} {{ unfinalisedNoun }}s from this session need to be reviewed and finalised before the session can be completed.
         {% endif %}
-        Review and finalise them before starting a new session.
       </p>
     {% endif %}
 
@@ -56,7 +55,10 @@
         text: "See session overview",
         href: "/reading/session/" + sessionId
       }) }}
-      <a href="/reading" class="nhsuk-link nhsuk-link--no-visited-state">Exit session</a>
+      {# Only let users exit if there's nothing to do #}
+      {% if unfinalisedReadCount == 0 %}
+        <a href="/reading" class="nhsuk-link nhsuk-link--no-visited-state">Exit session</a>
+      {% endif %}
     </div>
 
   </div>
