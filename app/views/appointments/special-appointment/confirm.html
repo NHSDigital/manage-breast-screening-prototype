@@ -7,6 +7,7 @@
 
 {% if isNoLongerSpecialAppointment %}
   {% set pageHeading = "Confirm " + (participant | getShortName) + " no longer needs additional support" %}
+  {% set pageName = "Confirm participant no longer needs additional support" %}
 {% endif %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}

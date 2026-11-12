@@ -128,7 +128,7 @@ How participant and staff names are shown. Use the helpers rather than building 
 
 **Page titles**
 
-Never put a participant’s name in the page `<title>`. Titles can be picked up by analytics and browser history, so a real service would leak personal data there.
+Never put a participant’s name in the page `<title>`. Titles reach analytics and browser history, so a real service would leak personal data there. The title comes from `pageHeading`, so pages whose heading is a name set a generic `pageName` instead, such as “Participant” or “Your opinion – Reading case”. The route sweep fails if a title contains a participant’s name.
 
 ## User workflows
 

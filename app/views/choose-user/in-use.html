@@ -3,6 +3,7 @@
 
 {% set userName = user | formatUserName %}
 {% set pageHeading = userName + (" is signed in on another browser" if signedInElsewhereCount == 1 else " is signed in on " + signedInElsewhereCount + " other browsers") %}
+{% set pageName = "User is signed in elsewhere" %}
 
 {% block beforeContent %}
   {{ backLink({

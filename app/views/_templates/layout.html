@@ -33,6 +33,16 @@
 {%- from '_components/copy-to-clipboard/macro.njk' import appCopyToClipboard %}
 {%- from '_components/option-picker/macro.njk' import appOptionPicker %}
 
+{# Title is "<page> – <service> – NHS". The page part is pageName if set,
+   otherwise the h1 (pageHeading). Set pageName when the heading holds
+   personal data - titles reach analytics and browser history. #}
+{% block pageTitle -%}
+  {%- set titlePagePart = (pageName or pageHeading or "") | striptags | trim -%}
+  {%- if errors === true or (errors | length) %}Error: {% endif -%}
+  {%- if titlePagePart and titlePagePart != serviceName %}{{ titlePagePart }} – {% endif -%}
+  {{ serviceName }} – NHS
+{%- endblock %}
+
 {% block head %}
   <link href="/assets/sass/main.css" rel="stylesheet">
 {% endblock %}

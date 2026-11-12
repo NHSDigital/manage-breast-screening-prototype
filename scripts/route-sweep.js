@@ -2,7 +2,8 @@
 //
 // Boots the prototype, walks every GET route registered on the Express router,
 // fills in the URL parameters from the seeded data, and requests each one.
-// Fails if anything returns a server error.
+// Fails if anything returns a server error, or if a page title contains a
+// participant's name - titles reach analytics and browser history.
 //
 // This is the cheap broad layer of the smoke suite: no browser, no journeys,
 // just "does every page still render". Node only throws on a broken require or
@@ -366,12 +367,55 @@ const buildUrl = (routePath, params) => {
   return { url }
 }
 
+/**
+ * Matchers for every seeded participant's name, so the sweep can spot one in a
+ * page title. A name counts when the first and last names both appear, which
+ * covers "Jane Smith" and "SMITH, Jane" without tripping on common words.
+ *
+ * @returns {Array<{name: string, test: (text: string) => boolean}>} Matchers
+ */
+const getParticipantNameMatchers = () => {
+  const { participants } = JSON.parse(
+    fs.readFileSync(
+      path.join(rootPath, 'app/data/generated/participants.json'),
+      'utf8'
+    )
+  )
+  const escape = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const word = (text) => new RegExp(`\\b${escape(text)}\\b`, 'i')
+
+  return participants.map(
+    ({ demographicInformation: { firstName, lastName } }) => {
+      const first = word(firstName)
+      const last = word(lastName)
+      return {
+        name: `${firstName} ${lastName}`,
+        test: (text) => first.test(text) && last.test(text)
+      }
+    }
+  )
+}
+
+/**
+ * The text of a page's <title>, if it has one
+ *
+ * @param {string} html - Page HTML
+ * @returns {string | undefined} Title text
+ */
+const getTitle = (html) =>
+  html
+    .match(/<title[^>]*>([\s\S]*?)<\/title>/i)?.[1]
+    .replace(/\s+/g, ' ')
+    .trim()
+
 const run = async () => {
   console.log(`Starting prototype on ${baseUrl} ...`)
   const server = await startServer()
 
   const failures = []
   const skipped = []
+  const titleFailures = []
+  const untitled = []
   let checked = 0
 
   try {
@@ -382,6 +426,7 @@ const run = async () => {
     await sessionFetch(`${baseUrl}/?${new URLSearchParams(sweepSettings)}`)
 
     const params = await collectParams(sessionFetch)
+    const nameMatchers = getParticipantNameMatchers()
     const routePaths = getRoutePaths()
     const urls = new Set()
 
@@ -422,6 +467,22 @@ const run = async () => {
         // Not a failure - some pages only resolve for particular ids or states -
         // but worth seeing
         console.log(`  404  ${url}`)
+      } else if (
+        response.ok &&
+        response.headers.get('content-type')?.includes('text/html')
+      ) {
+        const title = getTitle(await response.text())
+        if (!title) continue
+
+        const match = nameMatchers.find((matcher) => matcher.test(title))
+        if (match) {
+          titleFailures.push({ url, title })
+          console.log(`  NAME IN TITLE  ${url}\n    ${title}`)
+        } else if (!title.includes(' – ', title.indexOf(' – ') + 1)) {
+          // Only "<service> – NHS": the page sets neither pageHeading nor
+          // pageName. Not a failure, but the title does not say where you are
+          untitled.push(url)
+        }
       }
     }
   } finally {
@@ -433,9 +494,20 @@ const run = async () => {
     console.log(`  ${entry.routePath} - ${entry.reason}`)
   }
 
-  console.log(`\nChecked ${checked} routes, ${failures.length} server errors`)
+  if (untitled.length) {
+    console.log(
+      `\n${untitled.length} pages have no page title, only the service name:`
+    )
+    for (const url of untitled) {
+      console.log(`  ${url}`)
+    }
+  }
 
-  if (failures.length) {
+  console.log(
+    `\nChecked ${checked} routes, ${failures.length} server errors, ${titleFailures.length} names in titles`
+  )
+
+  if (failures.length || titleFailures.length) {
     process.exitCode = 1
   }
 }
