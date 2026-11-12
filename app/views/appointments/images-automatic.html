@@ -65,8 +65,7 @@
 
   {% if appointment.workflowStatus["take-images"] == 'completed' %}
     {{ button({
-      text: "Next section",
-      classes: "nhsuk-u-margin-bottom-1"
+      text: "Next section"
     }) }}
   {% endif %}
 
@@ -109,7 +108,7 @@
       {% include "_includes/additional-image-details.njk" %}
 
       {{ button({
-        text: "Confirm all images received",
+        text: "Confirm all images received" if appointment.workflowStatus["take-images"] != 'completed' else "Next section",
         classes: "nhsuk-u-margin-bottom-1"
       }) }}
 

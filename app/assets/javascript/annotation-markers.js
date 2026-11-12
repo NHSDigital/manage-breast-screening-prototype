@@ -528,7 +528,7 @@
         if (isIncomplete) {
           html +=
             '<div class="app-annotation-list__actions">' +
-            '<button class="nhsuk-button nhsuk-button--small nhsuk-u-margin-bottom-0" type="button" data-action="edit" data-ann-id="' +
+            '<button class="nhsuk-button nhsuk-button--small nhsuk-u-margin-bottom-1" type="button" data-action="edit" data-ann-id="' +
             ann.id +
             '">Add details</button>' +
             ' <button class="app-link-button app-link-button--warning" type="button" data-action="delete-annotation" data-ann-id="' +

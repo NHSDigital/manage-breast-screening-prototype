@@ -580,7 +580,7 @@ $ann-marker-shadow:
 
     .nhsuk-button {
       width: 100%;
-      margin-bottom: 0;
+      margin-bottom: $nhsuk-button-shadow-size;
     }
   }
 }
