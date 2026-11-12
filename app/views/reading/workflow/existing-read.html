@@ -22,7 +22,7 @@
   {% set isAwaitingPriors = appointment | awaitingPriors %}
 
   <span class="nhsuk-caption-l">
-    {{ participant | getFullNameReversed }}
+    {{ participant | getShortNameReversed }}
   </span>
 
   {% if openIssues | length and not hasUserRead %}

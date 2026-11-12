@@ -7,6 +7,7 @@ const {
   needsRegeneration
 } = require('./lib/utils/regenerate-data')
 const { resetCallSequence } = require('./lib/utils/random')
+const { formatUserName } = require('./lib/utils/users')
 const dataStore = require('./lib/data-store')
 const sharedData = require('./lib/shared-data')
 const {
@@ -224,17 +225,12 @@ router.use((req, res, next) => {
     )
 
     if (selectedUser) {
-      console.log(
-        `Changing user to user ${selectedUser.firstName} ${selectedUser.lastName}`
-      )
+      console.log(`Changing user to user ${formatUserName(selectedUser)}`)
 
       data.currentUser = selectedUser
       res.locals.data.currentUser = selectedUser
 
-      req.flash(
-        'success',
-        `Signed in as ${selectedUser.firstName} ${selectedUser.lastName}`
-      )
+      req.flash('success', `Signed in as ${formatUserName(selectedUser)}`)
     } else {
       console.log(
         `Cannot find user ${data.currentUserId} to sign in. Reverting to user 1`

@@ -25,7 +25,7 @@
     {% set mammogramSource = appointment.mammogramDataTemp or appointment.mammogramData %}
 
     {# The authorised mammographer defaults to the logged in user, unless an alternative has been nominated #}
-    {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName({ format: "reversed" })) or (currentUser.id | getUsername({ format: "reversed" })) %}
+    {% set authorisedMammographerName = (appointment | getAuthorisedMammographerName) or (currentUser.id | getUsername) %}
 
     {# Determine current room name #}
     {% set currentRoomName = "" %}

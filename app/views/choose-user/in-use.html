@@ -1,7 +1,7 @@
 {# app/views/choose-user/in-use.html #}
 {% extends 'layout-app.html' %}
 
-{% set userName = user.firstName + " " + user.lastName %}
+{% set userName = user | formatUserName %}
 {% set pageHeading = userName + (" is signed in on another browser" if signedInElsewhereCount == 1 else " is signed in on " + signedInElsewhereCount + " other browsers") %}
 
 {% block beforeContent %}

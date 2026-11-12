@@ -4,7 +4,7 @@
 // consent, and the appointment-cannot-proceed answer.
 
 const {
-  getFullName,
+  getShortName,
   saveTempParticipantToParticipant
 } = require('../../lib/utils/participants')
 const {
@@ -368,7 +368,7 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
-      const participantName = getFullName(data.participant)
+      const participantName = getShortName(data.participant)
 
       if (
         data.appointment?.status !== 'in_progress' ||
@@ -501,7 +501,7 @@ module.exports = (router) => {
     (req, res) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
-      const participantName = getFullName(data.participant)
+      const participantName = getShortName(data.participant)
 
       const futureScreeningPlan =
         data.appointment?.cannotProceed?.futureScreeningPlan

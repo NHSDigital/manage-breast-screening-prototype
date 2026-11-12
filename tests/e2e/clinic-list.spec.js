@@ -173,7 +173,7 @@ test.describe('Clinic appointment list', () => {
     const runner = users.find(
       (user) => user.id === getAppointmentRunnerId(appointment)
     )
-    const runnerName = `${runner.firstName.charAt(0)}. ${runner.lastName}`
+    const runnerName = `${runner.firstName} ${runner.lastName}`
     const row = page.locator(`tr[data-fragment-id="${appointment.id}"]`)
     const statusColumn = row.locator(
       '.app-clinic-appointments-table__appointment-column'

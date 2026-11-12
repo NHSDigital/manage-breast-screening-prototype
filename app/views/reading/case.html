@@ -21,7 +21,7 @@
 {% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
 {% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
-{% set pageHeading = participant | getFullNameReversed %}
+{% set pageHeading = participant | getShortNameReversed %}
 {% set gridColumn = "nhsuk-grid-column-full app-u-max-width-three-quarters" %}
 
 {% set breadcrumbItems = getCaseBreadcrumb(participant, episode) %}
@@ -223,7 +223,7 @@
                 {% if sideAnnotations | length %}
                   <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1 nhsuk-u-margin-top-3">
                     {%- for authorId in thisRead | getReadAuthorIds %}
-                      {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                      {{ authorId | getUsername({ identifyCurrentUser: true }) }}{{ "," if not loop.last }}
                     {%- endfor %}
                     <span class="nhsuk-u-secondary-text-colour nhsuk-u-font-weight-normal">
                       ({{ thisRead.readType | formatWords }} read)
@@ -250,7 +250,7 @@
         {% set readersHtml %}
           {%- for thisRead in originalReads %}
             {%- for authorId in thisRead | getReadAuthorIds %}
-              {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}
+              {{ authorId | getUsername({ identifyCurrentUser: true }) }}
             {%- endfor %}{{ "," if not loop.last }}
           {%- endfor %}
         {% endset %}
@@ -399,7 +399,7 @@
               {% set bylineHtml %}
                 <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-1">
                   {%- for authorId in slotAuthorIds %}
-                    {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                    {{ authorId | getUsername({ identifyCurrentUser: true }) }}{{ "," if not loop.last }}
                   {%- endfor %},
                   {{ slotRead.timestamp | formatDate }}
                 </span>

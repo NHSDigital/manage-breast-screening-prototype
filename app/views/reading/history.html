@@ -65,10 +65,10 @@
             <span class="nhsuk-u-font-weight-bold">Arbitration</span>
             <br>
             <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-              {{- "Group" if session.arbitration.mode === 'panel' else "On your own" }}
+              {{- "Group" if session.arbitration.mode === 'panel' else "Solo" }}
               {%- if session.arbitration.arbitratorIds | length %} &ndash;
                 {%- for userId in session.arbitration.arbitratorIds %}
-                  {{ userId | getUsername({ format: 'short', identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                  {{ userId | getUsername({ identifyCurrentUser: true }) }}{{ "," if not loop.last }}
                 {%- endfor %}
               {%- endif %}
             </span>
@@ -191,7 +191,7 @@
          row's link to the case sits in the last column instead #}
       {% set participantHtml %}
         <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
-          {{ reading.participant | getFullNameReversed }}
+          {{ reading.participant | getShortNameReversed }}
         </p>
         <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
           NHS: {{ reading.participant.medicalInformation.nhsNumber | formatNhsNumber }}
@@ -200,10 +200,7 @@
 
       {% set readerHtml %}
         {%- for authorId in reading | getReadAuthorIds %}
-          {{ authorId | getUsername({
-            format: 'short',
-            identifyCurrentUser: true
-          }) }}{{ "," if not loop.last }}
+          {{ authorId | getUsername({ identifyCurrentUser: true }) }}{{ "," if not loop.last }}
         {%- endfor %}
       {% endset %}
 

@@ -53,21 +53,19 @@ const getFirstNames = (participant) => {
 }
 
 /**
- * Get full name in reversed 'Last, First Middle' format
+ * Get short name in reversed 'LASTNAME, Firstname' format, with no middle names
+ *
+ * For lists, page headings and captions.
  *
  * @param {object} participant - Participant object
- * @returns {string} Reversed full name, or empty string if unavailable
+ * @returns {string} Reversed short name, or empty string if unavailable
  * @example
- * getFullNameReversed(participant) // 'SMITH, Jane Louise'
+ * getShortNameReversed(participant) // 'SMITH, Jane'
  */
-const getFullNameReversed = (participant) => {
+const getShortNameReversed = (participant) => {
   if (!participant?.demographicInformation) return ''
-  const { firstName, middleName, lastName } = participant.demographicInformation
-  return nunjucksSafe(
-    [`${lastName.toUpperCase()},`, firstName, middleName]
-      .filter(Boolean)
-      .join(' ')
-  )
+  const { firstName, lastName } = participant.demographicInformation
+  return nunjucksSafe(`${lastName.toUpperCase()}, ${firstName}`)
 }
 
 /**
@@ -227,7 +225,7 @@ module.exports = {
   getParticipant,
   getFullName,
   getFirstNames,
-  getFullNameReversed,
+  getShortNameReversed,
   getShortName,
   findBySXNumber,
   getAge,

@@ -5,7 +5,7 @@
 // (clinic, reading list) is a separate fixed back link, so most case pages
 // show both. The current page is never included in the trail.
 
-const { getFullNameReversed } = require('./participants')
+const { getShortNameReversed } = require('./participants')
 const { getEpisodeLabel } = require('./episodes')
 const { getParticipantUrl, getEpisodeUrl } = require('./urls')
 
@@ -27,7 +27,7 @@ const getCaseBreadcrumb = (participant = null, episode = null) => {
   if (participant) {
     items.push({
       href: getParticipantUrl(participant),
-      text: getFullNameReversed(participant)
+      text: getShortNameReversed(participant)
     })
   }
 

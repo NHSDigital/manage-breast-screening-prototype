@@ -257,7 +257,7 @@ const RUNNING_ACTIONS = ['started', 'resumed']
  * @param {object} appointment - Appointment object
  * @returns {string | null} User id, or null if it hasn't been started
  * @example
- * {{ appointment | getAppointmentRunnerId | getUsername({ format: "short" }) }}
+ * {{ appointment | getAppointmentRunnerId | getUsername }}
  */
 const getAppointmentRunnerId = (appointment) => {
   const sessionDetails = appointment?.sessionDetails
@@ -310,7 +310,7 @@ const getAppointmentRunByIds = (appointment) => {
  * @param {object} [options] - Display options, as accepted by getUsername
  * @returns {Array<string>} Names, in the order they joined the appointment
  * @example
- * {{ appointment | getAppointmentRunByNames({ format: "reversed" }) | formatList }}
+ * {{ appointment | getAppointmentRunByNames | formatList }}
  */
 const getAppointmentRunByNames = function (appointment, options = {}) {
   return getAppointmentRunByIds(appointment).map((userId) =>
@@ -376,7 +376,7 @@ const getAppointmentMammographerSummary = function (appointment, options = {}) {
  * @param {object} [options] - Display options, as accepted by getUsername
  * @returns {string} Name, or '' if the appointment hasn't been started
  * @example
- * {{ appointment | getScreenedByName({ format: "short", identifyCurrentUser: true }) }}
+ * {{ appointment | getScreenedByName({ identifyCurrentUser: true }) }}
  */
 const getScreenedByName = function (appointment, options = {}) {
   const endedBy = appointment?.sessionDetails?.endedBy
@@ -400,7 +400,7 @@ const getScreenedByName = function (appointment, options = {}) {
  * @param {object} [options] - Display options, as accepted by getUsername
  * @returns {Array<string>} Names in display order
  * @example
- * {{ appointment | getAppointmentScreenedByNames({ format: "short", identifyCurrentUser: true }) | join(", ") }}
+ * {{ appointment | getAppointmentScreenedByNames({ identifyCurrentUser: true }) | join(", ") }}
  */
 const getAppointmentScreenedByNames = function (appointment, options = {}) {
   const runByIds = getAppointmentRunByIds(appointment)

@@ -4,7 +4,7 @@
 
 const dayjs = require('dayjs')
 const {
-  getFullName,
+  getShortName,
   saveTempParticipantToParticipant
 } = require('../../lib/utils/participants')
 const {
@@ -163,7 +163,7 @@ module.exports = (router) => {
         delete data.appointment?.previousMammogramTemp
 
         // Get participant info for message
-        const participantName = getFullName(data.participant)
+        const participantName = getShortName(data.participant)
         const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
 
         // Save changes and update status
@@ -247,7 +247,7 @@ module.exports = (router) => {
           )
         } else if (needsReschedule === 'no-invite') {
           // Get participant info BEFORE saving (which clears temp data)
-          const participantName = getFullName(data.participant)
+          const participantName = getShortName(data.participant)
           const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
 
           // Save changes and update status

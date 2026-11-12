@@ -117,8 +117,9 @@ test.describe('Screening appointment', () => {
   test('records medical history and a symptom, then completes', async ({
     page
   }) => {
-    const { clinic, appointment, fullName, fullNameReversed } =
-      findTodayAppointment({ index: 0 })
+    const { clinic, appointment, fullName, shortName } = findTodayAppointment({
+      index: 0
+    })
 
     await pinSettings(page, appointmentSettings)
     await page.goto(`/clinics/${clinic.id}`)
@@ -137,7 +138,7 @@ test.describe('Screening appointment', () => {
     await expect(
       page.getByRole('heading', { name: 'Confirm identity' })
     ).toBeVisible()
-    await expect(page.getByText(fullNameReversed).first()).toBeVisible()
+    await expect(page.getByText(fullName).first()).toBeVisible()
     await page.getByRole('button', { name: 'Confirm identity' }).first().click()
 
     await expect(
@@ -238,7 +239,7 @@ test.describe('Screening appointment', () => {
 
     // Back on the clinic list, with the appointment finished
     await expect(page).toHaveURL(new RegExp(`/clinics/${clinic.id}`))
-    await expect(page.getByText(`${fullName} has been screened`)).toBeVisible()
+    await expect(page.getByText(`${shortName} has been screened`)).toBeVisible()
     await page.goto(
       `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`
     )
@@ -256,7 +257,9 @@ test.describe('Screening appointment', () => {
   test('goes straight through with nothing to record', async ({ page }) => {
     // A different appointment to the journey above, so a failure points at one
     // journey rather than at the two interfering
-    const { clinic, appointment, fullName } = findTodayAppointment({ index: 1 })
+    const { clinic, appointment, shortName } = findTodayAppointment({
+      index: 1
+    })
     const operator = users.find(
       (user) =>
         user.id !== users[0].id && user.permissions.includes('implantImaging')
@@ -288,7 +291,7 @@ test.describe('Screening appointment', () => {
     await takeImagesAndComplete(page, operator.id)
 
     await expect(page).toHaveURL(new RegExp(`/clinics/${clinic.id}`))
-    await expect(page.getByText(`${fullName} has been screened`)).toBeVisible()
+    await expect(page.getByText(`${shortName} has been screened`)).toBeVisible()
     await page.goto(
       `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`
     )
@@ -311,10 +314,12 @@ test.describe('Screening appointment', () => {
       completedColumn.locator('.app-clinic-appointments-table__completed-time')
     ).toHaveCSS('display', 'block')
     await expect(
-      completedColumn.locator('.app-clinic-appointments-table__completed-details')
+      completedColumn.locator(
+        '.app-clinic-appointments-table__completed-details'
+      )
     ).toHaveCSS('display', 'block')
     await expect(completedColumn).toContainText(
-      `${users[0].firstName.charAt(0)}. ${users[0].lastName} (you), ${operator.firstName.charAt(0)}. ${operator.lastName}`
+      `${users[0].firstName} ${users[0].lastName} (you), ${operator.firstName} ${operator.lastName}`
     )
   })
 
@@ -394,7 +399,7 @@ test.describe('Screening appointment', () => {
   test('records why no images were needed after bilateral mastectomy', async ({
     page
   }) => {
-    const { clinic, appointment, fullName } = findTodayAppointment({
+    const { clinic, appointment, shortName } = findTodayAppointment({
       index: 2
     })
 
@@ -464,7 +469,7 @@ test.describe('Screening appointment', () => {
     await expect(
       page.locator('.nhsuk-notification-banner__heading')
     ).toHaveText(
-      `Appointment ended. ${fullName} does not need any images because of their bilateral mastectomy. View their appointment`
+      `Appointment ended. ${shortName} does not need any images because of their bilateral mastectomy. View their appointment`
     )
     const endedAppointmentPage = await page.request.get(
       `/clinics/${clinic.id}/appointments/${appointment.id}/appointment`

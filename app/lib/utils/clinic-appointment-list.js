@@ -9,6 +9,7 @@
 const { isSpecialAppointment } = require('./status')
 const { isFirstScreening, isLastScreening } = require('./episodes')
 const { getAppointmentRunByIds } = require('./roles-and-permissions')
+const { formatUserName, sortUsersByName } = require('./users')
 
 /**
  * The mammographers an appointment counts for when filtering: everyone who ran
@@ -43,10 +44,11 @@ const getClinicFilterGroups = (data = {}, appointments = []) => {
   const mammographerIds = [
     ...new Set(appointments.flatMap(getAppointmentMammographerIds))
   ]
-  const mammographers = mammographerIds
-    .map((userId) => (data.users || []).find((user) => user.id === userId))
-    .filter(Boolean)
-    .sort((a, b) => a.firstName.localeCompare(b.firstName))
+  const mammographers = sortUsersByName(
+    mammographerIds
+      .map((userId) => (data.users || []).find((user) => user.id === userId))
+      .filter(Boolean)
+  )
 
   return [
     {
@@ -65,7 +67,7 @@ const getClinicFilterGroups = (data = {}, appointments = []) => {
       legend: 'Mammographers',
       options: mammographers.map((user) => ({
         value: user.id,
-        label: `${user.firstName} ${user.lastName}`
+        label: formatUserName(user)
       })),
       matches: (appointment, values) =>
         getAppointmentMammographerIds(appointment).some((userId) =>

@@ -130,7 +130,7 @@
 
           {% set nameHtml %}
             <a href="/participants/{{ row.participant.id }}" class="nhsuk-link">
-              {{ row.participant | getFullNameReversed }}
+              {{ row.participant | getShortNameReversed }}
             </a><br>
             {{ dob | asHint }}
             {% if row.hasSpecialAppointment %}

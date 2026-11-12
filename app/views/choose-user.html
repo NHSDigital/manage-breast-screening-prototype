@@ -19,14 +19,14 @@
   {% set clinicalItems = [] %}
   {% set administrativeItems = [] %}
 
-  {% for user in data.users %}
+  {% for user in data.users | sortUsersByName %}
     {% set groupRole = "clinician" if "clinician" in user.role else "administrative" %}
     {% set signedInElsewhereCount = sharedData.usersSignedInElsewhere[user.id] %}
 
     {# The status is live while sharing, so it shows who signs in elsewhere.
     It holds no inputs, so refreshing it can't change the selection. #}
     {% set labelHtml %}
-      {{ user.firstName }} {{ user.lastName }}
+      {{ user | formatUserName }}
       {% if user.id == data.currentUser.id %}
         {{ "Signed in" | toTag }}
       {% endif %}

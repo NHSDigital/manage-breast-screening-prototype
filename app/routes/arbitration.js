@@ -18,6 +18,7 @@ const {
 const {
   getArbitrationBacklogCounts
 } = require('../lib/utils/reading-case-list')
+const { sortUsersByName } = require('../lib/utils/users')
 
 /**
  * Create the arbitration session and send the user into its first case,
@@ -142,9 +143,11 @@ module.exports = (router) => {
     const data = req.session.data
 
     // Clinicians other than the current user
-    const availableUsers = data.users.filter(
-      (user) =>
-        user.role.includes('clinician') && user.id !== data.currentUser.id
+    const availableUsers = sortUsersByName(
+      data.users.filter(
+        (user) =>
+          user.role.includes('clinician') && user.id !== data.currentUser.id
+      )
     )
 
     res.render('reading/arbitration/panel', { availableUsers })

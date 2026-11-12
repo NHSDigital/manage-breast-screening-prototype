@@ -30,6 +30,7 @@ const {
   getAwaitingPriorsStatus
 } = require('./prior-mammograms')
 const { participantMatchesQuery } = require('./search')
+const { formatUserName, sortUsersByName } = require('./users')
 const { applyFilterGroups } = require('./filter-list')
 
 // Which population the list draws on. Historic episodes are seeded summaries of
@@ -295,13 +296,9 @@ const getReadingCaseFilterGroups = (data = {}) => {
 
   const currentUserId = data.currentUser?.id
 
-  const otherReaders = (data.users || [])
-    .filter((user) => user.id !== currentUserId)
-    .sort((a, b) =>
-      `${a.lastName} ${a.firstName}`.localeCompare(
-        `${b.lastName} ${b.firstName}`
-      )
-    )
+  const otherReaders = sortUsersByName(
+    (data.users || []).filter((user) => user.id !== currentUserId)
+  )
 
   if (currentUserId) {
     groups.push({
@@ -353,7 +350,7 @@ const getReadingCaseFilterGroups = (data = {}) => {
       style: 'select',
       emptyLabel: 'Select a reader',
       options: otherReaders.map((user) => {
-        const name = `${user.firstName} ${user.lastName}`.trim()
+        const name = formatUserName(user)
 
         return {
           value: user.id,
