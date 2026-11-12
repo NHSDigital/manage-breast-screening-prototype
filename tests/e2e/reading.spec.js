@@ -359,7 +359,7 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/no-more-cases/)
     await expect(
       page.getByRole('heading', {
-        name: 'You have read every case in this session'
+        name: 'You have read all cases in this session'
       })
     ).toBeVisible()
 
@@ -1160,7 +1160,9 @@ test.describe('Image reading', () => {
     // The only case is read, so the session is complete - the page notes the
     // unfinalised read but sends the reader to the overview to finalise it
     await expect(page).toHaveURL(/\/no-more-cases/)
-    await expect(page.getByText('not yet finalised')).toBeVisible()
+    await expect(
+      page.getByText('needs to be reviewed and finalised')
+    ).toBeVisible()
     await page.getByRole('button', { name: 'See session overview' }).click()
 
     // The session-complete panel carries the auto-finalisation time and the
