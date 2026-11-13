@@ -81,6 +81,7 @@ One folder per woman, holding:
 
 Things that matter for using it:
 
+- Some study folders aren't listed in the image index. Link them to an NBSS episode by date: image and NBSS dates are shifted by the same amount.
 - Studies and episodes are not one-to-one. A recalled episode has a screening study and an assessment study. Older episodes predate digital imaging and have no images. The most recent study may have no NBSS episode, so no known outcome.
 - Dates are shifted per woman. Gaps between her studies are kept, so only use dates relative to each other, and only the study date (other DICOM dates are shifted differently).
 - A study can include more than one image of a view (a retake, or extra images to cover a large breast; the data doesn't say which), raw "for processing" images that must not be shown, assessment views (spot compression, ML, XCCL) and tomosynthesis-generated 2D images. Image headers say which.
@@ -96,11 +97,11 @@ From the NBSS reporting tables specification (DS0026). The PDF is kept with the 
 | --------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Screening `Opinion` per side                                    | `RN` normal, `RU` abnormal, `BA` clinical, `RO` unreported                                                                                                                                                         |
 | Reader opinion (`FilmReaderNOpinion`)                           | `N` normal, `A` abnormal, `C` clinical, `T` technical recall                                                                                                                                                       |
-| Reader and final action (`FilmReaderNRecAction`, `FinalAction`) | `RR` routine recall, `RC` review in clinic (recall to assessment), `TR` repeat film (technical)                                                                                                                    |
+| Reader and final action (`FilmReaderNRecAction`, `FinalAction`) | `RR` routine recall, `RC` review in clinic (recall to assessment), `FV` further X-ray views, `EC` early recall for clinic, `TR` repeat film (technical)                                                            |
 | `FinalActionSource`                                             | `A` automatic (readers agreed), `D` human arbitration, `P` entered from paper                                                                                                                                      |
 | `RepeatReason`                                                  | `R1A` / `R1B` inadequate positioning (radiographer / client), `R2` inadequate compression, `E1`-`E6` equipment or film faults                                                                                      |
 | `LesionPosition`                                                | Side, then a cell on a front-on grid of the breast: columns `A` (axilla, outer) to `E` (inner), rows `1` (top) to `4` (bottom), `M` the nipple. `RB2` is right, outer, upper-middle. Not tied to a mammogram view. |
-| Episode type in the extract                                     | `F` first call, `R` routine recall, `S` self referral, `G` GP referral                                                                                                                                             |
+| Episode type in the extract                                     | `F` first call, `R` routine recall, `S` self referral, `G` GP referral, `H` higher risk, `CI` interval case, `N` non-routine recall, `X` other                                                                     |
 
 Assessment opinions use the usual 1 (normal) to 5 (malignant) scales: `R` mammography, `U` ultrasound, `I` imaging overall, `P` clinical, `B` biopsy. The participant `Classification` comes from the image set's providers, not NBSS.
 

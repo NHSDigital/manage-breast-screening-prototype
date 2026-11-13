@@ -100,6 +100,7 @@ def read_header(path):
         "model": str(ds.get("ManufacturerModelName", "")),
         "protocol": protocol,
         "age": str(ds.get("PatientAge", "")),
+        "studyDate": str(ds.get("StudyDate", "")),
     }
 
 
@@ -133,14 +134,26 @@ def duplicate_views(images):
 
 
 # Code meanings: DS0026 NBSS Crystal Reports Tables. Final/reader actions: RR routine
-# recall, RC review in clinic (recall to assessment), TR repeat film (technical).
+# recall, RC review in clinic (recall to assessment), FV further X-ray views, EC early
+# recall for clinic, TR repeat film (technical).
 
 
 def recalled(episode):
-    """Recalled to assessment at screening: either side's final action is RC, or the outcome is S+."""
+    """Recalled at screening: outcome S+ / Sabn, or a side's final action is RC, FV (further views) or EC (early recall)."""
     scr = (episode or {}).get("SCREENING") or {}
     sides = [scr.get("R") or {}, scr.get("L") or {}]
-    return scr.get("diagnosticsetoutcome") == "S+" or any(s.get("FinalAction") == "RC" for s in sides)
+    return scr.get("diagnosticsetoutcome") in ("S+", "Sabn") or any(
+        s.get("FinalAction") in ("RC", "FV", "EC") for s in sides
+    )
+
+
+def cancer_found(episode):
+    """B5 / C5 / H5 at biopsy or surgery, or a positive (+) outcome after screening."""
+    episode = episode or {}
+    sections = ("ASSESSMENT", "CLINICAL", "BIOPSYWIDE", "BIOPSYFINE", "SURGERY")
+    opinions = {(episode.get(name) or {}).get("Opinion") for name in sections}
+    outcomes = [str((episode.get(name) or {}).get("diagnosticsetoutcome") or "") for name in sections]
+    return bool(opinions & {"B5", "C5", "H5"}) or any(o.endswith("+") for o in outcomes)
 
 
 def reader_actions(episode):
@@ -167,11 +180,68 @@ def study_outcome(episode):
     """Rough outcome of a screening round, for counting possible cases."""
     if not episode:
         return "unknown (no NBSS episode)"
+    if cancer_found(episode):
+        return "cancer"
     if recalled(episode):
-        return "recalled"
+        return "recalled, not cancer"
     if any_reader_technical_recall(episode):
         return "routine, but a reader asked for a technical repeat"
     return "routine recall"
+
+
+def survey_study(client, study_uid, files, errors):
+    """Read one study folder's headers. Returns the study record, without episode linking."""
+    images = []
+    first = None
+    try:
+        first = read_header(files[0])
+    except Exception as e:  # noqa: BLE001
+        errors.append(f"{client}/{study_uid}/{os.path.basename(files[0])}: {e}")
+    if first and first["modality"] not in ("MG", ""):
+        # MRI and similar: thousands of slices we won't use. Read one, count the rest.
+        images = [first]
+        other_bytes = sum(os.path.getsize(p) for p in files[1:])
+    else:
+        other_bytes = 0
+        if first:
+            images.append(first)
+        for p in files[1:]:
+            try:
+                images.append(read_header(p))
+            except Exception as e:  # noqa: BLE001
+                errors.append(f"{client}/{study_uid}/{os.path.basename(p)}: {e}")
+    if not images:
+        return None
+    return {
+        "studyUid": study_uid,
+        "studyDate": images[0]["studyDate"],
+        "kind": classify_study(images),
+        "fileCount": len(files),
+        "bytes": sum(i["bytes"] for i in images) + other_bytes,
+        "duplicateViews": duplicate_views(images),
+        "hasForProcessing": any(i["forProcessing"] for i in images),
+        "hasSynthetic2D": any(i["synthetic2D"] for i in images),
+        "hasImplants": any(i["implant"] for i in images),
+        "manufacturers": sorted({i["manufacturer"] for i in images}),
+        "age": images[0]["age"],
+        "images": images,
+    }
+
+
+def episode_dates(episodes):
+    """Map YYYYMMDD → episode ID, from screening dates first, then any other section's date."""
+    by_date = {}
+    for prefer_screening in (True, False):
+        for episode_id, ep in episodes.items():
+            for name, section in ep.items():
+                if not isinstance(section, dict) or (name == "SCREENING") != prefer_screening:
+                    continue
+                dates = [section.get("dateperformed")]
+                dates += [(section.get(side) or {}).get("DateTaken") for side in ("R", "L")]
+                for d in dates:
+                    if d:
+                        by_date.setdefault(d.replace("-", ""), episode_id)
+    return by_date
 
 
 def survey_case(folder, errors):
@@ -192,54 +262,41 @@ def survey_case(folder, errors):
     episodes = {k: v for k, v in nbss.items() if isinstance(v, dict)}
 
     studies = []
-    for study_uid, meta in (imagedb.get("STUDIES") or {}).items():
-        study_dir = os.path.join(folder, study_uid)
-        files = sorted(glob.glob(os.path.join(study_dir, "*.dcm")))
+    indexed = imagedb.get("STUDIES") or {}
+    for study_uid, meta in indexed.items():
+        files = sorted(glob.glob(os.path.join(folder, study_uid, "*.dcm")))
         if not files:
             errors.append(f"{client}/{study_uid}: in IMAGEDB but no .dcm files on disk")
             continue
-        images = []
-        first = None
-        try:
-            first = read_header(files[0])
-        except Exception as e:  # noqa: BLE001
-            errors.append(f"{client}/{study_uid}/{os.path.basename(files[0])}: {e}")
-        if first and first["modality"] not in ("MG", ""):
-            # MRI and similar: thousands of slices we won't use. Read one, count the rest.
-            images = [first]
-            other_bytes = sum(os.path.getsize(p) for p in files[1:])
-        else:
-            other_bytes = 0
-            if first:
-                images.append(first)
-            for p in files[1:]:
-                try:
-                    images.append(read_header(p))
-                except Exception as e:  # noqa: BLE001
-                    errors.append(f"{client}/{study_uid}/{os.path.basename(p)}: {e}")
-        if not images:
-            continue
-        episode_id = meta.get("EpisodeID")
-        studies.append({
-            "studyUid": study_uid,
-            "studyDate": meta.get("StudyDate"),
-            "episodeId": episode_id,
-            "episodeInNbss": bool(episode_id and episode_id in episodes),
-            "kind": classify_study(images),
-            "fileCount": len(files),
-            "bytes": sum(i["bytes"] for i in images) + other_bytes,
-            "duplicateViews": duplicate_views(images),
-            "hasForProcessing": any(i["forProcessing"] for i in images),
-            "hasSynthetic2D": any(i["synthetic2D"] for i in images),
-            "hasImplants": any(i["implant"] for i in images),
-            "manufacturers": sorted({i["manufacturer"] for i in images}),
-            "age": images[0]["age"],
-            "images": images,
-        })
+        study = survey_study(client, study_uid, files, errors)
+        if study:
+            episode_id = meta.get("EpisodeID")
+            study.update({
+                "studyDate": meta.get("StudyDate") or study["studyDate"],
+                "episodeId": episode_id,
+                "episodeInNbss": bool(episode_id and episode_id in episodes),
+                "linkedBy": "imagedb" if episode_id else None,
+                "inImagedb": True,
+            })
+            studies.append(study)
 
+    # Some participants' study folders aren't in their IMAGEDB. Survey them anyway, and link
+    # them to an NBSS episode by date (image and NBSS dates are shifted by the same amount).
+    episodes_by_date = episode_dates(episodes)
     on_disk = {os.path.basename(p) for p in glob.glob(os.path.join(folder, "2.25.*")) if os.path.isdir(p)}
-    for missing in sorted(on_disk - set(imagedb.get("STUDIES", {}))):
-        errors.append(f"{client}/{missing}: folder on disk but not in IMAGEDB")
+    for study_uid in sorted(on_disk - set(indexed)):
+        files = sorted(glob.glob(os.path.join(folder, study_uid, "*.dcm")))
+        study = survey_study(client, study_uid, files, errors) if files else None
+        if not study:
+            continue
+        episode_id = episodes_by_date.get(study["studyDate"])
+        study.update({
+            "episodeId": episode_id,
+            "episodeInNbss": bool(episode_id),
+            "linkedBy": "date" if episode_id else None,
+            "inImagedb": False,
+        })
+        studies.append(study)
 
     studies.sort(key=lambda s: s["studyDate"] or "")
     screening = [s for s in studies if s["kind"] in ("screening", "screening-plus")]
@@ -349,7 +406,8 @@ def write_summary(cases, errors, path, seconds):
         table(c(s["kind"] for s in studies), "Study kind"),
         "\n### Size by study kind\n\n| Kind | GB |\n|---|---|",
         "\n".join(f"| {k} | {v / 1e9:.2f} |" for k, v in bytes_by_kind.most_common()),
-        table(c(s["episodeInNbss"] for s in studies), "Study linked to an NBSS episode"),
+        table(c(s["inImagedb"] for s in studies), "Study folder listed in IMAGEDB"),
+        table(c(s["linkedBy"] or "not linked" for s in studies), "How the study was linked to an NBSS episode"),
         table(c(len(s["images"]) for s in screening), "Images per screening study"),
         table(c(d for s in screening for d in s["duplicateViews"]), "Duplicate views in screening studies"),
         table(c(s["hasForProcessing"] for s in screening), "Screening study includes 'for processing' images"),
@@ -406,7 +464,7 @@ CASE_COLUMNS = [
     "hasImplants", "manufacturers", "studyKinds",
 ]
 STUDY_COLUMNS = [
-    "caseId", "studyUid", "studyDate", "episodeId", "episodeInNbss", "kind", "fileCount", "bytes",
+    "caseId", "studyUid", "studyDate", "episodeId", "episodeInNbss", "inImagedb", "linkedBy", "kind", "fileCount", "bytes",
     "duplicateViews", "hasForProcessing", "hasSynthetic2D", "hasImplants", "manufacturers", "age",
 ]
 
