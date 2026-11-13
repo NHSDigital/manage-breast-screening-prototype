@@ -45,7 +45,10 @@ try:
     import numpy as np
     import pydicom
     from PIL import Image
-    from pydicom.pixels import apply_modality_lut, apply_voi_lut
+    try:
+        from pydicom.pixels import apply_modality_lut, apply_voi_lut
+    except ImportError:  # pydicom 2.x, the newest available on Python 3.8 and 3.9
+        from pydicom.pixel_data_handlers.util import apply_modality_lut, apply_voi_lut
 except ImportError:
     sys.exit("Missing dependencies. Run: pip install -r requirements.txt")
 
@@ -253,13 +256,19 @@ def render(dicom_path, flip, targets, display_height):
     if flip:
         im = im.transpose(Image.FLIP_LEFT_RIGHT)
     if targets.get("full"):
-        os.makedirs(os.path.dirname(targets["full"]), exist_ok=True)
-        im.save(targets["full"], quality=90)
+        save_jpeg(im, targets["full"], quality=90)
     if targets.get("display"):
         if im.height > display_height:
             im = im.resize((round(im.width * display_height / im.height), display_height), Image.LANCZOS)
-        os.makedirs(os.path.dirname(targets["display"]), exist_ok=True)
-        im.save(targets["display"], quality=85)
+        save_jpeg(im, targets["display"], quality=85)
+
+
+def save_jpeg(im, path, quality):
+    """Write via a temp file, so an interrupted run never leaves a half-written JPEG for --skip-existing to keep."""
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    tmp = path + ".tmp"
+    im.save(tmp, format="JPEG", quality=quality)
+    os.replace(tmp, path)
 
 
 def has_repeat(images):
