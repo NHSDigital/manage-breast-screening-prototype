@@ -2,6 +2,8 @@
 
 The PACS viewer simulates a Picture Archiving and Communication System on a separate monitor, displaying mammogram images for the current participant during image reading.
 
+For how appointments get their images across the prototype, and the real images being added, see [mammogram-images.md](mammogram-images.md).
+
 ---
 
 ## Overview
@@ -71,7 +73,7 @@ When the viewer opens (manually or auto), it requests current participant data:
 - **Diagrams**: `app/assets/images/mammogram-diagrams/`
   - Complete sets: `set-XX/` folders with 4 views
   - Image library: `image-library/` folder with individual images
-- **Real images** (future): `app/assets/images/mammogram-sets/`
+- **Real images** (planned): see [mammogram-images.md](mammogram-images.md#real-images-in-planning)
 
 Each complete set contains four views: `rcc.png`, `lcc.png`, `rmlo.png`, `lmlo.png`
 
@@ -308,7 +310,7 @@ The `scripts/process-mammogram-images.sh` script processes individual mammogram 
 ## Future Enhancements
 
 - [ ] Test/verify probability distribution (debug route to sample many appointments)
-- [ ] Real mammogram images integration (local gitignored folder)
+- [ ] Real mammogram images integration (see [mammogram-images.md](mammogram-images.md#real-images-in-planning))
 - [ ] Annotation inheritance for composite sets (abnormality markers)
 - [ ] Breast features alignment (moles, scars visible in mammograms)
 
@@ -332,13 +334,7 @@ The following planned features have been implemented:
 
 ### Real Mammogram Images
 
-Real mammogram images cannot be committed to the public repo. Strategy:
-
-- Store in a gitignored local folder (e.g., `app/assets/images/mammogram-sets/`)
-- Create a manifest file (`manifest.json`) in that folder, same structure as diagrams
-- Existing config `mammogramImageSource: 'diagrams' | 'real'` already supports switching
-- Code already looks for manifest in appropriate folder based on source
-- Document the expected folder structure so images can be added locally
+Being planned. See [mammogram-images.md](mammogram-images.md#real-images-in-planning). They can't go in `app/assets`, which is served without the password check.
 
 ### Richer Manifest Metadata
 
