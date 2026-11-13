@@ -76,6 +76,7 @@ def read_header(path):
         protocol = str(ds.PerformedProtocolCodeSequence[0].CodeMeaning)
     except (AttributeError, IndexError, KeyError):
         pass
+    spacing = ds.get("PixelSpacing") or ds.get("ImagerPixelSpacing")
     return {
         "file": os.path.basename(path),
         "bytes": os.path.getsize(path),
@@ -89,6 +90,7 @@ def read_header(path):
         "frames": int(ds.get("NumberOfFrames", 1) or 1),
         "rows": int(ds.get("Rows", 0) or 0),
         "columns": int(ds.get("Columns", 0) or 0),
+        "pixelSpacingMm": float(spacing[0]) if spacing else None,
         "photometric": str(ds.get("PhotometricInterpretation", "")),
         "forProcessing": "Processing" in sop,
         "synthetic2D": "GENERATED_2D" in image_type,
@@ -244,7 +246,11 @@ def episode_dates(episodes):
     return by_date
 
 
-def survey_case(folder, errors):
+def read_participant(folder, errors):
+    """Read a participant's IMAGEDB, NBSS and study headers, linking each study to an NBSS episode.
+
+    Returns (imagedb, nbss, studies sorted by date), or None if there's no IMAGEDB.
+    """
     client = os.path.basename(folder.rstrip("/\\"))
     imagedb_files = glob.glob(os.path.join(folder, "IMAGEDB_*.json"))
     nbss_files = glob.glob(os.path.join(folder, "NBSS_*.json"))
@@ -299,6 +305,16 @@ def survey_case(folder, errors):
         studies.append(study)
 
     studies.sort(key=lambda s: s["studyDate"] or "")
+    return imagedb, nbss, studies
+
+
+def survey_case(folder, errors):
+    client = os.path.basename(folder.rstrip("/\\"))
+    read = read_participant(folder, errors)
+    if not read:
+        return None
+    imagedb, nbss, studies = read
+    episodes = {k: v for k, v in nbss.items() if isinstance(v, dict)}
     screening = [s for s in studies if s["kind"] in ("screening", "screening-plus")]
     latest = screening[-1] if screening else None
     latest_ep = episodes.get(latest["episodeId"]) if latest and latest["episodeId"] else None

@@ -112,3 +112,21 @@ Real sets can't be bent to fit an appointment, so the direction reverses: choose
 ### Surveying the full set
 
 `scripts/real-images/survey.py` reads every participant's JSON and DICOM headers (not pixels) and reports what the set contains: outcomes, study types, duplicate views, machines, image sizes, and the NBSS code values in use. It needs Python 3.8+ and `pydicom`; usage is in the script's docstring. Its output contains pseudonymised IDs and outcomes, so it's treated like the data itself.
+
+### Building a pack
+
+`scripts/real-images/build-pack.py` turns the raw participant folders into a **pack**: `manifest.json`, a private `id-map.json` (our short aliases back to the original IDs) and JPEGs of every usable image, at display size (~1600 px tall) and full resolution. The prototype only ever reads a pack.
+
+```sh
+python3 -m venv pack-env
+pack-env/bin/pip install -r scripts/real-images/requirements.txt
+pack-env/bin/python scripts/real-images/build-pack.py /path/to/participant-folders --out /path/to/pack
+```
+
+- `--display-only` for a quick, small pack; `--skip-existing` to render only what's missing on a re-run; `--limit N` for a trial run; `--check` to validate an existing pack's manifest.
+- It drops 'for processing' images, tomosynthesis slices, non-mammogram studies and images too small to be a full view, and mirrors images so a right breast's chest wall is on the right and a left's on the left. Images it can't orient are left as they are and flagged in `build.log`.
+- Each screening study becomes a **case**, with only earlier screening studies as priors and its NBSS result (`normal`, `recalled-not-cancer`, `cancer`, `technical-repeat-requested`) for choosing the mix. Higher-risk participants are marked so they can be included or left out.
+- It never overwrites the hand-made `annotations.json` and `curation.json` in the pack, and leaves out studies and images that `curation.json` excludes.
+- The manifest is checked against the format at the end of every build, including a scan for original IDs or dates.
+
+A pack is real image data: never commit it, and never put it under `app/assets` or `public`.

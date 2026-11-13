@@ -6,6 +6,7 @@
 .tmp
 /public
 app/data/generated/
+__pycache__/
 
 # Runtime data
 pids

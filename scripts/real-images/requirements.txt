@@ -1,0 +1,6 @@
+pydicom>=2.4
+numpy
+pillow
+pylibjpeg
+pylibjpeg-libjpeg
+pylibjpeg-openjpeg
