@@ -14,11 +14,26 @@ const {
   restoreRememberedSignIn,
   rememberSignIn
 } = require('./lib/middleware/remembered-sign-in')
+const realImages = require('./lib/real-images')
 
 const router = express.Router()
 
 // Parse JSON request bodies (in addition to URL-encoded, which the kit handles)
 router.use(express.json())
+
+// Real mammogram images, from the pack's images/ folder. Served here rather
+// than from app/assets or public because the kit serves those before its
+// password check, and these must never be public. Ahead of the session
+// middleware below, which images don't need. See docs/mammogram-images.md.
+router.get('/real-images/*imagePath', (req, res) => {
+  const image = realImages.getImageSource(req.params.imagePath.join('/'))
+
+  if (!image) return res.sendStatus(404)
+
+  res.set('Cache-Control', 'private, max-age=86400')
+  if (image.redirectUrl) return res.redirect(image.redirectUrl)
+  res.sendFile(image.filePath, { cacheControl: false })
+})
 
 // Memory logging - tracks growth and logs significant changes. Logs at
 // startup, around regeneration, and whenever RSS jumps >20MB (a canary for

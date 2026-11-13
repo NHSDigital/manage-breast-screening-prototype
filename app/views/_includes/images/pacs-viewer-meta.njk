@@ -8,7 +8,7 @@
    - viewerParticipant - whose they are
    - viewerAutoOpen - whether to open the viewer if it is not already open #}
 
-{% set mammogramImages = getImagesForAppointment(viewerAppointment.id, "diagrams", { appointment: viewerAppointment }) %}
+{% set mammogramImages = getImagesForAppointment(viewerAppointment.id, getMammogramImageSource(), { appointment: viewerAppointment }) %}
 <meta name="mammogram-appointment-id" content="{{ viewerAppointment.id }}">
 <meta name="mammogram-participant-name" content="{{ viewerParticipant | getShortNameReversed }}">
 <meta name="mammogram-nhs-number" content="{{ viewerParticipant.medicalInformation.nhsNumber | formatNhsNumber }}">

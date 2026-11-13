@@ -57,11 +57,15 @@ The admin page `/admin/mammogram-sets` (`app/views/admin/mammogram-sets.html`) e
 
 ### Image source setting
 
-`config.reading.mammogramImageSource` (`'diagrams'` or `'real'`) and `IMAGE_SOURCES` in `mammogram-images.js` anticipate a second source. Only the reading opinion thumbnails (`_includes/reading/opinion-thumbnails.njk`) read the setting. The generators, routes and other templates pass `"diagrams"` directly, so changing it today would make the thumbnails disagree with everything else.
+`config.reading.mammogramImageSource` is `'diagrams'` (the default) or `'real'`, set with the `MAMMOGRAM_IMAGE_SOURCE` environment variable. Nothing reads it directly: code and templates call `getMammogramImageSource()` in `mammogram-images.js`, which returns `'real'` only when the setting is `'real'` **and** a pack with usable cases is present, and otherwise `'diagrams'`, silently.
 
-## Real images (in planning)
+Real images are for image reading only. `getMammogramImageSource('screening')` is always `'diagrams'`: screening pages, the generators and the imaging routes use it, so the set stored on an appointment (`mammogramData.selectedSetId`) is always a diagram set. Reading pages call `getMammogramImageSource()` and choose a real case at render time.
 
-We have a set of real, de-identified screening mammograms with screening history, to make usability testing more realistic. Work is at the planning stage; this section records what is known and agreed.
+The route sweep and journey tests pin `MAMMOGRAM_IMAGE_SOURCE=diagrams`, so they run on diagrams whatever pack is present locally.
+
+## Real images
+
+We have a set of real, de-identified screening mammograms with screening history, to make usability testing more realistic. The prototype can show them in image reading from a local pack; hosting for deployed testing, priors in the PACS viewer and annotation are still to come.
 
 ### Rules
 
@@ -130,3 +134,16 @@ pack-env/bin/python scripts/real-images/build-pack.py /path/to/participant-folde
 - The manifest is checked against the format at the end of every build, including a scan for original IDs or dates.
 
 A pack is real image data: never commit it, and never put it under `app/assets` or `public`.
+
+### Showing a pack in the prototype
+
+```sh
+MAMMOGRAM_IMAGE_SOURCE=real REAL_IMAGES_PATH=/path/to/pack npm run dev
+```
+
+`REAL_IMAGES_PATH` defaults to `real-images/` at the repo root, which is gitignored. Without a pack, the prototype shows diagrams.
+
+- **Serving**: `GET /real-images/*` in `app/routes.js` serves files from the pack's `images/` folder. It's in the app's routes so it runs after the kit's password check (which the kit only turns on when `NODE_ENV=production`). Paths outside `images/` and anything that isn't an image return 404. `getImageSource()` in `app/lib/real-images.js` decides where a file comes from; for remote storage it would return a redirect instead, without changing pages.
+- **Loading**: `app/lib/real-images.js` reads `manifest.json`, `annotations.json` and `curation.json`, and turns each case into an image set like the diagram ones: tag, side statuses, `hasRepeat`, `hasImplants`, `paths` per view using the display JPEGs (an array ordered by instance when a view was taken more than once), and annotations with image IDs mapped to view keys (`rmlo`, `rmlo-1`…). Cases tagged `unknown`, excluded studies and studies with no standard views are left out. It re-reads the files when they change.
+- **Assignment**: every imaged appointment in the seed data gets its own case, matching its context (implants, repeats), its diagram set's tag (`indeterminate` becomes `abnormal`) and, where it can, which breasts are abnormal (so seeded reads mark the right breast), in order of appointment time, preferring the participant whose cases were used longest ago. Deterministic for the same seed data and pack. A reading session rarely meets the same participant twice, but this isn't guaranteed yet. Appointments not in the seed data choose by tag.
+- **Trying it without real data**: `node scripts/real-images/build-fake-pack.js /path/to/fake-pack` makes a small pack from the diagrams: priors, a repeated view, implants, annotations, a technical case and an `unknown` case.

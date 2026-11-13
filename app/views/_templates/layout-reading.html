@@ -34,7 +34,7 @@
 
     {# Inspect panel: press 'i' to show debug info about the current mammogram set #}
     {% if appointment.mammogramData %}
-      {% set inspectImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+      {% set inspectImages = getImagesForAppointment(appointmentId, getMammogramImageSource(), { appointment: appointment }) %}
       {% set inspectContext = extractAppointmentContext(appointment) %}
     {% endif %}
 

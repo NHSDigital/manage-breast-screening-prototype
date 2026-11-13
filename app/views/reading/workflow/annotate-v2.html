@@ -9,7 +9,7 @@
 {% block pageContent %}
 
   {# Serialise image paths and existing annotations for JS #}
-  {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+  {% set mammogramImages = getImagesForAppointment(appointmentId, getMammogramImageSource(), { appointment: appointment }) %}
   {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
 
   {% set existingLeft = data.imageReadingTemp.left.annotations | default([]) %}

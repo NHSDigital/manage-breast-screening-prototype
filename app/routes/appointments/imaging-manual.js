@@ -3,7 +3,8 @@
 // Manual imaging: entering image details and repeats by hand.
 
 const {
-  getImageSetForAppointment
+  getImageSetForAppointment,
+  getMammogramImageSource
 } = require('../../lib/utils/mammogram-images')
 const { getExpectedViews } = require('../../lib/utils/expected-views')
 
@@ -726,9 +727,13 @@ module.exports = (router) => {
       }
 
       // Now repeat metadata is final, select and store the image set
-      const selectedSet = getImageSetForAppointment(appointmentId, 'diagrams', {
-        appointment: data.appointment
-      })
+      const selectedSet = getImageSetForAppointment(
+        appointmentId,
+        getMammogramImageSource('screening'),
+        {
+          appointment: data.appointment
+        }
+      )
       if (selectedSet) {
         data.appointment.mammogramData.selectedSetId = selectedSet.id
       }

@@ -81,6 +81,7 @@ notes/
 
 # Real mammogram data and anything derived from it - never commit (docs/mammogram-images.md)
 survey-output/
+/real-images/
 
 # Playwright output (traces and screenshots from failed runs)
 test-results/

@@ -73,7 +73,7 @@ When the viewer opens (manually or auto), it requests current participant data:
 - **Diagrams**: `app/assets/images/mammogram-diagrams/`
   - Complete sets: `set-XX/` folders with 4 views
   - Image library: `image-library/` folder with individual images
-- **Real images** (planned): see [mammogram-images.md](mammogram-images.md#real-images-in-planning)
+- **Real images**: a pack outside the app, served by the `/real-images/` route, image reading only. See [mammogram-images.md](mammogram-images.md#showing-a-pack-in-the-prototype)
 
 Each complete set contains four views: `rcc.png`, `lcc.png`, `rmlo.png`, `lmlo.png`
 
@@ -200,10 +200,10 @@ When sets have arrays for views (repeat scenarios), the viewer:
 
 ### Hard Config (`config.reading`)
 
-| Setting                | Default                                                                  | Description                             |
-| ---------------------- | ------------------------------------------------------------------------ | --------------------------------------- |
-| `mammogramImageSource` | `'diagrams'`                                                             | Image source: `'diagrams'` or `'real'`  |
-| `mammogramTagWeights`  | `{ normal: 0.7, abnormal: 0.15, indeterminate: 0.1, technical: 0.05 }` | Distribution weights for image set tags |
+| Setting                | Default                                                                | Description                                                                                                               |
+| ---------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `mammogramImageSource` | `'diagrams'`                                                           | Image source: `'diagrams'` or `'real'` (`MAMMOGRAM_IMAGE_SOURCE`). Use `getMammogramImageSource()` rather than reading it |
+| `mammogramTagWeights`  | `{ normal: 0.7, abnormal: 0.15, indeterminate: 0.1, technical: 0.05 }` | Distribution weights for image set tags                                                                                   |
 
 ---
 
@@ -214,6 +214,7 @@ When sets have arrays for views (repeat scenarios), the viewer:
 | File                                         | Purpose                                                                  |
 | -------------------------------------------- | ------------------------------------------------------------------------ |
 | `app/lib/utils/mammogram-images.js`          | Image selection utility (weighted seeded random, path generation)        |
+| `app/lib/real-images.js`                     | Reads a real image pack and finds its image files for `/real-images/`    |
 | `app/assets/javascript/mammogram-channel.js` | BroadcastChannel communication (broadcast, listen, ping/pong, auto-open) |
 | `app/views/reading/mammogram-viewer.html`    | Viewer page (dark theme, 2×2 grid, placeholder states)                   |
 
@@ -310,7 +311,7 @@ The `scripts/process-mammogram-images.sh` script processes individual mammogram 
 ## Future Enhancements
 
 - [ ] Test/verify probability distribution (debug route to sample many appointments)
-- [ ] Real mammogram images integration (see [mammogram-images.md](mammogram-images.md#real-images-in-planning))
+- [ ] Real mammogram images: priors in the viewer, pan and zoom on full-resolution images (see [mammogram-images.md](mammogram-images.md#real-images))
 - [ ] Annotation inheritance for composite sets (abnormality markers)
 - [ ] Breast features alignment (moles, scars visible in mammograms)
 
@@ -334,7 +335,7 @@ The following planned features have been implemented:
 
 ### Real Mammogram Images
 
-Being planned. See [mammogram-images.md](mammogram-images.md#real-images-in-planning). They can't go in `app/assets`, which is served without the password check.
+The viewer shows a real image pack in image reading when one is configured. See [mammogram-images.md](mammogram-images.md#showing-a-pack-in-the-prototype). Packs can't go in `app/assets`, which is served without the password check. Still to come: priors, and loading full-resolution images on zoom.
 
 ### Richer Manifest Metadata
 

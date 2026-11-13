@@ -47,7 +47,7 @@
   {# Image paths drive the annotation markers, resolved once for every read #}
   {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
   {% if withImages and appointment %}
-    {% set mammogramImages = getImagesForAppointment(appointment.id, "diagrams", { appointment: appointment }) %}
+    {% set mammogramImages = getImagesForAppointment(appointment.id, getMammogramImageSource(), { appointment: appointment }) %}
     {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
   {% endif %}
 

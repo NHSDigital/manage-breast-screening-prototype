@@ -134,7 +134,7 @@
 
   {# Set up annotation data early — needed by both breast cards and tab modes #}
   {% if annotationsMode != 'without-images' %}
-    {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+    {% set mammogramImages = getImagesForAppointment(appointmentId, getMammogramImageSource(), { appointment: appointment }) %}
     {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
     {% set mammogramViewOrder = data.settings.mammogramViewOrder or "cc-first" %}
   {% endif %}

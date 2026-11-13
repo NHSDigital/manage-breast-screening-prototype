@@ -75,7 +75,9 @@ const startServer = async () => {
       ...process.env,
       PORT: String(port),
       PROXY: 'true',
-      SHARED_DATA_MODE: 'off'
+      SHARED_DATA_MODE: 'off',
+      // The sweep runs on diagrams, whatever image pack is present locally
+      MAMMOGRAM_IMAGE_SOURCE: 'diagrams'
     },
     stdio: ['ignore', 'ignore', 'pipe']
   })

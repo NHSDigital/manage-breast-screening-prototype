@@ -5,11 +5,13 @@ const fs = require('fs')
 const config = require('../../config')
 const { isMedicalHistoryItemRemoved } = require('./medical-information')
 const { getImagedSides } = require('./expected-views')
+const realImages = require('../real-images')
 
-// Image sources
+// Image sources. Diagrams are in app/assets; real images come from a pack
+// outside the app (app/lib/real-images.js).
 const IMAGE_SOURCES = {
   diagrams: 'mammogram-diagrams',
-  real: 'mammogram-sets'
+  real: 'real-images'
 }
 
 // Standard view names
@@ -350,6 +352,8 @@ const applySidePreference = (sets, symptomSides, randomValue) => {
  * @returns {object|null} - The manifest object or null if not found
  */
 const getManifest = (source = 'diagrams') => {
+  if (source === 'real') return realImages.getManifest()
+
   const sourceFolder = IMAGE_SOURCES[source]
   if (!sourceFolder) return null
 
@@ -383,6 +387,170 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
 }
 
 /**
+ * Which image source to show: 'diagrams' or 'real'. Real images are for image
+ * reading only, and are used only when `config.reading.mammogramImageSource`
+ * is 'real' and a pack with usable cases is present. Otherwise, diagrams.
+ *
+ * Screening pages, and the set stored on appointments
+ * (`mammogramData.selectedSetId`, chosen when images are taken or seed data is
+ * generated), are always diagrams. Reading pages choose a real case at render
+ * time when real images are on.
+ *
+ * @param {string} [area] - 'reading' (default) or 'screening'
+ * @returns {string} 'diagrams' or 'real'
+ * @example
+ * getMammogramImageSource() // 'real' when configured and a pack is present
+ * getMammogramImageSource('screening') // always 'diagrams'
+ */
+const getMammogramImageSource = (area = 'reading') => {
+  if (area !== 'reading') return 'diagrams'
+  if (config.reading?.mammogramImageSource !== 'real') return 'diagrams'
+  return hasImageSets('real') ? 'real' : 'diagrams'
+}
+
+// The real case tag that best stands in for a diagram set's tag. Real cases
+// have no 'indeterminate'; those were recalled, so they are 'abnormal'.
+const DIAGRAM_TAG_TO_REAL_TAG = {
+  normal: 'normal',
+  abnormal: 'abnormal',
+  indeterminate: 'abnormal',
+  technical: 'technical'
+}
+
+/**
+ * The real case tag to choose for an appointment, from its stored diagram
+ * set, so the images agree roughly with the seed data's reads.
+ *
+ * @param {object} appointment - Appointment with mammogramData
+ * @returns {string|null} Tag, or null if it has no stored set
+ */
+const getRealTagForAppointment = (appointment) => {
+  const setId = appointment?.mammogramData?.selectedSetId
+  const diagramSet = setId ? getSetById(setId, 'diagrams') : null
+  return diagramSet ? DIAGRAM_TAG_TO_REAL_TAG[diagramSet.tag] || null : null
+}
+
+/**
+ * Whether a real case is abnormal on the same breasts as an appointment's
+ * stored diagram set, so earlier readers' recalls and markers in the seed data
+ * land on the breast that's abnormal in the real images. Any status other
+ * than normal counts as abnormal.
+ *
+ * @param {object} set - Real image set
+ * @param {object} appointment - Appointment with mammogramData
+ * @returns {boolean} True if the sides match, or there's nothing to match
+ */
+const realSetMatchesSides = (set, appointment) => {
+  const setId = appointment?.mammogramData?.selectedSetId
+  const diagramSet = setId ? getSetById(setId, 'diagrams') : null
+  if (!diagramSet || diagramSet.tag === 'normal') return true
+
+  const isAbnormal = (side) => side?.status && side.status !== 'normal'
+  return ['left', 'right'].every(
+    (side) => isAbnormal(set[side]) === isAbnormal(diagramSet[side])
+  )
+}
+
+// Real cases assigned to seed appointments, rebuilt when the seed data or the
+// pack changes
+let realAssignments = {
+  manifest: null,
+  generationId: null,
+  setsById: new Map(),
+  caseIdsByAppointmentId: new Map()
+}
+
+/**
+ * The real case assigned to a seed data appointment.
+ *
+ * Every imaged appointment is assigned up front, in order of appointment time,
+ * so participants can be spread out: each appointment gets an unused case
+ * matching its context (implants, repeats) and its diagram set's tag, from the
+ * participant whose cases were used longest ago. A reading session's cases are
+ * mostly close together in time, so it rarely meets the same participant
+ * twice, but this isn't guaranteed. Deterministic for the same seed data and
+ * pack.
+ *
+ * @param {string} appointmentId - Appointment ID
+ * @returns {object|null} The assigned set, or null if the appointment isn't in
+ *   the seed data or there's no pack
+ */
+const getAssignedRealSet = (appointmentId) => {
+  const manifest = getManifest('real')
+  if (!manifest) return null
+
+  // Required here rather than at the top: the generators use this file, and
+  // loading the store reads the generated data
+  const dataStore = require('../data-store')
+  const { generationId, appointments } = dataStore.state
+
+  if (
+    realAssignments.manifest !== manifest ||
+    realAssignments.generationId !== generationId
+  ) {
+    const sets = getAvailableSets('real')
+    const setsById = new Map(sets.map((set) => [set.id, set]))
+    const caseIdsByAppointmentId = new Map()
+    const usedCaseIds = new Set()
+    const lastUsedByParticipant = new Map()
+
+    const imagedAppointments = appointments
+      .filter((appointment) => appointment.mammogramData && sets.length > 0)
+      .sort(
+        (a, b) =>
+          new Date(a.timing?.startTime) - new Date(b.timing?.startTime) ||
+          a.id.localeCompare(b.id)
+      )
+
+    // Keep the candidates that pass, unless none do
+    const narrowTo = (candidates, keep) => {
+      const kept = candidates.filter(keep)
+      return kept.length > 0 ? kept : candidates
+    }
+
+    imagedAppointments.forEach((appointment, index) => {
+      const fitting = filterSetsByContext(
+        sets,
+        extractAppointmentContext(appointment)
+      )
+      let candidates = fitting.length > 0 ? fitting : sets
+      const tag = getRealTagForAppointment(appointment)
+      candidates = narrowTo(candidates, (set) => !tag || set.tag === tag)
+      candidates = narrowTo(candidates, (set) =>
+        realSetMatchesSides(set, appointment)
+      )
+      candidates = narrowTo(candidates, (set) => !usedCaseIds.has(set.id))
+
+      const score = (set) => [
+        lastUsedByParticipant.get(set.participantId) ?? -1,
+        seededRandom(appointment.id + set.id)
+      ]
+      const chosen = candidates.reduce((best, set) => {
+        const [bestUsed, bestRandom] = score(best)
+        const [used, random] = score(set)
+        return used < bestUsed || (used === bestUsed && random < bestRandom)
+          ? set
+          : best
+      })
+
+      caseIdsByAppointmentId.set(appointment.id, chosen.id)
+      usedCaseIds.add(chosen.id)
+      lastUsedByParticipant.set(chosen.participantId, index)
+    })
+
+    realAssignments = {
+      manifest,
+      generationId,
+      setsById,
+      caseIdsByAppointmentId
+    }
+  }
+
+  const caseId = realAssignments.caseIdsByAppointmentId.get(appointmentId)
+  return caseId ? realAssignments.setsById.get(caseId) : null
+}
+
+/**
  * Select an image set for an appointment using seeded random with weighted tag distribution
  * Returns the same set for the same appointmentId
  * @param {string} appointmentId - The appointment ID to use as seed
@@ -402,6 +570,15 @@ const getImageSetForAppointment = (
 ) => {
   let allSets = getAvailableSets(source)
   if (allSets.length === 0) return null
+
+  if (source === 'real' && !options.tag && !options.weights) {
+    const assignedSet = getAssignedRealSet(appointmentId)
+    if (assignedSet) return assignedSet
+
+    // Not in the seed data, so not assigned: choose by the diagram set's tag
+    const tag = getRealTagForAppointment(options.appointment)
+    if (tag) options = { ...options, tag }
+  }
 
   // If the appointment already has a stored selectedSetId, use that directly.
   // This ensures the viewer always shows the same set the reading generator used,
@@ -589,10 +766,13 @@ const resolveViewPath = (viewDef, view, source) => {
  * @returns {object} - Object with paths for each view. Path can be string or array of strings.
  */
 const getImagePaths = (setId, source = 'diagrams') => {
+  const set = getSetById(setId, source)
+
+  // Real image sets come with their paths
+  if (set?.paths) return set.paths
+
   const sourceFolder = IMAGE_SOURCES[source]
   if (!sourceFolder) return null
-
-  const set = getSetById(setId, source)
 
   // Check if this is a composite set (has views object with from/image references)
   if (set && set.views) {
@@ -901,6 +1081,7 @@ const summariseMammogramImages = (appointment, options = {}) => {
 module.exports = {
   IMAGE_SOURCES,
   VIEWS,
+  getMammogramImageSource,
   getManifest,
   getAvailableSets,
   getSetById,
