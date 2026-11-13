@@ -90,8 +90,11 @@ const getHistoricReadingSessions = (data) => {
         shape.type === 'arbitration'
           ? {
               mode: shape.mode,
-              arbitratorIds:
-                shape.mode === 'panel' ? otherReaders.slice(0, 2) : []
+              // As in a real session, the current user is always on it
+              arbitratorIds: [
+                data.currentUser?.id,
+                ...(shape.mode === 'panel' ? otherReaders.slice(0, 2) : [])
+              ].filter(Boolean)
             }
           : undefined
     }
