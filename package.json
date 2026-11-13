@@ -45,6 +45,6 @@
     "globals": "^17.14.0",
     "postcss": "^8.5.32",
     "prettier": "^3.9.10",
-    "purgecss": "^8.0.0"
+    "purgecss": "^9.1.0"
   }
 }
