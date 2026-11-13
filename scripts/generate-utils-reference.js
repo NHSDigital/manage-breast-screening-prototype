@@ -33,6 +33,11 @@ const FILE_META = {
     description:
       'Participant lookups and derived data: full/short names, age, clinic history, and risk level.'
   },
+  'app/lib/utils/users.js': {
+    label: 'users.js',
+    description:
+      'Staff user names as ‘Firstname Lastname’, and sorting lists of users by first name. For a name from a user id, use the `getUsername` filter.'
+  },
   'app/lib/utils/appointment-data.js': {
     label: 'appointment-data.js',
     description:
@@ -184,6 +189,7 @@ const UTILS_FILES = [
   'app/lib/utils/strings.js',
   'app/lib/utils/status.js',
   'app/lib/utils/participants.js',
+  'app/lib/utils/users.js',
   'app/lib/utils/appointment-data.js',
   'app/lib/utils/episodes.js',
   'app/lib/utils/clinics.js',

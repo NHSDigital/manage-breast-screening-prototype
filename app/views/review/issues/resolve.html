@@ -20,7 +20,7 @@
 
   <h1 class="nhsuk-heading-l">
     {% if issueParticipants | length %}
-      <span class="nhsuk-caption-l">{{ issueParticipants[0].participant | getFullNameReversed }}</span>
+      <span class="nhsuk-caption-l">{{ issueParticipants[0].participant | getShortNameReversed }}</span>
     {% endif %}
     {{ pageHeading }}
   </h1>
@@ -40,11 +40,11 @@
   {# Anyone but the person resolving it, who answers "Just me" instead. The
      component adds the blank first option #}
   {% set verifierItems = [] %}
-  {% for user in data.users | sort(false, false, "lastName") %}
+  {% for user in data.users | sortUsersByName %}
     {% if user.id != data.currentUser.id %}
       {% set verifierItems = verifierItems | push({
         value: user.id,
-        text: user.id | getUsername({ format: "reversed" })
+        text: user.id | getUsername
       }) %}
     {% endif %}
   {% endfor %}

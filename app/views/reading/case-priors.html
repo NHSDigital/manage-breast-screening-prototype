@@ -11,7 +11,8 @@
 {% from "_includes/issues/open-issues.njk" import openIssuesCallout with context %}
 {% from "_includes/issues/raise-link.njk" import raiseIssueLink with context %}
 
-{% set pageHeading = participant | getFullNameReversed %}
+{% set pageHeading = participant | getShortNameReversed %}
+{% set pageName = "Disclosed mammograms – Reading case" %}
 {% set gridColumn = "nhsuk-grid-column-full" %}
 
 {% set breadcrumbItems = getCaseBreadcrumb(participant, episode) %}

@@ -126,7 +126,7 @@
         },
         {
           href: "/choose-user" | urlWithReferrer(currentUrl),
-          text: (data.currentUser.lastName | upper) + ", " + (data.currentUser.firstName),
+          text: data.currentUser | formatUserName,
           icon: true
         },
         {

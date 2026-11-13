@@ -6,7 +6,7 @@
 // episode along (see updateAppointmentStatus).
 
 const {
-  getFullName,
+  getShortName,
   saveTempParticipantToParticipant
 } = require('../../lib/utils/participants')
 const {
@@ -29,6 +29,7 @@ const {
   getBilateralMastectomySuccessMessage
 } = require('../../lib/utils/mastectomy')
 const { captureSessionEndTime } = require('./shared')
+const { formatUserName } = require('../../lib/utils/users')
 const { hasMissingExpectedViews } = require('../../lib/utils/expected-views')
 
 module.exports = (router) => {
@@ -436,7 +437,7 @@ module.exports = (router) => {
           (user) => user.id === selectedUserId
         )
         const newAuthorisedMammographerName = selectedUser
-          ? `${selectedUser.lastName.toUpperCase()}, ${selectedUser.firstName}`
+          ? formatUserName(selectedUser)
           : otherName
         req.flash(
           'success',
@@ -503,7 +504,7 @@ module.exports = (router) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
 
-      const participantName = getFullName(data.participant)
+      const participantName = getShortName(data.participant)
       const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
 
       const notScreenedReason =
@@ -596,7 +597,7 @@ module.exports = (router) => {
 
       const data = req.session.data
       const currentUser = data.currentUser
-      const participantName = getFullName(data.participant)
+      const participantName = getShortName(data.participant)
       const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
 
       // Store session end details
@@ -640,7 +641,7 @@ module.exports = (router) => {
       const appointment = getAppointment(data, appointmentId)
 
       if (appointment && appointment.status === 'checked_in') {
-        const participantName = getFullName(data.participant)
+        const participantName = getShortName(data.participant)
 
         // Save changes
         saveTempAppointmentToAppointment(data)

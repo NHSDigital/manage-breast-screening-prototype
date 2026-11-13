@@ -311,7 +311,7 @@
                 {# An ended session lists only the cases worked in it, so every row opens in the session #}
                 {% set readingHref = "/reading/session/" + session.id + "/appointments/" + appointment.id %}
                 <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
-                  {{ appointment.participant | getFullNameReversed }}
+                  {{ appointment.participant | getShortNameReversed }}
                 </p>
                 <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-1">
                   NHS: {{ appointment.participant.medicalInformation.nhsNumber | formatNhsNumber }}
@@ -530,7 +530,7 @@
                 {# An ended session lists only the cases worked in it, so every row opens in the session #}
                 {% set readingHref = "/reading/session/" + session.id + "/appointments/" + appointment.id %}
                 <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
-                  {{ appointment.participant | getFullNameReversed }}
+                  {{ appointment.participant | getShortNameReversed }}
                 </p>
                 <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-1">
                   NHS: {{ appointment.participant.medicalInformation.nhsNumber | formatNhsNumber }}
@@ -585,10 +585,7 @@
                   }) }}
 
                   <br>
-                  <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ firstRead.readerId | getUsername({
-                    format: 'short',
-                    identifyCurrentUser: true
-                  }) }}</span>
+                  <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ firstRead.readerId | getUsername({ identifyCurrentUser: true }) }}</span>
                 {% elseif session.skippedAppointments | includes(appointment.id) %}
                   {{ "Skipped" | toTag }}
                 {% else %}
@@ -605,10 +602,7 @@
                   {% set isCurrentUserRead = secondRead.readerId === data.currentUser.id %}
                   {{ readOpinionTag(secondRead) }}
                   <br>
-                  <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ secondRead.readerId | getUsername({
-                    format: 'short',
-                    identifyCurrentUser: true
-                  }) }}</span>
+                  <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by {{ secondRead.readerId | getUsername({ identifyCurrentUser: true }) }}</span>
                 {% elseif metadata.readCount == 1 %}
                   {% if session.skippedAppointments | includes(appointment.id) %}
                     {{ "Skipped" | toTag }}

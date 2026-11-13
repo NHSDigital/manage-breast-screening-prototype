@@ -63,7 +63,7 @@
   <h3 class="nhsuk-u-margin-bottom-0 nhsuk-heading-s">
     {{ readLabel }}
     <span class="nhsuk-u-font-weight-normal nhsuk-u-font-size-19">
-      – {{ read.readerId | getUsername({ format: "short" }) }},
+      – {{ read.readerId | getUsername }},
       {{ read.timestamp | formatDate }}
     </span>
   </h3>

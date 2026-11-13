@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-12 12:08 UTC
+- **Generated:** 2026-11-12 17:08 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -15,39 +15,40 @@
 
 | File | Purpose | Line |
 |---|---|---|
-| `dates.js` | Date formatting and calculation using dayjs | 58 |
-| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 96 |
-| `status.js` | Appointment status checks and display helpers | 131 |
-| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 167 |
-| `appointment-data.js` | Appointment lookups and mutations in session data | 188 |
-| `episodes.js` | Episode lookups and stage changes | 203 |
-| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 242 |
-| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 262 |
-| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 310 |
-| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 374 |
-| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 396 |
-| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 422 |
-| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 449 |
-| `expected-views.js` | Which mammogram views an appointment is expected to produce (after a mastectomy or for a technical recall), and how the views taken compare. | 467 |
-| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 485 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 497 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 510 |
-| `objects.js` | Object utilities for extracting and flattening values. | 529 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 540 |
-| `random.js` | Seeded random functions for stable prototype data | 550 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 567 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 582 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 592 |
-| `roles-and-permissions.js` | User role checks | 605 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 636 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 652 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 664 |
+| `dates.js` | Date formatting and calculation using dayjs | 59 |
+| `strings.js` | String manipulation: case conversion, formatting, NHS-specific formats (NHS number, phone), pluralisation, and HTML-wrapping helpers for use in templates. | 97 |
+| `status.js` | Appointment status checks and display helpers | 132 |
+| `participants.js` | Participant lookups and derived data: full/short names, age, clinic history, and risk level. | 168 |
+| `users.js` | Staff user names as ‘Firstname Lastname’, and sorting lists of users by first name | 188 |
+| `appointment-data.js` | Appointment lookups and mutations in session data | 199 |
+| `episodes.js` | Episode lookups and stage changes | 214 |
+| `clinics.js` | Clinic filtering by time period, slot formatting, and opening hours calculation. | 253 |
+| `reading-cases.js` | A reading case is one set of mammograms being read, held on the episode as episode.readingCases[] | 273 |
+| `reading.js` | Image reading workflow: read state, progress tracking, batch management, per-user navigation, and filtering | 321 |
+| `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 385 |
+| `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 407 |
+| `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 433 |
+| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 460 |
+| `expected-views.js` | Which mammogram views an appointment is expected to produce (after a mastectomy or for a technical recall), and how the views taken compare. | 478 |
+| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 496 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 508 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 521 |
+| `objects.js` | Object utilities for extracting and flattening values. | 540 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 551 |
+| `random.js` | Seeded random functions for stable prototype data | 561 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 578 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 593 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 603 |
+| `roles-and-permissions.js` | User role checks | 616 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 647 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 663 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 675 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 680 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 693 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 705 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 719 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 729 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 691 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 704 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 716 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 730 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 740 |
 
 ---
 
@@ -174,16 +175,26 @@ Participant lookups and derived data: full/short names, age, clinic history, and
 |---|---|---|
 | `getParticipant(data, participantId)` | Get a participant by ID | 8 |
 | `getFullName(participant)` | Get full name (first, middle, last) of a participant as a Nunjucks-safe string | 29 |
-| `getFirstNames(participant)` | Get first names (first + middle) of a participant as a Nunjucks-safe string | 43 |
-| `getFullNameReversed(participant)` | Get full name in reversed 'Last, First Middle' format — e.g. `getFullNameReversed(participant) // 'SMITH, Jane Louise'` | 55 |
-| `getShortName(participant)` | Get short name (first + last only) of participant as a Nunjucks-safe string | 73 |
-| `findBySXNumber(participants, sxNumber)` | Find a participant by their SX number | 85 |
-| `getAge(participant, [referenceDate])` | Get participant's age | 96 |
-| `sortBySurname(participants)` | Sort participants by surname | 117 |
-| `getCurrentRiskLevel(participant)` | Determine a participant's current risk level based on age and risk factors | 131 |
-| `getScreeningProtocolName(participant, [referenceDate])` | Get the display name of a participant's current screening protocol | 162 |
-| `updateParticipant(data, participantId, updatedParticipant)` | Find and update a participant in session data | 175 |
-| `saveTempParticipantToParticipant(data)` | Save temporary participant data back to the main participant | 197 |
+| `getShortNameReversed(participant)` | Get short name in reversed 'LASTNAME, Firstname' format, with no middle names — e.g. `getShortNameReversed(participant) // 'SMITH, Jane'` | 43 |
+| `getShortName(participant)` | Get short name (first + last only) of participant as a Nunjucks-safe string | 59 |
+| `findBySXNumber(participants, sxNumber)` | Find a participant by their SX number | 71 |
+| `getAge(participant, [referenceDate])` | Get participant's age | 82 |
+| `sortBySurname(participants)` | Sort participants by surname | 103 |
+| `getCurrentRiskLevel(participant)` | Determine a participant's current risk level based on age and risk factors | 117 |
+| `getScreeningProtocolName(participant, [referenceDate])` | Get the display name of a participant's current screening protocol | 148 |
+| `updateParticipant(data, participantId, updatedParticipant)` | Find and update a participant in session data | 161 |
+| `saveTempParticipantToParticipant(data)` | Save temporary participant data back to the main participant | 183 |
+
+### users.js
+
+`app/lib/utils/users.js`
+
+Staff user names as ‘Firstname Lastname’, and sorting lists of users by first name. For a name from a user id, use the `getUsername` filter.
+
+| Function | Description | Line |
+|---|---|---|
+| `formatUserName(user)` | Format a user's name as 'Firstname Lastname' — e.g. `formatUserName(user) // 'Jane Hitchin'` | 3 |
+| `sortUsersByName(users)` | Sort users alphabetically by first name, then last name — e.g. `{% for user in data.users \| sortUsersByName %}` | 18 |
 
 ### appointment-data.js
 
@@ -625,13 +636,13 @@ User role checks. Use these instead of comparing role strings directly.
 | `isHybridUser(user)` | Check if a user has both clinical and administrative roles | 209 |
 | `getRolesText(user, separator)` | Get all roles for a user as formatted string | 219 |
 | `isCurrentUser(user)` | Check if a user is the current user | 233 |
-| `getAppointmentRunnerId(appointment)` | Get the id of the user running an appointment now: whoever last started or — e.g. `{{ appointment \| getAppointmentRunnerId \| getUsername({ format: "short" }) }}` | 250 |
+| `getAppointmentRunnerId(appointment)` | Get the id of the user running an appointment now: whoever last started or — e.g. `{{ appointment \| getAppointmentRunnerId \| getUsername }}` | 250 |
 | `isRunByCurrentUser(appointment)` | Check if an appointment is being run by the current user, meaning they | 270 |
 | `getAppointmentRunByIds(appointment)` | Get the ids of everyone who ran an appointment, in the order they joined | 285 |
-| `getAppointmentRunByNames(appointment, [options])` | Get the names of everyone who ran an appointment, for showing everyone — e.g. `{{ appointment \| getAppointmentRunByNames({ format: "reversed" }) \| formatList }}` | 305 |
+| `getAppointmentRunByNames(appointment, [options])` | Get the names of everyone who ran an appointment, for showing everyone — e.g. `{{ appointment \| getAppointmentRunByNames \| formatList }}` | 305 |
 | `getAppointmentMammographerSummary(appointment, [options])` | Get the people and roles to show for a completed appointment — e.g. `{{ appointment \| getAppointmentMammographerSummary({ identifyCurrentUser: true }) }}` | 321 |
-| `getScreenedByName(appointment, [options])` | Get the name of whoever screened an appointment, for showing one name in a — e.g. `{{ appointment \| getScreenedByName({ format: "short", identifyCurrentUser: true }) }}` | 369 |
-| `getAppointmentScreenedByNames(appointment, [options])` | Get the names of everyone who screened an appointment, for a list where — e.g. `{{ appointment \| getAppointmentScreenedByNames({ format: "short", identifyCurrentUser: true }) \| join(", ") }}` | 392 |
+| `getScreenedByName(appointment, [options])` | Get the name of whoever screened an appointment, for showing one name in a — e.g. `{{ appointment \| getScreenedByName({ identifyCurrentUser: true }) }}` | 369 |
+| `getAppointmentScreenedByNames(appointment, [options])` | Get the names of everyone who screened an appointment, for a list where — e.g. `{{ appointment \| getAppointmentScreenedByNames({ identifyCurrentUser: true }) \| join(", ") }}` | 392 |
 
 ### filter-list.js
 
@@ -710,11 +721,11 @@ Nunjucks-specific helpers: joining arrays, resolving user names from IDs, templa
 
 | Function | Description | Line |
 |---|---|---|
-| `log(a, [description])` | Render a value to the browser console via an inline script tag (for template debugging) | 5 |
-| `join(input, [delimiter], [attribute], [options], [options.filterEmpty], [options.toString])` | Safely join array elements with proper undefined/null handling — e.g. `join(['a', 'b', 'c'], ', ') // 'a, b, c'` | 22 |
-| `getUsername(userId, [options], [options.identifyCurrentUser], [options.useYou], [options.format])` | Get user name by user ID with format options | 98 |
-| `getContext()` | Return the full Nunjucks template context — useful for debugging | 149 |
-| `parseJsonString(value)` | Safely parse a JSON string and return the resulting object, or return structured data as-is | 158 |
+| `log(a, [description])` | Render a value to the browser console via an inline script tag (for template debugging) | 6 |
+| `join(input, [delimiter], [attribute], [options], [options.filterEmpty], [options.toString])` | Safely join array elements with proper undefined/null handling — e.g. `join(['a', 'b', 'c'], ', ') // 'a, b, c'` | 23 |
+| `getUsername(userId, [options], [options.identifyCurrentUser], [options.useYou])` | Get a user's name by user ID, as 'Firstname Lastname' | 99 |
+| `getContext()` | Return the full Nunjucks template context — useful for debugging | 132 |
+| `parseJsonString(value)` | Safely parse a JSON string and return the resulting object, or return structured data as-is | 141 |
 
 ### tags.js
 

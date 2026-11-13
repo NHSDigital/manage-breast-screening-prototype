@@ -17,7 +17,7 @@
 {% set breastDensityFactors = appointment.medicalInformation | getBreastDensityFactors %}
 {% set pregnancyAndBreastfeeding = breastDensityFactors.pregnancyAndBreastfeeding %}
 
-{% set hrtQuestion = "Is " + participant.demographicInformation.firstName + " currently taking HRT?" %}
+{% set hrtQuestion = "Are they currently taking HRT?" %}
 
 {% set pregnancyAndBreastfeedingUrl = contextUrl + "/medical-information/pregnancy-and-breastfeeding" %}
 

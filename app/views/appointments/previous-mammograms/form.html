@@ -16,7 +16,7 @@
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
-      {{ participant | getFullNameReversed }}
+      {{ participant | getShortNameReversed }}
     </span>
     {{ pageHeading }}
   </h1>
@@ -239,7 +239,7 @@
     name: "appointment[previousMammogramTemp][sameName]",
     fieldset: {
       legend: {
-        text: "Were they taken with the name " + (participant | getFullName) + "?",
+        text: "Were they taken with the name " + (participant | getShortName) + "?",
         size: "m"
       }
     },

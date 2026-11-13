@@ -44,6 +44,9 @@ route on the Express router, fills the URL parameters from the seeded data, and
 requests each one. It also sweeps the pages served by the wildcard template
 routes, which the router alone does not reveal. Any 5xx fails the run; 404s are
 printed but tolerated, since some pages only resolve for particular ids.
+It also fails if a page title contains a participant's name, and lists pages
+whose title is only the service name because they set no `pageHeading` or
+`pageName`.
 
 Routes that change state — check-in, complete, regenerate — are skipped by
 name, and the skip list is printed on every run so it stays visible.

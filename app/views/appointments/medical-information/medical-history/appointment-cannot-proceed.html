@@ -12,7 +12,7 @@
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
-      {{ participant | getFullNameReversed }}
+      {{ participant | getShortNameReversed }}
     </span>
     {{ pageHeading }}
   </h1>
@@ -39,7 +39,7 @@
       {
         value: "invite-next-routine",
         text: "Yes, invite to next routine appointment",
-        hint: "If eligible, " + (participant | getFullName) + " will be invited to their next routine appointment"
+        hint: "If eligible, " + (participant | getShortName) + " will be invited to their next routine appointment"
       },
       {
         value: "opt-out",

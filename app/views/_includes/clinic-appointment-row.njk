@@ -47,7 +47,7 @@
     {# Appointment details - Name and NHS number #}
     <td class="nhsuk-table__cell">
       <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
-        <a href="{{ appointmentBaseUrl }}">{{ participant | getFullNameReversed }}</a>
+        <a href="{{ appointmentBaseUrl }}">{{ participant | getShortNameReversed }}</a>
       </p>
       <p class="nhsuk-u-secondary-text-colour nhsuk-body-s app-nowrap app-code-font nhsuk-u-margin-bottom-0">
         {{ appCopyToClipboard({
@@ -134,18 +134,12 @@
 
       {% elseif (appointment | isInProgressNotPaused) and not columns.startedAt %}
         <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">with {{
-          appointment | getAppointmentRunnerId | getUsername({
-          format: 'short',
-          identifyCurrentUser: true
-          }) }}</span>
+          appointment | getAppointmentRunnerId | getUsername({ identifyCurrentUser: true }) }}</span>
 
       {% elseif (appointment | isFinal) and not columns.screenedBy %}
         {% if appointment.sessionDetails.startedBy %}
           <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-margin-bottom-0">by {{ appointment
-            | getScreenedByName({
-            format: 'short',
-            identifyCurrentUser: true
-            }) }}</span>
+            | getScreenedByName({ identifyCurrentUser: true }) }}</span>
         {% endif %}
       {% endif %}
 
@@ -188,9 +182,7 @@
         {% if startedTime %}
           {{ startedTime | formatTimeString }}
           <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0 js-elapsed-time" data-elapsed-since="{{ startedTime | getElapsedSince }}">{{ startedTime | getMinutesSince | formatWaitingTime }} ago</span>
-          <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0">({{ appointment | getAppointmentRunnerId | getUsername({
-            format: 'short'
-          }) }})</span>
+          <span class="nhsuk-u-secondary-text-colour nhsuk-body-s nhsuk-u-margin-bottom-0">({{ appointment | getAppointmentRunnerId | getUsername }})</span>
         {% endif %}
       </td>
     {% endif %}
@@ -206,15 +198,9 @@
       {% set completedOrder = appointment.screeningOrder if attended %}
       {% set completedByName = "" %}
       {% if attended and appointment.sessionDetails.startedBy %}
-        {% set completedByName = appointment | getAppointmentScreenedByNames({
-          format: 'short',
-          identifyCurrentUser: true
-        }) | join(", ") %}
+        {% set completedByName = appointment | getAppointmentScreenedByNames({ identifyCurrentUser: true }) | join(", ") %}
       {% elseif appointment.status == 'cancelled' and appointment.cancellation.cancelledBy %}
-        {% set completedByName = appointment.cancellation.cancelledBy | getUsername({
-          format: 'short',
-          identifyCurrentUser: true
-        }) %}
+        {% set completedByName = appointment.cancellation.cancelledBy | getUsername({ identifyCurrentUser: true }) %}
       {% endif %}
       <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
         {% if completedTime or completedByName %}

@@ -6,7 +6,8 @@
 {% set isNoLongerSpecialAppointment = appointment.specialAppointment.supportTypes | length === 0 %}
 
 {% if isNoLongerSpecialAppointment %}
-  {% set pageHeading = "Confirm " + (participant | getFullName) + " no longer needs additional support" %}
+  {% set pageHeading = "Confirm " + (participant | getShortName) + " no longer needs additional support" %}
+  {% set pageName = "Confirm participant no longer needs additional support" %}
 {% endif %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}
@@ -26,7 +27,7 @@
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-m">
-      {{ participant | getFullNameReversed }}
+      {{ participant | getShortNameReversed }}
     </span>
     {{ pageHeading }}
   </h1>

@@ -38,7 +38,7 @@
       <p class="nhsuk-u-secondary-text-colour">
         Arbitrated by
         {%- for userId in session.arbitration.arbitratorIds %}
-          {{ userId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+          {{ userId | getUsername({ identifyCurrentUser: true }) }}{{ "," if not loop.last }}
         {%- endfor %}
       </p>
     {% endif %}
@@ -204,7 +204,7 @@
             </td>
             <td class="nhsuk-table__cell">
               <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
-                {{ appointment.participant | getFullNameReversed }}
+                {{ appointment.participant | getShortNameReversed }}
               </p>
               <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-1">
                 NHS: {{ appointment.participant.medicalInformation.nhsNumber | formatNhsNumber }}
@@ -238,7 +238,7 @@
                   <br>
                   <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s">by
                     {%- for authorId in originalRead | getReadAuthorIds %}
-                      {{ authorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                      {{ authorId | getUsername({ identifyCurrentUser: true }) }}{{ "," if not loop.last }}
                     {%- endfor %}
                   </span>
                 {% else %}

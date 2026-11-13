@@ -40,7 +40,7 @@
   <div class="app-header-with-status">
     <h1 class="nhsuk-heading-l">
       {% if issueParticipants | length %}
-        <span class="nhsuk-caption-l">{{ issueParticipants[0].participant | getFullNameReversed }}</span>
+        <span class="nhsuk-caption-l">{{ issueParticipants[0].participant | getShortNameReversed }}</span>
       {% endif %}
       {{ pageHeading }}
     </h1>
@@ -159,7 +159,7 @@
         {# The viewer can't open a participant yet, only a study, so "Open
            participant in PACS" goes nowhere for now #}
         {{ appSummaryListRow({
-          key: { text: "Name" },
+          key: { text: "Full name" },
           value: { text: participant | getFullName },
           actions: {
             items: [
@@ -234,7 +234,7 @@
          same problem, or may keep the case held after this one closes #}
       {% if not issue.resolved and entry.otherOpenIssues | length %}
         {% set otherIssuesHtml %}
-          <p>{{ participant | getFullName }} has {{ "another open issue" if entry.otherOpenIssues | length == 1 else "other open issues" }}:</p>
+          <p>{{ participant | getShortName }} has {{ "another open issue" if entry.otherOpenIssues | length == 1 else "other open issues" }}:</p>
           <ul class="nhsuk-list nhsuk-u-margin-bottom-0">
             {% for otherIssue in entry.otherOpenIssues %}
               <li>

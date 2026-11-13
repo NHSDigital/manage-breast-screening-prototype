@@ -10,7 +10,7 @@
 
 {% set mammogramImages = getImagesForAppointment(viewerAppointment.id, "diagrams", { appointment: viewerAppointment }) %}
 <meta name="mammogram-appointment-id" content="{{ viewerAppointment.id }}">
-<meta name="mammogram-participant-name" content="{{ viewerParticipant | getFullNameReversed }}">
+<meta name="mammogram-participant-name" content="{{ viewerParticipant | getShortNameReversed }}">
 <meta name="mammogram-nhs-number" content="{{ viewerParticipant.medicalInformation.nhsNumber | formatNhsNumber }}">
 <meta name="mammogram-sx-number" content="{{ viewerParticipant.sxNumber }}">
 <meta name="mammogram-date-of-birth" content="{{ viewerParticipant.demographicInformation.dateOfBirth | formatDate }} ({{ viewerParticipant | getAge }} years)">

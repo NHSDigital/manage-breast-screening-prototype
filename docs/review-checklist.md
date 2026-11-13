@@ -80,7 +80,7 @@ Spot it: `grep -nE 'data\.[a-zA-Z]+ *=|req\.session\[|req\.session\.[a-zA-Z]+ *=
 
 Spot it: string literals of people's names or list options in templates. For every new field read in a view, search `app/lib/generators/` for where it is created.
 
-> **Past example.** The "choose mammographer" radios listed five made-up names (`S. Patel`, `R. Thompson`, and so on). They became the real users able to screen the appointment, sorted by surname, using `canUserScreenAppointment`.
+> **Past example.** The "choose mammographer" radios listed five made-up names (`S. Patel`, `R. Thompson`, and so on). They became the real users able to screen the appointment, sorted by first name with `sortUsersByName`, using `canUserScreenAppointment`.
 >
 > **Past example.** Seed data gave attended-not-screened appointments a reason only 70% of the time. Once closing a clinic required a reason, that left records the new flow could not handle, so generation became unconditional.
 

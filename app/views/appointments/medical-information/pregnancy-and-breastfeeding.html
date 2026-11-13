@@ -14,7 +14,7 @@
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
-      {{ participant | getFullName }}
+      {{ participant | getShortNameReversed }}
     </span>
     {{ pageHeading }}
   </h1>
@@ -25,7 +25,7 @@
     values: pregnancyAndBreastfeeding.values,
     fieldset: {
       legend: {
-        text: "Is " + participant.demographicInformation.firstName + " pregnant or breastfeeding?",
+        text: "Are they pregnant or breastfeeding?",
         size: "s"
       }
     },

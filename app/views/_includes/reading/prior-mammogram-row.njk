@@ -24,7 +24,7 @@
     {% set caseHref = (getReadingCaseUrl(thisReadingCase) + '/priors') if thisReadingCase else getAppointmentUrl(thisAppointment) %}
     <td class="nhsuk-table__cell">
       <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
-        {{ thisParticipant | getFullNameReversed }}
+        {{ thisParticipant | getShortNameReversed }}
       </p>
       <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
         NHS: {{ thisParticipant.medicalInformation.nhsNumber | formatNhsNumber }}

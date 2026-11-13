@@ -37,7 +37,7 @@
 {% set recordedHtml %}
   {{ mammogram.dateAdded | formatDate }}
   {% if mammogram.addedBy %}
-    by {{ mammogram.addedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}
+    by {{ mammogram.addedBy | getUsername({ identifyCurrentUser: true }) }}
   {% endif %}
 {% endset %}
 {% set mammogramRows = mammogramRows | push({
@@ -81,7 +81,7 @@
   {% if changedDate %}
     <p class="nhsuk-u-margin-bottom-0">
       {{- changedLabel }}
-      {%- if changedBy %} by {{ changedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+      {%- if changedBy %} by {{ changedBy | getUsername({ identifyCurrentUser: true }) }}{% endif %}
       on {{ changedDate | formatDate("D MMMM YYYY") -}}
     </p>
   {% endif %}
