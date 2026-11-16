@@ -45,7 +45,7 @@
 
     {% include "_includes/reading/session-timing.njk" %}
 
-    {% set arbitrationActionText = "Resume session" if sessionStarted else "Start session" %}
+    {% set arbitrationActionText = "Resume arbitration" if sessionStarted else "Start arbitration" %}
 
     {% if sessionState == "in_progress" %}
       {# Cases still to do can all be held up by other readers - priors they

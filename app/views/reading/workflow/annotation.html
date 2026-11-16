@@ -99,7 +99,7 @@
 
       <div class="nhsuk-button-group nhsuk-u-margin-top-7">
         {{ button({
-          text: "Save",
+          text: "Update annotation" if annotation.id else "Add annotation",
           attributes: {
             name: "action",
             value: "save"

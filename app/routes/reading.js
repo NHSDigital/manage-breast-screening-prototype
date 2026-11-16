@@ -1314,6 +1314,14 @@ module.exports = (router) => {
       res.locals.appointmentId = appointmentId
       res.locals.progress = progress
 
+      // The existing-read page is the only way back into a read already made,
+      // and its links carry it in the referrer chain, which each step passes on
+      res.locals.isEditingExistingRead = Boolean(
+        req.query.referrerChain?.includes(
+          `/appointments/${appointmentId}/existing-read`
+        )
+      )
+
       next()
     }
   )
