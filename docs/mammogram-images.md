@@ -142,7 +142,7 @@ A pack is real image data: never commit it, and never put it under `app/assets` 
 Put the pack at `real-images/` in the repo root (gitignored), or point `REAL_IMAGES_PATH` at it, start the prototype, and choose "Real images" on the settings page. To start with real images on, without the setting:
 
 ```sh
-MAMMOGRAM_IMAGE_SOURCE=real REAL_IMAGES_PATH=/path/to/pack npm run dev
+MAMMOGRAM_IMAGE_SOURCE=real REAL_IMAGES_PATH=/path/to/pack npm run start
 ```
 
 Without a pack, the prototype shows diagrams.
