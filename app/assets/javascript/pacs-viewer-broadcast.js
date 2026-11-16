@@ -17,6 +17,7 @@
   if (!appointmentId || !participantName) return
 
   const allPaths = getMeta('mammogram-all-paths')
+  const fullPaths = getMeta('mammogram-full-paths')
   const context = getMeta('mammogram-context')
   const notExpected = getMeta('mammogram-not-expected')
 
@@ -34,6 +35,7 @@
       lmlo: getMeta('mammogram-image-lmlo') || null
     },
     allPaths: allPaths ? JSON.parse(allPaths) : null,
+    fullPaths: fullPaths ? JSON.parse(fullPaths) : null,
     hasAdditionalImages: getMeta('mammogram-has-additional') === 'true',
     notExpected: notExpected ? JSON.parse(notExpected) : null,
     setId: getMeta('mammogram-set-id'),

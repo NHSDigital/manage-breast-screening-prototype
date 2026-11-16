@@ -25,6 +25,7 @@ const getChannel = () => {
  * @param {string} data.dateOfBirth - Date of birth with age (optional)
  * @param {object} data.images - Image paths (rcc, lcc, rmlo, lmlo) - latest images
  * @param {object} data.allPaths - All image paths including additional images
+ * @param {object} data.fullPaths - Full-resolution path for each display path, loaded on zoom (optional)
  * @param {boolean} data.hasAdditionalImages - Whether there are additional images
  * @param {Array<string>} data.notExpected - Views that weren't expected, left blank (e.g. ['rcc', 'rmlo'])
  */
@@ -41,6 +42,7 @@ const broadcastShowParticipant = (data) => {
     dateOfBirth: data.dateOfBirth || null,
     images: data.images || null,
     allPaths: data.allPaths || null,
+    fullPaths: data.fullPaths || null,
     hasAdditionalImages: data.hasAdditionalImages || false,
     notExpected: data.notExpected || null,
     setId: data.setId || null,
@@ -228,6 +230,17 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelector('meta[name="mammogram-has-additional"]')
         ?.getAttribute('content') === 'true'
 
+    // Full-resolution images, real images only
+    const fullPathsRaw = document
+      .querySelector('meta[name="mammogram-full-paths"]')
+      ?.getAttribute('content')
+    let fullPaths = null
+    try {
+      fullPaths = fullPathsRaw ? JSON.parse(fullPathsRaw) : null
+    } catch (e) {
+      // Invalid JSON, ignore
+    }
+
     // Views that weren't expected, for example after a mastectomy
     const notExpectedRaw = document
       .querySelector('meta[name="mammogram-not-expected"]')
@@ -258,6 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
       dateOfBirth,
       images,
       allPaths,
+      fullPaths,
       hasAdditionalImages,
       notExpected,
       setId,

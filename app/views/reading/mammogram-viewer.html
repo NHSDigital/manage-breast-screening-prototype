@@ -194,10 +194,34 @@
       cursor: zoom-out;
     }
 
+    .viewer-zoom--zoomed {
+      cursor: grab;
+    }
+
+    .viewer-zoom--panning {
+      cursor: grabbing;
+    }
+
     .viewer-zoom__image {
       max-width: 95%;
       max-height: 95%;
       object-fit: contain;
+      transform-origin: center center;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .viewer-zoom__level {
+      position: absolute;
+      bottom: 16px;
+      right: 16px;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 4px 8px;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+      color: #aaa;
+      border-radius: 4px;
+      z-index: 1;
     }
 
     .viewer-zoom__label {
@@ -209,6 +233,7 @@
       font-size: 14px;
       font-weight: 600;
       border-radius: 4px;
+      z-index: 1;
     }
 
     .viewer-zoom__close {
@@ -240,6 +265,7 @@
       font-size: 13px;
       color: #aaa;
       border-radius: 4px;
+      z-index: 1;
     }
 
     .viewer-debug {
@@ -567,14 +593,34 @@
     // Current set info for debug display
     let currentSetInfo = null
 
+    // Full-resolution image for each display image path, when the set has them
+    let currentFullPaths = null
+
+    // Zoom limits and steps, relative to the image fitted to the screen
+    const MIN_ZOOM = 1
+    const MAX_ZOOM = 8
+    const KEYBOARD_ZOOM_STEP = 1.25
+
+    // Closes the open zoom view and removes its listeners
+    let closeActiveZoom = null
+
     /**
      * Close the zoom overlay if open
      */
     const closeZoomOverlay = () => {
-      const zoomEl = document.querySelector(".viewer-zoom")
-      if (zoomEl) {
-        zoomEl.remove()
+      if (closeActiveZoom) {
+        closeActiveZoom()
       }
+    }
+
+    /**
+     * The full-resolution path for a displayed image, if there is one
+     * @param {string} src - The image's src (absolute or relative)
+     * @returns {string|null}
+     */
+    const getFullSrc = (src) => {
+      if (!currentFullPaths || !src) return null
+      return currentFullPaths[new URL(src, window.location.href).pathname] || null
     }
 
     /**
@@ -745,6 +791,7 @@
       additionalLinkEl.style.display = "none"
       currentAppointmentId = null
       currentAllPaths = null
+      currentFullPaths = null
       updateStatus("Waiting for participant...")
     }
 
@@ -880,6 +927,7 @@
 
       // Store all paths and show/hide additional images link
       currentAllPaths = data.allPaths
+      currentFullPaths = data.fullPaths || null
       if (data.hasAdditionalImages) {
         additionalLinkEl.style.display = "block"
       } else {
@@ -960,6 +1008,7 @@
         if (imgEl && imgEl.src && imgEl.style.display !== "none") {
           images.push({
             src: imgEl.src,
+            fullSrc: getFullSrc(imgEl.src),
             label: viewLabels[view],
             side: view.startsWith("r") ? "right" : "left"
           })
@@ -977,75 +1026,225 @@
     }
 
     /**
-     * Show image in fullscreen zoom with arrow key navigation
+     * Show image in fullscreen zoom, with zoom, pan and arrow key navigation.
+     * Arrow keys always move between images, zoomed or not; pan by dragging.
+     * Each image opens fitted to the screen.
      * @param {string} imageSrc - The image source to show (optional, can start from index)
      * @param {string} viewLabel - The view label (optional)
      * @param {number} startIndex - Starting index in allImages array (optional)
      */
     const showZoom = (imageSrc, viewLabel, startIndex) => {
-      const allImages = getAllViewableImages()
-      if (allImages.length === 0) return
-      
+      closeZoomOverlay()
+
+      let allImages = getAllViewableImages()
       let currentIndex
       if (typeof startIndex === "number") {
         currentIndex = startIndex
       } else {
         currentIndex = allImages.findIndex(img => img.src === imageSrc)
-        if (currentIndex === -1) currentIndex = 0
-      }
-      
-      const zoomEl = document.createElement('div')
-      zoomEl.className = 'viewer-zoom'
-      
-      const closeZoom = () => {
-        document.body.removeChild(zoomEl)
-        document.removeEventListener('keydown', handleKeydown)
-      }
-      
-      const updateZoomContent = () => {
-        const img = allImages[currentIndex]
-        const navHint = allImages.length > 1 ? " · ← → to navigate" : ""
-        zoomEl.innerHTML = `
-          <div class="viewer-zoom__label">${img.label}</div>
-          <button class="viewer-zoom__close" type="button">Close</button>
-          <img class="viewer-zoom__image" src="${img.src}" alt="${img.label}">
-          <div class="viewer-zoom__hint">Click anywhere or press Escape to close${navHint}</div>
-        `
-        // Attach close button handler
-        zoomEl.querySelector('.viewer-zoom__close').addEventListener('click', (e) => {
-          e.stopPropagation()
-          closeZoom()
-        })
-      }
-      
-      updateZoomContent()
-      
-      // Close on click (but not on close button, handled separately)
-      zoomEl.addEventListener('click', (e) => {
-        if (!e.target.classList.contains('viewer-zoom__close')) {
-          closeZoom()
+        if (currentIndex === -1 && imageSrc) {
+          // An image not in the main grid, such as an earlier attempt, is shown on its own
+          allImages = [{ src: imageSrc, fullSrc: getFullSrc(imageSrc), label: viewLabel }]
+          currentIndex = 0
         }
-      })
-      
-      // Handle keyboard navigation
+      }
+      if (allImages.length === 0 || !allImages[currentIndex]) return
+
+      const zoomEl = document.createElement("div")
+      zoomEl.className = "viewer-zoom"
+      zoomEl.innerHTML = `
+        <div class="viewer-zoom__label"></div>
+        <button class="viewer-zoom__close" type="button">Close</button>
+        <img class="viewer-zoom__image" alt="">
+        <div class="viewer-zoom__level"></div>
+        <div class="viewer-zoom__hint"></div>
+      `
+      const labelEl = zoomEl.querySelector(".viewer-zoom__label")
+      const imageEl = zoomEl.querySelector(".viewer-zoom__image")
+      const levelEl = zoomEl.querySelector(".viewer-zoom__level")
+      const hintEl = zoomEl.querySelector(".viewer-zoom__hint")
+
+      // Scale is relative to the fitted image; offsets move the image's centre
+      let scale = 1
+      let offsetX = 0
+      let offsetY = 0
+      let drag = null
+      let isClosed = false
+
+      const applyTransform = () => {
+        const isZoomed = scale > 1
+        imageEl.style.transform = isZoomed ? `translate(${offsetX}px, ${offsetY}px) scale(${scale})` : ""
+        zoomEl.classList.toggle("viewer-zoom--zoomed", isZoomed)
+        levelEl.textContent = isZoomed ? `${Math.round(scale * 100)}%` : "Fit"
+
+        const navHint = allImages.length > 1 ? " · ← → to navigate" : ""
+        hintEl.textContent = isZoomed
+          ? `Drag to pan · + − or scroll to zoom · 0 to fit${navHint} · Escape to close`
+          : `Scroll or + − to zoom${navHint} · Click or press Escape to close`
+      }
+
+      // Keep the image covering the screen when it's bigger than the screen,
+      // and centred on any axis where it's smaller
+      const clampOffsets = () => {
+        const maxX = Math.max(0, (imageEl.offsetWidth * scale - zoomEl.clientWidth) / 2)
+        const maxY = Math.max(0, (imageEl.offsetHeight * scale - zoomEl.clientHeight) / 2)
+        offsetX = Math.min(maxX, Math.max(-maxX, offsetX))
+        offsetY = Math.min(maxY, Math.max(-maxY, offsetY))
+      }
+
+      // Size the image to fit the screen from its shape, not its pixel size, so
+      // the display and full-resolution files fill the same box
+      const fitImage = () => {
+        const aspectRatio = imageEl.naturalWidth / imageEl.naturalHeight
+        if (!aspectRatio) return
+        let width = zoomEl.clientWidth * 0.95
+        let height = width / aspectRatio
+        if (height > zoomEl.clientHeight * 0.95) {
+          height = zoomEl.clientHeight * 0.95
+          width = height * aspectRatio
+        }
+        imageEl.style.width = `${width}px`
+        imageEl.style.height = `${height}px`
+      }
+      imageEl.addEventListener("load", fitImage)
+
+      // Swap in the full-resolution image, if there is one, the first time it's zoomed
+      const loadFullImage = () => {
+        const image = allImages[currentIndex]
+        if (!image.fullSrc) return
+        if (image.isFullLoaded) {
+          if (imageEl.getAttribute("src") !== image.fullSrc) imageEl.src = image.fullSrc
+          return
+        }
+        if (image.isFullLoading) return
+
+        image.isFullLoading = true
+        const loader = new Image()
+        loader.onload = () => {
+          image.isFullLoaded = true
+          if (!isClosed && allImages[currentIndex] === image && scale > 1) {
+            imageEl.src = image.fullSrc
+          }
+        }
+        loader.src = image.fullSrc
+      }
+
+      /**
+       * Zoom to a scale, keeping the point under the pointer (or the centre) still
+       */
+      const zoomTo = (newScale, pointX = zoomEl.clientWidth / 2, pointY = zoomEl.clientHeight / 2) => {
+        newScale = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, newScale))
+        if (newScale < 1.01) newScale = MIN_ZOOM
+
+        const fromCentreX = pointX - zoomEl.clientWidth / 2
+        const fromCentreY = pointY - zoomEl.clientHeight / 2
+        const ratio = newScale / scale
+        offsetX = fromCentreX - ratio * (fromCentreX - offsetX)
+        offsetY = fromCentreY - ratio * (fromCentreY - offsetY)
+        scale = newScale
+
+        clampOffsets()
+        if (scale > 1) loadFullImage()
+        applyTransform()
+      }
+
+      const showImage = () => {
+        const image = allImages[currentIndex]
+        scale = 1
+        offsetX = 0
+        offsetY = 0
+        labelEl.textContent = image.label || ""
+        imageEl.alt = image.label || ""
+        imageEl.src = image.src
+        applyTransform()
+      }
+
+      const closeZoom = () => {
+        if (isClosed) return
+        isClosed = true
+        zoomEl.remove()
+        document.removeEventListener("keydown", handleKeydown)
+        window.removeEventListener("resize", handleResize)
+        closeActiveZoom = null
+      }
+
       const handleKeydown = (e) => {
-        if (e.key === 'Escape') {
+        if (e.key === "Escape") {
           closeZoom()
-        } else if (e.key === 'ArrowLeft') {
+        } else if (e.key === "ArrowLeft") {
           e.preventDefault()
           // Wrap to end if at start
           currentIndex = currentIndex === 0 ? allImages.length - 1 : currentIndex - 1
-          updateZoomContent()
-        } else if (e.key === 'ArrowRight') {
+          showImage()
+        } else if (e.key === "ArrowRight") {
           e.preventDefault()
           // Wrap to start if at end
           currentIndex = currentIndex === allImages.length - 1 ? 0 : currentIndex + 1
-          updateZoomContent()
+          showImage()
+        } else if (e.ctrlKey || e.metaKey || e.altKey) {
+          // Leave the browser's own zoom shortcuts alone
+        } else if (e.key === "+" || e.key === "=") {
+          e.preventDefault()
+          zoomTo(scale * KEYBOARD_ZOOM_STEP)
+        } else if (e.key === "-" || e.key === "_") {
+          e.preventDefault()
+          zoomTo(scale / KEYBOARD_ZOOM_STEP)
+        } else if (e.key === "0") {
+          e.preventDefault()
+          zoomTo(MIN_ZOOM)
         }
       }
-      document.addEventListener('keydown', handleKeydown)
-      
+
+      const handleResize = () => {
+        fitImage()
+        clampOffsets()
+        applyTransform()
+      }
+
+      // Mouse wheel and trackpad zoom. Trackpad pinches arrive as ctrl + wheel with small steps
+      zoomEl.addEventListener("wheel", (e) => {
+        e.preventDefault()
+        const deltaPixels = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaY
+        const sensitivity = e.ctrlKey ? 0.01 : 0.002
+        zoomTo(scale * Math.exp(-deltaPixels * sensitivity), e.clientX, e.clientY)
+      }, { passive: false })
+
+      zoomEl.addEventListener("pointerdown", (e) => {
+        if (scale === 1 || e.button !== 0 || e.target.closest(".viewer-zoom__close")) return
+        drag = { startX: e.clientX, startY: e.clientY, offsetX, offsetY }
+        zoomEl.setPointerCapture(e.pointerId)
+        zoomEl.classList.add("viewer-zoom--panning")
+      })
+
+      zoomEl.addEventListener("pointermove", (e) => {
+        if (!drag) return
+        offsetX = drag.offsetX + e.clientX - drag.startX
+        offsetY = drag.offsetY + e.clientY - drag.startY
+        clampOffsets()
+        applyTransform()
+      })
+
+      const endDrag = () => {
+        drag = null
+        zoomEl.classList.remove("viewer-zoom--panning")
+      }
+      zoomEl.addEventListener("pointerup", endDrag)
+      zoomEl.addEventListener("pointercancel", endDrag)
+
+      // Clicking closes only at fit, so a click while panning doesn't close it
+      zoomEl.addEventListener("click", (e) => {
+        if (e.target.closest(".viewer-zoom__close") || scale === 1) {
+          e.stopPropagation()
+          closeZoom()
+        }
+      })
+
+      document.addEventListener("keydown", handleKeydown)
+      window.addEventListener("resize", handleResize)
+      closeActiveZoom = closeZoom
+
       document.body.appendChild(zoomEl)
+      showImage()
     }
     
     /**

@@ -58,11 +58,26 @@ When the viewer opens (manually or auto), it requests current participant data:
 
 ### Viewer Features
 
-- **Zoom**: Click any image in the main grid to view fullscreen; click or press Escape to close
-- **Keyboard navigation**: Arrow keys cycle through zoomed images (ordered by breast: right then left). When not zoomed, left arrow opens first right breast image, right arrow opens first left breast image.
+- **Zoom**: Click any image in the main grid to view it fullscreen, fitted to the screen. Click (when fitted), press Escape or use the Close button to close
+- **Zoom in and pan**: In the fullscreen view, scroll the mouse wheel or pinch on a trackpad to zoom towards the pointer, or press + and - to zoom on the centre, up to 8 times the fitted size; 0 goes back to fit. When zoomed in, drag to pan. A small indicator shows the zoom level (“Fit” or a percentage of the fitted size). Each image opens fitted, so moving to another image or participant resets the zoom. If a set has a full-resolution file for an image (real images do), it's loaded the first time that image is zoomed in
+- **Keyboard navigation**: Arrow keys cycle through zoomed images (ordered by breast: right then left), zoomed in or not; they don't pan. When not zoomed, left arrow opens first right breast image, right arrow opens first left breast image.
 - **Opinion shortcuts**: Press N (normal), D (normal, but add details), T (technical recall), or R (recall for assessment) to trigger the corresponding opinion on the reading page - works even when PACS viewer is focused. When the participant has symptoms, plain Normal is not offered: “Normal, and add details” replaces it, and both N and D trigger it
-- **Additional images**: When a case has repeat/retake images, "View additional images" button appears; modal shows all attempts with labels
+- **Additional images**: When a case has repeat/retake images, "View additional images" button appears; modal shows all attempts with labels. Clicking an earlier attempt shows it fullscreen on its own
 - **Debug mode**: Press 'i' to toggle debug bar showing set ID, tag, description, and context flags
+
+#### Keyboard shortcuts
+
+| Key        | Where               | Does                                                         |
+| ---------- | ------------------- | ------------------------------------------------------------ |
+| ← →        | Grid                | Open the first right (←) or left (→) breast image fullscreen |
+| ← →        | Fullscreen          | Previous or next image                                       |
+| + -        | Fullscreen          | Zoom in or out                                               |
+| 0          | Fullscreen          | Back to fit                                                  |
+| Escape     | Fullscreen or modal | Close                                                        |
+| N, D, T, R | Anywhere            | Opinion shortcuts, sent to the reading page                  |
+| i          | Anywhere            | Toggle the debug bar                                         |
+
+Full-resolution images reach the viewer as `fullPaths`, a map from display path to full path, in the `mammogram-full-paths` meta tag. Only real image sets have them (`fullPaths` in `app/lib/real-images.js`).
 
 ---
 
@@ -311,7 +326,7 @@ The `scripts/process-mammogram-images.sh` script processes individual mammogram 
 ## Future Enhancements
 
 - [ ] Test/verify probability distribution (debug route to sample many appointments)
-- [ ] Real mammogram images: priors in the viewer, pan and zoom on full-resolution images (see [mammogram-images.md](mammogram-images.md#real-images))
+- [ ] Real mammogram images: priors in the viewer (see [mammogram-images.md](mammogram-images.md#real-images))
 - [ ] Annotation inheritance for composite sets (abnormality markers)
 - [ ] Breast features alignment (moles, scars visible in mammograms)
 
@@ -335,7 +350,7 @@ The following planned features have been implemented:
 
 ### Real Mammogram Images
 
-The viewer shows a real image pack in image reading when one is configured. See [mammogram-images.md](mammogram-images.md#showing-a-pack-in-the-prototype). Packs can't go in `app/assets`, which is served without the password check. Still to come: priors, and loading full-resolution images on zoom.
+The viewer shows a real image pack in image reading when one is configured, loading full-resolution images when zoomed in. See [mammogram-images.md](mammogram-images.md#showing-a-pack-in-the-prototype). Packs can't go in `app/assets`, which is served without the password check. Still to come: priors.
 
 ### Richer Manifest Metadata
 
@@ -496,4 +511,3 @@ Options:
 ## To do
 
 Don't show implant images where implants have been removed
-bird's eye viewer doens't update when moving between participant - reset to normal view

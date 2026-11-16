@@ -48,12 +48,14 @@ const getImageUrl = (packFile) => URL_PREFIX + packFile.replace(/^images\//, '')
  * unless they are all there is for a view.
  *
  * @param {object} study - Study from the manifest
- * @returns {{ paths: object, imageViewKeys: Map<string, string> }} Paths per
- *   view, and the view key (eg "rmlo" or "rmlo-2") for each image ID, used to
- *   place annotations
+ * @returns {{ paths: object, fullPaths: object, imageViewKeys: Map<string, string> }}
+ *   Paths per view; the full-resolution URL for each display URL, where the
+ *   pack has one; and the view key (eg "rmlo" or "rmlo-2") for each image ID,
+ *   used to place annotations
  */
 const getStudyViews = (study) => {
   const paths = {}
+  const fullPaths = {}
   const imageViewKeys = new Map()
 
   for (const view of STANDARD_VIEWS) {
@@ -66,6 +68,14 @@ const getStudyViews = (study) => {
     const images = (plainImages.length ? plainImages : viewImages).sort(
       (a, b) => a.instance - b.instance
     )
+
+    for (const image of images) {
+      if (image.files.full) {
+        fullPaths[getImageUrl(image.files.display)] = getImageUrl(
+          image.files.full
+        )
+      }
+    }
 
     if (images.length === 0) {
       paths[view] = null
@@ -80,7 +90,7 @@ const getStudyViews = (study) => {
     }
   }
 
-  return { paths, imageViewKeys }
+  return { paths, fullPaths, imageViewKeys }
 }
 
 /**
@@ -130,7 +140,7 @@ const buildSets = (manifest, annotations, curation) => {
       const study = studiesById.get(readingCase.currentStudyId)
       if (!study) return null
 
-      const { paths, imageViewKeys } = getStudyViews(study)
+      const { paths, fullPaths, imageViewKeys } = getStudyViews(study)
       if (!STANDARD_VIEWS.some((view) => paths[view])) return null
 
       return {
@@ -148,6 +158,7 @@ const buildSets = (manifest, annotations, curation) => {
         result: readingCase.result,
         ageAtCurrent: readingCase.ageAtCurrent,
         paths,
+        fullPaths,
         annotations: getStudyAnnotations(
           annotations.studies?.[readingCase.currentStudyId],
           imageViewKeys

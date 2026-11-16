@@ -24,6 +24,10 @@
   {# Pass all image paths for additional images view #}
   <meta name="mammogram-all-paths" content="{{ mammogramImages.allPaths | dump | escape }}">
   <meta name="mammogram-has-additional" content="{{ 'true' if mammogramImages.hasAdditionalImages else 'false' }}">
+  {# Full-resolution image for each display image, which the viewer loads on zoom. Real images only #}
+  {% if mammogramImages.set.fullPaths %}
+    <meta name="mammogram-full-paths" content="{{ mammogramImages.set.fullPaths | dump | escape }}">
+  {% endif %}
   {# Views that weren't expected and weren't taken, which the viewer leaves blank rather than showing "No image" #}
   <meta name="mammogram-not-expected" content="{{ viewerAppointment | getNotExpectedViews | map("lower") | dump | escape }}">
   {# Pass set info for debugging #}
