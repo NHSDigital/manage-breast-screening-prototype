@@ -465,8 +465,8 @@ test.describe('Image reading', () => {
     await recordRecallOpinions(page)
 
     // Continuing without an annotation fails validation, which must keep the
-    // chain back to the existing read
-    await page.getByRole('button', { name: 'Continue' }).first().click()
+    // chain back to the existing read. An edit's button says Update
+    await page.getByRole('button', { name: 'Update' }).first().click()
     await expect(page).toHaveURL(
       /\/recall-for-assessment-details\?referrerChain=/
     )
@@ -484,7 +484,7 @@ test.describe('Image reading', () => {
     await expect(page.getByText('Level 4 (suspicious)')).toHaveCount(0)
 
     await addTextAnnotation(page, 'Ill-defined mass')
-    await page.getByRole('button', { name: 'Continue' }).first().click()
+    await page.getByRole('button', { name: 'Update' }).first().click()
 
     // An edit skips the confirmation step and saves straight back to the read
     await expect(page).toHaveURL(/\/existing-read/)
@@ -910,7 +910,10 @@ test.describe('Image reading', () => {
     // Resuming lands on the session overview, where the reader can carry on
     // or end the session
     await expect(page).toHaveURL(new RegExp(`/reading/session/${sessionId}$`))
-    await page.getByRole('button', { name: 'Resume session' }).first().click()
+    await page
+      .getByRole('button', { name: 'Resume arbitration' })
+      .first()
+      .click()
     await expect(page).toHaveURL(
       new RegExp(`/reading/session/${sessionId}/appointments/`)
     )
