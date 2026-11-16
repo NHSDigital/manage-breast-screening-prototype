@@ -224,11 +224,11 @@ When sets have arrays for views (repeat scenarios), the viewer:
 
 ### Hard Config (`config.reading`)
 
-| Setting                   | Default                                                                | Description                                                                                                               |
-| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `mammogramImageSource`    | `'diagrams'`                                                           | Image source: `'diagrams'` or `'real'` (`MAMMOGRAM_IMAGE_SOURCE`). Use `getMammogramImageSource()` rather than reading it |
-| `mammogramTagWeights`     | `{ normal: 0.7, abnormal: 0.15, indeterminate: 0.1, technical: 0.05 }` | Distribution weights for image set tags                                                                                   |
-| `maxPriorStudiesInViewer` | `3`                                                                    | How many priors the viewer offers, the most recent                                                                        |
+| Setting                   | Default                                                                | Description                                                                                                                                                                                |
+| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `mammogramImageSource`    | `'diagrams'`                                                           | Default image source: `'diagrams'` or `'real'` (`MAMMOGRAM_IMAGE_SOURCE`). The "Mammogram images" setting overrides it per session. Use `getMammogramImageSource()` rather than reading it |
+| `mammogramTagWeights`     | `{ normal: 0.7, abnormal: 0.15, indeterminate: 0.1, technical: 0.05 }` | Distribution weights for image set tags                                                                                                                                                    |
+| `maxPriorStudiesInViewer` | `3`                                                                    | How many priors the viewer offers, the most recent                                                                                                                                         |
 
 ---
 

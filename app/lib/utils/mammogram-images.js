@@ -389,8 +389,10 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
 
 /**
  * Which image source to show: 'diagrams' or 'real'. Real images are for image
- * reading only, and are used only when `config.reading.mammogramImageSource`
- * is 'real' and a pack with usable cases is present. Otherwise, diagrams.
+ * reading only, and are used only when the "Mammogram images" setting
+ * (`data.settings.reading.mammogramImageSource`) is 'real' and a pack with
+ * usable cases is present. Otherwise, diagrams. Outside a template, or when
+ * the session has no setting, `config.reading.mammogramImageSource` decides.
  *
  * Screening pages, and the set stored on appointments
  * (`mammogramData.selectedSetId`, chosen when images are taken or seed data is
@@ -403,9 +405,14 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
  * getMammogramImageSource() // 'real' when configured and a pack is present
  * getMammogramImageSource('screening') // always 'diagrams'
  */
-const getMammogramImageSource = (area = 'reading') => {
+function getMammogramImageSource(area = 'reading') {
   if (area !== 'reading') return 'diagrams'
-  if (config.reading?.mammogramImageSource !== 'real') return 'diagrams'
+  const setting =
+    (this &&
+      this.ctx &&
+      this.ctx.data?.settings?.reading?.mammogramImageSource) ||
+    config.reading?.mammogramImageSource
+  if (setting !== 'real') return 'diagrams'
   return hasImageSets('real') ? 'real' : 'diagrams'
 }
 

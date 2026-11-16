@@ -57,7 +57,9 @@ The admin page `/admin/mammogram-sets` (`app/views/admin/mammogram-sets.html`) e
 
 ### Image source setting
 
-`config.reading.mammogramImageSource` is `'diagrams'` (the default) or `'real'`, set with the `MAMMOGRAM_IMAGE_SOURCE` environment variable. Nothing reads it directly: code and templates call `getMammogramImageSource()` in `mammogram-images.js`, which returns `'real'` only when the setting is `'real'` **and** a pack with usable cases is present, and otherwise `'diagrams'`, silently.
+Choose diagrams or real images on the settings page, under Image reading: "Mammogram images". It's stored per session as `data.settings.reading.mammogramImageSource`, `'diagrams'` or `'real'`. When no pack is present, the settings page says so instead of offering the choice. The default comes from `config.reading.mammogramImageSource`, which is `'diagrams'` unless the `MAMMOGRAM_IMAGE_SOURCE` environment variable says otherwise.
+
+Nothing reads the setting directly: templates call `getMammogramImageSource()` in `mammogram-images.js`, which returns `'real'` only when the session's setting (or, outside a template, the config default) is `'real'` **and** a pack with usable cases is present, and otherwise `'diagrams'`, silently.
 
 Real images are for image reading only. `getMammogramImageSource('screening')` is always `'diagrams'`: screening pages, the generators and the imaging routes use it, so the set stored on an appointment (`mammogramData.selectedSetId`) is always a diagram set. Reading pages call `getMammogramImageSource()` and choose a real case at render time.
 
@@ -137,11 +139,13 @@ A pack is real image data: never commit it, and never put it under `app/assets` 
 
 ### Showing a pack in the prototype
 
+Put the pack at `real-images/` in the repo root (gitignored), or point `REAL_IMAGES_PATH` at it, start the prototype, and choose "Real images" on the settings page. To start with real images on, without the setting:
+
 ```sh
 MAMMOGRAM_IMAGE_SOURCE=real REAL_IMAGES_PATH=/path/to/pack npm run dev
 ```
 
-`REAL_IMAGES_PATH` defaults to `real-images/` at the repo root, which is gitignored. Without a pack, the prototype shows diagrams.
+Without a pack, the prototype shows diagrams.
 
 - **Serving**: `GET /real-images/*` in `app/routes.js` serves files from the pack's `images/` folder. It's in the app's routes so it runs after the kit's password check (which the kit only turns on when `NODE_ENV=production`). Paths outside `images/` and anything that isn't an image return 404. `getImageSource()` in `app/lib/real-images.js` decides where a file comes from; for remote storage it would return a redirect instead, without changing pages.
 - **Loading**: `app/lib/real-images.js` reads `manifest.json`, `annotations.json` and `curation.json`, and turns each case into an image set like the diagram ones: tag, side statuses, `hasRepeat`, `hasImplants`, `paths` per view using the display JPEGs (an array ordered by instance when a view was taken more than once), `fullPaths` (the full-resolution JPEG for each display one, which the PACS viewer loads when zoomed in), `priors` (the case's earlier studies, newest first, each with its `paths`, `fullPaths` and `daysBefore` the case's study; excluded studies are left out), and annotations with image IDs mapped to view keys (`rmlo`, `rmlo-1`…). Cases tagged `unknown`, excluded studies and studies with no standard views are left out. It re-reads the files when they change.

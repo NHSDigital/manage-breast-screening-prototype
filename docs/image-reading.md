@@ -597,6 +597,7 @@ for both reading and arbitration, and the global dark-mode preference.
 - `lazySessions` - Build sessions lazily one case at a time: `'true'` (default) | `'false'`
 - `defaultSessionSize` - Default session size for reading and arbitration
   sessions (default: 25; dashboard options: 10, 25, 50 or 100)
+- `mammogramImageSource` - Mammogram images: `'diagrams'` | `'real'` (real only takes effect when a pack is present; see [mammogram-images.md](mammogram-images.md)). Defaults to `config.reading.mammogramImageSource`
 
 **Arbitration settings** (in `settings.reading.arbitration`):
 
@@ -611,7 +612,7 @@ for both reading and arbitration, and the global dark-mode preference.
 
 - `priorityThreshold` - Days until "due soon"
 - `urgentThreshold` - Days until "urgent"
-- `mammogramImageSource` - Image source: `'diagrams'` or `'real'`
+- `mammogramImageSource` - Default for the `mammogramImageSource` setting: `'diagrams'` or `'real'` (`MAMMOGRAM_IMAGE_SOURCE`)
 - `mammogramViewOrder` - View display order: `'cc-first'` or `'mlo-first'`
 - `mammogramTagWeights` - Distribution weights for image set tags (normal/abnormal/indeterminate/technical)
 

@@ -58,8 +58,9 @@ module.exports = {
     blindReading: 'true', // Enable blind reading
     urgentThreshold: 10, // 10 days and over
     priorityThreshold: 7, // 7 days and over
-    // 'diagrams' or 'real'. Real images are used for reading only, and only
-    // when a pack is present. See docs/mammogram-images.md.
+    // Default for the "Mammogram images" setting: 'diagrams' or 'real'. Real
+    // images are used for reading only, and only when a pack is present. See
+    // docs/mammogram-images.md.
     mammogramImageSource: (process.env.MAMMOGRAM_IMAGE_SOURCE || 'diagrams')
       .trim()
       .toLowerCase(),

@@ -105,6 +105,7 @@ const defaultSettings = {
   },
   reading: {
     blindReading: config.reading.blindReading,
+    mammogramImageSource: config.reading.mammogramImageSource, // 'diagrams' | 'real'
     confirmNormal: 'false',
     confirmNormalWithDetails: 'false',
     confirmTechnicalRecall: 'false',
