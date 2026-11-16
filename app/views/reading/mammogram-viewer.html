@@ -82,6 +82,36 @@
       background-color: #a00;
     }
 
+    .viewer-studies {
+      display: flex;
+      gap: 4px;
+      margin-right: 16px;
+    }
+
+    .viewer-studies[hidden] {
+      display: none;
+    }
+
+    .viewer-button[aria-pressed="true"] {
+      background-color: #ffeb3b;
+      border-color: #ffeb3b;
+      color: #000;
+      font-weight: 600;
+    }
+
+    .viewer-prior-banner {
+      background-color: #ffeb3b;
+      color: #000;
+      padding: 6px 16px;
+      font-size: 14px;
+      font-weight: 600;
+      flex-shrink: 0;
+    }
+
+    .viewer-prior-banner[hidden] {
+      display: none;
+    }
+
     .viewer-grid {
       flex: 1;
       display: grid;
@@ -234,6 +264,11 @@
       font-weight: 600;
       border-radius: 4px;
       z-index: 1;
+    }
+
+    .viewer-zoom__label--prior {
+      background-color: #ffeb3b;
+      color: #000;
     }
 
     .viewer-zoom__close {
@@ -476,11 +511,14 @@
       </div>
     </div>
     <div class="viewer-header__actions">
+      <div class="viewer-studies" id="viewer-studies" role="group" aria-label="Study" hidden></div>
       <button class="viewer-button viewer-button--close" onclick="window.close()">
         Close viewer
       </button>
     </div>
   </header>
+
+  <div class="viewer-prior-banner" id="viewer-prior-banner" hidden></div>
 
   <div class="viewer-grid" id="viewer-grid" style="display: none;">
     <div class="viewer-panel viewer-panel--right" id="panel-rcc">
@@ -596,6 +634,12 @@
     // Full-resolution image for each display image path, when the set has them
     let currentFullPaths = null
 
+    // The current study then any priors, newest first, and which is showing
+    let currentStudies = []
+    let selectedStudyIndex = 0
+    const studiesEl = document.getElementById("viewer-studies")
+    const priorBannerEl = document.getElementById("viewer-prior-banner")
+
     // Zoom limits and steps, relative to the image fitted to the screen
     const MIN_ZOOM = 1
     const MAX_ZOOM = 8
@@ -603,6 +647,9 @@
 
     // Closes the open zoom view and removes its listeners
     let closeActiveZoom = null
+
+    // Shows the same view from the newly selected study in the open zoom view
+    let switchActiveZoomStudy = null
 
     /**
      * Close the zoom overlay if open
@@ -789,9 +836,12 @@
       placeholderEl.style.display = "flex"
       loadingEl.style.display = "none"
       additionalLinkEl.style.display = "none"
+      priorBannerEl.hidden = true
       currentAppointmentId = null
       currentAllPaths = null
       currentFullPaths = null
+      currentStudies = []
+      selectedStudyIndex = 0
       updateStatus("Waiting for participant...")
     }
 
@@ -808,6 +858,7 @@
       placeholderEl.style.display = "none"
       loadingEl.style.display = "flex"
       additionalLinkEl.style.display = "none"
+      priorBannerEl.hidden = true
       updateStatus("Loading...")
     }
 
@@ -917,22 +968,29 @@
       nameEl.textContent = data.participantName || "Unknown"
       renderDetails(data)
 
-      // Update images - show placeholder for missing views
-      if (data.images) {
-        const notExpectedViews = data.notExpected || []
-        for (const view of ["rcc", "lcc", "rmlo", "lmlo"]) {
-          updateViewPanel(view, data.images[view], notExpectedViews.includes(view))
-        }
-      }
-
-      // Store all paths and show/hide additional images link
-      currentAllPaths = data.allPaths
-      currentFullPaths = data.fullPaths || null
-      if (data.hasAdditionalImages) {
-        additionalLinkEl.style.display = "block"
-      } else {
-        additionalLinkEl.style.display = "none"
-      }
+      // The current study first, then priors, newest first
+      currentStudies = [
+        {
+          label: "Current",
+          images: data.images || null,
+          allPaths: data.allPaths,
+          fullPaths: data.fullPaths || null,
+          hasAdditionalImages: data.hasAdditionalImages,
+          notExpected: data.notExpected || []
+        },
+        ...(data.priors || []).map((prior) => ({
+          label: prior.label,
+          dateText: prior.dateText,
+          images: prior.paths || {},
+          allPaths: prior.allPaths,
+          fullPaths: prior.fullPaths || null,
+          hasAdditionalImages: prior.hasAdditionalImages,
+          // A prior is shown as it was taken, so any missing view says so
+          notExpected: []
+        }))
+      ]
+      renderStudySwitcher()
+      showStudy(0)
 
       // Update debug info if visible
       updateDebugInfo(data)
@@ -945,6 +1003,68 @@
 
       currentAppointmentId = data.appointmentId
       updateStatus(`Viewing: ${data.participantName}`)
+    }
+
+    /**
+     * Buttons to choose between the current study and its priors, shown only
+     * when there are priors
+     */
+    const renderStudySwitcher = () => {
+      studiesEl.replaceChildren()
+      studiesEl.hidden = currentStudies.length < 2
+      currentStudies.forEach((study, index) => {
+        const buttonEl = document.createElement("button")
+        buttonEl.type = "button"
+        buttonEl.className = "viewer-button"
+        buttonEl.textContent = study.label
+        if (study.dateText) buttonEl.title = study.dateText
+        buttonEl.addEventListener("click", () => showStudy(index))
+        studiesEl.appendChild(buttonEl)
+      })
+    }
+
+    /**
+     * Show one of the participant's studies: 0 is the current one, then
+     * priors, newest first. An open zoom view moves to the same view.
+     * @param {number} index - Index in currentStudies
+     */
+    const showStudy = (index) => {
+      const study = currentStudies[index]
+      if (!study) return
+
+      selectedStudyIndex = index
+      closeAdditionalModal()
+
+      for (const view of ["rcc", "lcc", "rmlo", "lmlo"]) {
+        if (study.images) {
+          updateViewPanel(view, study.images[view], study.notExpected.includes(view))
+        }
+      }
+
+      currentAllPaths = study.allPaths
+      currentFullPaths = study.fullPaths
+      additionalLinkEl.style.display = study.hasAdditionalImages ? "block" : "none"
+
+      Array.from(studiesEl.children).forEach((buttonEl, buttonIndex) => {
+        buttonEl.setAttribute("aria-pressed", buttonIndex === index ? "true" : "false")
+      })
+
+      priorBannerEl.hidden = index === 0
+      if (index > 0) {
+        const date = study.dateText ? ` (${study.dateText})` : ""
+        priorBannerEl.textContent = `Prior: ${study.label}${date}. Press ] for newer, [ for older`
+      }
+
+      if (switchActiveZoomStudy) switchActiveZoomStudy()
+    }
+
+    /**
+     * Page between the current study and its priors
+     * @param {number} step - 1 for an older study, -1 for a newer one
+     */
+    const stepStudy = (step) => {
+      const index = selectedStudyIndex + step
+      if (index >= 0 && index < currentStudies.length) showStudy(index)
     }
 
     /**
@@ -1003,13 +1123,19 @@
       const leftViews = ccFirst ? ["lcc", "lmlo"] : ["lmlo", "lcc"]
       const viewOrder = [...rightViews, ...leftViews]
       
+      const study = currentStudies[selectedStudyIndex]
+      const studyLabel = currentStudies.length > 1 ? ` · ${study.label}` : ""
+
       for (const view of viewOrder) {
-        const imgEl = imageEls[view]
-        if (imgEl && imgEl.src && imgEl.style.display !== "none") {
+        const path = study?.images?.[view]
+        if (path) {
+          const src = new URL(path, window.location.href).href
           images.push({
-            src: imgEl.src,
-            fullSrc: getFullSrc(imgEl.src),
-            label: viewLabels[view],
+            src,
+            fullSrc: getFullSrc(src),
+            label: viewLabels[view] + studyLabel,
+            isPrior: selectedStudyIndex > 0,
+            view,
             side: view.startsWith("r") ? "right" : "left"
           })
         }
@@ -1078,9 +1204,10 @@
         levelEl.textContent = isZoomed ? `${Math.round(scale * 100)}%` : "Fit"
 
         const navHint = allImages.length > 1 ? " · ← → to navigate" : ""
+        const studyHint = currentStudies.length > 1 ? " · [ ] for priors" : ""
         hintEl.textContent = isZoomed
-          ? `Drag to pan · + − or scroll to zoom · 0 to fit${navHint} · Escape to close`
-          : `Scroll or + − to zoom${navHint} · Click or press Escape to close`
+          ? `Drag to pan · + − or scroll to zoom · 0 to fit${navHint}${studyHint} · Escape to close`
+          : `Scroll or + − to zoom${navHint}${studyHint} · Click or press Escape to close`
       }
 
       // Keep the image covering the screen when it's bigger than the screen,
@@ -1106,7 +1233,12 @@
         imageEl.style.width = `${width}px`
         imageEl.style.height = `${height}px`
       }
-      imageEl.addEventListener("load", fitImage)
+      // A prior may not be the same shape, so refit and keep it in bounds
+      imageEl.addEventListener("load", () => {
+        fitImage()
+        clampOffsets()
+        applyTransform()
+      })
 
       // Swap in the full-resolution image, if there is one, the first time it's zoomed
       const loadFullImage = () => {
@@ -1148,14 +1280,38 @@
         applyTransform()
       }
 
+      const setLabel = (image) => {
+        labelEl.textContent = image.label || ""
+        labelEl.classList.toggle("viewer-zoom__label--prior", Boolean(image.isPrior))
+        imageEl.alt = image.label || ""
+      }
+
       const showImage = () => {
         const image = allImages[currentIndex]
         scale = 1
         offsetX = 0
         offsetY = 0
-        labelEl.textContent = image.label || ""
-        imageEl.alt = image.label || ""
+        setLabel(image)
         imageEl.src = image.src
+        applyTransform()
+      }
+
+      // Show the same view from the newly selected study, at the same zoom and
+      // position, so the two can be compared. Closes if that study lacks the view
+      const switchStudy = () => {
+        const view = allImages[currentIndex]?.view
+        const images = getAllViewableImages()
+        const index = images.findIndex((image) => view && image.view === view)
+        if (index === -1) {
+          closeZoom()
+          return
+        }
+        allImages = images
+        currentIndex = index
+        const image = allImages[currentIndex]
+        setLabel(image)
+        imageEl.src = image.src
+        if (scale > 1) loadFullImage()
         applyTransform()
       }
 
@@ -1166,6 +1322,7 @@
         document.removeEventListener("keydown", handleKeydown)
         window.removeEventListener("resize", handleResize)
         closeActiveZoom = null
+        switchActiveZoomStudy = null
       }
 
       const handleKeydown = (e) => {
@@ -1242,6 +1399,7 @@
       document.addEventListener("keydown", handleKeydown)
       window.addEventListener("resize", handleResize)
       closeActiveZoom = closeZoom
+      switchActiveZoomStudy = switchStudy
 
       document.body.appendChild(zoomEl)
       showImage()
@@ -1275,6 +1433,23 @@
           // Start with first left breast image
           const leftIndex = getFirstIndexForSide(allImages, "left")
           showZoom(null, null, leftIndex !== -1 ? leftIndex : 0)
+        }
+      })
+    }
+
+    /**
+     * [ and ] page to an older or newer study, in the grid or zoomed in
+     */
+    const setupStudyKeys = () => {
+      document.addEventListener("keydown", (e) => {
+        if (e.ctrlKey || e.altKey || e.metaKey) return
+        if (currentStudies.length < 2) return
+        if (e.key === "[") {
+          e.preventDefault()
+          stepStudy(1)
+        } else if (e.key === "]") {
+          e.preventDefault()
+          stepStudy(-1)
         }
       })
     }
@@ -1317,6 +1492,8 @@
       
       // Setup global arrow key handlers for opening zoom
       setupGlobalArrowKeys()
+
+      setupStudyKeys()
       
       // Setup keyboard shortcut forwarding to reading page
       setupShortcutForwarding()

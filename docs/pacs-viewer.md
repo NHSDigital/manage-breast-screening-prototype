@@ -63,6 +63,7 @@ When the viewer opens (manually or auto), it requests current participant data:
 - **Keyboard navigation**: Arrow keys cycle through zoomed images (ordered by breast: right then left), zoomed in or not; they don't pan. When not zoomed, left arrow opens first right breast image, right arrow opens first left breast image.
 - **Opinion shortcuts**: Press N (normal), D (normal, but add details), T (technical recall), or R (recall for assessment) to trigger the corresponding opinion on the reading page - works even when PACS viewer is focused. When the participant has symptoms, plain Normal is not offered: “Normal, and add details” replaces it, and both N and D trigger it
 - **Additional images**: When a case has repeat/retake images, "View additional images" button appears; modal shows all attempts with labels. Clicking an earlier attempt shows it fullscreen on its own
+- **Priors**: When the participant has earlier studies, buttons in the header switch between “Current” and each prior (“3 years ago”, with the date on hover), newest first, up to `config.reading.maxPriorStudiesInViewer` (3). [ and ] page to an older or newer study. A yellow bar under the header, and a yellow label when fullscreen, show a prior is on screen. Switching study while fullscreen shows the same view at the same zoom and position, to compare the two; if that study has no such view, fullscreen closes. A new participant always opens on their current study
 - **Debug mode**: Press 'i' to toggle debug bar showing set ID, tag, description, and context flags
 
 #### Keyboard shortcuts
@@ -73,11 +74,19 @@ When the viewer opens (manually or auto), it requests current participant data:
 | ← →        | Fullscreen          | Previous or next image                                       |
 | + -        | Fullscreen          | Zoom in or out                                               |
 | 0          | Fullscreen          | Back to fit                                                  |
+| [ ]        | Anywhere            | Older ([) or newer (]) study, when there are priors          |
 | Escape     | Fullscreen or modal | Close                                                        |
 | N, D, T, R | Anywhere            | Opinion shortcuts, sent to the reading page                  |
 | i          | Anywhere            | Toggle the debug bar                                         |
 
 Full-resolution images reach the viewer as `fullPaths`, a map from display path to full path, in the `mammogram-full-paths` meta tag. Only real image sets have them (`fullPaths` in `app/lib/real-images.js`).
+
+Priors reach the viewer as `priors` in the `mammogram-priors` meta tag, from `getPriorImagesForAppointment()` in `app/lib/utils/mammogram-images.js`. Each has a `label`, `dateText`, `paths`, `allPaths`, `hasAdditionalImages` and `fullPaths`.
+
+- **Real images**: the case's own earlier studies from the pack, dated back from the appointment by the gap between the studies. They don't follow the participant's generated screening history.
+- **Diagrams**: one for each mammogram in the participant's earlier episodes (historic or not), on its date, showing a normal set other than the current one, with matching implants. Seeded by participant and date, so the same each time.
+
+Priors show even when the case is waiting for priors to be requested (`appointment.previousMammograms`); the two aren't linked yet.
 
 ---
 
@@ -215,10 +224,11 @@ When sets have arrays for views (repeat scenarios), the viewer:
 
 ### Hard Config (`config.reading`)
 
-| Setting                | Default                                                                | Description                                                                                                               |
-| ---------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `mammogramImageSource` | `'diagrams'`                                                           | Image source: `'diagrams'` or `'real'` (`MAMMOGRAM_IMAGE_SOURCE`). Use `getMammogramImageSource()` rather than reading it |
-| `mammogramTagWeights`  | `{ normal: 0.7, abnormal: 0.15, indeterminate: 0.1, technical: 0.05 }` | Distribution weights for image set tags                                                                                   |
+| Setting                   | Default                                                                | Description                                                                                                               |
+| ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `mammogramImageSource`    | `'diagrams'`                                                           | Image source: `'diagrams'` or `'real'` (`MAMMOGRAM_IMAGE_SOURCE`). Use `getMammogramImageSource()` rather than reading it |
+| `mammogramTagWeights`     | `{ normal: 0.7, abnormal: 0.15, indeterminate: 0.1, technical: 0.05 }` | Distribution weights for image set tags                                                                                   |
+| `maxPriorStudiesInViewer` | `3`                                                                    | How many priors the viewer offers, newest first                                                                           |
 
 ---
 
@@ -243,11 +253,11 @@ When sets have arrays for views (repeat scenarios), the viewer:
 
 ### Data Files
 
-| File                                                 | Purpose                                          |
-| ---------------------------------------------------- | ------------------------------------------------ |
-| `app/assets/images/mammogram-diagrams/manifest.json` | Image set metadata (90 sets)                     |
-| `app/data/session-data-defaults.js`                  | `autoOpenPacsViewer` setting default             |
-| `app/config.js`                                      | `mammogramImageSource` and `mammogramTagWeights` |
+| File                                                 | Purpose                                                                     |
+| ---------------------------------------------------- | --------------------------------------------------------------------------- |
+| `app/assets/images/mammogram-diagrams/manifest.json` | Image set metadata (90 sets)                                                |
+| `app/data/session-data-defaults.js`                  | `autoOpenPacsViewer` setting default                                        |
+| `app/config.js`                                      | `mammogramImageSource`, `mammogramTagWeights` and `maxPriorStudiesInViewer` |
 
 ### Scripts
 
@@ -326,7 +336,7 @@ The `scripts/process-mammogram-images.sh` script processes individual mammogram 
 ## Future Enhancements
 
 - [ ] Test/verify probability distribution (debug route to sample many appointments)
-- [ ] Real mammogram images: priors in the viewer (see [mammogram-images.md](mammogram-images.md#real-images))
+- [ ] Priors side by side with the current study, and hiding priors while a case is waiting for them
 - [ ] Annotation inheritance for composite sets (abnormality markers)
 - [ ] Breast features alignment (moles, scars visible in mammograms)
 
@@ -350,7 +360,7 @@ The following planned features have been implemented:
 
 ### Real Mammogram Images
 
-The viewer shows a real image pack in image reading when one is configured, loading full-resolution images when zoomed in. See [mammogram-images.md](mammogram-images.md#showing-a-pack-in-the-prototype). Packs can't go in `app/assets`, which is served without the password check. Still to come: priors.
+The viewer shows a real image pack in image reading when one is configured, loading full-resolution images when zoomed in, with each case's earlier studies as priors. See [mammogram-images.md](mammogram-images.md#showing-a-pack-in-the-prototype). Packs can't go in `app/assets`, which is served without the password check.
 
 ### Richer Manifest Metadata
 

@@ -5,6 +5,7 @@ const fs = require('fs')
 const config = require('../../config')
 const { isMedicalHistoryItemRemoved } = require('./medical-information')
 const { getImagedSides } = require('./expected-views')
+const { formatDate, formatRelativeDate } = require('./dates')
 const realImages = require('../real-images')
 
 // Image sources. Diagrams are in app/assets; real images come from a pack
@@ -946,6 +947,127 @@ const getImagesForAppointment = function (
 }
 
 /**
+ * Split a set's paths into what a viewer shows: the latest image for each
+ * view, every image for each view, and whether any view has more than one
+ *
+ * @param {object} rawPaths - Paths per view, from getImagePaths
+ * @returns {{ paths: object, allPaths: object, hasAdditionalImages: boolean }}
+ */
+const splitLatestPaths = (rawPaths) => {
+  const paths = {}
+  for (const view of VIEWS) {
+    paths[view] = getLatestPath(rawPaths[view])
+  }
+  return {
+    paths,
+    allPaths: rawPaths,
+    hasAdditionalImages: VIEWS.some((view) => Array.isArray(rawPaths[view]))
+  }
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+
+/**
+ * Earlier studies (priors) to show alongside an appointment's images in the
+ * PACS viewer, newest first, up to `config.reading.maxPriorStudiesInViewer`.
+ *
+ * - Real images: the pack case's own earlier studies, dated back from the
+ *   appointment by the gap between the studies. They don't follow the
+ *   participant's generated screening history.
+ * - Diagrams: a normal set other than the current one, standing in for each
+ *   mammogram in the participant's earlier episodes, on that mammogram's date.
+ *   Needs session data, which it reads from the template context.
+ *
+ * Priors show whether or not the appointment is waiting for them to be
+ * requested (`appointment.previousMammograms`).
+ *
+ * @param {object} appointment - The appointment
+ * @param {string} [source] - "diagrams" or "real"
+ * @param {object} [options]
+ * @param {object} [options.data] - Session data, when not called from a template
+ * @param {number} [options.limit] - How many priors at most
+ * @returns {Array<{ date: string|null, dateText: string, label: string, paths: object, allPaths: object, fullPaths: object|null, hasAdditionalImages: boolean }>}
+ * @example
+ * {% set priors = getPriorImagesForAppointment(appointment, getMammogramImageSource()) %}
+ */
+const getPriorImagesForAppointment = function (
+  appointment,
+  source = 'diagrams',
+  options = {}
+) {
+  if (!appointment) return []
+
+  const limit = options.limit ?? config.reading?.maxPriorStudiesInViewer ?? 3
+  const appointmentTime = appointment.timing?.startTime
+    ? new Date(appointment.timing.startTime).getTime()
+    : null
+  const currentSet = getImageSetForAppointment(appointment.id, source, {
+    appointment
+  })
+
+  const describe = (date, rawPaths, fullPaths = null) => ({
+    date,
+    dateText: date ? formatDate(date) : '',
+    label: date ? formatRelativeDate(date) : 'Prior',
+    ...splitLatestPaths(rawPaths),
+    fullPaths
+  })
+
+  if (source === 'real') {
+    return (currentSet?.priors || [])
+      .slice(0, limit)
+      .map((prior) =>
+        describe(
+          appointmentTime
+            ? new Date(
+                appointmentTime - prior.daysBefore * MS_PER_DAY
+              ).toISOString()
+            : null,
+          prior.paths,
+          prior.fullPaths
+        )
+      )
+  }
+
+  const data = options.data || this?.ctx?.data
+  if (!data || !appointmentTime) return []
+
+  // Required here rather than at the top: episodes.js loads the data store,
+  // which reads the generated data, and the generators use this file
+  const { getEpisodesForParticipant } = require('./episodes')
+
+  const priorDates = getEpisodesForParticipant(data, appointment.participantId)
+    .filter((episode) => episode.id !== appointment.episodeId)
+    .flatMap((episode) => episode.mammograms || [])
+    .map((mammogram) => mammogram.takenDate)
+    .filter((date) => date && new Date(date).getTime() < appointmentTime)
+    .sort((a, b) => new Date(b) - new Date(a))
+    .slice(0, limit)
+  if (priorDates.length === 0) return []
+
+  // Normal sets, matching the current images' implants, not the current set
+  const candidates = filterSetsByContext(
+    getAvailableSets('diagrams').filter(
+      (set) => set.tag === 'normal' && set.id !== currentSet?.id
+    ),
+    { hasImplants: extractAppointmentContext(appointment).hasImplants }
+  )
+  if (candidates.length === 0) return []
+
+  const usedSetIds = new Set()
+  return priorDates.map((date) => {
+    const unused = candidates.filter((set) => !usedSetIds.has(set.id))
+    const pool = unused.length > 0 ? unused : candidates
+    const set =
+      pool[
+        Math.floor(seededRandom(appointment.participantId + date) * pool.length)
+      ]
+    usedSetIds.add(set.id)
+    return describe(date, getImagePaths(set.id, 'diagrams'))
+  })
+}
+
+/**
  * Check if an image source has any available sets
  * @param {string} source - "diagrams" or "real"
  * @returns {boolean}
@@ -1089,6 +1211,7 @@ module.exports = {
   getImagePaths,
   getImageLibraryPath,
   getImagesForAppointment,
+  getPriorImagesForAppointment,
   hasImageSets,
   extractAppointmentContext,
   getResolvedAnnotations,

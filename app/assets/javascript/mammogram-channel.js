@@ -26,6 +26,7 @@ const getChannel = () => {
  * @param {object} data.images - Image paths (rcc, lcc, rmlo, lmlo) - latest images
  * @param {object} data.allPaths - All image paths including additional images
  * @param {object} data.fullPaths - Full-resolution path for each display path, loaded on zoom (optional)
+ * @param {Array<object>} data.priors - Earlier studies, newest first, from getPriorImagesForAppointment (optional)
  * @param {boolean} data.hasAdditionalImages - Whether there are additional images
  * @param {Array<string>} data.notExpected - Views that weren't expected, left blank (e.g. ['rcc', 'rmlo'])
  */
@@ -43,6 +44,7 @@ const broadcastShowParticipant = (data) => {
     images: data.images || null,
     allPaths: data.allPaths || null,
     fullPaths: data.fullPaths || null,
+    priors: data.priors || [],
     hasAdditionalImages: data.hasAdditionalImages || false,
     notExpected: data.notExpected || null,
     setId: data.setId || null,
@@ -241,6 +243,17 @@ document.addEventListener('DOMContentLoaded', () => {
       // Invalid JSON, ignore
     }
 
+    // Earlier studies the viewer can page back to
+    const priorsRaw = document
+      .querySelector('meta[name="mammogram-priors"]')
+      ?.getAttribute('content')
+    let priors = []
+    try {
+      priors = priorsRaw ? JSON.parse(priorsRaw) : []
+    } catch (e) {
+      // Invalid JSON, ignore
+    }
+
     // Views that weren't expected, for example after a mastectomy
     const notExpectedRaw = document
       .querySelector('meta[name="mammogram-not-expected"]')
@@ -272,6 +285,7 @@ document.addEventListener('DOMContentLoaded', () => {
       images,
       allPaths,
       fullPaths,
+      priors,
       hasAdditionalImages,
       notExpected,
       setId,

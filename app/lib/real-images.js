@@ -114,6 +114,37 @@ const getStudyAnnotations = (annotations = [], imageViewKeys) =>
   })
 
 /**
+ * A case's earlier studies, for showing as priors: newest first, with how many
+ * days before the case's own study each was taken. Excluded studies and studies
+ * with no standard views are left out.
+ *
+ * @param {object} readingCase - Case from the manifest
+ * @param {object} currentStudy - The case's own study
+ * @param {Map<string, object>} studiesById - Every study in the pack
+ * @param {object} curation - The pack's curation.json
+ * @returns {Array<{ studyId: string, daysBefore: number, paths: object, fullPaths: object }>}
+ */
+const getPriorStudies = (readingCase, currentStudy, studiesById, curation) =>
+  (readingCase.priorStudyIds || [])
+    .filter((studyId) => !curation.studies?.[studyId]?.exclude)
+    .map((studyId) => studiesById.get(studyId))
+    .filter(Boolean)
+    .map((study) => {
+      const { paths, fullPaths } = getStudyViews(study)
+      return {
+        studyId: study.id,
+        daysBefore: currentStudy.daysFromFirst - study.daysFromFirst,
+        paths,
+        fullPaths
+      }
+    })
+    .filter(
+      (prior) =>
+        prior.daysBefore > 0 && STANDARD_VIEWS.some((view) => prior.paths[view])
+    )
+    .sort((a, b) => a.daysBefore - b.daysBefore)
+
+/**
  * Turn the pack's cases into image sets, the shape the diagram manifest uses,
  * so the existing selection code can choose between them. Cases with no known
  * outcome, excluded studies and studies with no standard views are left out.
@@ -159,6 +190,7 @@ const buildSets = (manifest, annotations, curation) => {
         ageAtCurrent: readingCase.ageAtCurrent,
         paths,
         fullPaths,
+        priors: getPriorStudies(readingCase, study, studiesById, curation),
         annotations: getStudyAnnotations(
           annotations.studies?.[readingCase.currentStudyId],
           imageViewKeys

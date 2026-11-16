@@ -30,6 +30,11 @@
   {% endif %}
   {# Views that weren't expected and weren't taken, which the viewer leaves blank rather than showing "No image" #}
   <meta name="mammogram-not-expected" content="{{ viewerAppointment | getNotExpectedViews | map("lower") | dump | escape }}">
+  {# Earlier studies the viewer can page back to, newest first #}
+  {% set viewerPriors = getPriorImagesForAppointment(viewerAppointment, getMammogramImageSource()) %}
+  {% if viewerPriors | length %}
+    <meta name="mammogram-priors" content="{{ viewerPriors | dump | escape }}">
+  {% endif %}
   {# Pass set info for debugging #}
   <meta name="mammogram-set-id" content="{{ mammogramImages.set.id }}">
   <meta name="mammogram-set-description" content="{{ mammogramImages.set.description }}">

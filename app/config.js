@@ -66,6 +66,9 @@ module.exports = {
     // View order for mammogram display: 'cc-first' or 'mlo-first'
     // Right breast views always on left, left breast views on right
     mammogramViewOrder: 'cc-first',
+    // How many earlier studies (priors) the PACS viewer offers, newest first.
+    // Higher-risk participants are screened yearly, so can have many
+    maxPriorStudiesInViewer: 3,
     // Distribution of image set tags (must sum to 1.0)
     // These are the base weights - they get adjusted based on appointment context
     // (symptoms, imperfect images, etc.)
