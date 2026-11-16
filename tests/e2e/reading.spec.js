@@ -131,7 +131,7 @@ const addTextAnnotation = async (page, abnormalityType) => {
     )
     .click()
   const saveAnnotation = annotationModal
-    .getByRole('button', { name: 'Save' })
+    .getByRole('button', { name: 'Add annotation' })
     .first()
   await revealInModal(saveAnnotation)
   await saveAnnotation.click()
