@@ -92,6 +92,12 @@
       display: none;
     }
 
+    .viewer-studies__none {
+      align-self: center;
+      color: #999;
+      font-size: 14px;
+    }
+
     .viewer-button[aria-pressed="true"] {
       background-color: #ffeb3b;
       border-color: #ffeb3b;
@@ -634,7 +640,7 @@
     // Full-resolution image for each display image path, when the set has them
     let currentFullPaths = null
 
-    // The current study then any priors, newest first, and which is showing
+    // Any priors, oldest first, then the current study, and which is showing
     let currentStudies = []
     let selectedStudyIndex = 0
     const studiesEl = document.getElementById("viewer-studies")
@@ -968,8 +974,21 @@
       nameEl.textContent = data.participantName || "Unknown"
       renderDetails(data)
 
-      // The current study first, then priors, newest first
+      // Priors oldest first, then the current study last, so newer is to the
+      // right in the switcher
       currentStudies = [
+        ...(data.priors || [])
+          .map((prior) => ({
+            label: prior.label,
+            dateText: prior.dateText,
+            images: prior.paths || {},
+            allPaths: prior.allPaths,
+            fullPaths: prior.fullPaths || null,
+            hasAdditionalImages: prior.hasAdditionalImages,
+            // A prior is shown as it was taken, so any missing view says so
+            notExpected: []
+          }))
+          .reverse(),
         {
           label: "Current",
           images: data.images || null,
@@ -977,20 +996,10 @@
           fullPaths: data.fullPaths || null,
           hasAdditionalImages: data.hasAdditionalImages,
           notExpected: data.notExpected || []
-        },
-        ...(data.priors || []).map((prior) => ({
-          label: prior.label,
-          dateText: prior.dateText,
-          images: prior.paths || {},
-          allPaths: prior.allPaths,
-          fullPaths: prior.fullPaths || null,
-          hasAdditionalImages: prior.hasAdditionalImages,
-          // A prior is shown as it was taken, so any missing view says so
-          notExpected: []
-        }))
+        }
       ]
       renderStudySwitcher()
-      showStudy(0)
+      showStudy(currentStudies.length - 1)
 
       // Update debug info if visible
       updateDebugInfo(data)
@@ -1005,13 +1014,22 @@
       updateStatus(`Viewing: ${data.participantName}`)
     }
 
+    const isCurrentStudy = (index) => index === currentStudies.length - 1
+
     /**
-     * Buttons to choose between the current study and its priors, shown only
-     * when there are priors
+     * Buttons to choose between the participant's priors and the current
+     * study, or a note when there are no priors
      */
     const renderStudySwitcher = () => {
       studiesEl.replaceChildren()
-      studiesEl.hidden = currentStudies.length < 2
+      studiesEl.hidden = false
+      if (currentStudies.length < 2) {
+        const noteEl = document.createElement("span")
+        noteEl.className = "viewer-studies__none"
+        noteEl.textContent = "No priors"
+        studiesEl.appendChild(noteEl)
+        return
+      }
       currentStudies.forEach((study, index) => {
         const buttonEl = document.createElement("button")
         buttonEl.type = "button"
@@ -1024,8 +1042,8 @@
     }
 
     /**
-     * Show one of the participant's studies: 0 is the current one, then
-     * priors, newest first. An open zoom view moves to the same view.
+     * Show one of the participant's studies: priors oldest first, then the
+     * current one last. An open zoom view moves to the same view.
      * @param {number} index - Index in currentStudies
      */
     const showStudy = (index) => {
@@ -1049,8 +1067,8 @@
         buttonEl.setAttribute("aria-pressed", buttonIndex === index ? "true" : "false")
       })
 
-      priorBannerEl.hidden = index === 0
-      if (index > 0) {
+      priorBannerEl.hidden = isCurrentStudy(index)
+      if (!isCurrentStudy(index)) {
         const date = study.dateText ? ` (${study.dateText})` : ""
         priorBannerEl.textContent = `Prior: ${study.label}${date}. Press ] for newer, [ for older`
       }
@@ -1060,7 +1078,7 @@
 
     /**
      * Page between the current study and its priors
-     * @param {number} step - 1 for an older study, -1 for a newer one
+     * @param {number} step - -1 for an older study, 1 for a newer one
      */
     const stepStudy = (step) => {
       const index = selectedStudyIndex + step
@@ -1134,7 +1152,7 @@
             src,
             fullSrc: getFullSrc(src),
             label: viewLabels[view] + studyLabel,
-            isPrior: selectedStudyIndex > 0,
+            isPrior: !isCurrentStudy(selectedStudyIndex),
             view,
             side: view.startsWith("r") ? "right" : "left"
           })
@@ -1446,10 +1464,10 @@
         if (currentStudies.length < 2) return
         if (e.key === "[") {
           e.preventDefault()
-          stepStudy(1)
+          stepStudy(-1)
         } else if (e.key === "]") {
           e.preventDefault()
-          stepStudy(-1)
+          stepStudy(1)
         }
       })
     }

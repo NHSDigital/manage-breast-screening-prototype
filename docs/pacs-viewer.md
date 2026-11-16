@@ -63,7 +63,7 @@ When the viewer opens (manually or auto), it requests current participant data:
 - **Keyboard navigation**: Arrow keys cycle through zoomed images (ordered by breast: right then left), zoomed in or not; they don't pan. When not zoomed, left arrow opens first right breast image, right arrow opens first left breast image.
 - **Opinion shortcuts**: Press N (normal), D (normal, but add details), T (technical recall), or R (recall for assessment) to trigger the corresponding opinion on the reading page - works even when PACS viewer is focused. When the participant has symptoms, plain Normal is not offered: “Normal, and add details” replaces it, and both N and D trigger it
 - **Additional images**: When a case has repeat/retake images, "View additional images" button appears; modal shows all attempts with labels. Clicking an earlier attempt shows it fullscreen on its own
-- **Priors**: When the participant has earlier studies, buttons in the header switch between “Current” and each prior (“3 years ago”, with the date on hover), newest first, up to `config.reading.maxPriorStudiesInViewer` (3). [ and ] page to an older or newer study. A yellow bar under the header, and a yellow label when fullscreen, show a prior is on screen. Switching study while fullscreen shows the same view at the same zoom and position, to compare the two; if that study has no such view, fullscreen closes. A new participant always opens on their current study
+- **Priors**: When the participant has earlier studies, buttons in the header switch between each prior (“3 years ago”, with the date on hover) and “Current”: oldest on the left, Current on the right and shown first, up to `config.reading.maxPriorStudiesInViewer` (3) priors. [ and ] page to an older or newer study. When there are none, the header says “No priors”. A yellow bar under the header, and a yellow label when fullscreen, show a prior is on screen. Switching study while fullscreen shows the same view at the same zoom and position, to compare the two; if that study has no such view, fullscreen closes. A new participant always opens on their current study
 - **Debug mode**: Press 'i' to toggle debug bar showing set ID, tag, description, and context flags
 
 #### Keyboard shortcuts
@@ -228,7 +228,7 @@ When sets have arrays for views (repeat scenarios), the viewer:
 | ------------------------- | ---------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `mammogramImageSource`    | `'diagrams'`                                                           | Image source: `'diagrams'` or `'real'` (`MAMMOGRAM_IMAGE_SOURCE`). Use `getMammogramImageSource()` rather than reading it |
 | `mammogramTagWeights`     | `{ normal: 0.7, abnormal: 0.15, indeterminate: 0.1, technical: 0.05 }` | Distribution weights for image set tags                                                                                   |
-| `maxPriorStudiesInViewer` | `3`                                                                    | How many priors the viewer offers, newest first                                                                           |
+| `maxPriorStudiesInViewer` | `3`                                                                    | How many priors the viewer offers, the most recent                                                                        |
 
 ---
 
