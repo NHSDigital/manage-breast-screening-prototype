@@ -15,6 +15,10 @@ const { getClinic } = require('./clinics.js')
 const { formatMonthYear } = require('./dates.js')
 const { isActive } = require('./status.js')
 const {
+  withRealImageReads,
+  withoutRealImageReads
+} = require('./real-image-reads.js')
+const {
   buildReadingCase,
   getReadingCases,
   getLatestReadingCase,
@@ -152,14 +156,16 @@ const buildMammogramEntry = (appointment, clinic) => {
  * @param {object} episode - Whole replacement episode record
  */
 const recordEpisodeChange = (data, episode) => {
-  recordChange(data, 'episodes', episode)
+  // Seeded reads shown with real case markers are saved as they were
+  recordChange(data, 'episodes', withoutRealImageReads(episode))
 }
 
 /**
  * Get an episode by ID
  *
  * Session changes first, then the shared store's id index, then a scan of
- * data.episodes for records that exist only in the passed data.
+ * data.episodes for records that exist only in the passed data. While real
+ * images are on, seeded reads mark the real case (see withRealImageReads).
  *
  * @param {object} data - Session data
  * @param {string} episodeId - Episode ID
@@ -168,11 +174,12 @@ const recordEpisodeChange = (data, episode) => {
 const getEpisode = (data, episodeId) => {
   if (!episodeId) return null
 
-  return (
+  return withRealImageReads(
+    data,
     data._changes?.episodes?.[episodeId] ??
-    dataStore.state.episodesById.get(episodeId) ??
-    data.episodes?.find((episode) => episode.id === episodeId) ??
-    null
+      dataStore.state.episodesById.get(episodeId) ??
+      data.episodes?.find((episode) => episode.id === episodeId) ??
+      null
   )
 }
 

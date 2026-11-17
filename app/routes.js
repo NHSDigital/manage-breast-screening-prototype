@@ -16,9 +16,11 @@ const {
 } = require('./lib/middleware/remembered-sign-in')
 const {
   getMammogramImageSource,
-  getRealImageDatesOfBirth
+  getRealImageDatesOfBirth,
+  getRealAssignments
 } = require('./lib/utils/mammogram-images')
 const { withRealImageDateOfBirth } = require('./lib/utils/participants')
+const { withRealImageReads } = require('./lib/utils/real-image-reads')
 
 const router = express.Router()
 
@@ -195,14 +197,22 @@ router.use((req, res, next) => {
   }
 
   // While real mammogram images are on, participants' ages match their real
-  // cases (see withRealImageDateOfBirth). Derived per request, never saved.
-  const realImageDatesOfBirth =
+  // cases (see withRealImageDateOfBirth), and seeded readers mark what
+  // clinicians marked on them (see withRealImageReads). Derived per request,
+  // never saved.
+  const isRealImages =
     getMammogramImageSource.call({ ctx: { data } }) === 'real'
-      ? getRealImageDatesOfBirth()
-      : null
+  const realImageDatesOfBirth = isRealImages ? getRealImageDatesOfBirth() : null
+  const realImageReads = isRealImages ? getRealAssignments() : null
   for (const target of [data, res.locals.data]) {
     Object.defineProperty(target, '_realImageDatesOfBirth', {
       value: realImageDatesOfBirth,
+      enumerable: false,
+      configurable: true,
+      writable: true
+    })
+    Object.defineProperty(target, '_realImageReads', {
+      value: realImageReads,
       enumerable: false,
       configurable: true,
       writable: true
@@ -213,6 +223,12 @@ router.use((req, res, next) => {
       withRealImageDateOfBirth(data, participant)
     )
     res.locals.data.participants = data.participants
+  }
+  if (realImageReads) {
+    data.episodes = data.episodes.map((episode) =>
+      withRealImageReads(data, episode)
+    )
+    res.locals.data.episodes = data.episodes
   }
 
   // Generation info also comes from the store, so every session sees the

@@ -12,7 +12,8 @@ const abnormalityTypes = require('../data/abnormality-types')
 const {
   STANDARD_VIEWS,
   getImageUrl,
-  getStandardViewImages
+  getStandardViewImages,
+  readersDisagreed
 } = require('./real-images')
 
 const DAYS_PER_YEAR = 365.25
@@ -78,28 +79,6 @@ const readPackJson = (fileName, fallback) => {
   const filePath = getPackFilePath(fileName)
   if (!fs.existsSync(filePath)) return fallback
   return JSON.parse(fs.readFileSync(filePath, 'utf8'))
-}
-
-/**
- * Whether the NBSS readers of a study disagreed: it went to arbitration, or
- * readers gave different opinions or actions on a breast
- *
- * @param {object} nbss - A study's nbss from the manifest
- * @returns {boolean} True if they disagreed
- */
-const readersDisagreed = (nbss) => {
-  if (nbss.finalActionSource === 'D') return true
-
-  return ['right', 'left'].some((side) => {
-    const readers = nbss[side]?.readers || []
-    const opinions = new Set(
-      readers.map((reader) => reader.opinion).filter(Boolean)
-    )
-    const actions = new Set(
-      readers.map((reader) => reader.action).filter(Boolean)
-    )
-    return opinions.size > 1 || actions.size > 1
-  })
 }
 
 /**
@@ -252,10 +231,7 @@ const getAnnotatorData = () => {
         result: readingCase.result,
         groups,
         suggestedFinding: getSuggestedFinding(groups),
-        suggestedLevelOfConcern: getSuggestedLevelOfConcern(
-          study.nbss,
-          groups
-        ),
+        suggestedLevelOfConcern: getSuggestedLevelOfConcern(study.nbss, groups),
         nbss: study.nbss && {
           ...study.nbss,
           lesions: (study.nbss.lesions || []).map((lesion) => ({
@@ -328,7 +304,9 @@ const cleanAnnotation = (annotation, index, imageIds) => {
     : [annotation.abnormalityType]
 
   return {
-    id: /^a-[\w-]{1,40}$/.test(annotation.id) ? annotation.id : `a-${index + 1}`,
+    id: /^a-[\w-]{1,40}$/.test(annotation.id)
+      ? annotation.id
+      : `a-${index + 1}`,
     side: annotation.side,
     positions,
     abnormalityType: types.filter((type) => abnormalityTypes.includes(type)),

@@ -160,6 +160,29 @@ const getPriorStudies = (readingCase, currentStudy, studiesById, curation) =>
     .sort((a, b) => a.daysBefore - b.daysBefore)
 
 /**
+ * Whether the NBSS readers of a study disagreed: it went to arbitration, or
+ * readers gave different opinions or actions on a breast
+ *
+ * @param {object} [nbss] - A study's nbss from the manifest
+ * @returns {boolean} True if they disagreed
+ */
+const readersDisagreed = (nbss) => {
+  if (!nbss) return false
+  if (nbss.finalActionSource === 'D') return true
+
+  return ['right', 'left'].some((side) => {
+    const readers = nbss[side]?.readers || []
+    const opinions = new Set(
+      readers.map((reader) => reader.opinion).filter(Boolean)
+    )
+    const actions = new Set(
+      readers.map((reader) => reader.action).filter(Boolean)
+    )
+    return opinions.size > 1 || actions.size > 1
+  })
+}
+
+/**
  * Turn the pack's cases into image sets, the shape the diagram manifest uses,
  * so the existing selection code can choose between them. Cases with no known
  * outcome, excluded studies and studies with no standard views are left out.
@@ -202,6 +225,7 @@ const buildSets = (manifest, annotations, curation) => {
         currentStudyId: readingCase.currentStudyId,
         priorStudyIds: readingCase.priorStudyIds,
         result: readingCase.result,
+        readersDisagreed: readersDisagreed(study.nbss),
         ageAtCurrent: readingCase.ageAtCurrent,
         paths,
         fullPaths,
@@ -290,5 +314,6 @@ module.exports = {
   getManifest,
   getImageSource,
   getImageUrl,
-  getStandardViewImages
+  getStandardViewImages,
+  readersDisagreed
 }

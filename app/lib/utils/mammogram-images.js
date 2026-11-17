@@ -615,6 +615,78 @@ const getRealCaseFitCost = (set, profile) => {
 }
 
 /**
+ * What the seed data's readers made of an appointment's images, from its
+ * reading case in the shared store: which breasts any recall for assessment
+ * called abnormal, and whether they disagreed (different opinions, or an
+ * arbitration read).
+ *
+ * @param {object} appointment - Appointment
+ * @returns {{ recalledSides: Set<string>, disagreed: boolean }}
+ */
+const getSeededReadsProfile = (appointment) => {
+  const dataStore = require('../data-store')
+  const readingCase = dataStore.state.episodesById
+    .get(appointment?.episodeId)
+    ?.readingCases?.find(
+      (candidate) => candidate.appointmentId === appointment.id
+    )
+  const reads = readingCase?.reads || []
+
+  const recalledSides = new Set(
+    reads
+      .filter((read) => read.opinion === 'recall_for_assessment')
+      .flatMap((read) =>
+        ['left', 'right'].filter(
+          (side) => read[side]?.breastAssessment === 'abnormal'
+        )
+      )
+  )
+
+  return {
+    recalledSides,
+    disagreed:
+      new Set(reads.map((read) => read.opinion)).size > 1 ||
+      reads.some((read) => read.readType === 'arbitration')
+  }
+}
+
+// How much worse a real case fits when the seeded readers recalled a breast
+// clinicians haven't marked, so their markers can't show the real
+// abnormality; or when they disagreed but the real readers didn't, and it
+// wasn't a recall that turned out not to be cancer
+const UNANNOTATED_RECALL_COST = 6
+const UNAMBIGUOUS_DISAGREEMENT_COST = 8
+
+/**
+ * How badly a real case fits the seed data's reads of an appointment. Seeded
+ * recalls should land on cases clinicians have marked, so their markers sit
+ * on the real abnormality (see withRealImageReads); seeded disagreements on
+ * cases real readers found hard - where they disagreed, or recalled something
+ * that wasn't cancer.
+ *
+ * @param {object} set - Real image set
+ * @param {object} readsProfile - From getSeededReadsProfile
+ * @returns {number} Cost, 0 for a good fit
+ */
+const getRealCaseReadsCost = (set, readsProfile) => {
+  let cost = 0
+  const markedSides = new Set(
+    (set.annotations || []).map((annotation) => annotation.side)
+  )
+  if ([...readsProfile.recalledSides].some((side) => !markedSides.has(side))) {
+    cost += UNANNOTATED_RECALL_COST
+  }
+  if (
+    readsProfile.disagreed &&
+    !set.readersDisagreed &&
+    set.result !== 'recalled-not-cancer'
+  ) {
+    cost += UNAMBIGUOUS_DISAGREEMENT_COST
+  }
+  return cost
+}
+
+/**
  * Real cases that could stand in for an appointment's images: matching its
  * context (implants, repeats), its diagram set's tag and, where possible,
  * which breasts are abnormal, so seeded reads mark the right breast.
@@ -708,10 +780,12 @@ const getRealAssignments = () => {
     }
 
     const profile = getParticipantProfile(appointment)
+    const readsProfile = getSeededReadsProfile(appointment)
     const chosen = cheapest(
       candidates,
       (set) =>
         getRealCaseFitCost(set, profile) +
+        getRealCaseReadsCost(set, readsProfile) +
         2 * (timesUsedByParticipant.get(set.participantId) || 0) +
         seededRandom(appointment.id + set.id)
     )
@@ -1506,6 +1580,8 @@ module.exports = {
   getImagesForAppointment,
   getPriorImagesForAppointment,
   getRealImageDatesOfBirth,
+  getRealAssignments,
+  getAssignedRealSet,
   hasImageSets,
   extractAppointmentContext,
   getResolvedAnnotations,
