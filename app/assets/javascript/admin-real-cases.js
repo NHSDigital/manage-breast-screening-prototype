@@ -52,6 +52,40 @@ const FINAL_ACTION_SOURCES = {
   P: 'entered from paper records, so reader opinions may not be recorded'
 }
 
+// Assessment findings on the UK 1 to 5 scales: I imaging, B core biopsy,
+// C cytology. The number is what matters; the letter says which test
+const ASSESSMENT_SCORES = {
+  1: 'normal',
+  2: 'benign',
+  3: 'indeterminate, probably benign',
+  4: 'suspicious of cancer',
+  5: 'cancer'
+}
+
+const ASSESSMENT_TESTS = { I: 'Imaging', B: 'Biopsy', C: 'Cytology' }
+
+// NBSS outcome codes are the stage letter then + or abn (positive) or -
+// (negative). The spec gives no list, so this is inferred - see the notes'
+// nbss-codes.md. Positive isn't necessarily cancer
+const describeAssessmentOutcome = (code) => {
+  if (!code) return 'Outcome not recorded'
+  if (code.endsWith('+') || code.endsWith('abn')) return `Abnormal (${code})`
+  if (code.endsWith('-')) return `Normal (${code})`
+  return `Outcome ${code}`
+}
+
+// Where a test's 1 means something more specific than normal
+const ASSESSMENT_SCORE_EXCEPTIONS = {
+  B1: 'normal tissue or unsatisfactory sample',
+  C1: 'unsatisfactory sample'
+}
+
+const describeAssessmentScore = (code) => {
+  const match = /^([IBC])(\d)/.exec(code || '')
+  if (!match || !ASSESSMENT_SCORES[match[2]]) return null
+  return `${ASSESSMENT_TESTS[match[1]]}: ${ASSESSMENT_SCORE_EXCEPTIONS[`${match[1]}${match[2]}`] || ASSESSMENT_SCORES[match[2]]} (${code})`
+}
+
 const RESULTS = {
   'normal': 'Normal',
   'recalled-not-cancer': 'Recalled, not cancer',
@@ -483,7 +517,19 @@ const renderNbss = (readingCase) => {
   const sides = renderNbssTable(nbss)
 
   const assessment = nbss.assessment
-    ? `<p class="nhsuk-body-s nhsuk-u-margin-bottom-2"><strong>Assessment:</strong> outcome ${escapeHtml(nbss.assessment.outcome || 'not recorded')}, imaging opinion ${escapeHtml(nbss.assessment.opinion || 'not recorded')}, biopsy ${escapeHtml(nbss.assessment.biopsyOpinion || 'none')}</p>`
+    ? `<p class="nhsuk-body-s nhsuk-u-margin-bottom-2"><strong>Assessment:</strong> ${[
+        describeAssessmentOutcome(nbss.assessment.outcome),
+        describeAssessmentScore(nbss.assessment.opinion) ||
+          (nbss.assessment.opinion
+            ? `Imaging opinion ${nbss.assessment.opinion}`
+            : 'Imaging opinion not recorded'),
+        nbss.assessment.biopsyOpinion
+          ? describeAssessmentScore(nbss.assessment.biopsyOpinion) ||
+            `Biopsy ${nbss.assessment.biopsyOpinion}`
+          : 'No biopsy'
+      ]
+        .map(escapeHtml)
+        .join('<br>')}</p>`
     : ''
 
   const lesions = nbss.lesions.length
