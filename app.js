@@ -1,3 +1,6 @@
+const path = require('node:path')
+const { pathToFileURL } = require('node:url')
+
 const NHSPrototypeKit = require('nhsuk-prototype-kit')
 
 // Local dependencies
@@ -29,7 +32,33 @@ const entryPoints = [
   'app/data/generated/**/*.json'
 ]
 
+// The kit's nodemon watches the whole repo for .json changes, so each save
+// from /admin/real-cases (which writes annotations.json and its backups in the
+// pack) would restart the server and reload the page. The entry point trick
+// above would copy the pack into public/, so add it to nodemon's ignore list
+// directly; the kit doesn't export its nodemon config.
+const ignoreRealImagesPack = async () => {
+  const kitPath = path.dirname(
+    require.resolve('nhsuk-prototype-kit/package.json')
+  )
+  const nodemonConfigUrl = pathToFileURL(
+    path.join(kitPath, 'lib', 'nodemon.config.js')
+  ).href
+  try {
+    const { default: nodemonConfig } = await import(nodemonConfigUrl)
+    nodemonConfig.ignore.push('real-images/**/*')
+  } catch (error) {
+    console.warn(
+      `Could not stop nodemon watching real-images/: ${error.message}`
+    )
+  }
+}
+
 async function init() {
+  if (process.env.NODE_ENV !== 'production') {
+    await ignoreRealImagesPack()
+  }
+
   const prototype = await NHSPrototypeKit.init({
     serviceName: config.serviceName,
     buildOptions: {

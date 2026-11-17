@@ -37,8 +37,8 @@ const ACTIONS = {
 
 const FINAL_ACTION_SOURCES = {
   A: 'readers agreed',
-  D: 'arbitration',
-  P: 'entered from paper'
+  D: 'decided at arbitration',
+  P: 'entered from paper records, so reader opinions may not be recorded'
 }
 
 const RESULTS = {
@@ -47,6 +47,9 @@ const RESULTS = {
   'cancer': 'Cancer',
   'technical-repeat-requested': 'Technical repeat requested'
 }
+
+const getResultLabel = (result) =>
+  RESULTS[result] || result || 'Outcome not known'
 
 const GROUP_TAG_COLOURS = {
   'cancer': 'red',
@@ -189,7 +192,7 @@ const renderListItem = (readingCase) => {
   return `
     <button type="button" class="app-real-cases__case ${isCurrent ? 'app-real-cases__case--current' : ''}" data-case-id="${readingCase.id}" ${isCurrent ? 'aria-current="true"' : ''}>
       <strong>${escapeHtml(readingCase.id)}</strong>
-      <span class="app-real-cases__case-meta">Age ${escapeHtml(readingCase.age)} · ${escapeHtml(RESULTS[readingCase.result] || readingCase.result)}</span>
+      <span class="app-real-cases__case-meta">Age ${escapeHtml(readingCase.age)} · ${escapeHtml(getResultLabel(readingCase.result))}</span>
       <span class="app-real-cases__tags">
         ${tag(getStatusLabel(status), STATUS_TAG_COLOURS[status])}
         ${readingCase.groups.map((group) => tag(getLabel(state.data.groups, group), GROUP_TAG_COLOURS[group])).join('')}
@@ -322,7 +325,8 @@ const renderMarkers = () => {
 
 const getFractionInImage = (container, event) => {
   const rect = container.getBoundingClientRect()
-  const fraction = (value) => Math.round(Math.min(1, Math.max(0, value)) * 1000) / 1000
+  const fraction = (value) =>
+    Math.round(Math.min(1, Math.max(0, value)) * 1000) / 1000
   return {
     x: fraction((event.clientX - rect.left) / rect.width),
     y: fraction((event.clientY - rect.top) / rect.height)
@@ -400,7 +404,11 @@ const describeReaders = (side) =>
   (side?.readers || [])
     .map(
       (reader, index) =>
-        `Reader ${index + 1}: ${escapeHtml(READER_OPINIONS[reader.opinion] || reader.opinion || 'no opinion')}, ${escapeHtml(ACTIONS[reader.action] || reader.action || 'no action')}`
+        `Reader ${index + 1}: ${escapeHtml(
+          reader.opinion
+            ? `opinion ${READER_OPINIONS[reader.opinion] || reader.opinion}`
+            : 'opinion not recorded'
+        )}; recommended ${escapeHtml(ACTIONS[reader.action] || reader.action || 'nothing recorded')}`
     )
     .join('<br>')
 
@@ -412,7 +420,7 @@ const renderNbss = (readingCase) => {
     .map(
       (side) => `
         <p class="nhsuk-body-s nhsuk-u-margin-bottom-2">
-          <strong>${side === 'right' ? 'Right' : 'Left'}:</strong> ${escapeHtml(nbss[side]?.opinion || 'no opinion')}, final action ${escapeHtml(ACTIONS[nbss[side]?.finalAction] || nbss[side]?.finalAction || 'none')}<br>
+          <strong>${side === 'right' ? 'Right breast' : 'Left breast'}:</strong> screening opinion ${escapeHtml(nbss[side]?.opinion || 'not recorded')}; final action ${escapeHtml(ACTIONS[nbss[side]?.finalAction] || nbss[side]?.finalAction || 'not recorded')}<br>
           ${describeReaders(nbss[side])}
         </p>
       `
@@ -433,7 +441,7 @@ const renderNbss = (readingCase) => {
     : '<p class="nhsuk-body-s">No lesions recorded.</p>'
 
   return `
-    <p class="nhsuk-body-s nhsuk-u-margin-bottom-2"><strong>${escapeHtml(RESULTS[readingCase.result] || readingCase.result)}</strong>, ${escapeHtml(FINAL_ACTION_SOURCES[nbss.finalActionSource] || 'decision source unknown')}</p>
+    <p class="nhsuk-body-s nhsuk-u-margin-bottom-2"><strong>${escapeHtml(getResultLabel(readingCase.result))}</strong>, ${escapeHtml(FINAL_ACTION_SOURCES[nbss.finalActionSource] || 'decision source unknown')}</p>
     ${sides}
     ${assessment}
     <h3 class="nhsuk-heading-xs nhsuk-u-margin-bottom-1">Lesions</h3>
@@ -447,14 +455,14 @@ const renderOtherStudies = (readingCase) => {
 
   return `
     <div class="app-real-cases__section">
-      <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">Her studies</h2>
+      <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">All studies for this participant</h2>
       <ul class="nhsuk-list nhsuk-body-s">
         ${otherCases
           .map((otherCase) => {
-            const result = RESULTS[otherCase.result] || otherCase.result
+            const result = getResultLabel(otherCase.result)
             return otherCase === readingCase
               ? `<li><strong>${escapeHtml(`Year ${otherCase.yearsFromFirst}: ${result}`)}</strong> - this study</li>`
-              : `<li><a href="#${otherCase.id}" data-case-id="${otherCase.id}">${escapeHtml(`Year ${otherCase.yearsFromFirst}: ${result} (${getStatusLabel(getStatus(otherCase))})`)}</a></li>`
+              : `<li><a href="#${otherCase.id}" data-case-id="${otherCase.id}">${escapeHtml(`Year ${otherCase.yearsFromFirst}: ${result}${otherCase.groups.length ? ` (${getStatusLabel(getStatus(otherCase))})` : ''}`)}</a></li>`
           })
           .join('')}
       </ul>
@@ -565,7 +573,7 @@ const renderEditor = () => {
   elements.editor.innerHTML = `
     <div class="app-real-cases__section">
       <h2 class="nhsuk-heading-s nhsuk-u-margin-bottom-1">${escapeHtml(readingCase.id)}</h2>
-      <p class="nhsuk-body-s nhsuk-u-margin-bottom-1">Age ${escapeHtml(readingCase.age)}, year ${escapeHtml(readingCase.yearsFromFirst)} of her studies. Woman classed ${escapeHtml(CLASSIFICATIONS[readingCase.classification] || readingCase.classification || 'unknown')}${readingCase.higherRisk ? ', higher risk' : ''}. ${escapeHtml(readingCase.manufacturer || '')}</p>
+      <p class="nhsuk-body-s nhsuk-u-margin-bottom-1">Age ${escapeHtml(readingCase.age)}. Year ${escapeHtml(readingCase.yearsFromFirst)} of this participant’s studies. Participant classed ${escapeHtml(CLASSIFICATIONS[readingCase.classification] || readingCase.classification || 'unknown')}${readingCase.higherRisk ? ', higher risk' : ''}. ${escapeHtml(readingCase.manufacturer || '')}</p>
       <p class="app-real-cases__save-status js-real-cases-save-status nhsuk-u-margin-bottom-0" role="status"></p>
     </div>
 
@@ -673,9 +681,7 @@ const updateAnnotationField = (input) => {
 
   if (field === 'abnormalityType') {
     annotation.abnormalityType = [
-      ...input
-        .closest('.nhsuk-checkboxes')
-        .querySelectorAll('input:checked')
+      ...input.closest('.nhsuk-checkboxes').querySelectorAll('input:checked')
     ].map((checkbox) => checkbox.value)
   } else {
     annotation[field] = input.value

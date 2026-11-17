@@ -5,9 +5,11 @@
 $app-real-cases-list-width: 300px;
 $app-real-cases-editor-width: 380px;
 
-// The page uses the full window width; set as containerClasses
+// The page uses the full window width; set as containerClasses. The fluid
+// mixin keeps the gutters, which the standard container drops for auto
+// margins on wide screens
 .app-real-cases-container {
-  max-width: none;
+  @include nhsuk-width-container-fluid;
 }
 
 .app-real-cases {
