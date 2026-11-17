@@ -15,6 +15,11 @@ const {
   rememberSignIn
 } = require('./lib/middleware/remembered-sign-in')
 const realImages = require('./lib/real-images')
+const {
+  getMammogramImageSource,
+  getRealImageDatesOfBirth
+} = require('./lib/utils/mammogram-images')
+const { withRealImageDateOfBirth } = require('./lib/utils/participants')
 
 const router = express.Router()
 
@@ -198,6 +203,27 @@ router.use((req, res, next) => {
       ...createdRecords
     ]
     res.locals.data[name] = data[name]
+  }
+
+  // While real mammogram images are on, participants' ages match their real
+  // cases (see withRealImageDateOfBirth). Derived per request, never saved.
+  const realImageDatesOfBirth =
+    getMammogramImageSource.call({ ctx: { data } }) === 'real'
+      ? getRealImageDatesOfBirth()
+      : null
+  for (const target of [data, res.locals.data]) {
+    Object.defineProperty(target, '_realImageDatesOfBirth', {
+      value: realImageDatesOfBirth,
+      enumerable: false,
+      configurable: true,
+      writable: true
+    })
+  }
+  if (realImageDatesOfBirth) {
+    data.participants = data.participants.map((participant) =>
+      withRealImageDateOfBirth(data, participant)
+    )
+    res.locals.data.participants = data.participants
   }
 
   // Generation info also comes from the store, so every session sees the

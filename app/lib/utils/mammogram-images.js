@@ -459,104 +459,343 @@ const realSetMatchesSides = (set, appointment) => {
   )
 }
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+const DAYS_PER_YEAR = 365.25
+
+// A woman's images look alike from one study to the next, so a real
+// participant isn't used again until this share of the pack's participants
+// have been used since (where the case mix allows). Reading sessions take
+// appointments close together in time, so they don't meet her twice.
+const REAL_PARTICIPANT_REST_SHARE = 0.75
+
+// Keep the candidates that pass, unless none do
+const narrowTo = (candidates, keep) => {
+  const kept = candidates.filter(keep)
+  return kept.length > 0 ? kept : candidates
+}
+
+// The candidate with the lowest cost
+const cheapest = (candidates, cost) => {
+  let best = null
+  let bestCost = Infinity
+  for (const candidate of candidates) {
+    const candidateCost = cost(candidate)
+    if (candidateCost < bestCost) {
+      best = candidate
+      bestCost = candidateCost
+    }
+  }
+  return best
+}
+
+/**
+ * What a real case should fit about an appointment's participant, from the
+ * seed data: her age at the appointment, how many days before it each of her
+ * earlier mammograms was taken (most recent first), and whether she's on a
+ * higher-risk protocol.
+ *
+ * @param {object} appointment - Appointment
+ * @returns {{ age: number|null, priorDaysBefore: number[], higherRisk: boolean }}
+ */
+const getParticipantProfile = (appointment) => {
+  // Required here rather than at the top: the generators use this file, and
+  // loading the store reads the generated data
+  const dataStore = require('../data-store')
+  const { getAge, getCurrentRiskLevel } = require('./participants')
+
+  const participant = dataStore.state.participantsById.get(
+    appointment?.participantId
+  )
+  const startTime = appointment?.timing?.startTime
+  if (!participant || !startTime) {
+    return { age: null, priorDaysBefore: [], higherRisk: false }
+  }
+
+  const appointmentDate = new Date(startTime)
+  const priorDaysBefore = (
+    dataStore.state.episodeIdsByParticipant.get(participant.id) || []
+  )
+    .filter((episodeId) => episodeId !== appointment.episodeId)
+    .flatMap(
+      (episodeId) =>
+        dataStore.state.episodesById.get(episodeId)?.mammograms || []
+    )
+    .map(
+      (mammogram) =>
+        (appointmentDate - new Date(mammogram.takenDate)) / MS_PER_DAY
+    )
+    .filter((daysBefore) => daysBefore > 0)
+    .sort((a, b) => a - b)
+
+  return {
+    age: getAge(participant, appointmentDate),
+    priorDaysBefore,
+    higherRisk: getCurrentRiskLevel(participant, appointmentDate) !== 'routine'
+  }
+}
+
+/**
+ * How badly a real case fits a participant: years between their ages, a
+ * different number of priors (up to the number the viewer shows), years
+ * between their most recent priors, and a different screening protocol.
+ * Lower is better; 0 is a perfect fit.
+ *
+ * @param {object} set - Real image set
+ * @param {object} profile - From getParticipantProfile
+ * @returns {number} Cost
+ */
+const getRealCaseFitCost = (set, profile) => {
+  const maxPriors = config.reading?.maxPriorStudiesInViewer ?? 3
+  const casePriors = set.priors || []
+  let cost = 0
+
+  if (profile.age !== null && set.ageAtCurrent != null) {
+    cost += Math.abs(profile.age - set.ageAtCurrent)
+  }
+  cost +=
+    3 *
+    Math.abs(
+      Math.min(casePriors.length, maxPriors) -
+        Math.min(profile.priorDaysBefore.length, maxPriors)
+    )
+  if (casePriors.length > 0 && profile.priorDaysBefore.length > 0) {
+    cost +=
+      (2 * Math.abs(casePriors[0].daysBefore - profile.priorDaysBefore[0])) /
+      DAYS_PER_YEAR
+  }
+  if (Boolean(set.higherRisk) !== profile.higherRisk) cost += 5
+
+  return cost
+}
+
+/**
+ * Real cases that could stand in for an appointment's images: matching its
+ * context (implants, repeats), its diagram set's tag and, where possible,
+ * which breasts are abnormal, so seeded reads mark the right breast.
+ *
+ * @param {Array} sets - Real image sets
+ * @param {object} appointment - Appointment
+ * @returns {Array} Candidate sets, never empty if sets isn't
+ */
+const getRealCandidates = (sets, appointment) => {
+  const fitting = filterSetsByContext(
+    sets,
+    extractAppointmentContext(appointment)
+  )
+  let candidates = fitting.length > 0 ? fitting : sets
+  const tag = getRealTagForAppointment(appointment)
+  candidates = narrowTo(candidates, (set) => !tag || set.tag === tag)
+  return narrowTo(candidates, (set) => realSetMatchesSides(set, appointment))
+}
+
 // Real cases assigned to seed appointments, rebuilt when the seed data or the
 // pack changes
 let realAssignments = {
   manifest: null,
   generationId: null,
   setsById: new Map(),
-  caseIdsByAppointmentId: new Map()
+  caseIdsByAppointmentId: new Map(),
+  usedParticipantIds: new Set(),
+  datesOfBirth: new Map()
 }
 
 /**
- * The real case assigned to a seed data appointment.
+ * Assign a real case to every imaged seed appointment, if the seed data or
+ * pack has changed since last time.
  *
- * Every imaged appointment is assigned up front, in order of appointment time,
- * so participants can be spread out: each appointment gets an unused case
- * matching its context (implants, repeats) and its diagram set's tag, from the
- * participant whose cases were used longest ago. A reading session's cases are
- * mostly close together in time, so it rarely meets the same participant
- * twice, but this isn't guaranteed. Deterministic for the same seed data and
- * pack.
+ * Appointments are assigned in order of appointment time. Each gets an unused
+ * case from getRealCandidates, from a participant not used recently (see
+ * REAL_PARTICIPANT_REST_SHARE), that best fits the participant's age and
+ * screening history. Deterministic for the same seed data and pack.
+ *
+ * @returns {object|null} The assignments, or null if there's no pack
+ */
+const getRealAssignments = () => {
+  const manifest = getManifest('real')
+  if (!manifest) return null
+
+  const dataStore = require('../data-store')
+  const { generationId, appointments } = dataStore.state
+
+  if (
+    realAssignments.manifest === manifest &&
+    realAssignments.generationId === generationId
+  ) {
+    return realAssignments
+  }
+
+  const sets = getAvailableSets('real')
+  const setsById = new Map(sets.map((set) => [set.id, set]))
+  const caseIdsByAppointmentId = new Map()
+  const datesOfBirth = new Map()
+  const usedCaseIds = new Set()
+  const lastUsedByParticipant = new Map()
+  const timesUsedByParticipant = new Map()
+
+  const participantCount = new Set(sets.map((set) => set.participantId)).size
+  const restLength = Math.floor(participantCount * REAL_PARTICIPANT_REST_SHARE)
+
+  const imagedAppointments = appointments
+    .filter((appointment) => appointment.mammogramData && sets.length > 0)
+    .sort(
+      (a, b) =>
+        new Date(a.timing?.startTime) - new Date(b.timing?.startTime) ||
+        a.id.localeCompare(b.id)
+    )
+
+  imagedAppointments.forEach((appointment, index) => {
+    let candidates = getRealCandidates(sets, appointment)
+    candidates = narrowTo(candidates, (set) => !usedCaseIds.has(set.id))
+
+    // Participants not used recently, or if there are none, those used
+    // longest ago
+    const lastUsed = (set) =>
+      lastUsedByParticipant.get(set.participantId) ?? -Infinity
+    const rested = candidates.filter(
+      (set) => index - lastUsed(set) > restLength
+    )
+    if (rested.length > 0) {
+      candidates = rested
+    } else {
+      const longestAgo = Math.min(...candidates.map(lastUsed))
+      candidates = candidates.filter((set) => lastUsed(set) === longestAgo)
+    }
+
+    const profile = getParticipantProfile(appointment)
+    const chosen = cheapest(
+      candidates,
+      (set) =>
+        getRealCaseFitCost(set, profile) +
+        2 * (timesUsedByParticipant.get(set.participantId) || 0) +
+        seededRandom(appointment.id + set.id)
+    )
+
+    caseIdsByAppointmentId.set(appointment.id, chosen.id)
+    usedCaseIds.add(chosen.id)
+    lastUsedByParticipant.set(chosen.participantId, index)
+    timesUsedByParticipant.set(
+      chosen.participantId,
+      (timesUsedByParticipant.get(chosen.participantId) || 0) + 1
+    )
+
+    const participant = dataStore.state.participantsById.get(
+      appointment.participantId
+    )
+    const dateOfBirth = getDateOfBirthForAge(
+      participant?.demographicInformation?.dateOfBirth,
+      appointment.timing?.startTime,
+      chosen.ageAtCurrent
+    )
+    if (dateOfBirth) {
+      datesOfBirth.set(participant.id, {
+        from: participant.demographicInformation.dateOfBirth,
+        to: dateOfBirth
+      })
+    }
+  })
+
+  realAssignments = {
+    manifest,
+    generationId,
+    setsById,
+    caseIdsByAppointmentId,
+    usedParticipantIds: new Set(lastUsedByParticipant.keys()),
+    datesOfBirth
+  }
+  return realAssignments
+}
+
+/**
+ * A date of birth on the same day of the year as an existing one, giving the
+ * age wanted on a date.
+ *
+ * @param {string} dateOfBirth - Existing date of birth, YYYY-MM-DD or an ISO
+ *   date and time
+ * @param {string} onDate - Date the age applies on
+ * @param {number} age - Age wanted
+ * @returns {string|null} Date of birth in the existing one's format, or null
+ *   if any input is missing or the existing date of birth gives that age
+ */
+const getDateOfBirthForAge = (dateOfBirth, onDate, age) => {
+  if (!dateOfBirth || !onDate || !Number.isInteger(age)) return null
+
+  const birth = new Date(dateOfBirth)
+  const date = new Date(onDate)
+  if (isNaN(birth) || isNaN(date)) return null
+
+  // UTC throughout, so the day of the year never moves with daylight saving
+  const month = birth.getUTCMonth()
+  const day = birth.getUTCDate()
+  const hadBirthday =
+    date.getUTCMonth() > month ||
+    (date.getUTCMonth() === month && date.getUTCDate() >= day)
+  const year = date.getUTCFullYear() - age - (hadBirthday ? 0 : 1)
+  if (year === birth.getUTCFullYear()) return null
+
+  // 29 February only exists in leap years
+  const isLeapYear = new Date(Date.UTC(year, 1, 29)).getUTCMonth() === 1
+  if (month === 1 && day === 29 && !isLeapYear) birth.setUTCDate(28)
+  birth.setUTCFullYear(year)
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)
+    ? birth.toISOString().slice(0, 10)
+    : birth.toISOString()
+}
+
+/**
+ * The real case assigned to a seed data appointment, by getRealAssignments.
  *
  * @param {string} appointmentId - Appointment ID
  * @returns {object|null} The assigned set, or null if the appointment isn't in
  *   the seed data or there's no pack
  */
 const getAssignedRealSet = (appointmentId) => {
-  const manifest = getManifest('real')
-  if (!manifest) return null
-
-  // Required here rather than at the top: the generators use this file, and
-  // loading the store reads the generated data
-  const dataStore = require('../data-store')
-  const { generationId, appointments } = dataStore.state
-
-  if (
-    realAssignments.manifest !== manifest ||
-    realAssignments.generationId !== generationId
-  ) {
-    const sets = getAvailableSets('real')
-    const setsById = new Map(sets.map((set) => [set.id, set]))
-    const caseIdsByAppointmentId = new Map()
-    const usedCaseIds = new Set()
-    const lastUsedByParticipant = new Map()
-
-    const imagedAppointments = appointments
-      .filter((appointment) => appointment.mammogramData && sets.length > 0)
-      .sort(
-        (a, b) =>
-          new Date(a.timing?.startTime) - new Date(b.timing?.startTime) ||
-          a.id.localeCompare(b.id)
-      )
-
-    // Keep the candidates that pass, unless none do
-    const narrowTo = (candidates, keep) => {
-      const kept = candidates.filter(keep)
-      return kept.length > 0 ? kept : candidates
-    }
-
-    imagedAppointments.forEach((appointment, index) => {
-      const fitting = filterSetsByContext(
-        sets,
-        extractAppointmentContext(appointment)
-      )
-      let candidates = fitting.length > 0 ? fitting : sets
-      const tag = getRealTagForAppointment(appointment)
-      candidates = narrowTo(candidates, (set) => !tag || set.tag === tag)
-      candidates = narrowTo(candidates, (set) =>
-        realSetMatchesSides(set, appointment)
-      )
-      candidates = narrowTo(candidates, (set) => !usedCaseIds.has(set.id))
-
-      const score = (set) => [
-        lastUsedByParticipant.get(set.participantId) ?? -1,
-        seededRandom(appointment.id + set.id)
-      ]
-      const chosen = candidates.reduce((best, set) => {
-        const [bestUsed, bestRandom] = score(best)
-        const [used, random] = score(set)
-        return used < bestUsed || (used === bestUsed && random < bestRandom)
-          ? set
-          : best
-      })
-
-      caseIdsByAppointmentId.set(appointment.id, chosen.id)
-      usedCaseIds.add(chosen.id)
-      lastUsedByParticipant.set(chosen.participantId, index)
-    })
-
-    realAssignments = {
-      manifest,
-      generationId,
-      setsById,
-      caseIdsByAppointmentId
-    }
-  }
-
-  const caseId = realAssignments.caseIdsByAppointmentId.get(appointmentId)
-  return caseId ? realAssignments.setsById.get(caseId) : null
+  const assignments = getRealAssignments()
+  const caseId = assignments?.caseIdsByAppointmentId.get(appointmentId)
+  return caseId ? assignments.setsById.get(caseId) : null
 }
+
+/**
+ * A real case for an appointment that isn't in the seed data, so has no
+ * assigned case: one matching it as seed appointments are matched, preferring
+ * cases and participants that no seed appointment uses, that best fits the
+ * participant. The same appointment gets the same case.
+ *
+ * @param {object} appointment - Appointment with mammogramData
+ * @returns {object|null} Real image set, or null if there's no pack
+ */
+const chooseUnassignedRealSet = (appointment) => {
+  const assignments = getRealAssignments()
+  const sets = getAvailableSets('real')
+  if (!assignments || sets.length === 0) return null
+
+  const assignedCaseIds = new Set(assignments.caseIdsByAppointmentId.values())
+  let candidates = getRealCandidates(sets, appointment)
+  candidates = narrowTo(candidates, (set) => !assignedCaseIds.has(set.id))
+  candidates = narrowTo(
+    candidates,
+    (set) => !assignments.usedParticipantIds.has(set.participantId)
+  )
+
+  const profile = getParticipantProfile(appointment)
+  return cheapest(
+    candidates,
+    (set) =>
+      getRealCaseFitCost(set, profile) + seededRandom(appointment.id + set.id)
+  )
+}
+
+/**
+ * Dates of birth to show for seed participants while real images are on, so
+ * a participant's age matches her real case's. Keyed by participant ID: `from`
+ * the seed data's date of birth, `to` the one to show instead. Only used when
+ * the date of birth hasn't been changed this session.
+ *
+ * @returns {Map<string, { from: string, to: string }>} Empty when there's no
+ *   pack
+ */
+const getRealImageDatesOfBirth = () =>
+  getRealAssignments()?.datesOfBirth || new Map()
 
 /**
  * Select an image set for an appointment using seeded random with weighted tag distribution
@@ -583,9 +822,10 @@ const getImageSetForAppointment = (
     const assignedSet = getAssignedRealSet(appointmentId)
     if (assignedSet) return assignedSet
 
-    // Not in the seed data, so not assigned: choose by the diagram set's tag
-    const tag = getRealTagForAppointment(options.appointment)
-    if (tag) options = { ...options, tag }
+    if (options.appointment?.mammogramData) {
+      const chosenSet = chooseUnassignedRealSet(options.appointment)
+      if (chosenSet) return chosenSet
+    }
   }
 
   // If the appointment already has a stored selectedSetId, use that directly.
@@ -972,8 +1212,6 @@ const splitLatestPaths = (rawPaths) => {
   }
 }
 
-const MS_PER_DAY = 24 * 60 * 60 * 1000
-
 /**
  * Earlier studies (priors) to show alongside an appointment's images in the
  * PACS viewer, newest first, up to `config.reading.maxPriorStudiesInViewer`.
@@ -1219,6 +1457,7 @@ module.exports = {
   getImageLibraryPath,
   getImagesForAppointment,
   getPriorImagesForAppointment,
+  getRealImageDatesOfBirth,
   hasImageSets,
   extractAppointmentContext,
   getResolvedAnnotations,
