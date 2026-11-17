@@ -302,6 +302,7 @@ const cleanAnnotation = (annotation, index, imageIds) => {
   const types = Array.isArray(annotation.abnormalityType)
     ? annotation.abnormalityType
     : [annotation.abnormalityType]
+  const size = Number(annotation.size)
 
   return {
     id: /^a-[\w-]{1,40}$/.test(annotation.id)
@@ -309,6 +310,8 @@ const cleanAnnotation = (annotation, index, imageIds) => {
       : `a-${index + 1}`,
     side: annotation.side,
     positions,
+    // Diameter as a fraction of the image's width; not shown when reading yet
+    ...(size > 0 && size <= 1 && { size: Math.round(size * 1000) / 1000 }),
     abnormalityType: types.filter((type) => abnormalityTypes.includes(type)),
     levelOfConcern: ['1', '2', '3', '4', '5'].includes(
       annotation.levelOfConcern

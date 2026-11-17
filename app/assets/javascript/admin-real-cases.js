@@ -25,6 +25,17 @@ const READER_OPINIONS = {
   X: 'not applicable'
 }
 
+// Same colours as the opinion tags in the reading screens (app/lib/utils/status.js)
+const OPINION_TAG_COLOURS = {
+  'normal': 'green',
+  'abnormal': 'red',
+  'clinical': 'yellow',
+  'technical recall': 'orange'
+}
+
+// Marker size, as its diameter in fractions of the image's width
+const MARKER_SIZE = { min: 0.02, max: 0.5, step: 0.01, default: 0.08 }
+
 const ACTIONS = {
   RR: 'routine recall',
   RC: 'recall to assessment',
@@ -315,6 +326,11 @@ const renderMarkers = () => {
         (index === state.activeAnnotationIndex ? ' is-active' : '')
       marker.style.left = `${position.x * 100}%`
       marker.style.top = `${position.y * 100}%`
+      if (annotation.size) {
+        marker.style.width = `${annotation.size * 100}%`
+        marker.style.height = 'auto'
+        marker.style.aspectRatio = '1'
+      }
       marker.dataset.annotationIndex = index
       marker.dataset.imageId = imageId
       marker.innerHTML = `<div class="app-ann-marker__badge" aria-hidden="true">${index + 1}</div>`
@@ -400,32 +416,71 @@ const dragMarker = (marker, event) => {
 
 // ─── Editor ────────────────────────────────────────────────────────────────
 
-const describeReaders = (side) =>
-  (side?.readers || [])
-    .map(
-      (reader, index) =>
-        `Reader ${index + 1}: ${escapeHtml(
-          reader.opinion
-            ? `opinion ${READER_OPINIONS[reader.opinion] || reader.opinion}`
-            : 'opinion not recorded'
-        )}; recommended ${escapeHtml(ACTIONS[reader.action] || reader.action || 'nothing recorded')}`
-    )
-    .join('<br>')
+const renderOpinionCell = (opinion, action) => {
+  const tag = opinion
+    ? `<strong class="nhsuk-tag nhsuk-tag--${OPINION_TAG_COLOURS[opinion] || 'grey'}">${escapeHtml(opinion.charAt(0).toUpperCase() + opinion.slice(1))}</strong>`
+    : '<strong class="nhsuk-tag nhsuk-tag--white">Not recorded</strong>'
+  return `
+    <td class="nhsuk-table__cell">
+      ${tag}
+      ${action ? `<span class="app-real-cases__nbss-action">${escapeHtml(ACTIONS[action] || action)}</span>` : ''}
+    </td>
+  `
+}
+
+// Readers down the side, breasts across, so each reader's opinions read
+// along a row and any disagreement shows down a column
+const renderNbssTable = (nbss) => {
+  const sides = ['right', 'left']
+  const readerCount = Math.max(
+    ...sides.map((side) => nbss[side]?.readers?.length || 0)
+  )
+
+  const readerRows = Array.from(
+    { length: readerCount },
+    (_, index) => `
+      <tr class="nhsuk-table__row">
+        <th class="nhsuk-table__header" scope="row">Reader ${index + 1}</th>
+        ${sides
+          .map((side) => {
+            const reader = nbss[side]?.readers?.[index]
+            if (!reader) return '<td class="nhsuk-table__cell"></td>'
+            return renderOpinionCell(
+              reader.opinion &&
+                (READER_OPINIONS[reader.opinion] || reader.opinion),
+              reader.action
+            )
+          })
+          .join('')}
+      </tr>
+    `
+  ).join('')
+
+  return `
+    <table class="nhsuk-table app-real-cases__nbss-table">
+      <thead class="nhsuk-table__head">
+        <tr class="nhsuk-table__row">
+          <td class="nhsuk-table__header"></td>
+          <th class="nhsuk-table__header" scope="col">Right breast</th>
+          <th class="nhsuk-table__header" scope="col">Left breast</th>
+        </tr>
+      </thead>
+      <tbody class="nhsuk-table__body">
+        ${readerRows}
+        <tr class="nhsuk-table__row app-real-cases__nbss-outcome">
+          <th class="nhsuk-table__header" scope="row">Outcome</th>
+          ${sides.map((side) => renderOpinionCell(nbss[side]?.opinion, nbss[side]?.finalAction)).join('')}
+        </tr>
+      </tbody>
+    </table>
+  `
+}
 
 const renderNbss = (readingCase) => {
   const nbss = readingCase.nbss
   if (!nbss) return '<p>No NBSS episode for this study.</p>'
 
-  const sides = ['right', 'left']
-    .map(
-      (side) => `
-        <p class="nhsuk-body-s nhsuk-u-margin-bottom-2">
-          <strong>${side === 'right' ? 'Right breast' : 'Left breast'}:</strong> screening opinion ${escapeHtml(nbss[side]?.opinion || 'not recorded')}; final action ${escapeHtml(ACTIONS[nbss[side]?.finalAction] || nbss[side]?.finalAction || 'not recorded')}<br>
-          ${describeReaders(nbss[side])}
-        </p>
-      `
-    )
-    .join('')
+  const sides = renderNbssTable(nbss)
 
   const assessment = nbss.assessment
     ? `<p class="nhsuk-body-s nhsuk-u-margin-bottom-2"><strong>Assessment:</strong> outcome ${escapeHtml(nbss.assessment.outcome || 'not recorded')}, imaging opinion ${escapeHtml(nbss.assessment.opinion || 'not recorded')}, biopsy ${escapeHtml(nbss.assessment.biopsyOpinion || 'none')}</p>`
@@ -469,6 +524,9 @@ const renderOtherStudies = (readingCase) => {
     </div>
   `
 }
+
+const getSizeLabel = (size) =>
+  size ? `${Math.round(size * 100)}% of image width` : 'Not set'
 
 const renderAnnotation = (annotation, index, readingCase) => {
   const isActive = index === state.activeAnnotationIndex
@@ -517,6 +575,16 @@ const renderAnnotation = (annotation, index, readingCase) => {
         <select class="nhsuk-select" id="${idBase}Finding" data-field="finding">
           ${state.data.findings.map((finding) => `<option value="${finding.id}" ${annotation.finding === finding.id ? 'selected' : ''}>${escapeHtml(finding.label)}</option>`).join('')}
         </select>
+      </div>
+
+      <div class="nhsuk-form-group nhsuk-u-margin-bottom-2">
+        <label class="nhsuk-label" for="${idBase}Size">Size</label>
+        <div class="nhsuk-hint" id="${idBase}SizeHint">Drag to fit the ring around the finding. Saved for later use; the reading screens don’t show it yet.</div>
+        <div class="app-real-cases__size">
+          <input class="app-real-cases__size-input" id="${idBase}Size" type="range" min="${MARKER_SIZE.min}" max="${MARKER_SIZE.max}" step="${MARKER_SIZE.step}" value="${annotation.size || MARKER_SIZE.default}" aria-describedby="${idBase}SizeHint" data-field="size">
+          <span class="app-real-cases__size-value js-real-cases-size-value">${getSizeLabel(annotation.size)}</span>
+          <button type="button" class="app-real-cases__link-button js-real-cases-clear-size" data-clear-size="${index}" ${annotation.size ? '' : 'hidden'}>Clear</button>
+        </div>
       </div>
 
       <div class="nhsuk-form-group nhsuk-u-margin-bottom-0">
@@ -683,6 +751,13 @@ const updateAnnotationField = (input) => {
     annotation.abnormalityType = [
       ...input.closest('.nhsuk-checkboxes').querySelectorAll('input:checked')
     ].map((checkbox) => checkbox.value)
+  } else if (field === 'size') {
+    annotation.size = Number(input.value)
+    const sizeControls = input.closest('.app-real-cases__size')
+    sizeControls.querySelector('.js-real-cases-size-value').textContent =
+      getSizeLabel(annotation.size)
+    sizeControls.querySelector('.js-real-cases-clear-size').hidden = false
+    renderMarkers()
   } else {
     annotation[field] = input.value
   }
@@ -782,6 +857,16 @@ const setUpEvents = () => {
       return scheduleSave()
     }
 
+    const clearSizeButton = event.target.closest('[data-clear-size]')
+    if (clearSizeButton) {
+      delete getStudyAnnotations(getCurrentCase().studyId)[
+        Number(clearSizeButton.dataset.clearSize)
+      ].size
+      renderMarkers()
+      renderEditor()
+      return scheduleSave()
+    }
+
     if (event.target.closest('[data-new-annotation]')) {
       state.activeAnnotationIndex = null
       renderMarkers()
@@ -795,7 +880,7 @@ const setUpEvents = () => {
   })
 
   elements.editor.addEventListener('input', (event) => {
-    if (event.target.dataset.field === 'notes') {
+    if (['notes', 'size'].includes(event.target.dataset.field)) {
       updateAnnotationField(event.target)
     }
     if (event.target.dataset.reviewField === 'notes') {

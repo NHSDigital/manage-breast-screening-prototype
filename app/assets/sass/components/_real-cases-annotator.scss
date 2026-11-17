@@ -193,6 +193,56 @@ $app-real-cases-editor-width: 380px;
   @include nhsuk-font(16);
 }
 
+.app-real-cases__size {
+  display: flex;
+  flex-wrap: wrap;
+  gap: nhsuk-spacing(2);
+  align-items: center;
+  @include nhsuk-font(16);
+}
+
+.app-real-cases__size-input {
+  flex: 1 1 140px;
+}
+
+.app-real-cases__link-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: $nhsuk-link-colour;
+  text-decoration: underline;
+  cursor: pointer;
+  @include nhsuk-font(16);
+
+  &:focus-visible {
+    @include nhsuk-focused-text;
+  }
+}
+
+.app-real-cases__nbss-table {
+  margin-bottom: nhsuk-spacing(2);
+  @include nhsuk-font(16);
+
+  .nhsuk-table__header,
+  .nhsuk-table__cell {
+    padding: nhsuk-spacing(1) nhsuk-spacing(2) nhsuk-spacing(1) 0;
+    vertical-align: top;
+  }
+}
+
+.app-real-cases__nbss-action {
+  display: block;
+  margin-top: nhsuk-spacing(1);
+  color: $nhsuk-secondary-text-colour;
+  @include nhsuk-font(14);
+}
+
+// Sets the outcome apart from the readers' opinions above it
+.app-real-cases__nbss-outcome .nhsuk-table__header,
+.app-real-cases__nbss-outcome .nhsuk-table__cell {
+  border-top: 2px solid $nhsuk-border-colour;
+}
+
 .app-real-cases__save-status--error {
   color: $nhsuk-error-colour;
   font-weight: bold;
