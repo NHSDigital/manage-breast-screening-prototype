@@ -42,10 +42,32 @@ const getModifiedTime = (filePath) => {
 const getImageUrl = (packFile) => URL_PREFIX + packFile.replace(/^images\//, '')
 
 /**
- * A study's standard views, in the shape image sets use: a URL per view, or
- * an array of URLs ordered by instance when the view was taken more than once.
+ * The images a study shows for each standard view, ordered by instance.
  * Assessment views (spot compression and so on) and C-View images are left out
  * unless they are all there is for a view.
+ *
+ * @param {object} study - Study from the manifest
+ * @returns {object} Array of manifest images per view, empty if none
+ */
+const getStandardViewImages = (study) =>
+  Object.fromEntries(
+    STANDARD_VIEWS.map((view) => {
+      const viewImages = study.images.filter(
+        (image) => image.view === view && image.files?.display
+      )
+      const plainImages = viewImages.filter(
+        (image) => !image.synthetic2D && !image.modifiers?.length
+      )
+      const images = (plainImages.length ? plainImages : viewImages).sort(
+        (a, b) => a.instance - b.instance
+      )
+      return [view, images]
+    })
+  )
+
+/**
+ * A study's standard views, in the shape image sets use: a URL per view, or
+ * an array of URLs ordered by instance when the view was taken more than once.
  *
  * @param {object} study - Study from the manifest
  * @returns {{ paths: object, fullPaths: object, imageViewKeys: Map<string, string> }}
@@ -57,17 +79,10 @@ const getStudyViews = (study) => {
   const paths = {}
   const fullPaths = {}
   const imageViewKeys = new Map()
+  const imagesByView = getStandardViewImages(study)
 
   for (const view of STANDARD_VIEWS) {
-    const viewImages = study.images.filter(
-      (image) => image.view === view && image.files?.display
-    )
-    const plainImages = viewImages.filter(
-      (image) => !image.synthetic2D && !image.modifiers?.length
-    )
-    const images = (plainImages.length ? plainImages : viewImages).sort(
-      (a, b) => a.instance - b.instance
-    )
+    const images = imagesByView[view]
 
     for (const image of images) {
       if (image.files.full) {
@@ -271,6 +286,9 @@ const getImageSource = (imagePath) => {
 }
 
 module.exports = {
+  STANDARD_VIEWS,
   getManifest,
-  getImageSource
+  getImageSource,
+  getImageUrl,
+  getStandardViewImages
 }

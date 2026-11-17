@@ -333,6 +333,7 @@ router.post(
   }
 )
 
+require('./routes/admin-real-cases')(router)
 require('./routes/settings')(router)
 require('./routes/users')(router)
 

@@ -1,0 +1,197 @@
+/* app/assets/sass/components/_real-cases-annotator.scss */
+/* Real case annotator (/admin/real-cases): case list, images and editor side by side */
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+$app-real-cases-list-width: 300px;
+$app-real-cases-editor-width: 380px;
+
+// The page uses the full window width; set as containerClasses
+.app-real-cases-container {
+  max-width: none;
+}
+
+.app-real-cases {
+  display: grid;
+  grid-template-columns: $app-real-cases-list-width minmax(0, 1fr) $app-real-cases-editor-width;
+  gap: nhsuk-spacing(3);
+  align-items: start;
+}
+
+.app-real-cases__list,
+.app-real-cases__editor {
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+  overflow-y: auto;
+}
+
+.app-real-cases__list {
+  border-right: 1px solid $nhsuk-border-colour;
+  padding-right: nhsuk-spacing(2);
+}
+
+.app-real-cases__case {
+  display: block;
+  width: 100%;
+  padding: nhsuk-spacing(2);
+  border: 0;
+  border-bottom: 1px solid nhsuk-colour("grey-4");
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  @include nhsuk-font(16);
+
+  &:hover {
+    background: nhsuk-colour("grey-5");
+  }
+
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+  }
+}
+
+.app-real-cases__case--current {
+  background: nhsuk-colour("pale-blue");
+  box-shadow: inset 4px 0 0 nhsuk-colour("blue");
+
+  &:hover {
+    background: nhsuk-colour("pale-blue");
+  }
+}
+
+.app-real-cases__case-meta {
+  display: block;
+  color: $nhsuk-secondary-text-colour;
+  @include nhsuk-font(14);
+}
+
+.app-real-cases__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: nhsuk-spacing(1);
+  margin-top: nhsuk-spacing(1);
+}
+
+// ─── Images ─────────────────────────────────────────────────────────────────
+
+.app-real-cases__case-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: nhsuk-spacing(2);
+  align-items: center;
+  margin-bottom: nhsuk-spacing(2);
+}
+
+.app-real-cases__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: nhsuk-spacing(2);
+  background: nhsuk-colour("black");
+  padding: nhsuk-spacing(2);
+}
+
+.app-real-cases__grid--single {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.app-real-cases__view {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: nhsuk-spacing(1);
+}
+
+// Bookmatched: right breast images sit against the middle from the left,
+// left breast images from the right
+.app-real-cases__view--left {
+  align-items: flex-start;
+}
+
+.app-real-cases__view-header {
+  display: flex;
+  gap: nhsuk-spacing(2);
+  align-items: center;
+  color: nhsuk-colour("white");
+  @include nhsuk-font(16, $weight: bold);
+}
+
+// A link-style button, light enough to sit over the black image grid
+.app-real-cases__enlarge {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: nhsuk-colour("white");
+  text-decoration: underline;
+  cursor: pointer;
+  @include nhsuk-font(16);
+
+  &:focus-visible {
+    outline: $nhsuk-focus-width solid $nhsuk-focus-colour;
+  }
+}
+
+// Sized by its image, so marker positions are fractions of the image
+.app-real-cases__image {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  cursor: crosshair;
+  line-height: 0;
+
+  img {
+    max-width: 100%;
+    max-height: 44vh;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+}
+
+.app-real-cases__grid--single .app-real-cases__image img {
+  max-height: 88vh;
+}
+
+.app-real-cases__no-image {
+  color: nhsuk-colour("grey-3");
+  @include nhsuk-font(16);
+}
+
+// ─── Editor ─────────────────────────────────────────────────────────────────
+
+.app-real-cases__section {
+  margin-bottom: nhsuk-spacing(3);
+  padding-bottom: nhsuk-spacing(2);
+  border-bottom: 1px solid $nhsuk-border-colour;
+}
+
+.app-real-cases__annotation {
+  margin-bottom: nhsuk-spacing(2);
+  padding: nhsuk-spacing(2);
+  border: 1px solid $nhsuk-border-colour;
+  border-left-width: 4px;
+}
+
+.app-real-cases__annotation--active {
+  border-left-color: $nhsuk-focus-colour;
+  background: nhsuk-colour("grey-5");
+}
+
+.app-real-cases__annotation-header {
+  display: flex;
+  gap: nhsuk-spacing(2);
+  justify-content: space-between;
+  align-items: center;
+}
+
+.app-real-cases__annotation-header .nhsuk-button {
+  margin-bottom: nhsuk-spacing(1);
+}
+
+.app-real-cases__save-status {
+  color: $nhsuk-secondary-text-colour;
+  @include nhsuk-font(16);
+}
+
+.app-real-cases__save-status--error {
+  color: $nhsuk-error-colour;
+  font-weight: bold;
+}
