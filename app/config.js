@@ -64,6 +64,9 @@ module.exports = {
     mammogramImageSource: (process.env.MAMMOGRAM_IMAGE_SOURCE || 'diagrams')
       .trim()
       .toLowerCase(),
+    // How long entering the real images access code unlocks them for. See
+    // app/lib/real-images-access.js
+    realImagesAccessHours: 4,
     // View order for mammogram display: 'cc-first' or 'mlo-first'
     // Right breast views always on left, left breast views on right
     mammogramViewOrder: 'cc-first',

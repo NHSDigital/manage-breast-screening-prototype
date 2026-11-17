@@ -1,0 +1,58 @@
+{# app/views/real-images-access.html #}
+{# Unlock real mammogram images for this session with the access code. See
+   app/lib/real-images-access.js #}
+
+{% extends 'layout-app.html' %}
+
+{% set pageHeading = "Enter the access code for real images" %}
+{% set gridColumn = "nhsuk-grid-column-two-thirds" %}
+{% set hideRealImagesLockBanner = true %}
+{% set back = {
+  href: "/settings" | getReturnUrl(referrerChain),
+  text: "Back"
+} %}
+
+{% set realImagesAccessState = getRealImagesAccessState() %}
+
+{% if realImagesAccessState == "locked" %}
+  {% set formAction = "/real-images-access-answer" | urlWithReferrer(referrerChain) %}
+{% endif %}
+
+{% block pageContent %}
+
+  {% if realImagesAccessState == "locked" %}
+
+    {{ input({
+      id: "realImagesAccessCode",
+      name: "_realImagesAccessCode",
+      label: {
+        heading: {
+          text: pageHeading,
+          size: "l"
+        }
+      },
+      hint: "Ask the research team for the code",
+      autocomplete: "off",
+      spellcheck: false,
+      width: 20
+    } | populateErrors) }}
+
+    {{ button({
+      text: "Unlock real images"
+    }) }}
+
+  {% else %}
+
+    <h1>{{ pageHeading }}</h1>
+
+    {% if realImagesAccessState == "unlocked" %}
+      <p>Real images are unlocked for this session.</p>
+    {% elseif realImagesAccessState == "no-access-code" %}
+      <p>Real images can’t be unlocked because no access code has been set for this prototype.</p>
+    {% else %}
+      <p>No access code is needed when the prototype runs locally.</p>
+    {% endif %}
+
+  {% endif %}
+
+{% endblock %}

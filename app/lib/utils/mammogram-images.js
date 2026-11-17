@@ -7,6 +7,10 @@ const { isMedicalHistoryItemRemoved } = require('./medical-information')
 const { getImagedSides } = require('./expected-views')
 const { formatDate, formatRelativeDate } = require('./dates')
 const realImages = require('../real-images')
+const {
+  getAccessCodeStatus,
+  isRealImagesUnlocked
+} = require('../real-images-access')
 
 // Image sources. Diagrams are in app/assets; real images come from a pack
 // outside the app (app/lib/real-images.js).
@@ -387,12 +391,23 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
   return []
 }
 
+// The "Mammogram images" setting is 'real' (or defaults to it) and a pack
+// with usable cases is present
+const isRealImagesWanted = (data) => {
+  const setting =
+    data?.settings?.reading?.mammogramImageSource ||
+    config.reading?.mammogramImageSource
+  return setting === 'real' && hasImageSets('real')
+}
+
 /**
  * Which image source to show: 'diagrams' or 'real'. Real images are for image
  * reading only, and are used only when the "Mammogram images" setting
- * (`data.settings.reading.mammogramImageSource`) is 'real' and a pack with
- * usable cases is present. Otherwise, diagrams. Outside a template, or when
- * the session has no setting, `config.reading.mammogramImageSource` decides.
+ * (`data.settings.reading.mammogramImageSource`) is 'real', a pack with
+ * usable cases is present, and the session has real images unlocked (see
+ * app/lib/real-images-access.js). Otherwise, diagrams. Outside a template, or
+ * when the session has no setting, `config.reading.mammogramImageSource`
+ * decides, and real images count as locked when an access code is needed.
  *
  * Screening pages, and the set stored on appointments
  * (`mammogramData.selectedSetId`, chosen when images are taken or seed data is
@@ -402,18 +417,49 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
  * @param {string} [area] - 'reading' (default) or 'screening'
  * @returns {string} 'diagrams' or 'real'
  * @example
- * getMammogramImageSource() // 'real' when configured and a pack is present
+ * getMammogramImageSource() // 'real' when configured, a pack is present and unlocked
  * getMammogramImageSource('screening') // always 'diagrams'
  */
 function getMammogramImageSource(area = 'reading') {
   if (area !== 'reading') return 'diagrams'
-  const setting =
-    (this &&
-      this.ctx &&
-      this.ctx.data?.settings?.reading?.mammogramImageSource) ||
-    config.reading?.mammogramImageSource
-  if (setting !== 'real') return 'diagrams'
-  return hasImageSets('real') ? 'real' : 'diagrams'
+  const data = this && this.ctx && this.ctx.data
+  if (!isRealImagesWanted(data)) return 'diagrams'
+  return isRealImagesUnlocked(data) ? 'real' : 'diagrams'
+}
+
+/**
+ * Where this session stands with the real images access code (see
+ * app/lib/real-images-access.js), whatever the "Mammogram images" setting.
+ *
+ * @returns {string} 'not-needed' (running locally without a code),
+ *   'unlocked', 'locked', or 'no-access-code' (deployed without
+ *   REAL_IMAGES_ACCESS_CODE, so real images can't be unlocked)
+ * @example
+ * {% if getRealImagesAccessState() == "locked" %}
+ */
+function getRealImagesAccessState() {
+  const data = this && this.ctx && this.ctx.data
+  const status = getAccessCodeStatus()
+  if (status === 'not-needed') return 'not-needed'
+  if (status === 'not-set') return 'no-access-code'
+  return isRealImagesUnlocked(data) ? 'unlocked' : 'locked'
+}
+
+/**
+ * Why real images are being held back, if they are: the "Mammogram images"
+ * setting is 'real' and a pack is present, but the session isn't unlocked.
+ *
+ * @returns {string|null} 'locked' or 'no-access-code' (as
+ *   getRealImagesAccessState), or null when real images aren't wanted or are
+ *   showing
+ * @example
+ * {% set realImagesLockReason = getRealImagesLockReason() %}
+ */
+function getRealImagesLockReason() {
+  const data = this && this.ctx && this.ctx.data
+  if (!isRealImagesWanted(data)) return null
+  const state = getRealImagesAccessState.call(this)
+  return state === 'locked' || state === 'no-access-code' ? state : null
 }
 
 // The real case tag that best stands in for a diagram set's tag. Real cases
@@ -1449,6 +1495,8 @@ module.exports = {
   IMAGE_SOURCES,
   VIEWS,
   getMammogramImageSource,
+  getRealImagesAccessState,
+  getRealImagesLockReason,
   getManifest,
   getAvailableSets,
   getSetById,

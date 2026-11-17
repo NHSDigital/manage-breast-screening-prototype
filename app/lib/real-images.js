@@ -4,7 +4,7 @@
 // manifest.json describing participants, studies and cases. The pack lives
 // outside app/assets and public, which the prototype kit serves before the
 // password check, and its images are served by the /real-images/ route in
-// app/routes.js. See docs/mammogram-images.md.
+// app/routes/real-images.js. See docs/mammogram-images.md.
 //
 // Not in app/lib/utils, so none of this becomes a Nunjucks filter. Pages get
 // real images through the helpers in app/lib/utils/mammogram-images.js.
