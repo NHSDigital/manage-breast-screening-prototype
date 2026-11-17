@@ -137,6 +137,8 @@ pack-env/bin/python scripts/real-images/build-pack.py /path/to/participant-folde
 
 A pack is real image data: never commit it, and never put it under `app/assets` or `public`.
 
+To share a pack, copy `manifest.json`, `images/`, and `annotations.json` and `curation.json` if they exist. Keep `id-map.json` and `build.log` with the raw data: both contain original IDs.
+
 ### Showing a pack in the prototype
 
 Put the pack at `real-images/` in the repo root (gitignored), or point `REAL_IMAGES_PATH` at it, start the prototype, and choose "Real images" on the settings page. To start with real images on, without the setting:
