@@ -14,6 +14,9 @@
 <meta name="mammogram-nhs-number" content="{{ viewerParticipant.medicalInformation.nhsNumber | formatNhsNumber }}">
 <meta name="mammogram-sx-number" content="{{ viewerParticipant.sxNumber }}">
 <meta name="mammogram-date-of-birth" content="{{ viewerParticipant.demographicInformation.dateOfBirth | formatDate }} ({{ viewerParticipant | getAge }} years)">
+{% if viewerAppointment.timing.startTime %}
+  <meta name="mammogram-study-date" content="{{ viewerAppointment.timing.startTime | formatDate }}">
+{% endif %}
 <meta name="mammogram-auto-open" content="{{ 'true' if viewerAutoOpen else 'false' }}">
 {% if mammogramImages and mammogramImages.paths %}
   {# Pass image paths - util filters to only include views present in mammogram data #}

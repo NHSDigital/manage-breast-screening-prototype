@@ -28,6 +28,26 @@ This prototype simulates that behaviour using:
 - **Auto-open**: If `autoOpenPacsViewer` setting is enabled, viewer opens automatically when entering reading workflow
 - **From an issue**: "Open study in PACS" on an issue page opens the viewer for that issue's images (see [issues.md](issues.md#images-on-the-issue-page))
 
+### Screens
+
+Most units read on two portrait monitors side by side. The `pacsScreens` setting chooses:
+
+- **Two** (default): the viewer opens on the left half of the screen as screen 1 (`/reading/mammogram-viewer`), then opens screen 2 (`?screen=2`, window name `mammogram-viewer-2`) on the right half. Browsers allow one pop-up per click, so screen 1 opens screen 2 itself; if that is blocked, an “Open screen 2” button appears in screen 1's header. Screen 2 gets its study and layout from screen 1. Closing either with “Close viewer” closes both.
+- **One**: a single landscape window showing screen 1 and screen 2 side by side. Opening it closes any screen 2 left over from two-screen mode.
+
+The setting is read when the viewer loads, so reopen the viewer after changing it.
+
+### Layouts (hanging protocol)
+
+| Layout  | Screen 1                                       | Screen 2               | Shown                        |
+| ------- | ---------------------------------------------- | ---------------------- | ---------------------------- |
+| Priors  | MLOs: prior on top (RMLO, LMLO), current below | CCs, the same way      | First, when there are priors |
+| Current | Right breast: RCC on top, RMLO below           | Left breast: LCC, LMLO | First, when there are none   |
+| MLO     | RMLO                                           | LMLO                   |                              |
+| CC      | RCC                                            | LCC                    |                              |
+
+Header buttons or ← → switch layout, in both screens at once. Right-breast images sit against the right edge of their panel and left-breast images against the left, so the pair is bookmatched. Every panel is labelled with its view and date; prior labels are yellow and include how long ago the prior was taken. Layouts are fixed in `LAYOUTS` in the viewer script; the viewer doesn't use `mammogramViewOrder`.
+
 Pages give the viewer their study with `_includes/images/pacs-viewer-meta.njk`, included in the head after setting `viewerAppointment`, `viewerParticipant` and `viewerAutoOpen`. The reading layout and the issue page use it.
 
 ### Communication Flow
@@ -58,26 +78,27 @@ When the viewer opens (manually or auto), it requests current participant data:
 
 ### Viewer Features
 
-- **Zoom**: Click any image in the main grid to view it fullscreen, fitted to the screen. Click (when fitted), press Escape or use the Close button to close
-- **Zoom in and pan**: In the fullscreen view, scroll the mouse wheel or pinch on a trackpad to zoom towards the pointer, or press + and - to zoom on the centre, up to 8 times the fitted size; 0 goes back to fit. When zoomed in, drag to pan. A small indicator shows the zoom level (“Fit” or a percentage of the fitted size). Each image opens fitted, so moving to another image or participant resets the zoom. If a set has a full-resolution file for an image (real images do), it's loaded the first time that image is zoomed in
-- **Keyboard navigation**: Arrow keys cycle through zoomed images (ordered by breast: right then left), zoomed in or not; they don't pan. When not zoomed, left arrow opens first right breast image, right arrow opens first left breast image.
+- **Zoom**: Click an image to open it fullscreen at 4 times the fitted size, with the point clicked under the pointer. Click again (without dragging), press Escape or use the Close button to close
+- **Zoom in and pan**: In the fullscreen view, scroll the mouse wheel or pinch on a trackpad to zoom towards the pointer, or press + and - to zoom on the centre, up to 8 times the fitted size; 0 goes back to fit. Drag to pan. A small indicator shows the zoom level (“Fit” or a percentage of the fitted size). Moving to another image opens it fitted. If a set has a full-resolution file for an image (real images do), it's loaded the first time that image is zoomed in
+- **Keyboard navigation**: In the grid, ← → change layout. Fullscreen, ← → move through the images on this screen, in layout order; they don't pan.
 - **Opinion shortcuts**: Press N (normal), D (normal, but add details), T (technical recall), or R (recall for assessment) to trigger the corresponding opinion on the reading page - works even when PACS viewer is focused. When the participant has symptoms, plain Normal is not offered: “Normal, and add details” replaces it, and both N and D trigger it
 - **Additional images**: When a case has repeat/retake images, "View additional images" button appears; modal shows all attempts with labels. Clicking an earlier attempt shows it fullscreen on its own
-- **Priors**: When the participant has earlier studies, buttons in the header switch between each prior (“3 years ago”, with the date on hover) and “Current”: oldest on the left, Current on the right and shown first, up to `config.reading.maxPriorStudiesInViewer` (3) priors. [ and ] page to an older or newer study. When there are none, the header says “No priors”. A yellow bar under the header, and a yellow label when fullscreen, show a prior is on screen. Switching study while fullscreen shows the same view at the same zoom and position, to compare the two; if that study has no such view, fullscreen closes. A new participant always opens on their current study
+- **Priors**: When the participant has earlier studies, the Priors layout compares the current study with one of them, the most recent by default. Buttons in the header (“Prior: 3 years ago”, with the date on hover, oldest on the left) choose which, up to `config.reading.maxPriorStudiesInViewer` (3) priors; [ and ] step older or newer. Choosing a prior switches to the Priors layout. When there are none, the header says “No priors” and the Priors layout isn't offered. Fullscreen, [ and ] show the same view from an older or newer study at the same zoom and position, skipping studies without that view. A new participant always opens on the default layout and most recent prior
 - **Debug mode**: Press 'i' to toggle debug bar showing set ID, tag, description, and context flags
 
 #### Keyboard shortcuts
 
-| Key        | Where               | Does                                                         |
-| ---------- | ------------------- | ------------------------------------------------------------ |
-| ← →        | Grid                | Open the first right (←) or left (→) breast image fullscreen |
-| ← →        | Fullscreen          | Previous or next image                                       |
-| + -        | Fullscreen          | Zoom in or out                                               |
-| 0          | Fullscreen          | Back to fit                                                  |
-| [ ]        | Anywhere            | Older ([) or newer (]) study, when there are priors          |
-| Escape     | Fullscreen or modal | Close                                                        |
-| N, D, T, R | Anywhere            | Opinion shortcuts, sent to the reading page                  |
-| i          | Anywhere            | Toggle the debug bar                                         |
+| Key        | Where               | Does                                           |
+| ---------- | ------------------- | ---------------------------------------------- |
+| ← →        | Grid                | Previous or next layout, on both screens       |
+| ← →        | Fullscreen          | Previous or next image on this screen          |
+| + -        | Fullscreen          | Zoom in or out                                 |
+| 0          | Fullscreen          | Back to fit                                    |
+| [ ]        | Grid                | Compare with an older ([) or newer (]) prior   |
+| [ ]        | Fullscreen          | Same view from an older ([) or newer (]) study |
+| Escape     | Fullscreen or modal | Close                                          |
+| N, D, T, R | Anywhere            | Opinion shortcuts, sent to the reading page    |
+| i          | Anywhere            | Toggle the debug bar                           |
 
 Full-resolution images reach the viewer as `fullPaths`, a map from display path to full path, in the `mammogram-full-paths` meta tag. Only real image sets have them (`fullPaths` in `app/lib/real-images.js`).
 
@@ -211,16 +232,17 @@ When sets have arrays for views (repeat scenarios), the viewer:
 
 ### User Settings (`data.settings`)
 
-| Setting              | Default      | Description                                                        |
-| -------------------- | ------------ | ------------------------------------------------------------------ |
-| `debugMode`          | `'false'`    | Show debug info (tags like Has repeat, Imperfect, etc.)            |
-| `mammogramViewOrder` | `'cc-first'` | View order: `'cc-first'` (CC on top) or `'mlo-first'` (MLO on top) |
+| Setting              | Default      | Description                                                                                                    |
+| -------------------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `debugMode`          | `'false'`    | Show debug info (tags like Has repeat, Imperfect, etc.)                                                        |
+| `mammogramViewOrder` | `'cc-first'` | View order on reading pages: `'cc-first'` (CC on top) or `'mlo-first'` (MLO on top). The viewer doesn't use it |
 
 ### User Settings (`data.settings.reading`)
 
-| Setting              | Default   | Description                                     |
-| -------------------- | --------- | ----------------------------------------------- |
-| `autoOpenPacsViewer` | `'false'` | Auto-open viewer when entering reading workflow |
+| Setting              | Default   | Description                                                   |
+| -------------------- | --------- | ------------------------------------------------------------- |
+| `autoOpenPacsViewer` | `'false'` | Auto-open viewer when entering reading workflow               |
+| `pacsScreens`        | `'two'`   | `'two'` windows, one per monitor, or `'one'` landscape window |
 
 ### Hard Config (`config.reading`)
 
@@ -241,7 +263,7 @@ When sets have arrays for views (repeat scenarios), the viewer:
 | `app/lib/utils/mammogram-images.js`          | Image selection utility (weighted seeded random, path generation)        |
 | `app/lib/real-images.js`                     | Reads a real image pack and finds its image files for `/real-images/`    |
 | `app/assets/javascript/mammogram-channel.js` | BroadcastChannel communication (broadcast, listen, ping/pong, auto-open) |
-| `app/views/reading/mammogram-viewer.html`    | Viewer page (dark theme, 2×2 grid, placeholder states)                   |
+| `app/views/reading/mammogram-viewer.html`    | Viewer page (dark theme, layouts, screens, zoom, placeholder states)     |
 
 ### Integration Points
 
@@ -256,7 +278,7 @@ When sets have arrays for views (repeat scenarios), the viewer:
 | File                                                 | Purpose                                                                     |
 | ---------------------------------------------------- | --------------------------------------------------------------------------- |
 | `app/assets/images/mammogram-diagrams/manifest.json` | Image set metadata (90 sets)                                                |
-| `app/data/session-data-defaults.js`                  | `autoOpenPacsViewer` setting default                                        |
+| `app/data/session-data-defaults.js`                  | `autoOpenPacsViewer` and `pacsScreens` setting defaults                     |
 | `app/config.js`                                      | `mammogramImageSource`, `mammogramTagWeights` and `maxPriorStudiesInViewer` |
 
 ### Scripts
@@ -336,7 +358,9 @@ The `scripts/process-mammogram-images.sh` script processes individual mammogram 
 ## Future Enhancements
 
 - [ ] Test/verify probability distribution (debug route to sample many appointments)
-- [ ] Priors side by side with the current study, and hiding priors while a case is waiting for them
+- [ ] Hiding priors while a case is waiting for them
+- [ ] Layouts for more than one prior, and for extra images (repeats and additional views)
+- [ ] Settings for screen and layout order
 - [ ] Annotation inheritance for composite sets (abnormality markers)
 - [ ] Breast features alignment (moles, scars visible in mammograms)
 

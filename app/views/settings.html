@@ -239,6 +239,9 @@
     {# Auto-open PACS viewer #}
     {{ settingToggle("Auto-open PACS viewer", "settings[reading][autoOpenPacsViewer]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenPacsViewer, "false") }}
 
+    {# PACS screens - reopen the viewer after changing #}
+    {{ settingToggle("PACS screens", "settings[reading][pacsScreens]", [{value: "two", label: "Two"}, {value: "one", label: "One"}], data.settings.reading.pacsScreens, "two") }}
+
     {# Opinion delay #}
     {{ settingToggle("Opinion delay", "settings[reading][enableOpinionDelay]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.enableOpinionDelay, "false") }}
 

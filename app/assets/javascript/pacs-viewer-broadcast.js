@@ -29,6 +29,7 @@
     nhsNumber: getMeta('mammogram-nhs-number'),
     sxNumber: getMeta('mammogram-sx-number'),
     dateOfBirth: getMeta('mammogram-date-of-birth'),
+    studyDateText: getMeta('mammogram-study-date'),
     images: {
       rcc: getMeta('mammogram-image-rcc') || null,
       lcc: getMeta('mammogram-image-lcc') || null,

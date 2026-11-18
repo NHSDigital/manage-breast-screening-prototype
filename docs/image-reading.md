@@ -590,6 +590,7 @@ for both reading and arbitration, and the global dark-mode preference.
 - `confirmTechnicalRecall`, `confirmRecallForAssessment` - Require confirmation for those opinions
 - `showRemaining` - Show remaining counts
 - `autoOpenPacsViewer` - Auto-open PACS viewer when entering reading workflow (once per session)
+- `pacsScreens` - PACS viewer screens: `'two'` (default, a window per monitor) | `'one'` (one landscape window). See [pacs-viewer.md](pacs-viewer.md#screens)
 - `enableOpinionDelay` - Enforce lockout period before shortcuts/buttons become active
 - `annotationsMode` - Annotation UI variant: `'without-images'` | `'with-images-simple'` (default) | `'with-images'` | `'with-images-progressive'`
 - `secondReaderComparison` - When to show compare page: `'early'` | `'late'` | `'off'` (default)
@@ -697,7 +698,7 @@ The mammogram viewer simulates a PACS viewer on a separate monitor, displaying m
 
 - **BroadcastChannel API**: Communication between reading pages and viewer window (channel: `mammogram-viewer`)
 - **Image selection utility**: `app/lib/utils/mammogram-images.js` - weighted seeded random selection based on appointment ID
-- **Viewer page**: `app/views/reading/mammogram-viewer.html` - standalone dark-themed page with 2×2 grid
+- **Viewer page**: `app/views/reading/mammogram-viewer.html` - standalone dark-themed page showing layouts across one or two screens
 
 Reading workflow pages broadcast participant/image data to the viewer via `BroadcastChannel` (`mammogram-channel.js`). The viewer updates on each navigation; a ping/pong mechanism prevents duplicate windows from opening. A `clear` message is sent when leaving the workflow. The viewer can be opened manually (header nav link) or automatically on workflow entry if `autoOpenPacsViewer` is enabled.
 
@@ -707,5 +708,5 @@ Image sets are in `app/assets/images/mammogram-diagrams/` with a `manifest.json`
 
 - `app/lib/utils/mammogram-images.js` - Weighted seeded image selection
 - `app/assets/javascript/mammogram-channel.js` - BroadcastChannel communication
-- `app/views/reading/mammogram-viewer.html` - Standalone viewer page (dark theme, 2×2 grid)
+- `app/views/reading/mammogram-viewer.html` - Standalone viewer page (dark theme, layouts across one or two screens)
 - `app/assets/images/mammogram-diagrams/manifest.json` - Image set metadata
