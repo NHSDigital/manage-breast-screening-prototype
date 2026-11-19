@@ -236,6 +236,10 @@ def usable_images(study, client, log):
             log(f"{client}/{image['studyUid']}/{image['file']}: skipped, too small "
                 f"({image['columns']}x{image['rows']})")
             continue
+        # The header says the pixels carry text, which may identify the patient
+        if image["burnedInAnnotation"] == "YES":
+            log(f"{client}/{image['studyUid']}/{image['file']}: skipped, BurnedInAnnotation is YES")
+            continue
         usable.append(image)
     return usable
 

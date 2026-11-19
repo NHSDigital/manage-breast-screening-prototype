@@ -746,6 +746,9 @@ const getRealAssignments = () => {
   const setsById = new Map(sets.map((set) => [set.id, set]))
   const caseIdsByAppointmentId = new Map()
   const datesOfBirth = new Map()
+  // The date of birth each participant shows, fixed by her first imaged
+  // appointment, so a later one (such as a technical recall) can't change it
+  const shownDatesOfBirth = new Map()
   const usedCaseIds = new Set()
   const lastUsedByParticipant = new Map()
   const timesUsedByParticipant = new Map()
@@ -762,8 +765,25 @@ const getRealAssignments = () => {
     )
 
   imagedAppointments.forEach((appointment, index) => {
+    const participant = dataStore.state.participantsById.get(
+      appointment.participantId
+    )
+    const shownDateOfBirth = shownDatesOfBirth.get(participant?.id)
+
     let candidates = getRealCandidates(sets, appointment)
     candidates = narrowTo(candidates, (set) => !usedCaseIds.has(set.id))
+    if (shownDateOfBirth) {
+      // Cases whose age the date of birth already shown gives
+      candidates = narrowTo(
+        candidates,
+        (set) =>
+          getDateOfBirthForAge(
+            shownDateOfBirth,
+            appointment.timing?.startTime,
+            set.ageAtCurrent
+          ) === null
+      )
+    }
 
     // Participants not used recently, or if there are none, those used
     // longest ago
@@ -798,19 +818,20 @@ const getRealAssignments = () => {
       (timesUsedByParticipant.get(chosen.participantId) || 0) + 1
     )
 
-    const participant = dataStore.state.participantsById.get(
-      appointment.participantId
-    )
-    const dateOfBirth = getDateOfBirthForAge(
-      participant?.demographicInformation?.dateOfBirth,
-      appointment.timing?.startTime,
-      chosen.ageAtCurrent
-    )
-    if (dateOfBirth) {
-      datesOfBirth.set(participant.id, {
-        from: participant.demographicInformation.dateOfBirth,
-        to: dateOfBirth
-      })
+    const seedDateOfBirth = participant?.demographicInformation?.dateOfBirth
+    if (!shownDateOfBirth && seedDateOfBirth) {
+      const dateOfBirth = getDateOfBirthForAge(
+        seedDateOfBirth,
+        appointment.timing?.startTime,
+        chosen.ageAtCurrent
+      )
+      if (dateOfBirth) {
+        datesOfBirth.set(participant.id, {
+          from: seedDateOfBirth,
+          to: dateOfBirth
+        })
+      }
+      shownDatesOfBirth.set(participant.id, dateOfBirth || seedDateOfBirth)
     }
   })
 

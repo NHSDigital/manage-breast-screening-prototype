@@ -300,13 +300,19 @@ const getImageSource = (imagePath) => {
     return null
   }
 
+  // Resolve symlinks, so a link in the pack can't lead outside images/
+  let realPath
   try {
-    if (!fs.statSync(filePath).isFile()) return null
+    realPath = fs.realpathSync(filePath)
+    if (!realPath.startsWith(fs.realpathSync(imagesRoot) + path.sep)) {
+      return null
+    }
+    if (!fs.statSync(realPath).isFile()) return null
   } catch (error) {
     return null
   }
 
-  return { filePath }
+  return { filePath: realPath }
 }
 
 module.exports = {
