@@ -15,7 +15,8 @@ Setup (Python 3.8 or later; survey.py must sit next to this script):
 Run:
     pack-env/bin/python build-pack.py /path/to/participant-folders --out /path/to/pack
     --display-only    only the ~1600 px display JPEGs (a quick, small pack)
-    --skip-existing   don't re-render JPEGs that are already there (for re-runs)
+    --skip-existing   don't re-render JPEGs that are already there. On an existing
+                      pack this rebuilds only the manifest, which takes minutes
     --limit 20        only the first N participants (a trial run)
     --check           only validate an existing pack's manifest.json
     --remove-duplicates  only remove duplicate images from a pack built before the
@@ -63,6 +64,7 @@ DISPLAY_HEIGHT = 1600
 MIN_IMAGE_SIDE = 1000  # smaller than this is a specimen or partial view, not a full view
 SIDE_OPINION = {"RN": "normal", "RU": "abnormal", "BA": "clinical", "RO": "unreported", "RB": "benign"}
 RECALL_ACTIONS = ("RC", "FV", "EC")
+ASSESSMENT_WINDOW_DAYS = 60  # a screening-like study this soon after a recall is the assessment
 
 
 def alias(prefix, original):
@@ -351,6 +353,27 @@ def has_repeat(images):
 # ---- Building ----------------------------------------------------------------
 
 
+def reclassify_assessments(studies, client, log):
+    """A study soon after a recalled screening study is assessment, even with all four standard views.
+
+    The source rarely records magnification or spot modifiers, so these studies
+    otherwise look like screening and would become cases and priors.
+    """
+    last_screening = None
+    for s in studies:
+        if s["kind"] not in SCREENING_KINDS:
+            continue
+        previous = last_screening
+        if (previous and previous["nbss"] and (previous["nbss"]["recalled"] or previous["nbss"]["cancerFound"])
+                and s["daysFromFirst"] is not None and previous["daysFromFirst"] is not None
+                and s["daysFromFirst"] - previous["daysFromFirst"] <= ASSESSMENT_WINDOW_DAYS):
+            log(f"{client}: study {s['id']} is {s['daysFromFirst'] - previous['daysFromFirst']} days after "
+                f"a recall, so treated as assessment")
+            s["kind"] = "assessment-or-other"
+            continue
+        last_screening = s
+
+
 def build_participant(folder, args, curation, marked, id_map, log):
     client = os.path.basename(folder.rstrip("/\\"))
     errors = []
@@ -419,6 +442,8 @@ def build_participant(folder, args, curation, marked, id_map, log):
             "images": out_images,
             "_excluded": bool(study_curation.get("exclude")),
         })
+
+    reclassify_assessments(out_studies, client, log)
 
     participant = {
         "id": participant_id,
@@ -628,7 +653,7 @@ def main():
     parser.add_argument("--out", required=True, help="pack folder to write (created if needed)")
     parser.add_argument("--limit", type=int, help="only the first N participants")
     parser.add_argument("--display-only", action="store_true", help="only render display-size JPEGs")
-    parser.add_argument("--skip-existing", action="store_true", help="don't re-render JPEGs already in the pack")
+    parser.add_argument("--skip-existing", action="store_true", help="don't re-render JPEGs already in the pack (rebuilds just the manifest)")
     parser.add_argument("--display-height", type=int, default=DISPLAY_HEIGHT, help="display JPEG height (default 1600)")
     parser.add_argument("--check", action="store_true", help="only validate the pack's existing manifest.json")
     parser.add_argument("--remove-duplicates", action="store_true",

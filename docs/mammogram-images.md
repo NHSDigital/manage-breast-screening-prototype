@@ -129,9 +129,10 @@ pack-env/bin/pip install -r scripts/real-images/requirements.txt
 pack-env/bin/python scripts/real-images/build-pack.py /path/to/participant-folders --out /path/to/pack
 ```
 
-- `--display-only` for a quick, small pack; `--skip-existing` to render only what's missing on a re-run; `--limit N` for a trial run; `--check` to validate an existing pack's manifest; `--remove-duplicates` to take duplicate images out of a pack built before the builder dropped them (needs only the pack, not the raw data).
+- `--display-only` for a quick, small pack; `--skip-existing` to render only what's missing, so on an existing pack it rebuilds just the manifest in minutes (it still needs the raw data); `--limit N` for a trial run; `--check` to validate an existing pack's manifest; `--remove-duplicates` to take duplicate images out of a pack built before the builder dropped them (needs only the pack, not the raw data).
 - It drops 'for processing' images, tomosynthesis slices, non-mammogram studies and images too small to be a full view, and mirrors images so a right breast's chest wall is on the right and a left's on the left. Images it can't orient are left as they are and flagged in `build.log`.
 - The raw data sometimes holds the same image more than once, as separate files with their own IDs. Where images share a view and instance number and have identical pixels, it keeps the first and logs the rest in `build.log`; otherwise the copies would show as repeated views.
+- A screening study within 60 days of a recalled one is treated as assessment, because the raw data rarely marks magnification or spot views. It isn't used as a case or a prior.
 - Each screening study becomes a **case**, with only earlier screening studies as priors and its NBSS result (`normal`, `recalled-not-cancer`, `cancer`, `technical-repeat-requested`) for choosing the mix. Higher-risk participants are marked so they can be included or left out.
 - It never overwrites the hand-made `annotations.json` and `curation.json` in the pack, and leaves out studies and images that `curation.json` excludes.
 - The manifest is checked against the format at the end of every build, including a scan for original IDs or dates.
