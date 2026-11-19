@@ -29,7 +29,6 @@ const getChannel = () => {
  * @param {object} data.fullPaths - Full-resolution path for each display path, loaded on zoom (optional)
  * @param {Array<object>} data.priors - Earlier studies, newest first, from getPriorImagesForAppointment (optional)
  * @param {boolean} data.hasAdditionalImages - Whether there are additional images
- * @param {Array<string>} data.notExpected - Views that weren't expected, left blank (e.g. ['rcc', 'rmlo'])
  */
 const broadcastShowParticipant = (data) => {
   const ch = getChannel()
@@ -48,7 +47,6 @@ const broadcastShowParticipant = (data) => {
     fullPaths: data.fullPaths || null,
     priors: data.priors || [],
     hasAdditionalImages: data.hasAdditionalImages || false,
-    notExpected: data.notExpected || null,
     setId: data.setId || null,
     setDescription: data.setDescription || null,
     setTag: data.setTag || null,
@@ -271,17 +269,6 @@ document.addEventListener('DOMContentLoaded', () => {
       // Invalid JSON, ignore
     }
 
-    // Views that weren't expected, for example after a mastectomy
-    const notExpectedRaw = document
-      .querySelector('meta[name="mammogram-not-expected"]')
-      ?.getAttribute('content')
-    let notExpected = null
-    try {
-      notExpected = notExpectedRaw ? JSON.parse(notExpectedRaw) : null
-    } catch (e) {
-      // Invalid JSON, ignore
-    }
-
     // Get context info for debugging
     const contextRaw = document
       .querySelector('meta[name="mammogram-context"]')
@@ -305,7 +292,6 @@ document.addEventListener('DOMContentLoaded', () => {
       fullPaths,
       priors,
       hasAdditionalImages,
-      notExpected,
       setId,
       setDescription,
       setTag,
@@ -322,6 +308,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data) {
           broadcastShowParticipant(data)
         }
+      } else if (event.data.type === 'screen-mode') {
+        // The viewer changed the setting, so reopening it uses the new size
+        document
+          .querySelector('meta[name="pacs-viewer-screens"]')
+          ?.setAttribute('content', event.data.mode)
       }
     })
   }

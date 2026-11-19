@@ -28,18 +28,18 @@
       background-color: #0d0d0d;
       padding: 12px 16px;
       display: flex;
-      flex-wrap: wrap;
-      gap: 8px 16px;
-      justify-content: space-between;
-      align-items: center;
+      flex-direction: column;
+      gap: 8px;
       border-bottom: 1px solid #333;
       flex-shrink: 0;
     }
 
-    .viewer-header__info {
+    .viewer-header__row {
       display: flex;
-      flex-direction: column;
-      gap: 4px;
+      flex-wrap: wrap;
+      gap: 8px 16px;
+      justify-content: space-between;
+      align-items: center;
     }
 
     .viewer-header__name {
@@ -54,6 +54,11 @@
 
     .viewer-header__details span {
       margin-right: 16px;
+    }
+
+    .viewer-header__tools {
+      display: flex;
+      gap: 8px;
     }
 
     .viewer-header__actions {
@@ -80,13 +85,20 @@
       background-color: #444;
     }
 
-    .viewer-button--close {
-      background-color: #8b0000;
-      border-color: #a00;
+    .viewer-button--small {
+      padding: 4px 10px;
+      font-size: 12px;
     }
 
-    .viewer-button--close:hover {
-      background-color: #a00;
+    .viewer-button--quiet {
+      background-color: transparent;
+      border-color: #444;
+      color: #999;
+    }
+
+    .viewer-button--quiet:hover {
+      background-color: #333;
+      color: #fff;
     }
 
     .viewer-layouts,
@@ -114,8 +126,9 @@
     }
 
     .viewer-studies .viewer-button[aria-pressed="true"] {
-      background-color: #ffeb3b;
-      border-color: #ffeb3b;
+      background-color: #444;
+      border-color: #c9a227;
+      color: #fff;
     }
 
     /* One grid per screen; in single screen mode both sit side by side */
@@ -137,11 +150,21 @@
 
     .viewer-panel {
       background-color: #000;
+      border: 2px solid transparent;
       position: relative;
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
+    }
+
+    /* The border says which study a view is from */
+    .viewer-panel--current {
+      border-color: #2c5f8f;
+    }
+
+    .viewer-panel--prior {
+      border-color: #c9a227;
     }
 
     .viewer-panel--right {
@@ -160,18 +183,21 @@
       padding: 4px 8px;
       font-size: 12px;
       font-weight: 600;
+      line-height: 1.4;
       border-radius: 2px;
       z-index: 1;
+    }
+
+    .viewer-label__date {
+      display: block;
+      font-weight: 400;
+      color: #ccc;
     }
 
     .viewer-panel__label--right {
       left: auto;
       right: 8px;
-    }
-
-    .viewer-panel__label--prior {
-      background-color: #ffeb3b;
-      color: #000;
+      text-align: right;
     }
 
     .viewer-panel__image {
@@ -191,9 +217,12 @@
       justify-content: center;
       width: 100%;
       height: 100%;
-      color: #555;
-      font-size: 14px;
-      font-style: italic;
+      color: #3a3a3a;
+    }
+
+    .viewer-panel__missing svg {
+      width: 48px;
+      height: 48px;
     }
 
     .viewer-placeholder {
@@ -281,16 +310,17 @@
       top: 16px;
       left: 16px;
       background-color: rgba(0, 0, 0, 0.8);
+      border: 2px solid #2c5f8f;
       padding: 8px 16px;
       font-size: 14px;
       font-weight: 600;
+      line-height: 1.4;
       border-radius: 4px;
       z-index: 1;
     }
 
     .viewer-zoom__label--prior {
-      background-color: #ffeb3b;
-      color: #000;
+      border-color: #c9a227;
     }
 
     .viewer-zoom__close {
@@ -400,145 +430,49 @@
       background-color: #06c;
     }
 
-    .viewer-additional-link {
-      position: fixed;
-      bottom: 40px;
-      right: 16px;
-      background-color: rgba(200, 100, 0, 0.9);
-      color: #fff;
-      padding: 6px 12px;
-      font-size: 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      border: none;
-      z-index: 100;
-    }
-
-    .viewer-additional-link:hover {
-      background-color: rgba(220, 120, 0, 1);
-    }
-
-    .viewer-additional-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: rgba(0, 0, 0, 0.95);
-      z-index: 9998;
-      display: flex;
-      flex-direction: column;
-      padding: 16px;
-    }
-
-    .viewer-additional-modal__header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 16px;
-      flex-shrink: 0;
-    }
-
-    .viewer-additional-modal__title {
-      font-size: 18px;
-      font-weight: 600;
-    }
-
-    .viewer-additional-modal__close {
-      background-color: rgba(80, 80, 80, 0.9);
-      color: #fff;
-      border: 1px solid #777;
-      padding: 10px 24px;
-      font-size: 14px;
-      cursor: pointer;
-      border-radius: 4px;
-    }
-
-    .viewer-additional-modal__close:hover {
-      background-color: rgba(100, 100, 100, 1);
-      border-color: #999;
-    }
-
-    .viewer-additional-modal__hint {
-      text-align: center;
-      padding: 12px;
-      color: #888;
-      font-size: 13px;
-      flex-shrink: 0;
-    }
-
-    .viewer-additional-modal__content {
-      flex: 1;
-      overflow-y: auto;
-    }
-
-    .viewer-additional-modal__view {
-      margin-bottom: 24px;
-    }
-
-    .viewer-additional-modal__view-label {
-      font-size: 14px;
-      font-weight: 600;
-      margin-bottom: 8px;
-      color: #999;
-    }
-
-    .viewer-additional-modal__images {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
-
-    .viewer-additional-modal__image-container {
-      position: relative;
-    }
-
-    .viewer-additional-modal__image {
-      max-height: 300px;
-      max-width: 300px;
-      object-fit: contain;
-      border: 2px solid #333;
-      border-radius: 4px;
-      cursor: zoom-in;
-    }
-
-    .viewer-additional-modal__image:hover {
-      border-color: #666;
-    }
-
-    .viewer-additional-modal__image--latest {
-      border-color: #0a5;
-    }
-
-    .viewer-additional-modal__image-label {
+    /* Buttons to choose between a view's images, such as a repeat and the original */
+    .viewer-panel__images {
       position: absolute;
-      bottom: 4px;
-      left: 4px;
-      background-color: rgba(0, 0, 0, 0.8);
-      padding: 2px 6px;
-      font-size: 11px;
-      border-radius: 2px;
+      bottom: 8px;
+      left: 8px;
+      display: flex;
+      gap: 4px;
+      z-index: 1;
     }
 
-    .viewer-additional-modal__image-label--latest {
-      background-color: rgba(0, 160, 80, 0.9);
+    .viewer-panel__images--right {
+      left: auto;
+      right: 8px;
     }
+
+    .viewer-panel__images .viewer-button {
+      padding: 4px 10px;
+      font-size: 12px;
+      font-variant-numeric: tabular-nums;
+    }
+
   </style>
 </head>
 <body>
   <header class="viewer-header" id="viewer-header" style="display: none;">
-    <div class="viewer-header__info">
+    <div class="viewer-header__row">
       <div class="viewer-header__name" id="participant-name"></div>
-      <div class="viewer-header__details" id="participant-details">
+      <div class="viewer-header__tools">
+        <button class="viewer-button viewer-button--small viewer-button--quiet" id="switch-screens" type="button">
+          {{ "Use two screens" if data.settings.reading.pacsScreens == "one" else "Use one screen" }}
+        </button>
+        <button class="viewer-button viewer-button--small viewer-button--quiet" id="close-viewer" type="button">
+          Close viewer
+        </button>
       </div>
     </div>
-    <div class="viewer-header__actions">
-      <div class="viewer-layouts" id="viewer-layouts" role="group" aria-label="Layout"></div>
-      <div class="viewer-studies" id="viewer-studies" role="group" aria-label="Prior" hidden></div>
-      <button class="viewer-button" id="open-other-screen" type="button" hidden>Open screen 2</button>
-      <button class="viewer-button viewer-button--close" id="close-viewer" type="button">
-        Close viewer
-      </button>
+    <div class="viewer-header__row">
+      <div class="viewer-header__details" id="participant-details"></div>
+      <div class="viewer-header__actions">
+        <div class="viewer-layouts" id="viewer-layouts" role="group" aria-label="Layout"></div>
+        <div class="viewer-studies" id="viewer-studies" role="group" aria-label="Prior" hidden></div>
+        <button class="viewer-button" id="open-other-screen" type="button" hidden>Open screen 2</button>
+      </div>
     </div>
   </header>
 
@@ -554,10 +488,6 @@
     <div class="viewer-placeholder__icon">⏳</div>
     <div class="viewer-placeholder__text">Loading next case...</div>
   </div>
-
-  <button class="viewer-additional-link" id="additional-link" style="display: none;">
-    View additional images
-  </button>
 
   <footer class="viewer-status" id="viewer-status">
     Listening for updates...
@@ -584,6 +514,8 @@
     const SCREENS_IN_WINDOW = SCREEN_MODE === "one" ? [1, 2] : [SCREEN]
     const OTHER_SCREEN_URL = "/reading/mammogram-viewer?screen=2"
     const OTHER_SCREEN_WINDOW = "mammogram-viewer-2"
+    // Layout, prior and images to restore after switching screen mode reloads the viewer
+    const RESTORE_STATE_KEY = "mammogram-viewer-restore-state"
 
     const VIEW_LABELS = {
       rcc: "RCC",
@@ -657,6 +589,7 @@
     const studiesEl = document.getElementById("viewer-studies")
     const openOtherScreenEl = document.getElementById("open-other-screen")
     const closeViewerEl = document.getElementById("close-viewer")
+    const switchScreensEl = document.getElementById("switch-screens")
 
     // Debug elements
     const debugEl = document.getElementById("viewer-debug")
@@ -666,9 +599,6 @@
     const debugContextEl = document.getElementById("debug-context")
     let debugVisible = false
 
-    // Additional images elements
-    const additionalLinkEl = document.getElementById("additional-link")
-
     // Current set info for debug display
     let currentSetInfo = null
 
@@ -677,6 +607,10 @@
 
     // The prior the Priors layout compares with: the most recent by default
     let comparisonStudyIndex = -1
+
+    // Which image shows for a view that has more than one (such as a repeat),
+    // by "studyIndex:view". A view not listed shows its latest image
+    let imageChoices = {}
 
     // Layouts this participant can have (Priors only when there are priors),
     // and which is showing
@@ -688,7 +622,7 @@
     const MAX_ZOOM = 8
     const KEYBOARD_ZOOM_STEP = 1.25
 
-    // Clicking an image opens it this many times the fitted size, on the point clicked
+    // Clicking an image opens it this many times the fitted size, centred on the point clicked
     const CLICK_ZOOM = 4
 
     // A pointer that moves further than this between press and release is a drag, not a click
@@ -708,127 +642,78 @@
 
     const isCurrentStudy = (index) => index === currentStudies.length - 1
 
-    const getCurrentStudy = () => currentStudies[currentStudies.length - 1]
-
     /**
      * The full-resolution path for a displayed image, if its study has one
      * @param {string} src - The image's src (absolute or relative)
-     * @param {object} [study] - The study it's from, the current study by default
+     * @param {object} study - The study it's from
      * @returns {string|null}
      */
-    const getFullSrc = (src, study = getCurrentStudy()) => {
+    const getFullSrc = (src, study) => {
       if (!study?.fullPaths || !src) return null
       return study.fullPaths[new URL(src, window.location.href).pathname] || null
     }
 
     /**
-     * Label for an image: the view, and for a prior its date, so a prior is
-     * never mistaken for the current study
+     * Every image of a view in a study, oldest first, so the last is the latest
+     * @param {number} studyIndex - Index in currentStudies
+     * @param {string} view - "rcc", "lcc", "rmlo" or "lmlo"
+     * @returns {Array<string>}
+     */
+    const getViewPaths = (studyIndex, view) => {
+      const study = currentStudies[studyIndex]
+      const allPaths = study?.allPaths?.[view]
+      if (Array.isArray(allPaths) && allPaths.length > 1) return allPaths
+      const path = study?.images?.[view]
+      return path ? [path] : []
+    }
+
+    /**
+     * Which of a view's images is showing: the one chosen, or the latest
+     * @returns {number} Index in getViewPaths
+     */
+    const getImageChoice = (studyIndex, view) => {
+      const paths = getViewPaths(studyIndex, view)
+      const choice = imageChoices[`${studyIndex}:${view}`]
+      return choice >= 0 && choice < paths.length ? choice : paths.length - 1
+    }
+
+    /**
+     * Label for an image: the view (and which image, when the view has more
+     * than one), then the study's date. Current and prior are labelled alike;
+     * the panel border tells them apart
      * @param {string} view - "rcc", "lcc", "rmlo" or "lmlo"
      * @param {number} studyIndex - Index in currentStudies
-     * @returns {string}
+     * @returns {object} view, and date (empty when not known)
      */
     const getImageLabel = (view, studyIndex) => {
       const study = currentStudies[studyIndex]
-      if (!study) return VIEW_LABELS[view]
-      if (isCurrentStudy(studyIndex)) {
-        return study.dateText ? `${VIEW_LABELS[view]} · ${study.dateText}` : VIEW_LABELS[view]
-      }
-      const date = study.dateText ? ` ${study.dateText} (${study.label})` : ` (${study.label})`
-      return `${VIEW_LABELS[view]} · Prior${date}`
-    }
-
-    /**
-     * Close the additional images modal if open
-     */
-    const closeAdditionalModal = () => {
-      const modalEl = document.getElementById("additional-modal")
-      if (modalEl) {
-        modalEl.remove()
+      const imageCount = getViewPaths(studyIndex, view).length
+      const imageText = imageCount > 1 ? ` (${getImageChoice(studyIndex, view) + 1} of ${imageCount})` : ""
+      return {
+        view: `${VIEW_LABELS[view]}${imageText}`,
+        date: study?.dateText || ""
       }
     }
 
     /**
-     * Show modal with all additional images of the current study
+     * Put an image label in an element: the view, with the date on its own line
      */
-    const showAdditionalImages = () => {
-      const allPaths = getCurrentStudy()?.allPaths
-      if (!allPaths) return
-
-      const viewLabels = {
-        rcc: "Right CC",
-        lcc: "Left CC",
-        rmlo: "Right MLO",
-        lmlo: "Left MLO"
-      }
-
-      // Build modal content
-      let contentHtml = ""
-      for (const view of ["rmlo", "lmlo", "rcc", "lcc"]) {
-        const paths = allPaths[view]
-        if (!paths) continue
-
-        const pathArray = Array.isArray(paths) ? paths : [paths]
-        if (pathArray.length === 0) continue
-
-        contentHtml += `<div class="viewer-additional-modal__view">
-          <div class="viewer-additional-modal__view-label">${viewLabels[view]} (${pathArray.length} image${pathArray.length > 1 ? "s" : ""})</div>
-          <div class="viewer-additional-modal__images">`
-
-        pathArray.forEach((path, index) => {
-          const isLatest = index === pathArray.length - 1
-          const label = isLatest ? "Latest" : `Image ${index + 1}`
-          const zoomLabel = `${viewLabels[view]} - ${label}`
-          contentHtml += `<div class="viewer-additional-modal__image-container">
-            <img class="viewer-additional-modal__image${isLatest ? " viewer-additional-modal__image--latest" : ""}" src="${path}" alt="${viewLabels[view]} image ${index + 1}" data-zoom-label="${zoomLabel}">
-            <span class="viewer-additional-modal__image-label${isLatest ? " viewer-additional-modal__image-label--latest" : ""}">${label}</span>
-          </div>`
-        })
-
-        contentHtml += `</div></div>`
-      }
-
-      // Create and show modal
-      const modalEl = document.createElement("div")
-      modalEl.className = "viewer-additional-modal"
-      modalEl.id = "additional-modal"
-      modalEl.innerHTML = `
-        <div class="viewer-additional-modal__header">
-          <div class="viewer-additional-modal__title">All images (including retakes)</div>
-          <button class="viewer-additional-modal__close" id="close-additional-modal">Back to default view</button>
-        </div>
-        <div class="viewer-additional-modal__content">${contentHtml}</div>
-        <div class="viewer-additional-modal__hint">Press Escape or click the button above to return to default view</div>
-      `
-
-      document.body.appendChild(modalEl)
-
-      // Add click handlers to images for zoom
-      modalEl.querySelectorAll(".viewer-additional-modal__image").forEach((imgEl) => {
-        imgEl.addEventListener("click", (e) => {
-          e.stopPropagation()
-          const zoomLabel = imgEl.getAttribute("data-zoom-label")
-          showZoom({ src: imgEl.src, label: zoomLabel })
-        })
-      })
-
-      // Close button handler
-      document.getElementById("close-additional-modal").addEventListener("click", () => {
-        modalEl.remove()
-      })
-
-      // Close on escape
-      const escHandler = (e) => {
-        if (e.key === "Escape") {
-          modalEl.remove()
-          document.removeEventListener("keydown", escHandler)
-        }
-      }
-      document.addEventListener("keydown", escHandler)
+    const renderLabel = (labelEl, label) => {
+      labelEl.textContent = label.view
+      if (!label.date) return
+      const dateEl = document.createElement("span")
+      dateEl.className = "viewer-label__date"
+      dateEl.textContent = label.date
+      labelEl.appendChild(dateEl)
     }
 
-    // Attach click handler to additional images link
-    additionalLinkEl.addEventListener("click", showAdditionalImages)
+    /**
+     * Image label as one line of text, for alt text. Says "prior", since the
+     * border colour can't
+     */
+    const getImageAltText = (label, isPrior) => {
+      return [label.view, isPrior ? "prior" : "", label.date].filter(Boolean).join(", ")
+    }
 
     /**
      * Set debug info visibility, optionally broadcasting the change
@@ -898,17 +783,16 @@
     const showPlaceholder = () => {
       // Close any open overlays
       closeZoomOverlay()
-      closeAdditionalModal()
 
       headerEl.style.display = "none"
       screensEl.style.display = "none"
       placeholderEl.style.display = "flex"
       loadingEl.style.display = "none"
-      additionalLinkEl.style.display = "none"
       currentAppointmentId = null
       currentData = null
       currentStudies = []
       comparisonStudyIndex = -1
+      imageChoices = {}
       updateStatus("Waiting for participant...")
     }
 
@@ -918,13 +802,11 @@
     const showLoading = () => {
       // Close any open overlays
       closeZoomOverlay()
-      closeAdditionalModal()
 
       headerEl.style.display = "none"
       screensEl.style.display = "none"
       placeholderEl.style.display = "none"
       loadingEl.style.display = "flex"
-      additionalLinkEl.style.display = "none"
       updateStatus("Loading...")
     }
 
@@ -954,7 +836,6 @@
     const showMammograms = (data) => {
       // Close any open overlays from previous case
       closeZoomOverlay()
-      closeAdditionalModal()
 
       // Log set info to console for debugging
       console.log('%c[Mammogram Set]', 'color: #0f0; font-weight: bold', {
@@ -976,10 +857,7 @@
             dateText: prior.dateText,
             images: prior.paths || {},
             allPaths: prior.allPaths,
-            fullPaths: prior.fullPaths || null,
-            hasAdditionalImages: prior.hasAdditionalImages,
-            // A prior is shown as it was taken, so any missing view says so
-            notExpected: []
+            fullPaths: prior.fullPaths || null
           }))
           .reverse(),
         {
@@ -987,16 +865,13 @@
           dateText: data.studyDateText || null,
           images: data.images || {},
           allPaths: data.allPaths,
-          fullPaths: data.fullPaths || null,
-          hasAdditionalImages: data.hasAdditionalImages,
-          notExpected: data.notExpected || []
+          fullPaths: data.fullPaths || null
         }
       ]
       comparisonStudyIndex = currentStudies.length - 2
+      imageChoices = {}
       availableLayouts = LAYOUTS.filter((layout) => !layout.needsPriors || currentStudies.length > 1)
       layoutIndex = 0
-
-      additionalLinkEl.style.display = data.hasAdditionalImages ? "block" : "none"
 
       renderLayoutSwitcher()
       renderStudySwitcher()
@@ -1064,10 +939,12 @@
     }
 
     /**
-     * Mark the showing layout and compared prior as pressed
+     * Mark the showing layout and compared prior as pressed. The prior
+     * buttons only show in the Priors layout
      */
     const updateSwitchers = () => {
       const isPriorsLayout = Boolean(availableLayouts[layoutIndex]?.needsPriors)
+      studiesEl.hidden = currentStudies.length > 1 && !isPriorsLayout
       Array.from(layoutsEl.children).forEach((buttonEl, index) => {
         buttonEl.setAttribute("aria-pressed", index === layoutIndex ? "true" : "false")
       })
@@ -1090,7 +967,7 @@
      */
     const getImageItem = (studyIndex, view) => {
       const study = currentStudies[studyIndex]
-      const path = study?.images?.[view]
+      const path = getViewPaths(studyIndex, view)[getImageChoice(studyIndex, view)]
       if (!path) return null
       const src = new URL(path, window.location.href).href
       return {
@@ -1122,31 +999,81 @@
     }
 
     /**
+     * Where a click fell on an image, as fractions of the picture's width and
+     * height. With object-fit the picture can be smaller than its element
+     * @returns {object} fractionX and fractionY, from 0 to 1
+     */
+    const getClickFraction = (imageEl, e) => {
+      const rect = imageEl.getBoundingClientRect()
+      const scale = Math.min(rect.width / imageEl.naturalWidth, rect.height / imageEl.naturalHeight)
+      const width = imageEl.naturalWidth * scale
+      const height = imageEl.naturalHeight * scale
+      const left = rect.left + (rect.width - width) / 2
+      const top = rect.top + (rect.height - height) / 2
+      const clamp = (value) => Math.min(1, Math.max(0, value))
+      return {
+        fractionX: clamp((e.clientX - left) / width),
+        fractionY: clamp((e.clientY - top) / height)
+      }
+    }
+
+    /**
+     * Numbered buttons to flick between a view's images, such as a repeat
+     * and the image it replaced. Only for views with more than one
+     * @returns {HTMLElement|null}
+     */
+    const createImageChoiceButtons = (studyIndex, view, isRight) => {
+      const paths = getViewPaths(studyIndex, view)
+      if (paths.length < 2) return null
+
+      const choice = getImageChoice(studyIndex, view)
+      const groupEl = document.createElement("div")
+      groupEl.className = `viewer-panel__images${isRight ? "" : " viewer-panel__images--right"}`
+      groupEl.setAttribute("role", "group")
+      groupEl.setAttribute("aria-label", `${VIEW_LABELS[view]} images`)
+
+      paths.forEach((path, index) => {
+        const isLatest = index === paths.length - 1
+        const buttonEl = document.createElement("button")
+        buttonEl.type = "button"
+        buttonEl.className = "viewer-button"
+        buttonEl.textContent = isLatest ? `${index + 1} (latest)` : `${index + 1}`
+        buttonEl.title = `Image ${index + 1} of ${paths.length}`
+        buttonEl.setAttribute("aria-pressed", index === choice ? "true" : "false")
+        buttonEl.dataset.imageChoice = `${studyIndex}:${view}:${index}`
+        buttonEl.addEventListener("click", (e) => {
+          e.stopPropagation()
+          setImageChoice(studyIndex, view, index)
+          broadcastViewerState()
+          // The panels are redrawn, so put focus back on the new button
+          screensEl.querySelector(`[data-image-choice="${studyIndex}:${view}:${index}"]`)?.focus()
+        })
+        groupEl.appendChild(buttonEl)
+      })
+      return groupEl
+    }
+
+    /**
      * A panel showing one view of one study, or "No image"
      */
     const createPanel = ({ study: studyType, view }) => {
       const studyIndex = getPanelStudyIndex(studyType)
-      const study = currentStudies[studyIndex]
       const isPrior = !isCurrentStudy(studyIndex)
       const isRight = view.startsWith("r")
 
       const panelEl = document.createElement("div")
-      panelEl.className = `viewer-panel viewer-panel--${isRight ? "right" : "left"}`
+      panelEl.className = `viewer-panel viewer-panel--${isRight ? "right" : "left"} viewer-panel--${isPrior ? "prior" : "current"}`
 
       const labelEl = document.createElement("span")
-      labelEl.className = [
-        "viewer-panel__label",
-        isRight ? "" : "viewer-panel__label--right",
-        isPrior ? "viewer-panel__label--prior" : ""
-      ].filter(Boolean).join(" ")
-      labelEl.textContent = getImageLabel(view, studyIndex)
+      labelEl.className = `viewer-panel__label${isRight ? "" : " viewer-panel__label--right"}`
+      renderLabel(labelEl, getImageLabel(view, studyIndex))
       panelEl.appendChild(labelEl)
 
       const item = getImageItem(studyIndex, view)
       if (item) {
         const imageEl = document.createElement("img")
         imageEl.className = "viewer-panel__image"
-        imageEl.alt = item.label
+        imageEl.alt = getImageAltText(item.label, isPrior)
         // Hidden until loaded, so a slow image doesn't flash the previous one
         imageEl.hidden = true
         imageEl.onload = () => {
@@ -1157,24 +1084,23 @@
           e.stopPropagation()
           const images = getAllViewableImages()
           const index = images.findIndex((image) => image.studyIndex === studyIndex && image.view === view)
-          showZoom({
-            images,
-            index,
-            clickPoint: {
-              fractionX: e.offsetX / imageEl.clientWidth,
-              fractionY: e.offsetY / imageEl.clientHeight,
-              clientX: e.clientX,
-              clientY: e.clientY
-            }
-          })
+          showZoom({ images, index, clickPoint: getClickFraction(imageEl, e) })
         })
         panelEl.appendChild(imageEl)
-      } else if (isPrior || !study?.notExpected.includes(view)) {
-        // A PACS knows nothing of medical history, so a view that wasn't
-        // expected (for example after a mastectomy) is just left blank
+
+        const imagesEl = createImageChoiceButtons(studyIndex, view, isRight)
+        if (imagesEl) panelEl.appendChild(imagesEl)
+      } else {
+        // A PACS knows nothing of medical history, so a missing view (for
+        // example after a mastectomy) just shows that there's no image
         const missingEl = document.createElement("div")
         missingEl.className = "viewer-panel__missing"
-        missingEl.textContent = "No image"
+        missingEl.setAttribute("role", "img")
+        missingEl.setAttribute("aria-label", "No image")
+        missingEl.innerHTML = `<svg viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="3" aria-hidden="true">
+          <circle cx="24" cy="24" r="20"></circle>
+          <line x1="10" y1="38" x2="38" y2="10"></line>
+        </svg>`
         panelEl.appendChild(missingEl)
       }
 
@@ -1226,8 +1152,19 @@
     }
 
     /**
-     * Tell the other screen which layout and prior are showing, so the two
-     * screens move together
+     * Show one of a view's images in place of the latest
+     * @param {number} studyIndex - Index in currentStudies
+     * @param {string} view - "rcc", "lcc", "rmlo" or "lmlo"
+     * @param {number} index - Index in getViewPaths
+     */
+    const setImageChoice = (studyIndex, view, index) => {
+      imageChoices[`${studyIndex}:${view}`] = index
+      renderScreens()
+    }
+
+    /**
+     * Tell the other screen which layout, prior and images are showing, so
+     * the two screens move together
      */
     const broadcastViewerState = () => {
       if (SCREEN_MODE !== "two" || !channel || !currentAppointmentId) return
@@ -1241,22 +1178,70 @@
     const getViewerState = () => ({
       appointmentId: currentAppointmentId,
       layoutName: availableLayouts[layoutIndex]?.name,
-      comparisonStudyIndex
+      comparisonStudyIndex,
+      imageChoices
     })
 
     /**
-     * Match the layout and prior the other screen is showing
+     * After switching screen mode, put back the layout, prior and images
+     * that were showing before the viewer reloaded
+     */
+    const restoreViewerState = () => {
+      const savedState = sessionStorage.getItem(RESTORE_STATE_KEY)
+      if (!savedState) return
+      sessionStorage.removeItem(RESTORE_STATE_KEY)
+      applyViewerState(JSON.parse(savedState))
+    }
+
+    /**
+     * Switch between one window showing both screens and a window per
+     * screen. The link saves the setting, so the viewer reloads in the new
+     * mode. Screen 2 is opened here, during the click, so the browser
+     * allows the pop-up
+     */
+    const switchScreenMode = () => {
+      if (SCREEN === 2) {
+        channel.postMessage({ type: "switch-screen-mode", timestamp: Date.now() })
+        return
+      }
+      const newMode = SCREEN_MODE === "one" ? "two" : "one"
+      const left = window.screen.availLeft ?? 0
+      const top = window.screen.availTop ?? 0
+      const { availWidth, availHeight } = window.screen
+      const width = newMode === "two" ? Math.floor(availWidth / 2) : availWidth
+
+      if (currentAppointmentId) {
+        sessionStorage.setItem(RESTORE_STATE_KEY, JSON.stringify(getViewerState()))
+      }
+      channel.postMessage({ type: "screen-mode", mode: newMode, timestamp: Date.now() })
+      window.moveTo(left, top)
+      window.resizeTo(width, availHeight)
+      if (newMode === "two") {
+        window.open(
+          `${OTHER_SCREEN_URL}&settings[reading][pacsScreens]=two`,
+          OTHER_SCREEN_WINDOW,
+          `left=${left + width},top=${top},width=${width},height=${availHeight},resizable=yes`
+        )
+      }
+      window.location.href = `/reading/mammogram-viewer?settings[reading][pacsScreens]=${newMode}&clearQuery=true`
+    }
+
+    /**
+     * Match the layout, prior and images the other screen is showing
      */
     const applyViewerState = (state) => {
       if (!state || state.appointmentId !== currentAppointmentId) return
       const index = availableLayouts.findIndex((layout) => layout.name === state.layoutName)
       if (index === -1) return
-      if (index === layoutIndex && state.comparisonStudyIndex === comparisonStudyIndex) return
-      closeZoomOverlay()
+      const newImageChoices = state.imageChoices || {}
+      const isSameImages = JSON.stringify(newImageChoices) === JSON.stringify(imageChoices)
+      if (index === layoutIndex && state.comparisonStudyIndex === comparisonStudyIndex && isSameImages) return
+      if (index !== layoutIndex || state.comparisonStudyIndex !== comparisonStudyIndex) closeZoomOverlay()
       layoutIndex = index
       if (state.comparisonStudyIndex >= 0 && state.comparisonStudyIndex < currentStudies.length - 1) {
         comparisonStudyIndex = state.comparisonStudyIndex
       }
+      imageChoices = { ...newImageChoices }
       renderScreens()
     }
 
@@ -1298,6 +1283,7 @@
         // Ignore if same appointment already displayed
         if (data.appointmentId !== currentAppointmentId) {
           showMammograms(data)
+          restoreViewerState()
           // Screen 2 ignores a study it already has, so make sure it matches
           // this screen's fresh layout
           if (SCREEN === 1 && !data.viewerState) broadcastViewerState()
@@ -1320,6 +1306,8 @@
         openOtherScreenEl.hidden = true
       } else if (data.type === "screen-closed" && data.screen === 2 && SCREEN === 1) {
         openOtherScreenEl.hidden = SCREEN_MODE !== "two"
+      } else if (data.type === "switch-screen-mode" && SCREEN === 1) {
+        switchScreenMode()
       } else if (data.type === "close-viewer" && (!data.screen || data.screen === SCREEN)) {
         window.close()
       }
@@ -1327,26 +1315,20 @@
 
     /**
      * Show an image fullscreen, with zoom, pan and arrow key navigation.
-     * Clicking an image opens it zoomed in on the point clicked; clicking again
+     * Clicking an image opens it zoomed in, centred on the point clicked; clicking again
      * closes. Arrow keys move between this window's images, zoomed or not;
      * pan by dragging. [ and ] show the same view from an older or newer study
      * @param {object} options
      * @param {Array<object>} [options.images] - Images to move between, from getAllViewableImages
      * @param {number} [options.index] - Which of them to show first
-     * @param {string} [options.src] - An image not in the panels, such as an earlier attempt, shown on its own
-     * @param {string} [options.label] - Its label
      * @param {object} [options.clickPoint] - Where the image was clicked, to zoom in on
      */
-    const showZoom = ({ images, index, src, label, clickPoint } = {}) => {
+    const showZoom = ({ images, index, clickPoint } = {}) => {
       closeZoomOverlay()
 
-      let allImages = images
+      const allImages = images
       let currentIndex = index
-      if (!allImages) {
-        allImages = [{ src, fullSrc: getFullSrc(src), label }]
-        currentIndex = 0
-      }
-      if (!allImages[currentIndex]) return
+      if (!allImages?.[currentIndex]) return
 
       const zoomEl = document.createElement("div")
       zoomEl.className = "viewer-zoom"
@@ -1384,11 +1366,16 @@
           : `Scroll or + − to zoom${navHint}${studyHint} · Click or Escape to close`
       }
 
-      // Keep the image covering the screen when it's bigger than the screen,
-      // and centred on any axis where it's smaller
+      // Zoomed in, any point of the image can be panned to the centre of the
+      // screen, even at its edge. Fitted, it stays centred
       const clampOffsets = () => {
-        const maxX = Math.max(0, (imageEl.offsetWidth * scale - zoomEl.clientWidth) / 2)
-        const maxY = Math.max(0, (imageEl.offsetHeight * scale - zoomEl.clientHeight) / 2)
+        if (scale === 1) {
+          offsetX = 0
+          offsetY = 0
+          return
+        }
+        const maxX = (imageEl.offsetWidth * scale) / 2
+        const maxY = (imageEl.offsetHeight * scale) / 2
         offsetX = Math.min(maxX, Math.max(-maxX, offsetX))
         offsetY = Math.min(maxY, Math.max(-maxY, offsetY))
       }
@@ -1408,11 +1395,11 @@
         imageEl.style.height = `${height}px`
       }
 
-      // Zoom in so the point clicked in the panel stays under the pointer
-      const zoomToClickPoint = ({ fractionX, fractionY, clientX, clientY }) => {
+      // Zoom in with the point clicked in the panel at the centre of the screen
+      const zoomToClickPoint = ({ fractionX, fractionY }) => {
         scale = CLICK_ZOOM
-        offsetX = clientX - zoomEl.clientWidth / 2 - (fractionX - 0.5) * imageEl.offsetWidth * scale
-        offsetY = clientY - zoomEl.clientHeight / 2 - (fractionY - 0.5) * imageEl.offsetHeight * scale
+        offsetX = -(fractionX - 0.5) * imageEl.offsetWidth * scale
+        offsetY = -(fractionY - 0.5) * imageEl.offsetHeight * scale
         loadFullImage()
       }
 
@@ -1468,9 +1455,9 @@
       }
 
       const setLabel = (image) => {
-        labelEl.textContent = image.label || ""
+        renderLabel(labelEl, image.label)
         labelEl.classList.toggle("viewer-zoom__label--prior", Boolean(image.isPrior))
-        imageEl.alt = image.label || ""
+        imageEl.alt = getImageAltText(image.label, image.isPrior)
       }
 
       const showImage = () => {
@@ -1603,11 +1590,12 @@
 
     /**
      * Keys for the grid: ← and → step through the layouts, [ and ] compare
-     * with an older or newer prior. The zoom view handles its own keys
+     * with an older or newer prior. From another layout, [ and ] first go
+     * back to the Priors layout. The zoom view handles its own keys
      */
     const setupGridKeys = () => {
       document.addEventListener("keydown", (e) => {
-        if (document.querySelector(".viewer-zoom, .viewer-additional-modal")) return
+        if (document.querySelector(".viewer-zoom")) return
         if (e.ctrlKey || e.altKey || e.metaKey) return
         if (!currentAppointmentId) return
 
@@ -1619,7 +1607,9 @@
           broadcastViewerState()
         } else if ((e.key === "[" || e.key === "]") && currentStudies.length > 1) {
           e.preventDefault()
-          setComparisonStudy(comparisonStudyIndex + (e.key === "[" ? -1 : 1))
+          const isPriorsLayout = Boolean(availableLayouts[layoutIndex]?.needsPriors)
+          const step = isPriorsLayout ? (e.key === "[" ? -1 : 1) : 0
+          setComparisonStudy(comparisonStudyIndex + step)
           broadcastViewerState()
         }
       })
@@ -1688,6 +1678,8 @@
         screen: SCREEN,
         timestamp: Date.now()
       })
+
+      switchScreensEl.addEventListener("click", switchScreenMode)
 
       closeViewerEl.addEventListener("click", () => {
         channel.postMessage({ type: "close-viewer", timestamp: Date.now() })

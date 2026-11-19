@@ -28,7 +28,7 @@ The fit is best effort. If filtering leaves no sets, it falls back to all of the
 
 The set ID is stored when appointments are generated (`appointment-generator.js`, `reading-generator.js`) and when images are recorded (`routes/appointments/imaging-automatic.js`, `imaging-manual.js`). Weights: `config.reading.mammogramTagWeights` and seed profiles.
 
-`getImagesForAppointment` then returns the paths for the views present in `mammogramData`, the latest attempt for each view, and every attempt for the "additional images" view.
+`getImagesForAppointment` then returns the paths for the views present in `mammogramData`, the latest attempt for each view, and every attempt, which the viewer lets the reader flick between.
 
 ### Where images are shown
 

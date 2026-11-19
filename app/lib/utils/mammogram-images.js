@@ -1372,7 +1372,7 @@ const getPriorImagesForAppointment = function (
 
   const describe = (date, rawPaths, fullPaths = null) => ({
     date,
-    dateText: date ? formatDate(date) : '',
+    dateText: date ? formatDate(date, 'MMM YYYY') : '',
     label: date ? formatRelativeDate(date) : 'Prior',
     ...splitLatestPaths(rawPaths),
     fullPaths

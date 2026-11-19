@@ -15,7 +15,7 @@
 <meta name="mammogram-sx-number" content="{{ viewerParticipant.sxNumber }}">
 <meta name="mammogram-date-of-birth" content="{{ viewerParticipant.demographicInformation.dateOfBirth | formatDate }} ({{ viewerParticipant | getAge }} years)">
 {% if viewerAppointment.timing.startTime %}
-  <meta name="mammogram-study-date" content="{{ viewerAppointment.timing.startTime | formatDate }}">
+  <meta name="mammogram-study-date" content="{{ viewerAppointment.timing.startTime | formatDate('MMM YYYY') }}">
 {% endif %}
 <meta name="mammogram-auto-open" content="{{ 'true' if viewerAutoOpen else 'false' }}">
 {% if mammogramImages and mammogramImages.paths %}
@@ -31,8 +31,6 @@
   {% if mammogramImages.set.fullPaths %}
     <meta name="mammogram-full-paths" content="{{ mammogramImages.set.fullPaths | dump | escape }}">
   {% endif %}
-  {# Views that weren't expected and weren't taken, which the viewer leaves blank rather than showing "No image" #}
-  <meta name="mammogram-not-expected" content="{{ viewerAppointment | getNotExpectedViews | map("lower") | dump | escape }}">
   {# Earlier studies the viewer can page back to, newest first #}
   {% set viewerPriors = getPriorImagesForAppointment(viewerAppointment, getMammogramImageSource()) %}
   {% if viewerPriors | length %}

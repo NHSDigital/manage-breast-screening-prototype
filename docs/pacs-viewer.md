@@ -35,7 +35,7 @@ Most units read on two portrait monitors side by side. The `pacsScreens` setting
 - **Two** (default): the viewer opens on the left half of the screen as screen 1 (`/reading/mammogram-viewer`), then opens screen 2 (`?screen=2`, window name `mammogram-viewer-2`) on the right half. Browsers allow one pop-up per click, so screen 1 opens screen 2 itself; if that is blocked, an “Open screen 2” button appears in screen 1's header. Screen 2 gets its study and layout from screen 1. Closing either with “Close viewer” closes both.
 - **One**: a single landscape window showing screen 1 and screen 2 side by side. Opening it closes any screen 2 left over from two-screen mode.
 
-The setting is read when the viewer loads, so reopen the viewer after changing it.
+“Use one screen” or “Use two screens” in the viewer header switches mode. It saves the setting through the URL, then reloads the viewer, resizing the window and opening or closing screen 2. Layout, prior and image choices are kept across the reload (in `sessionStorage`). Screen 2's button asks screen 1 to switch, since screen 1 does the work. The reading page updates its `pacs-viewer-screens` meta, so reopening the viewer uses the new size. Changing the setting elsewhere takes effect when the viewer next loads.
 
 ### Layouts (hanging protocol)
 
@@ -46,7 +46,7 @@ The setting is read when the viewer loads, so reopen the viewer after changing i
 | MLO     | RMLO                                           | LMLO                   |                              |
 | CC      | RCC                                            | LCC                    |                              |
 
-Header buttons or ← → switch layout, in both screens at once. Right-breast images sit against the right edge of their panel and left-breast images against the left, so the pair is bookmatched. Every panel is labelled with its view and date; prior labels are yellow and include how long ago the prior was taken. Layouts are fixed in `LAYOUTS` in the viewer script; the viewer doesn't use `mammogramViewOrder`.
+Header buttons or ← → switch layout, in both screens at once. Right-breast images sit against the right edge of their panel and left-breast images against the left, so the pair is bookmatched. Every panel is labelled with its view, and its study date (“Nov 2026”) on a second line, the same for current and prior images. Current panels have a blue outline and prior panels a yellow one. Layouts are fixed in `LAYOUTS` in the viewer script; the viewer doesn't use `mammogramViewOrder`.
 
 Pages give the viewer their study with `_includes/images/pacs-viewer-meta.njk`, included in the head after setting `viewerAppointment`, `viewerParticipant` and `viewerAutoOpen`. The reading layout and the issue page use it.
 
@@ -78,31 +78,31 @@ When the viewer opens (manually or auto), it requests current participant data:
 
 ### Viewer Features
 
-- **Zoom**: Click an image to open it fullscreen at 4 times the fitted size, with the point clicked under the pointer. Click again (without dragging), press Escape or use the Close button to close
+- **Zoom**: Click an image to open it fullscreen at 4 times the fitted size, centred on the point clicked. Zoomed in, the image can be panned until any point of it, even its edge, is at the centre. Click again (without dragging), press Escape or use the Close button to close
 - **Zoom in and pan**: In the fullscreen view, scroll the mouse wheel or pinch on a trackpad to zoom towards the pointer, or press + and - to zoom on the centre, up to 8 times the fitted size; 0 goes back to fit. Drag to pan. A small indicator shows the zoom level (“Fit” or a percentage of the fitted size). Moving to another image opens it fitted. If a set has a full-resolution file for an image (real images do), it's loaded the first time that image is zoomed in
 - **Keyboard navigation**: In the grid, ← → change layout. Fullscreen, ← → move through the images on this screen, in layout order; they don't pan.
 - **Opinion shortcuts**: Press N (normal), D (normal, but add details), T (technical recall), or R (recall for assessment) to trigger the corresponding opinion on the reading page - works even when PACS viewer is focused. When the participant has symptoms, plain Normal is not offered: “Normal, and add details” replaces it, and both N and D trigger it
-- **Additional images**: When a case has repeat/retake images, "View additional images" button appears; modal shows all attempts with labels. Clicking an earlier attempt shows it fullscreen on its own
-- **Priors**: When the participant has earlier studies, the Priors layout compares the current study with one of them, the most recent by default. Buttons in the header (“Prior: 3 years ago”, with the date on hover, oldest on the left) choose which, up to `config.reading.maxPriorStudiesInViewer` (3) priors; [ and ] step older or newer. Choosing a prior switches to the Priors layout. When there are none, the header says “No priors” and the Priors layout isn't offered. Fullscreen, [ and ] show the same view from an older or newer study at the same zoom and position, skipping studies without that view. A new participant always opens on the default layout and most recent prior
+- **Additional images**: A panel whose view has more than one image (a repeat, or extra images of a large breast), in the current study or a prior, shows the latest with numbered buttons (“1”, “2 (latest)”) to flick between them in place, so a prior stays alongside. The label says which (“RMLO (1 of 2)”). The choice holds across layouts, fullscreen and both screens, and resets for the next participant
+- **Priors**: When the participant has earlier studies, the Priors layout compares the current study with one of them, the most recent by default. Buttons in the header (“Prior: 3 years ago”, with the date on hover, oldest on the left) choose which, up to `config.reading.maxPriorStudiesInViewer` (3) priors; [ and ] step older or newer. The buttons only show in the Priors layout; [ or ] from another layout switches to it. When there are none, the header says “No priors” and the Priors layout isn't offered. Fullscreen, [ and ] show the same view from an older or newer study at the same zoom and position, skipping studies without that view. A new participant always opens on the default layout and most recent prior
 - **Debug mode**: Press 'i' to toggle debug bar showing set ID, tag, description, and context flags
 
 #### Keyboard shortcuts
 
-| Key        | Where               | Does                                           |
-| ---------- | ------------------- | ---------------------------------------------- |
-| ← →        | Grid                | Previous or next layout, on both screens       |
-| ← →        | Fullscreen          | Previous or next image on this screen          |
-| + -        | Fullscreen          | Zoom in or out                                 |
-| 0          | Fullscreen          | Back to fit                                    |
-| [ ]        | Grid                | Compare with an older ([) or newer (]) prior   |
-| [ ]        | Fullscreen          | Same view from an older ([) or newer (]) study |
-| Escape     | Fullscreen or modal | Close                                          |
-| N, D, T, R | Anywhere            | Opinion shortcuts, sent to the reading page    |
-| i          | Anywhere            | Toggle the debug bar                           |
+| Key        | Where      | Does                                            |
+| ---------- | ---------- | ----------------------------------------------- |
+| ← →        | Grid       | Previous or next layout, on both screens        |
+| ← →        | Fullscreen | Previous or next image on this screen           |
+| + -        | Fullscreen | Zoom in or out                                  |
+| 0          | Fullscreen | Back to fit                                     |
+| [ ]        | Grid       | Older ([) or newer (]) prior, or back to Priors |
+| [ ]        | Fullscreen | Same view from an older ([) or newer (]) study  |
+| Escape     | Fullscreen | Close                                           |
+| N, D, T, R | Anywhere   | Opinion shortcuts, sent to the reading page     |
+| i          | Anywhere   | Toggle the debug bar                            |
 
 Full-resolution images reach the viewer as `fullPaths`, a map from display path to full path, in the `mammogram-full-paths` meta tag. Only real image sets have them (`fullPaths` in `app/lib/real-images.js`).
 
-Priors reach the viewer as `priors` in the `mammogram-priors` meta tag, from `getPriorImagesForAppointment()` in `app/lib/utils/mammogram-images.js`. Each has a `label`, `dateText`, `paths`, `allPaths`, `hasAdditionalImages` and `fullPaths`.
+Priors reach the viewer as `priors` in the `mammogram-priors` meta tag, from `getPriorImagesForAppointment()` in `app/lib/utils/mammogram-images.js`. Each has a `label` (“3 years ago”), `dateText` (“Dec 2023”), `paths`, `allPaths`, `hasAdditionalImages` and `fullPaths`.
 
 - **Real images**: the case's own earlier studies from the pack, dated back from the appointment by the gap between the studies. They don't follow the participant's generated screening history.
 - **Diagrams**: one for each mammogram in the participant's earlier episodes (historic or not), on its date, showing a normal set other than the current one, with matching implants. Seeded by participant and date, so the same each time.
@@ -189,9 +189,9 @@ When no context requires hard filtering, sets are selected using weighted random
 
 ### Missing Views
 
-If a mammogram view is missing from `appointment.mammogramData.views`, the viewer shows "No image" placeholder for that panel. The image selection system filters paths to only include views present in the appointment's mammogram data.
+If a mammogram view is missing from `appointment.mammogramData.views`, the viewer shows a no-entry symbol in that panel, labelled “No image” for screen readers. The image selection system filters paths to only include views present in the appointment's mammogram data.
 
-A view that wasn't expected (for example after a mastectomy, see `getExpectedViews` in [data-conventions.md](data-conventions.md#expected-views)) is left blank instead: a real PACS knows nothing of medical history, so it wouldn't explain why. `pacs-viewer-meta.njk` passes these in a `mammogram-not-expected` meta tag (`['rcc', 'rmlo']`), sent to the viewer as `notExpected`. Set selection also avoids sets with an abnormal or technical finding on a breast with no images (`notImagedSides` in the context).
+A view that wasn't expected (for example after a mastectomy, see `getExpectedViews` in [data-conventions.md](data-conventions.md#expected-views)) looks the same: a real PACS knows nothing of medical history, so it wouldn't explain why. Set selection also avoids sets with an abnormal or technical finding on a breast with no images (`notImagedSides` in the context).
 
 ### Composite Sets
 
@@ -221,10 +221,9 @@ First element is the initial (failed) attempt, last element is the final (used) 
 
 When sets have arrays for views (repeat scenarios), the viewer:
 
-1. Shows the latest (last) image in the main grid
-2. Displays "View additional images" button
-3. Modal shows all attempts labelled "Attempt 1", "Attempt 2", "Latest"
-4. Click any image in the modal to zoom
+1. Shows the latest (last) image in the panel
+2. Adds numbered buttons to the panel, one per image, to show an earlier one in its place
+3. Adds “(1 of 2)” after the view in the panel and fullscreen labels
 
 ---
 
@@ -359,7 +358,7 @@ The `scripts/process-mammogram-images.sh` script processes individual mammogram 
 
 - [ ] Test/verify probability distribution (debug route to sample many appointments)
 - [ ] Hiding priors while a case is waiting for them
-- [ ] Layouts for more than one prior, and for extra images (repeats and additional views)
+- [ ] Layouts for more than one prior
 - [ ] Settings for screen and layout order
 - [ ] Annotation inheritance for composite sets (abnormality markers)
 - [ ] Breast features alignment (moles, scars visible in mammograms)
@@ -378,7 +377,7 @@ The following planned features have been implemented:
 - [x] **Context-aware selection**: Symptoms, implants, imperfect images, repeats
 - [x] **Side preference**: Abnormalities matched to symptom side (70% probability)
 - [x] **View filtering**: Only show views present in mammogram data
-- [x] **Additional images**: Support for repeat/retake scenarios with modal viewer
+- [x] **Additional images**: Support for repeat/retake scenarios, chosen per panel
 - [x] **Debug display**: Press 'i' in viewer to see set info and context flags
 - [x] **Repeat sets**: 7 composite sets with `hasRepeat: true` flag
 
