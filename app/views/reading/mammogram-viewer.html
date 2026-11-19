@@ -924,17 +924,19 @@
         studiesEl.appendChild(noteEl)
         return
       }
+      // Newest prior first
       currentStudies.slice(0, -1).forEach((study, index) => {
         const buttonEl = document.createElement("button")
         buttonEl.type = "button"
         buttonEl.className = "viewer-button"
+        buttonEl.dataset.studyIndex = index
         buttonEl.textContent = `Prior: ${study.label}`
         if (study.dateText) buttonEl.title = study.dateText
         buttonEl.addEventListener("click", () => {
           setComparisonStudy(index)
           broadcastViewerState()
         })
-        studiesEl.appendChild(buttonEl)
+        studiesEl.prepend(buttonEl)
       })
     }
 
@@ -948,8 +950,9 @@
       Array.from(layoutsEl.children).forEach((buttonEl, index) => {
         buttonEl.setAttribute("aria-pressed", index === layoutIndex ? "true" : "false")
       })
-      Array.from(studiesEl.querySelectorAll("button")).forEach((buttonEl, index) => {
-        buttonEl.setAttribute("aria-pressed", isPriorsLayout && index === comparisonStudyIndex ? "true" : "false")
+      Array.from(studiesEl.querySelectorAll("button")).forEach((buttonEl) => {
+        const isPressed = isPriorsLayout && Number(buttonEl.dataset.studyIndex) === comparisonStudyIndex
+        buttonEl.setAttribute("aria-pressed", isPressed ? "true" : "false")
       })
     }
 
