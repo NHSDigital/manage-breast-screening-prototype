@@ -21,7 +21,7 @@
 
 {% set activeTab = 'images' %}
 
-{% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+{% set mammogramImages = getImagesForAppointment(appointmentId, getMammogramImageSource("screening"), { appointment: appointment }) %}
 
 {# Build ordered image list for streaming simulation - bookmatched arrival order #}
 {# CC first: RCC > RMLO > LMLO > LCC (right side then left mirrored) #}

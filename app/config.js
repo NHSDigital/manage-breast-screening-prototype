@@ -17,7 +17,12 @@ module.exports = {
   useDocumentation: true,
 
   paths: {
-    generatedData: path.join(__dirname, 'data/generated')
+    generatedData: path.join(__dirname, 'data/generated'),
+    // A real image pack. Never commit one or put it under app/assets or
+    // public. See docs/mammogram-images.md.
+    realImages: path.resolve(
+      process.env.REAL_IMAGES_PATH || path.join(__dirname, '../real-images')
+    )
   },
 
   // Sharing changes between browsers, for testing with several users at once.
@@ -53,10 +58,21 @@ module.exports = {
     blindReading: 'true', // Enable blind reading
     urgentThreshold: 10, // 10 days and over
     priorityThreshold: 7, // 7 days and over
-    mammogramImageSource: 'diagrams', // 'diagrams' or 'real'
+    // Default for the "Mammogram images" setting: 'diagrams' or 'real'. Real
+    // images are used for reading only, and only when a pack is present. See
+    // docs/mammogram-images.md.
+    mammogramImageSource: (process.env.MAMMOGRAM_IMAGE_SOURCE || 'diagrams')
+      .trim()
+      .toLowerCase(),
+    // How long entering the real images access code unlocks them for. See
+    // app/lib/real-images-access.js
+    realImagesAccessHours: 4,
     // View order for mammogram display: 'cc-first' or 'mlo-first'
     // Right breast views always on left, left breast views on right
     mammogramViewOrder: 'cc-first',
+    // How many earlier studies (priors) the PACS viewer offers, newest first.
+    // Higher-risk participants are screened yearly, so can have many
+    maxPriorStudiesInViewer: 3,
     // Distribution of image set tags (must sum to 1.0)
     // These are the base weights - they get adjusted based on appointment context
     // (symptoms, imperfect images, etc.)

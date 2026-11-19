@@ -18,7 +18,8 @@ const {
 const { getAppointmentData } = require('../../lib/utils/appointment-data')
 const { getReturnUrl, urlWithReferrer } = require('../../lib/utils/referrers')
 const {
-  getImageSetForAppointment
+  getImageSetForAppointment,
+  getMammogramImageSource
 } = require('../../lib/utils/mammogram-images')
 const { getExpectedViews } = require('../../lib/utils/expected-views')
 const {
@@ -162,7 +163,7 @@ module.exports = (router) => {
       if (!data.appointment.mammogramData.selectedSetId) {
         const selectedSet = getImageSetForAppointment(
           appointmentId,
-          'diagrams',
+          getMammogramImageSource('screening'),
           {
             appointment: data.appointment
           }

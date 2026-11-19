@@ -16,7 +16,7 @@
   {% set mammogramViews = appointment.mammogramData.views | getObjectValues %}
   {% set machineRoom = appointment.mammogramData.machineRoom %}
   {% set isManualEntry = appointment.mammogramData.isManualEntry %}
-  {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+  {% set mammogramImages = getImagesForAppointment(appointmentId, getMammogramImageSource("screening"), { appointment: appointment }) %}
 
   {# Only show image thumbnails for automatic entry #}
   {% if not isManualEntry %}

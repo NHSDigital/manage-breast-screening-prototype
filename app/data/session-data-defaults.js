@@ -105,12 +105,14 @@ const defaultSettings = {
   },
   reading: {
     blindReading: config.reading.blindReading,
+    mammogramImageSource: config.reading.mammogramImageSource, // 'diagrams' | 'real'
     confirmNormal: 'false',
     confirmNormalWithDetails: 'false',
     confirmTechnicalRecall: 'false',
     confirmRecallForAssessment: 'true',
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
+    pacsScreens: 'two', // 'two' (a window per monitor) | 'one' (one landscape window)
     enableOpinionDelay: 'true',
     annotationsMode: 'with-images-simple', // 'without-images' | 'with-images-simple' | 'with-images' | 'with-images-progressive'
     secondReaderComparison: 'off', // 'early' | 'late' | 'off'

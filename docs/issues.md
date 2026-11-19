@@ -88,7 +88,7 @@ The two closing forms share their routes through `CLOSING_FORMS` in `routes/revi
 
 Many issues are about images, and staff look studies up in PACS by accession number. `getIssueImages` in `routes/review.js` takes the linked appointment's images, or with no linked appointment the latest set in the linked episode's `mammograms`; an appointment or round with no images shows no card. The card shows when they were taken (with the machine room or clinic location as a hint), the authorised mammographer where known, the image count with the views (`summariseMammogramImages`), and the accession number with a copy link.
 
-"Open study in PACS" links to the viewer page (`/reading/mammogram-viewer`) in the named `mammogram-viewer` window, so it reuses an open viewer. The issue page carries the study in `_includes/images/pacs-viewer-meta.njk`, the same meta tags and broadcast the reading workflow uses, and the viewer asks the page for it when it opens (see [pacs-viewer.md](pacs-viewer.md)). An open viewer also follows the page as it loads, as it does in reading. The viewer holds one study, so only the first participant's images get the link.
+"Open study in PACS" links to the viewer page (`/reading/mammogram-viewer`) in the named `mammogram-viewer` window, so it reuses an open viewer. With two PACS screens, that window then opens screen 2. The issue page carries the study in `_includes/images/pacs-viewer-meta.njk`, the same meta tags and broadcast the reading workflow uses, and the viewer asks the page for it when it opens (see [pacs-viewer.md](pacs-viewer.md)). An open viewer also follows the page as it loads, as it does in reading. The viewer holds one study, so only the first participant's images get the link.
 
 ## Form answers keyed to their record
 

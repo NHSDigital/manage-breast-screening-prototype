@@ -197,6 +197,21 @@
     {{ settingToggle("Participant added to worklist", "settings[appointment][addedToWorklist]", [{value: "true", label: "Successful"}, {value: "false", label: "Not successful"}], data.settings.appointment.addedToWorklist, "true") }}
 
     <h2>Image reading</h2>
+    {# Mammogram images - real images need a local pack, see docs/mammogram-images.md #}
+    {% if hasImageSets("real") %}
+      {{ settingToggle("Mammogram images", "settings[reading][mammogramImageSource]", [{value: "diagrams", label: "Diagrams"}, {value: "real", label: "Real images"}], data.settings.reading.mammogramImageSource, "diagrams") }}
+      {% set realImagesAccessState = getRealImagesAccessState() %}
+      {% if realImagesAccessState == "unlocked" %}
+        <p>Real images access: <strong>Unlocked</strong> for this session</p>
+      {% elseif realImagesAccessState == "locked" %}
+        <p>Real images access: <strong>Locked</strong> (<a class="nhsuk-link--no-visited-state" href="{{ '/real-images-access' | urlWithReferrer(currentUrl) }}">enter the access code</a>)</p>
+      {% elseif realImagesAccessState == "no-access-code" %}
+        <p>Real images access: <strong>Locked</strong> <span class="nhsuk-u-secondary-text-colour">(no access code set)</span></p>
+      {% endif %}
+    {% else %}
+      <p>Mammogram images: <strong>Diagrams</strong> <span class="nhsuk-u-secondary-text-colour">(no real image pack found)</span></p>
+    {% endif %}
+
     {# One click normal #}
     {{ settingToggle("Confirm normal results", "settings[reading][confirmNormal]", [{value: "true", label: "Required"}, {value: "false", label: "Not required"}], data.settings.reading.confirmNormal, "true") }}
 
@@ -223,6 +238,9 @@
 
     {# Auto-open PACS viewer #}
     {{ settingToggle("Auto-open PACS viewer", "settings[reading][autoOpenPacsViewer]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenPacsViewer, "false") }}
+
+    {# PACS screens - reopen the viewer after changing #}
+    {{ settingToggle("PACS screens", "settings[reading][pacsScreens]", [{value: "two", label: "Two"}, {value: "one", label: "One"}], data.settings.reading.pacsScreens, "two") }}
 
     {# Opinion delay #}
     {{ settingToggle("Opinion delay", "settings[reading][enableOpinionDelay]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.enableOpinionDelay, "false") }}

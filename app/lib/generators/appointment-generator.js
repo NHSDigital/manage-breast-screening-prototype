@@ -16,7 +16,10 @@ const {
 } = require('./special-appointment-generator')
 const { generateAppointmentNote } = require('./appointment-note-generator')
 const { generatePreviousMammograms } = require('./previous-mammogram-generator')
-const { getImageSetForAppointment } = require('../utils/mammogram-images')
+const {
+  getImageSetForAppointment,
+  getMammogramImageSource
+} = require('../utils/mammogram-images')
 const {
   getExpectedViews,
   hasMissingExpectedViews
@@ -611,7 +614,7 @@ const generateAppointment = ({
     if (appointment.mammogramData) {
       const selectedSet = getImageSetForAppointment(
         appointment.id,
-        'diagrams',
+        getMammogramImageSource('screening'),
         {
           appointment,
           contextualWeights:

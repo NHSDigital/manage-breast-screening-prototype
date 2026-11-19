@@ -18,12 +18,51 @@ const { recordChange } = require('../shared-data')
  * @returns {object | null} Participant object or null if not found
  */
 const getParticipant = (data, participantId) => {
-  return (
+  return withRealImageDateOfBirth(
+    data,
     data._changes?.participants?.[participantId] ??
-    dataStore.state.participantsById.get(participantId) ??
-    data.participants?.find((p) => p.id === participantId) ??
-    null
+      dataStore.state.participantsById.get(participantId) ??
+      data.participants?.find((p) => p.id === participantId) ??
+      null
   )
+}
+
+// Copies made by withRealImageDateOfBirth, so each record is copied once
+const realImageCopies = new WeakMap()
+
+/**
+ * A participant as shown while real mammogram images are on: with a date of
+ * birth that gives her real case's age. The dates come from
+ * `data._realImageDatesOfBirth`, which app/routes.js sets per request only
+ * when real images are on. Unchanged otherwise, or if her date of birth has
+ * been changed this session.
+ *
+ * @param {object} data - Session data
+ * @param {object | null} participant - Participant
+ * @returns {object | null} The participant, or a copy with another date of birth
+ */
+const withRealImageDateOfBirth = (data, participant) => {
+  const change =
+    participant && data?._realImageDatesOfBirth?.get(participant.id)
+  if (
+    !change ||
+    participant.demographicInformation?.dateOfBirth !== change.from
+  ) {
+    return participant
+  }
+
+  const copy = realImageCopies.get(participant)
+  if (copy?.demographicInformation.dateOfBirth === change.to) return copy
+
+  const newCopy = {
+    ...participant,
+    demographicInformation: {
+      ...participant.demographicInformation,
+      dateOfBirth: change.to
+    }
+  }
+  realImageCopies.set(participant, newCopy)
+  return newCopy
 }
 
 /**
@@ -172,12 +211,31 @@ const updateParticipant = (data, participantId, updatedParticipant) => {
   )
   if (participantIndex === -1) return null
 
+  // Real image ages are shown, not saved (see withRealImageDateOfBirth)
+  const realImageChange = data._realImageDatesOfBirth?.get(participantId)
+  if (
+    realImageChange &&
+    updatedParticipant.demographicInformation?.dateOfBirth ===
+      realImageChange.to
+  ) {
+    updatedParticipant = {
+      ...updatedParticipant,
+      demographicInformation: {
+        ...updatedParticipant.demographicInformation,
+        dateOfBirth: realImageChange.from
+      }
+    }
+  }
+
   // Update in the attached array (same-request reads) and record the change
   // in data._changes (persistence - the attached array is rebuilt from the
   // shared data store on every request; see middleware in app/routes.js)
-  data.participants[participantIndex] = updatedParticipant
+  data.participants[participantIndex] = withRealImageDateOfBirth(
+    data,
+    updatedParticipant
+  )
   recordChange(data, 'participants', updatedParticipant)
-  return updatedParticipant
+  return data.participants[participantIndex]
 }
 
 /**
@@ -211,6 +269,7 @@ const saveTempParticipantToParticipant = (data) => {
 
 module.exports = {
   getParticipant,
+  withRealImageDateOfBirth,
   getFullName,
   getShortNameReversed,
   getShortName,

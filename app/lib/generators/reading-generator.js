@@ -8,7 +8,8 @@ const { buildRead } = require('../utils/reading-cases')
 const {
   getSetById,
   getResolvedAnnotations,
-  getImageSetForAppointment
+  getImageSetForAppointment,
+  getMammogramImageSource
 } = require('../utils/mammogram-images')
 const generateId = require('../utils/id-generator')
 const { getImagedSides, getTakenViews } = require('../utils/expected-views')
@@ -102,7 +103,9 @@ const generateSingleRead = (
   options = {}
 ) => {
   const setId = appointment.mammogramData?.selectedSetId
-  const set = setId ? getSetById(setId, 'diagrams') : null
+  const set = setId
+    ? getSetById(setId, getMammogramImageSource('screening'))
+    : null
 
   // Determine the opinion
   let opinion
@@ -544,7 +547,7 @@ const pickSecondOpinion = (
  */
 const getAppointmentSet = (appointment) => {
   const setId = appointment?.mammogramData?.selectedSetId
-  return setId ? getSetById(setId, 'diagrams') : null
+  return setId ? getSetById(setId, getMammogramImageSource('screening')) : null
 }
 
 // What the images look like behind an arbitration case. Most disagreements
@@ -609,10 +612,14 @@ const assignArbitrationImageSets = (appointments, limit) => {
     // Anything past the wanted mix keeps the set it was given
     if (!tag || !appointment.mammogramData) return
 
-    const set = getImageSetForAppointment(appointment.id, 'diagrams', {
-      appointment,
-      tag
-    })
+    const set = getImageSetForAppointment(
+      appointment.id,
+      getMammogramImageSource('screening'),
+      {
+        appointment,
+        tag
+      }
+    )
 
     if (set) appointment.mammogramData.selectedSetId = set.id
   })

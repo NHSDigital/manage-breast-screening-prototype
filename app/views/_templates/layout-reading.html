@@ -34,7 +34,7 @@
 
     {# Inspect panel: press 'i' to show debug info about the current mammogram set #}
     {% if appointment.mammogramData %}
-      {% set inspectImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+      {% set inspectImages = getImagesForAppointment(appointmentId, getMammogramImageSource(), { appointment: appointment }) %}
       {% set inspectContext = extractAppointmentContext(appointment) %}
     {% endif %}
 
@@ -155,6 +155,9 @@
 
 {% block head %}
   {{ super() }}
+
+  {# How many screens the PACS viewer opens, so "Open PACS viewer" can size its window #}
+  <meta name="pacs-viewer-screens" content="{{ 'one' if data.settings.reading.pacsScreens == 'one' else 'two' }}">
 
   {# Meta tags for PACS viewer - only in workflow mode with participant #}
   {% if isReadingWorkflow and participant %}

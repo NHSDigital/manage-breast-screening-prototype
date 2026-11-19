@@ -5,11 +5,18 @@ const fs = require('fs')
 const config = require('../../config')
 const { isMedicalHistoryItemRemoved } = require('./medical-information')
 const { getImagedSides } = require('./expected-views')
+const { formatDate, formatRelativeDate } = require('./dates')
+const realImages = require('../real-images')
+const {
+  getAccessCodeStatus,
+  isRealImagesUnlocked
+} = require('../real-images-access')
 
-// Image sources
+// Image sources. Diagrams are in app/assets; real images come from a pack
+// outside the app (app/lib/real-images.js).
 const IMAGE_SOURCES = {
   diagrams: 'mammogram-diagrams',
-  real: 'mammogram-sets'
+  real: 'real-images'
 }
 
 // Standard view names
@@ -350,6 +357,8 @@ const applySidePreference = (sets, symptomSides, randomValue) => {
  * @returns {object|null} - The manifest object or null if not found
  */
 const getManifest = (source = 'diagrams') => {
+  if (source === 'real') return realImages.getManifest()
+
   const sourceFolder = IMAGE_SOURCES[source]
   if (!sourceFolder) return null
 
@@ -382,6 +391,553 @@ const getAvailableSets = (source = 'diagrams', options = {}) => {
   return []
 }
 
+// The "Mammogram images" setting is 'real' (or defaults to it) and a pack
+// with usable cases is present
+const isRealImagesWanted = (data) => {
+  const setting =
+    data?.settings?.reading?.mammogramImageSource ||
+    config.reading?.mammogramImageSource
+  return setting === 'real' && hasImageSets('real')
+}
+
+/**
+ * Which image source to show: 'diagrams' or 'real'. Real images are for image
+ * reading only, and are used only when the "Mammogram images" setting
+ * (`data.settings.reading.mammogramImageSource`) is 'real', a pack with
+ * usable cases is present, and the session has real images unlocked (see
+ * app/lib/real-images-access.js). Otherwise, diagrams. Outside a template, or
+ * when the session has no setting, `config.reading.mammogramImageSource`
+ * decides, and real images count as locked when an access code is needed.
+ *
+ * Screening pages, and the set stored on appointments
+ * (`mammogramData.selectedSetId`, chosen when images are taken or seed data is
+ * generated), are always diagrams. Reading pages choose a real case at render
+ * time when real images are on.
+ *
+ * @param {string} [area] - 'reading' (default) or 'screening'
+ * @returns {string} 'diagrams' or 'real'
+ * @example
+ * getMammogramImageSource() // 'real' when configured, a pack is present and unlocked
+ * getMammogramImageSource('screening') // always 'diagrams'
+ */
+function getMammogramImageSource(area = 'reading') {
+  if (area !== 'reading') return 'diagrams'
+  const data = this && this.ctx && this.ctx.data
+  if (!isRealImagesWanted(data)) return 'diagrams'
+  return isRealImagesUnlocked(data) ? 'real' : 'diagrams'
+}
+
+/**
+ * Where this session stands with the real images access code (see
+ * app/lib/real-images-access.js), whatever the "Mammogram images" setting.
+ *
+ * @returns {string} 'not-needed' (running locally without a code),
+ *   'unlocked', 'locked', or 'no-access-code' (deployed without
+ *   REAL_IMAGES_ACCESS_CODE, so real images can't be unlocked)
+ * @example
+ * {% if getRealImagesAccessState() == "locked" %}
+ */
+function getRealImagesAccessState() {
+  const data = this && this.ctx && this.ctx.data
+  const status = getAccessCodeStatus()
+  if (status === 'not-needed') return 'not-needed'
+  if (status === 'not-set') return 'no-access-code'
+  return isRealImagesUnlocked(data) ? 'unlocked' : 'locked'
+}
+
+/**
+ * Why real images are being held back, if they are: the "Mammogram images"
+ * setting is 'real' and a pack is present, but the session isn't unlocked.
+ *
+ * @returns {string|null} 'locked' or 'no-access-code' (as
+ *   getRealImagesAccessState), or null when real images aren't wanted or are
+ *   showing
+ * @example
+ * {% set realImagesLockReason = getRealImagesLockReason() %}
+ */
+function getRealImagesLockReason() {
+  const data = this && this.ctx && this.ctx.data
+  if (!isRealImagesWanted(data)) return null
+  const state = getRealImagesAccessState.call(this)
+  return state === 'locked' || state === 'no-access-code' ? state : null
+}
+
+// The real case tag that best stands in for a diagram set's tag. Real cases
+// have no 'indeterminate'; those were recalled, so they are 'abnormal'.
+const DIAGRAM_TAG_TO_REAL_TAG = {
+  normal: 'normal',
+  abnormal: 'abnormal',
+  indeterminate: 'abnormal',
+  technical: 'technical'
+}
+
+/**
+ * The real case tag to choose for an appointment, from its stored diagram
+ * set, so the images agree roughly with the seed data's reads.
+ *
+ * @param {object} appointment - Appointment with mammogramData
+ * @returns {string|null} Tag, or null if it has no stored set
+ */
+const getRealTagForAppointment = (appointment) => {
+  const setId = appointment?.mammogramData?.selectedSetId
+  const diagramSet = setId ? getSetById(setId, 'diagrams') : null
+  return diagramSet ? DIAGRAM_TAG_TO_REAL_TAG[diagramSet.tag] || null : null
+}
+
+/**
+ * Whether a real case is abnormal on the same breasts as an appointment's
+ * stored diagram set, so earlier readers' recalls and markers in the seed data
+ * land on the breast that's abnormal in the real images. Any status other
+ * than normal counts as abnormal.
+ *
+ * @param {object} set - Real image set
+ * @param {object} appointment - Appointment with mammogramData
+ * @returns {boolean} True if the sides match, or there's nothing to match
+ */
+const realSetMatchesSides = (set, appointment) => {
+  const setId = appointment?.mammogramData?.selectedSetId
+  const diagramSet = setId ? getSetById(setId, 'diagrams') : null
+  if (!diagramSet || diagramSet.tag === 'normal') return true
+
+  const isAbnormal = (side) => side?.status && side.status !== 'normal'
+  return ['left', 'right'].every(
+    (side) => isAbnormal(set[side]) === isAbnormal(diagramSet[side])
+  )
+}
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000
+const DAYS_PER_YEAR = 365.25
+
+// A woman's images look alike from one study to the next, so a real
+// participant isn't used again until this share of the pack's participants
+// have been used since (where the case mix allows). Reading sessions take
+// appointments close together in time, so they don't meet her twice.
+const REAL_PARTICIPANT_REST_SHARE = 0.75
+
+// Keep the candidates that pass, unless none do
+const narrowTo = (candidates, keep) => {
+  const kept = candidates.filter(keep)
+  return kept.length > 0 ? kept : candidates
+}
+
+// The candidate with the lowest cost
+const cheapest = (candidates, cost) => {
+  let best = null
+  let bestCost = Infinity
+  for (const candidate of candidates) {
+    const candidateCost = cost(candidate)
+    if (candidateCost < bestCost) {
+      best = candidate
+      bestCost = candidateCost
+    }
+  }
+  return best
+}
+
+/**
+ * What a real case should fit about an appointment's participant, from the
+ * seed data: her age at the appointment, how many days before it each of her
+ * earlier mammograms was taken (most recent first), and whether she's on a
+ * higher-risk protocol.
+ *
+ * @param {object} appointment - Appointment
+ * @returns {{ age: number|null, priorDaysBefore: number[], higherRisk: boolean }}
+ */
+const getParticipantProfile = (appointment) => {
+  // Required here rather than at the top: the generators use this file, and
+  // loading the store reads the generated data
+  const dataStore = require('../data-store')
+  const { getAge, getCurrentRiskLevel } = require('./participants')
+
+  const participant = dataStore.state.participantsById.get(
+    appointment?.participantId
+  )
+  const startTime = appointment?.timing?.startTime
+  if (!participant || !startTime) {
+    return { age: null, priorDaysBefore: [], higherRisk: false }
+  }
+
+  const appointmentDate = new Date(startTime)
+  const priorDaysBefore = (
+    dataStore.state.episodeIdsByParticipant.get(participant.id) || []
+  )
+    .filter((episodeId) => episodeId !== appointment.episodeId)
+    .flatMap(
+      (episodeId) =>
+        dataStore.state.episodesById.get(episodeId)?.mammograms || []
+    )
+    .map(
+      (mammogram) =>
+        (appointmentDate - new Date(mammogram.takenDate)) / MS_PER_DAY
+    )
+    .filter((daysBefore) => daysBefore > 0)
+    .sort((a, b) => a - b)
+
+  return {
+    age: getAge(participant, appointmentDate),
+    priorDaysBefore,
+    higherRisk: getCurrentRiskLevel(participant, appointmentDate) !== 'routine'
+  }
+}
+
+/**
+ * How badly a real case fits a participant: years between their ages, a
+ * different number of priors (up to the number the viewer shows), years
+ * between their most recent priors, and a different screening protocol.
+ * Lower is better; 0 is a perfect fit.
+ *
+ * @param {object} set - Real image set
+ * @param {object} profile - From getParticipantProfile
+ * @returns {number} Cost
+ */
+const getRealCaseFitCost = (set, profile) => {
+  const maxPriors = config.reading?.maxPriorStudiesInViewer ?? 3
+  const casePriors = set.priors || []
+  let cost = 0
+
+  if (profile.age !== null && set.ageAtCurrent != null) {
+    cost += Math.abs(profile.age - set.ageAtCurrent)
+  }
+  cost +=
+    3 *
+    Math.abs(
+      Math.min(casePriors.length, maxPriors) -
+        Math.min(profile.priorDaysBefore.length, maxPriors)
+    )
+  if (casePriors.length > 0 && profile.priorDaysBefore.length > 0) {
+    cost +=
+      (2 * Math.abs(casePriors[0].daysBefore - profile.priorDaysBefore[0])) /
+      DAYS_PER_YEAR
+  }
+  if (Boolean(set.higherRisk) !== profile.higherRisk) cost += 5
+
+  return cost
+}
+
+/**
+ * What the seed data's readers made of an appointment's images, from its
+ * reading case in the shared store: which breasts any recall for assessment
+ * called abnormal, and whether they disagreed (different opinions, or an
+ * arbitration read).
+ *
+ * @param {object} appointment - Appointment
+ * @returns {{ recalledSides: Set<string>, disagreed: boolean }}
+ */
+const getSeededReadsProfile = (appointment) => {
+  const dataStore = require('../data-store')
+  const readingCase = dataStore.state.episodesById
+    .get(appointment?.episodeId)
+    ?.readingCases?.find(
+      (candidate) => candidate.appointmentId === appointment.id
+    )
+  const reads = readingCase?.reads || []
+
+  const recalledSides = new Set(
+    reads
+      .filter((read) => read.opinion === 'recall_for_assessment')
+      .flatMap((read) =>
+        ['left', 'right'].filter(
+          (side) => read[side]?.breastAssessment === 'abnormal'
+        )
+      )
+  )
+
+  return {
+    recalledSides,
+    disagreed:
+      new Set(reads.map((read) => read.opinion)).size > 1 ||
+      reads.some((read) => read.readType === 'arbitration')
+  }
+}
+
+// How much worse a real case fits when the seeded readers recalled a breast
+// clinicians haven't marked, so their markers can't show the real
+// abnormality; or when they disagreed but the real readers didn't, and it
+// wasn't a recall that turned out not to be cancer
+const UNANNOTATED_RECALL_COST = 6
+const UNAMBIGUOUS_DISAGREEMENT_COST = 8
+
+/**
+ * How badly a real case fits the seed data's reads of an appointment. Seeded
+ * recalls should land on cases clinicians have marked, so their markers sit
+ * on the real abnormality (see withRealImageReads); seeded disagreements on
+ * cases real readers found hard - where they disagreed, or recalled something
+ * that wasn't cancer.
+ *
+ * @param {object} set - Real image set
+ * @param {object} readsProfile - From getSeededReadsProfile
+ * @returns {number} Cost, 0 for a good fit
+ */
+const getRealCaseReadsCost = (set, readsProfile) => {
+  let cost = 0
+  const markedSides = new Set(
+    (set.annotations || []).map((annotation) => annotation.side)
+  )
+  if ([...readsProfile.recalledSides].some((side) => !markedSides.has(side))) {
+    cost += UNANNOTATED_RECALL_COST
+  }
+  if (
+    readsProfile.disagreed &&
+    !set.readersDisagreed &&
+    set.result !== 'recalled-not-cancer'
+  ) {
+    cost += UNAMBIGUOUS_DISAGREEMENT_COST
+  }
+  return cost
+}
+
+/**
+ * Real cases that could stand in for an appointment's images: matching its
+ * context (implants, repeats), its diagram set's tag and, where possible,
+ * which breasts are abnormal, so seeded reads mark the right breast.
+ *
+ * @param {Array} sets - Real image sets
+ * @param {object} appointment - Appointment
+ * @returns {Array} Candidate sets, never empty if sets isn't
+ */
+const getRealCandidates = (sets, appointment) => {
+  const fitting = filterSetsByContext(
+    sets,
+    extractAppointmentContext(appointment)
+  )
+  let candidates = fitting.length > 0 ? fitting : sets
+  const tag = getRealTagForAppointment(appointment)
+  candidates = narrowTo(candidates, (set) => !tag || set.tag === tag)
+  return narrowTo(candidates, (set) => realSetMatchesSides(set, appointment))
+}
+
+// Real cases assigned to seed appointments, rebuilt when the seed data or the
+// pack changes
+let realAssignments = {
+  manifest: null,
+  generationId: null,
+  setsById: new Map(),
+  caseIdsByAppointmentId: new Map(),
+  usedParticipantIds: new Set(),
+  datesOfBirth: new Map()
+}
+
+/**
+ * Assign a real case to every imaged seed appointment, if the seed data or
+ * pack has changed since last time.
+ *
+ * Appointments are assigned in order of appointment time. Each gets an unused
+ * case from getRealCandidates, from a participant not used recently (see
+ * REAL_PARTICIPANT_REST_SHARE), that best fits the participant's age and
+ * screening history. Deterministic for the same seed data and pack.
+ *
+ * @returns {object|null} The assignments, or null if there's no pack
+ */
+const getRealAssignments = () => {
+  const manifest = getManifest('real')
+  if (!manifest) return null
+
+  const dataStore = require('../data-store')
+  const { generationId, appointments } = dataStore.state
+
+  if (
+    realAssignments.manifest === manifest &&
+    realAssignments.generationId === generationId
+  ) {
+    return realAssignments
+  }
+
+  const sets = getAvailableSets('real')
+  const setsById = new Map(sets.map((set) => [set.id, set]))
+  const caseIdsByAppointmentId = new Map()
+  const datesOfBirth = new Map()
+  // The date of birth each participant shows, fixed by her first imaged
+  // appointment, so a later one (such as a technical recall) can't change it
+  const shownDatesOfBirth = new Map()
+  const usedCaseIds = new Set()
+  const lastUsedByParticipant = new Map()
+  const timesUsedByParticipant = new Map()
+
+  const participantCount = new Set(sets.map((set) => set.participantId)).size
+  const restLength = Math.floor(participantCount * REAL_PARTICIPANT_REST_SHARE)
+
+  const imagedAppointments = appointments
+    .filter((appointment) => appointment.mammogramData && sets.length > 0)
+    .sort(
+      (a, b) =>
+        new Date(a.timing?.startTime) - new Date(b.timing?.startTime) ||
+        a.id.localeCompare(b.id)
+    )
+
+  imagedAppointments.forEach((appointment, index) => {
+    const participant = dataStore.state.participantsById.get(
+      appointment.participantId
+    )
+    const shownDateOfBirth = shownDatesOfBirth.get(participant?.id)
+
+    let candidates = getRealCandidates(sets, appointment)
+    candidates = narrowTo(candidates, (set) => !usedCaseIds.has(set.id))
+    if (shownDateOfBirth) {
+      // Cases whose age the date of birth already shown gives
+      candidates = narrowTo(
+        candidates,
+        (set) =>
+          getDateOfBirthForAge(
+            shownDateOfBirth,
+            appointment.timing?.startTime,
+            set.ageAtCurrent
+          ) === null
+      )
+    }
+
+    // Participants not used recently, or if there are none, those used
+    // longest ago
+    const lastUsed = (set) =>
+      lastUsedByParticipant.get(set.participantId) ?? -Infinity
+    const rested = candidates.filter(
+      (set) => index - lastUsed(set) > restLength
+    )
+    if (rested.length > 0) {
+      candidates = rested
+    } else {
+      const longestAgo = Math.min(...candidates.map(lastUsed))
+      candidates = candidates.filter((set) => lastUsed(set) === longestAgo)
+    }
+
+    const profile = getParticipantProfile(appointment)
+    const readsProfile = getSeededReadsProfile(appointment)
+    const chosen = cheapest(
+      candidates,
+      (set) =>
+        getRealCaseFitCost(set, profile) +
+        getRealCaseReadsCost(set, readsProfile) +
+        2 * (timesUsedByParticipant.get(set.participantId) || 0) +
+        seededRandom(appointment.id + set.id)
+    )
+
+    caseIdsByAppointmentId.set(appointment.id, chosen.id)
+    usedCaseIds.add(chosen.id)
+    lastUsedByParticipant.set(chosen.participantId, index)
+    timesUsedByParticipant.set(
+      chosen.participantId,
+      (timesUsedByParticipant.get(chosen.participantId) || 0) + 1
+    )
+
+    const seedDateOfBirth = participant?.demographicInformation?.dateOfBirth
+    if (!shownDateOfBirth && seedDateOfBirth) {
+      const dateOfBirth = getDateOfBirthForAge(
+        seedDateOfBirth,
+        appointment.timing?.startTime,
+        chosen.ageAtCurrent
+      )
+      if (dateOfBirth) {
+        datesOfBirth.set(participant.id, {
+          from: seedDateOfBirth,
+          to: dateOfBirth
+        })
+      }
+      shownDatesOfBirth.set(participant.id, dateOfBirth || seedDateOfBirth)
+    }
+  })
+
+  realAssignments = {
+    manifest,
+    generationId,
+    setsById,
+    caseIdsByAppointmentId,
+    usedParticipantIds: new Set(lastUsedByParticipant.keys()),
+    datesOfBirth
+  }
+  return realAssignments
+}
+
+/**
+ * A date of birth on the same day of the year as an existing one, giving the
+ * age wanted on a date.
+ *
+ * @param {string} dateOfBirth - Existing date of birth, YYYY-MM-DD or an ISO
+ *   date and time
+ * @param {string} onDate - Date the age applies on
+ * @param {number} age - Age wanted
+ * @returns {string|null} Date of birth in the existing one's format, or null
+ *   if any input is missing or the existing date of birth gives that age
+ */
+const getDateOfBirthForAge = (dateOfBirth, onDate, age) => {
+  if (!dateOfBirth || !onDate || !Number.isInteger(age)) return null
+
+  const birth = new Date(dateOfBirth)
+  const date = new Date(onDate)
+  if (isNaN(birth) || isNaN(date)) return null
+
+  // UTC throughout, so the day of the year never moves with daylight saving
+  const month = birth.getUTCMonth()
+  const day = birth.getUTCDate()
+  const hadBirthday =
+    date.getUTCMonth() > month ||
+    (date.getUTCMonth() === month && date.getUTCDate() >= day)
+  const year = date.getUTCFullYear() - age - (hadBirthday ? 0 : 1)
+  if (year === birth.getUTCFullYear()) return null
+
+  // 29 February only exists in leap years
+  const isLeapYear = new Date(Date.UTC(year, 1, 29)).getUTCMonth() === 1
+  if (month === 1 && day === 29 && !isLeapYear) birth.setUTCDate(28)
+  birth.setUTCFullYear(year)
+
+  return /^\d{4}-\d{2}-\d{2}$/.test(dateOfBirth)
+    ? birth.toISOString().slice(0, 10)
+    : birth.toISOString()
+}
+
+/**
+ * The real case assigned to a seed data appointment, by getRealAssignments.
+ *
+ * @param {string} appointmentId - Appointment ID
+ * @returns {object|null} The assigned set, or null if the appointment isn't in
+ *   the seed data or there's no pack
+ */
+const getAssignedRealSet = (appointmentId) => {
+  const assignments = getRealAssignments()
+  const caseId = assignments?.caseIdsByAppointmentId.get(appointmentId)
+  return caseId ? assignments.setsById.get(caseId) : null
+}
+
+/**
+ * A real case for an appointment that isn't in the seed data, so has no
+ * assigned case: one matching it as seed appointments are matched, preferring
+ * cases and participants that no seed appointment uses, that best fits the
+ * participant. The same appointment gets the same case.
+ *
+ * @param {object} appointment - Appointment with mammogramData
+ * @returns {object|null} Real image set, or null if there's no pack
+ */
+const chooseUnassignedRealSet = (appointment) => {
+  const assignments = getRealAssignments()
+  const sets = getAvailableSets('real')
+  if (!assignments || sets.length === 0) return null
+
+  const assignedCaseIds = new Set(assignments.caseIdsByAppointmentId.values())
+  let candidates = getRealCandidates(sets, appointment)
+  candidates = narrowTo(candidates, (set) => !assignedCaseIds.has(set.id))
+  candidates = narrowTo(
+    candidates,
+    (set) => !assignments.usedParticipantIds.has(set.participantId)
+  )
+
+  const profile = getParticipantProfile(appointment)
+  return cheapest(
+    candidates,
+    (set) =>
+      getRealCaseFitCost(set, profile) + seededRandom(appointment.id + set.id)
+  )
+}
+
+/**
+ * Dates of birth to show for seed participants while real images are on, so
+ * a participant's age matches her real case's. Keyed by participant ID: `from`
+ * the seed data's date of birth, `to` the one to show instead. Only used when
+ * the date of birth hasn't been changed this session.
+ *
+ * @returns {Map<string, { from: string, to: string }>} Empty when there's no
+ *   pack
+ */
+const getRealImageDatesOfBirth = () =>
+  getRealAssignments()?.datesOfBirth || new Map()
+
 /**
  * Select an image set for an appointment using seeded random with weighted tag distribution
  * Returns the same set for the same appointmentId
@@ -402,6 +958,16 @@ const getImageSetForAppointment = (
 ) => {
   let allSets = getAvailableSets(source)
   if (allSets.length === 0) return null
+
+  if (source === 'real' && !options.tag && !options.weights) {
+    const assignedSet = getAssignedRealSet(appointmentId)
+    if (assignedSet) return assignedSet
+
+    if (options.appointment?.mammogramData) {
+      const chosenSet = chooseUnassignedRealSet(options.appointment)
+      if (chosenSet) return chosenSet
+    }
+  }
 
   // If the appointment already has a stored selectedSetId, use that directly.
   // This ensures the viewer always shows the same set the reading generator used,
@@ -589,10 +1155,13 @@ const resolveViewPath = (viewDef, view, source) => {
  * @returns {object} - Object with paths for each view. Path can be string or array of strings.
  */
 const getImagePaths = (setId, source = 'diagrams') => {
+  const set = getSetById(setId, source)
+
+  // Real image sets come with their paths
+  if (set?.paths) return set.paths
+
   const sourceFolder = IMAGE_SOURCES[source]
   if (!sourceFolder) return null
-
-  const set = getSetById(setId, source)
 
   // Check if this is a composite set (has views object with from/image references)
   if (set && set.views) {
@@ -766,6 +1335,125 @@ const getImagesForAppointment = function (
 }
 
 /**
+ * Split a set's paths into what a viewer shows: the latest image for each
+ * view, every image for each view, and whether any view has more than one
+ *
+ * @param {object} rawPaths - Paths per view, from getImagePaths
+ * @returns {{ paths: object, allPaths: object, hasAdditionalImages: boolean }}
+ */
+const splitLatestPaths = (rawPaths) => {
+  const paths = {}
+  for (const view of VIEWS) {
+    paths[view] = getLatestPath(rawPaths[view])
+  }
+  return {
+    paths,
+    allPaths: rawPaths,
+    hasAdditionalImages: VIEWS.some((view) => Array.isArray(rawPaths[view]))
+  }
+}
+
+/**
+ * Earlier studies (priors) to show alongside an appointment's images in the
+ * PACS viewer, newest first, up to `config.reading.maxPriorStudiesInViewer`.
+ *
+ * - Real images: the pack case's own earlier studies, dated back from the
+ *   appointment by the gap between the studies. They don't follow the
+ *   participant's generated screening history.
+ * - Diagrams: a normal set other than the current one, standing in for each
+ *   mammogram in the participant's earlier episodes, on that mammogram's date.
+ *   Needs session data, which it reads from the template context.
+ *
+ * Priors show whether or not the appointment is waiting for them to be
+ * requested (`appointment.previousMammograms`).
+ *
+ * @param {object} appointment - The appointment
+ * @param {string} [source] - "diagrams" or "real"
+ * @param {object} [options]
+ * @param {object} [options.data] - Session data, when not called from a template
+ * @param {number} [options.limit] - How many priors at most
+ * @returns {Array<{ date: string|null, dateText: string, label: string, paths: object, allPaths: object, fullPaths: object|null, hasAdditionalImages: boolean }>}
+ * @example
+ * {% set priors = getPriorImagesForAppointment(appointment, getMammogramImageSource()) %}
+ */
+const getPriorImagesForAppointment = function (
+  appointment,
+  source = 'diagrams',
+  options = {}
+) {
+  if (!appointment) return []
+
+  const limit = options.limit ?? config.reading?.maxPriorStudiesInViewer ?? 3
+  const appointmentTime = appointment.timing?.startTime
+    ? new Date(appointment.timing.startTime).getTime()
+    : null
+  const currentSet = getImageSetForAppointment(appointment.id, source, {
+    appointment
+  })
+
+  const describe = (date, rawPaths, fullPaths = null) => ({
+    date,
+    dateText: date ? formatDate(date, 'MMM YYYY') : '',
+    label: date ? formatRelativeDate(date) : 'Prior',
+    ...splitLatestPaths(rawPaths),
+    fullPaths
+  })
+
+  if (source === 'real') {
+    return (currentSet?.priors || [])
+      .slice(0, limit)
+      .map((prior) =>
+        describe(
+          appointmentTime
+            ? new Date(
+                appointmentTime - prior.daysBefore * MS_PER_DAY
+              ).toISOString()
+            : null,
+          prior.paths,
+          prior.fullPaths
+        )
+      )
+  }
+
+  const data = options.data || this?.ctx?.data
+  if (!data || !appointmentTime) return []
+
+  // Required here rather than at the top: episodes.js loads the data store,
+  // which reads the generated data, and the generators use this file
+  const { getEpisodesForParticipant } = require('./episodes')
+
+  const priorDates = getEpisodesForParticipant(data, appointment.participantId)
+    .filter((episode) => episode.id !== appointment.episodeId)
+    .flatMap((episode) => episode.mammograms || [])
+    .map((mammogram) => mammogram.takenDate)
+    .filter((date) => date && new Date(date).getTime() < appointmentTime)
+    .sort((a, b) => new Date(b) - new Date(a))
+    .slice(0, limit)
+  if (priorDates.length === 0) return []
+
+  // Normal sets, matching the current images' implants, not the current set
+  const candidates = filterSetsByContext(
+    getAvailableSets('diagrams').filter(
+      (set) => set.tag === 'normal' && set.id !== currentSet?.id
+    ),
+    { hasImplants: extractAppointmentContext(appointment).hasImplants }
+  )
+  if (candidates.length === 0) return []
+
+  const usedSetIds = new Set()
+  return priorDates.map((date) => {
+    const unused = candidates.filter((set) => !usedSetIds.has(set.id))
+    const pool = unused.length > 0 ? unused : candidates
+    const set =
+      pool[
+        Math.floor(seededRandom(appointment.participantId + date) * pool.length)
+      ]
+    usedSetIds.add(set.id)
+    return describe(date, getImagePaths(set.id, 'diagrams'))
+  })
+}
+
+/**
  * Check if an image source has any available sets
  * @param {string} source - "diagrams" or "real"
  * @returns {boolean}
@@ -901,6 +1589,9 @@ const summariseMammogramImages = (appointment, options = {}) => {
 module.exports = {
   IMAGE_SOURCES,
   VIEWS,
+  getMammogramImageSource,
+  getRealImagesAccessState,
+  getRealImagesLockReason,
   getManifest,
   getAvailableSets,
   getSetById,
@@ -908,6 +1599,10 @@ module.exports = {
   getImagePaths,
   getImageLibraryPath,
   getImagesForAppointment,
+  getPriorImagesForAppointment,
+  getRealImageDatesOfBirth,
+  getRealAssignments,
+  getAssignedRealSet,
   hasImageSets,
   extractAppointmentContext,
   getResolvedAnnotations,
