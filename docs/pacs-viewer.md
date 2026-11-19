@@ -95,7 +95,7 @@ When the viewer opens (manually or auto), it requests current participant data:
 | + -        | Fullscreen | Zoom in or out                                  |
 | 0          | Fullscreen | Back to fit                                     |
 | [ ]        | Grid       | Newer ([) or older (]) prior, or back to Priors |
-| [ ]        | Fullscreen | Same view from a newer ([) or older (]) study  |
+| [ ]        | Fullscreen | Same view from a newer ([) or older (]) study   |
 | Escape     | Fullscreen | Close                                           |
 | N, D, T, R | Anywhere   | Opinion shortcuts, sent to the reading page     |
 | i          | Anywhere   | Toggle the debug bar                            |
