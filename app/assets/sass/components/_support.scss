@@ -1,0 +1,21 @@
+@use "nhsuk-frontend/dist/nhsuk/core" as *;
+
+// ==========================================================================
+// COMPONENTS / #SUPPORT
+// ==========================================================================
+
+// Left-hand nav on support pages: a heading per section, with the section
+// navigation component listing that section's articles. Generated from the
+// markdown content tree.
+
+.app-support-nav {
+  @include nhsuk-media-query($until: desktop) {
+    border-bottom: 1px solid $nhsuk-border-colour;
+    margin-bottom: nhsuk-spacing(5);
+    padding-bottom: nhsuk-spacing(3);
+  }
+}
+
+.app-support-nav__heading {
+  margin-bottom: nhsuk-spacing(2);
+}

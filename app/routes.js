@@ -384,6 +384,7 @@ require('./routes/reading')(router)
 require('./routes/reading-cases')(router)
 require('./routes/arbitration')(router)
 require('./routes/reports')(router)
+require('./routes/support')(router)
 require('./routes/issues')(router)
 require('./routes/review')(router)
 
