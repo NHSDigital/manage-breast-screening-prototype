@@ -15,9 +15,12 @@ Setup (Python 3.8 or later; survey.py must sit next to this script):
 Run:
     pack-env/bin/python build-pack.py /path/to/participant-folders --out /path/to/pack
     --display-only    only the ~1600 px display JPEGs (a quick, small pack)
-    --skip-existing   don't re-render JPEGs that are already there (for re-runs)
+    --skip-existing   don't re-render JPEGs that are already there. On an existing
+                      pack this rebuilds only the manifest, which takes minutes
     --limit 20        only the first N participants (a trial run)
     --check           only validate an existing pack's manifest.json
+    --remove-duplicates  only remove duplicate images from a pack built before the
+                      builder dropped them (needs the pack, not the source)
 
 Output, in the --out folder:
     manifest.json     participants, studies, images and cases (aliased IDs, no dates)
@@ -61,6 +64,7 @@ DISPLAY_HEIGHT = 1600
 MIN_IMAGE_SIDE = 1000  # smaller than this is a specimen or partial view, not a full view
 SIDE_OPINION = {"RN": "normal", "RU": "abnormal", "BA": "clinical", "RO": "unreported", "RB": "benign"}
 RECALL_ACTIONS = ("RC", "FV", "EC")
+ASSESSMENT_WINDOW_DAYS = 60  # a screening-like study this soon after a recall is the assessment
 
 
 def alias(prefix, original):
@@ -240,6 +244,76 @@ def usable_images(study, client, log):
     return usable
 
 
+def pixel_digest(dicom_path):
+    """A hash of an image's pixel data, or None if it can't be read."""
+    try:
+        return hashlib.sha1(pydicom.dcmread(dicom_path).PixelData).hexdigest()
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def duplicate_key(view, modifiers, synthetic2D, instance):
+    """Images can only be copies of each other if they share all of these."""
+    return (view, tuple(modifiers or []), bool(synthetic2D), instance)
+
+
+def marked_image_ids(annotations):
+    """IDs of images with annotation markers on them."""
+    return {image_id
+            for markers in (annotations.get("studies") or {}).values()
+            for marker in markers or []
+            for image_id in (marker.get("positions") or {})}
+
+
+def find_copies(images, key, digest, image_id, marked):
+    """Images that are copies of another, as (copy, kept) pairs.
+
+    Only images sharing a key are compared, so most are never hashed. The first of
+    each is kept, except that a copy with annotation markers is kept in preference
+    to one without, and never dropped, so markers aren't lost.
+    """
+    groups = collections.defaultdict(list)
+    for image in images:
+        groups[key(image)].append(image)
+    copies = []
+    for group in groups.values():
+        if len(group) < 2:
+            continue
+        kept = {}
+        for image in sorted(group, key=lambda i: image_id(i) not in marked):
+            image_digest = digest(image)
+            if image_digest is None:
+                continue
+            if image_digest in kept and image_id(image) not in marked:
+                copies.append((image, kept[image_digest]))
+            else:
+                kept.setdefault(image_digest, image)
+    return copies
+
+
+def drop_duplicates(images, folder, client, log, excluded, marked):
+    """Keep one of each image the source holds more than once under different IDs.
+
+    The source sometimes has the same image (identical pixels, same view and instance
+    number) as several files, within a study or across same-day studies. Images
+    curation.json excludes aren't compared, so a copy it keeps isn't dropped.
+    """
+    copies = find_copies(
+        sorted((i for i in images if alias("i-", i["file"]) not in excluded),
+               key=lambda i: (i["instance"], i["file"])),
+        key=lambda i: duplicate_key((i["laterality"] + i["view"]).lower(), i["viewModifiers"],
+                                    i["synthetic2D"], i["instance"]),
+        digest=lambda i: pixel_digest(os.path.join(folder, i["studyUid"], i["file"])),
+        image_id=lambda i: alias("i-", i["file"]),
+        marked=marked,
+    )
+    for copy, kept in copies:
+        log(f"{client}/{copy['studyUid']}/{copy['file']}: skipped, same pixels as "
+            f"{kept['studyUid']}/{kept['file']}")
+    dropped = {id(copy) for copy, _ in copies}
+    return [i for i in images if id(i) not in dropped]
+
+
 def render(dicom_path, flip, targets, display_height):
     """Decode, window, normalise orientation and write JPEGs. targets: {"display": path, "full": path}."""
     ds = pydicom.dcmread(dicom_path)
@@ -279,7 +353,28 @@ def has_repeat(images):
 # ---- Building ----------------------------------------------------------------
 
 
-def build_participant(folder, args, curation, id_map, log):
+def reclassify_assessments(studies, client, log):
+    """A study soon after a recalled screening study is assessment, even with all four standard views.
+
+    The source rarely records magnification or spot modifiers, so these studies
+    otherwise look like screening and would become cases and priors.
+    """
+    last_screening = None
+    for s in studies:
+        if s["kind"] not in SCREENING_KINDS:
+            continue
+        previous = last_screening
+        if (previous and previous["nbss"] and (previous["nbss"]["recalled"] or previous["nbss"]["cancerFound"])
+                and s["daysFromFirst"] is not None and previous["daysFromFirst"] is not None
+                and s["daysFromFirst"] - previous["daysFromFirst"] <= ASSESSMENT_WINDOW_DAYS):
+            log(f"{client}: study {s['id']} is {s['daysFromFirst'] - previous['daysFromFirst']} days after "
+                f"a recall, so treated as assessment")
+            s["kind"] = "assessment-or-other"
+            continue
+        last_screening = s
+
+
+def build_participant(folder, args, curation, marked, id_map, log):
     client = os.path.basename(folder.rstrip("/\\"))
     errors = []
     read = survey.read_participant(folder, errors)
@@ -301,7 +396,9 @@ def build_participant(folder, args, curation, id_map, log):
     for s in studies:
         if s["kind"].startswith("other-") or s["kind"] == "unusable":
             continue
-        images = usable_images(s, client, log)
+        study_images_curation = ((curation.get("studies") or {}).get(alias("s-", s["studyUid"])) or {}).get("images") or {}
+        excluded = {image_id for image_id, c in study_images_curation.items() if (c or {}).get("role") == "exclude"}
+        images = drop_duplicates(usable_images(s, client, log), folder, client, log, excluded, marked)
         kind = survey.classify_study([i for i in s["images"] if i in images or i["tomo"]])
         if not images or kind == "unusable":
             log(f"{client}/{s['studyUid']}: skipped, no usable images")
@@ -345,6 +442,8 @@ def build_participant(folder, args, curation, id_map, log):
             "images": out_images,
             "_excluded": bool(study_curation.get("exclude")),
         })
+
+    reclassify_assessments(out_studies, client, log)
 
     participant = {
         "id": participant_id,
@@ -507,6 +606,44 @@ def check_manifest(manifest, pack_root):
     return problems
 
 
+# ---- Removing duplicates from an existing pack -----------------------------------
+
+
+def file_digest(path):
+    with open(path, "rb") as f:
+        return hashlib.sha1(f.read()).hexdigest()
+
+
+def remove_duplicates(pack_root, manifest):
+    """Take images the builder would now drop as duplicates out of a pack built before it did.
+
+    Copies render to identical JPEGs, so this needs only the pack, not the source data.
+    The same images are kept as the builder keeps. Returns the removed images.
+    """
+    marked = marked_image_ids(read_json(os.path.join(pack_root, "annotations.json"), {}))
+    removed = []
+    studies_by_id = {}
+    for p in manifest.get("participants", []):
+        for s in p.get("studies", []):
+            studies_by_id[s["id"]] = s
+            copies = find_copies(
+                s["images"],
+                key=lambda i: duplicate_key(i["view"], i["modifiers"], i["synthetic2D"], i["instance"]),
+                digest=lambda i: tuple(file_digest(os.path.join(pack_root, path))
+                                       for path in i["files"].values() if path),
+                image_id=lambda i: i["id"],
+                marked=marked,
+            )
+            dropped = {copy["id"] for copy, _ in copies}
+            s["images"] = [i for i in s["images"] if i["id"] not in dropped]
+            removed += [copy for copy, _ in copies]
+    for c in manifest.get("cases", []):
+        study = studies_by_id.get(c["currentStudyId"])
+        if study:
+            c["hasRepeat"] = has_repeat(study["images"])
+    return removed
+
+
 # ---- Main ------------------------------------------------------------------------
 
 
@@ -516,9 +653,11 @@ def main():
     parser.add_argument("--out", required=True, help="pack folder to write (created if needed)")
     parser.add_argument("--limit", type=int, help="only the first N participants")
     parser.add_argument("--display-only", action="store_true", help="only render display-size JPEGs")
-    parser.add_argument("--skip-existing", action="store_true", help="don't re-render JPEGs already in the pack")
+    parser.add_argument("--skip-existing", action="store_true", help="don't re-render JPEGs already in the pack (rebuilds just the manifest)")
     parser.add_argument("--display-height", type=int, default=DISPLAY_HEIGHT, help="display JPEG height (default 1600)")
     parser.add_argument("--check", action="store_true", help="only validate the pack's existing manifest.json")
+    parser.add_argument("--remove-duplicates", action="store_true",
+                        help="only remove duplicate images from an existing pack (no source needed)")
     args = parser.parse_args()
 
     manifest_path = os.path.join(args.out, "manifest.json")
@@ -526,8 +665,23 @@ def main():
         problems = check_manifest(read_json(manifest_path, {}), args.out)
         print("\n".join(problems) or "manifest.json is valid")
         sys.exit(1 if problems else 0)
+    if args.remove_duplicates:
+        manifest = read_json(manifest_path, None)
+        if not manifest:
+            sys.exit(f"No manifest.json in {args.out}")
+        removed = remove_duplicates(args.out, manifest)
+        if removed:
+            write_json(manifest_path, manifest)
+            for image in removed:
+                for path in image["files"].values():
+                    if path and os.path.exists(os.path.join(args.out, path)):
+                        os.remove(os.path.join(args.out, path))
+        print(f"Removed {len(removed)} duplicate images")
+        problems = check_manifest(manifest, args.out)
+        print("\n".join(problems) or "manifest.json is valid")
+        sys.exit(1 if problems else 0)
     if not args.source:
-        parser.error("source is required unless --check")
+        parser.error("source is required unless --check or --remove-duplicates")
 
     folders = sorted(p for p in glob.glob(os.path.join(args.source, "*"))
                      if os.path.isdir(p) and glob.glob(os.path.join(p, "IMAGEDB_*.json")))
@@ -544,12 +698,13 @@ def main():
         print("  " + message, flush=True)
 
     curation = read_json(os.path.join(args.out, "curation.json"), {})
+    marked = marked_image_ids(read_json(os.path.join(args.out, "annotations.json"), {}))
     id_map = {"participants": {}, "studies": {}, "images": {}}
     participants, cases = [], []
     started = time.time()
     for n, folder in enumerate(folders, 1):
         try:
-            participant, participant_cases = build_participant(folder, args, curation, id_map, log)
+            participant, participant_cases = build_participant(folder, args, curation, marked, id_map, log)
             if participant:
                 participants.append(participant)
                 cases += participant_cases
