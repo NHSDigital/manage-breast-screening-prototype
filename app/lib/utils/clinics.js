@@ -116,6 +116,47 @@ const getNextScreeningOrder = (data, clinicId) => {
 }
 
 /**
+ * Calculate screening order based on completion time (endedAt) for appointments
+ * that were attended. This ensures the order reflects when they actually
+ * completed, not when their status was updated. For use when assigning order
+ * to attended_not_screened appointments that already have endedAt times.
+ *
+ * @param {object} data - Session data
+ * @param {string} clinicId - Clinic ID
+ * @param {string} appointmentId - The appointment to assign order to
+ * @returns {number} The screening order based on completion time
+ */
+const getScreeningOrderByCompletionTime = (data, clinicId, appointmentId) => {
+  const clinicAppointments = getClinicAppointments(data.appointments, clinicId)
+  const targetAppointment = clinicAppointments.find(a => a.id === appointmentId)
+
+  if (!targetAppointment?.sessionDetails?.endedAt) {
+    return getNextScreeningOrder(data, clinicId)
+  }
+
+  const targetEndTime = new Date(targetAppointment.sessionDetails.endedAt)
+
+  // Count how many appointments ended before this one (and have screening order)
+  const appointmentsBefore = clinicAppointments.filter(appointment => {
+    if (!appointment.sessionDetails?.endedAt) return false
+    if (appointment.id === appointmentId) return false
+    if (typeof appointment.screeningOrder !== 'number') return false
+
+    const endTime = new Date(appointment.sessionDetails.endedAt)
+    return endTime < targetEndTime
+  })
+
+  if (appointmentsBefore.length === 0) {
+    // No earlier appointments - take the highest order and add 1
+    return getNextScreeningOrder(data, clinicId)
+  }
+
+  // Find the highest order among appointments before this one
+  const highestBefore = Math.max(...appointmentsBefore.map(a => a.screeningOrder))
+  return highestBefore + 1
+}
+
+/**
  * Which broken-out columns the clinic appointments table shows for a tab.
  * Shared by the table header, the row macro and the sort logic so the three
  * never fall out of step.
@@ -259,6 +300,7 @@ module.exports = {
   getFilteredClinics,
   getClinicAppointments,
   getNextScreeningOrder,
+  getScreeningOrderByCompletionTime,
   getClinicTableColumns,
   formatTimeSlot,
   getClinicHours,

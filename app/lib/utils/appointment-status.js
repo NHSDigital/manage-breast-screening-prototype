@@ -18,7 +18,7 @@ const {
   advanceEpisodeForAppointmentStatus
 } = require('./episodes')
 const { getSimulatedNow } = require('./status')
-const { getNextScreeningOrder } = require('./clinics')
+const { getNextScreeningOrder, getScreeningOrderByCompletionTime } = require('./clinics')
 
 /**
  * Update appointment status and add to history
@@ -53,13 +53,19 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
   if (!updatedAppointment) return null
 
   // Attended not screened takes a place in the order of screening, unless it
-  // already has one from being started
+  // already has one from being started. Order is based on when it actually
+  // completed (endedAt), not when this status update occurs, so appointments
+  // display in the correct order regardless of when their status is changed.
   if (
     newStatus === 'attended_not_screened' &&
     updatedAppointment.screeningOrder == null
   ) {
     updateAppointmentData(data, appointmentId, {
-      screeningOrder: getNextScreeningOrder(data, updatedAppointment.clinicId)
+      screeningOrder: getScreeningOrderByCompletionTime(
+        data,
+        updatedAppointment.clinicId,
+        appointmentId
+      )
     })
   }
 
