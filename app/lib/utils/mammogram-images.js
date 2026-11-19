@@ -472,17 +472,25 @@ const DIAGRAM_TAG_TO_REAL_TAG = {
 }
 
 /**
+ * The diagram set stored on an appointment, which real cases are matched to.
+ *
+ * @param {object} appointment - Appointment with mammogramData
+ * @returns {object|null} Diagram set, or null if it has no stored set
+ */
+const getStoredDiagramSet = (appointment) => {
+  const setId = appointment?.mammogramData?.selectedSetId
+  return setId ? getSetById(setId, 'diagrams') : null
+}
+
+/**
  * The real case tag to choose for an appointment, from its stored diagram
  * set, so the images agree roughly with the seed data's reads.
  *
- * @param {object} appointment - Appointment with mammogramData
- * @returns {string|null} Tag, or null if it has no stored set
+ * @param {object|null} diagramSet - From getStoredDiagramSet
+ * @returns {string|null} Tag, or null if there's no diagram set
  */
-const getRealTagForAppointment = (appointment) => {
-  const setId = appointment?.mammogramData?.selectedSetId
-  const diagramSet = setId ? getSetById(setId, 'diagrams') : null
-  return diagramSet ? DIAGRAM_TAG_TO_REAL_TAG[diagramSet.tag] || null : null
-}
+const getRealTagForDiagramSet = (diagramSet) =>
+  diagramSet ? DIAGRAM_TAG_TO_REAL_TAG[diagramSet.tag] || null : null
 
 /**
  * Whether a real case is abnormal on the same breasts as an appointment's
@@ -491,12 +499,10 @@ const getRealTagForAppointment = (appointment) => {
  * than normal counts as abnormal.
  *
  * @param {object} set - Real image set
- * @param {object} appointment - Appointment with mammogramData
+ * @param {object|null} diagramSet - From getStoredDiagramSet
  * @returns {boolean} True if the sides match, or there's nothing to match
  */
-const realSetMatchesSides = (set, appointment) => {
-  const setId = appointment?.mammogramData?.selectedSetId
-  const diagramSet = setId ? getSetById(setId, 'diagrams') : null
+const realSetMatchesSides = (set, diagramSet) => {
   if (!diagramSet || diagramSet.tag === 'normal') return true
 
   const isAbnormal = (side) => side?.status && side.status !== 'normal'
@@ -701,9 +707,11 @@ const getRealCandidates = (sets, appointment) => {
     extractAppointmentContext(appointment)
   )
   let candidates = fitting.length > 0 ? fitting : sets
-  const tag = getRealTagForAppointment(appointment)
+  // Looked up once: each lookup reads the diagram manifest from disk
+  const diagramSet = getStoredDiagramSet(appointment)
+  const tag = getRealTagForDiagramSet(diagramSet)
   candidates = narrowTo(candidates, (set) => !tag || set.tag === tag)
-  return narrowTo(candidates, (set) => realSetMatchesSides(set, appointment))
+  return narrowTo(candidates, (set) => realSetMatchesSides(set, diagramSet))
 }
 
 // Real cases assigned to seed appointments, rebuilt when the seed data or the
