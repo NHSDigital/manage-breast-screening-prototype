@@ -1320,7 +1320,7 @@
      * Show an image fullscreen, with zoom, pan and arrow key navigation.
      * Clicking an image opens it zoomed in, centred on the point clicked; clicking again
      * closes. Arrow keys move between this window's images, zoomed or not;
-     * pan by dragging. [ and ] show the same view from an older or newer study
+     * pan by dragging. [ and ] show the same view from a newer or older study
      * @param {object} options
      * @param {Array<object>} [options.images] - Images to move between, from getAllViewableImages
      * @param {number} [options.index] - Which of them to show first
@@ -1517,10 +1517,10 @@
           // Leave the browser's own zoom shortcuts alone
         } else if (e.key === "[") {
           e.preventDefault()
-          stepStudy(-1)
+          stepStudy(1)
         } else if (e.key === "]") {
           e.preventDefault()
-          stepStudy(1)
+          stepStudy(-1)
         } else if (e.key === "+" || e.key === "=") {
           e.preventDefault()
           zoomTo(scale * KEYBOARD_ZOOM_STEP)
@@ -1593,7 +1593,7 @@
 
     /**
      * Keys for the grid: ← and → step through the layouts, [ and ] compare
-     * with an older or newer prior. From another layout, [ and ] first go
+     * with a newer or older prior, matching the newest-first buttons. From another layout, [ and ] first go
      * back to the Priors layout. The zoom view handles its own keys
      */
     const setupGridKeys = () => {
@@ -1611,7 +1611,7 @@
         } else if ((e.key === "[" || e.key === "]") && currentStudies.length > 1) {
           e.preventDefault()
           const isPriorsLayout = Boolean(availableLayouts[layoutIndex]?.needsPriors)
-          const step = isPriorsLayout ? (e.key === "[" ? -1 : 1) : 0
+          const step = isPriorsLayout ? (e.key === "[" ? 1 : -1) : 0
           setComparisonStudy(comparisonStudyIndex + step)
           broadcastViewerState()
         }

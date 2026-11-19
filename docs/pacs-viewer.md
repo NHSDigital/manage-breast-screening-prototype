@@ -83,7 +83,7 @@ When the viewer opens (manually or auto), it requests current participant data:
 - **Keyboard navigation**: In the grid, ← → change layout. Fullscreen, ← → move through the images on this screen, in layout order; they don't pan.
 - **Opinion shortcuts**: Press N (normal), D (normal, but add details), T (technical recall), or R (recall for assessment) to trigger the corresponding opinion on the reading page - works even when PACS viewer is focused. When the participant has symptoms, plain Normal is not offered: “Normal, and add details” replaces it, and both N and D trigger it
 - **Additional images**: A panel whose view has more than one image (a repeat, or extra images of a large breast), in the current study or a prior, shows the latest with numbered buttons (“1”, “2 (latest)”) to flick between them in place, so a prior stays alongside. The label says which (“RMLO (1 of 2)”). The choice holds across layouts, fullscreen and both screens, and resets for the next participant
-- **Priors**: When the participant has earlier studies, the Priors layout compares the current study with one of them, the most recent by default. Buttons in the header (“Prior: 3 years ago”, with the date on hover, newest on the left) choose which, up to `config.reading.maxPriorStudiesInViewer` (3) priors; [ and ] step older or newer. The buttons only show in the Priors layout; [ or ] from another layout switches to it. When there are none, the header says “No priors” and the Priors layout isn't offered. Fullscreen, [ and ] show the same view from an older or newer study at the same zoom and position, skipping studies without that view. A new participant always opens on the default layout and most recent prior
+- **Priors**: When the participant has earlier studies, the Priors layout compares the current study with one of them, the most recent by default. Buttons in the header (“Prior: 3 years ago”, with the date on hover, newest on the left) choose which, up to `config.reading.maxPriorStudiesInViewer` (3) priors; [ and ] step newer or older, matching the buttons. The buttons only show in the Priors layout; [ or ] from another layout switches to it. When there are none, the header says “No priors” and the Priors layout isn't offered. Fullscreen, [ and ] show the same view from a newer or older study at the same zoom and position, skipping studies without that view. A new participant always opens on the default layout and most recent prior
 - **Debug mode**: Press 'i' to toggle debug bar showing set ID, tag, description, and context flags
 
 #### Keyboard shortcuts
@@ -94,8 +94,8 @@ When the viewer opens (manually or auto), it requests current participant data:
 | ← →        | Fullscreen | Previous or next image on this screen           |
 | + -        | Fullscreen | Zoom in or out                                  |
 | 0          | Fullscreen | Back to fit                                     |
-| [ ]        | Grid       | Older ([) or newer (]) prior, or back to Priors |
-| [ ]        | Fullscreen | Same view from an older ([) or newer (]) study  |
+| [ ]        | Grid       | Newer ([) or older (]) prior, or back to Priors |
+| [ ]        | Fullscreen | Same view from a newer ([) or older (]) study  |
 | Escape     | Fullscreen | Close                                           |
 | N, D, T, R | Anywhere   | Opinion shortcuts, sent to the reading page     |
 | i          | Anywhere   | Toggle the debug bar                            |
