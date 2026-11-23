@@ -507,11 +507,11 @@ const getCheckInTime = (appointment) => getStatusTime(appointment, 'checked_in')
 
 /**
  * Whether an appointment that has ended was attended: screened, attended not
- * screened, or started and then rescheduled or cancelled. An attended
- * appointment keeps its place in the order of screening.
+ * screened, or started and then rescheduled or cancelled. Attended
+ * appointments are numbered by the time they reached their outcome.
  *
- * Stopping an appointment can end in a reschedule or cancellation rather than
- * attended not screened, so having been started is what counts for those.
+ * A reschedule or cancellation can follow a started appointment or an
+ * attended-not-screened outcome, which already has an end time.
  *
  * @param {object} appointment - Appointment object to check
  * @returns {boolean} Whether the appointment was attended
@@ -527,7 +527,10 @@ const wasAttended = (appointment) => {
 
   return (
     ['cancelled', 'rescheduled'].includes(status) &&
-    Boolean(appointment.sessionDetails?.startedAt)
+    Boolean(
+      appointment.sessionDetails?.startedAt ||
+      appointment.sessionDetails?.endedAt
+    )
   )
 }
 

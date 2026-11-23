@@ -11,14 +11,21 @@
 // appointment-data.js it needed a lazy require of episodes.js to dodge the
 // resulting cycle.
 
-const { getAppointment, updateAppointmentData } = require('./appointment-data')
+const {
+  getAppointment,
+  updateAppointment,
+  updateAppointmentData
+} = require('./appointment-data')
 const {
   syncEpisodeMammogramsForAppointment,
   syncReadingCasesForAppointment,
   advanceEpisodeForAppointmentStatus
 } = require('./episodes')
-const { getSimulatedNow } = require('./status')
-const { getNextScreeningOrder } = require('./clinics')
+const { getSimulatedNow, wasAttended } = require('./status')
+const {
+  getClinicAppointments,
+  getAppointmentsInScreeningOrder
+} = require('./clinics')
 
 /**
  * Update appointment status and add to history
@@ -38,7 +45,10 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
       : getAppointment(data, appointmentId)
   if (!baseAppointment) return null
 
-  const updatedAppointment = updateAppointmentData(data, appointmentId, {
+  const nextAppointment = { ...baseAppointment, status: newStatus }
+  const wasPreviouslyAttended = wasAttended(baseAppointment)
+  const isNowAttended = wasAttended(nextAppointment)
+  const updates = {
     status: newStatus,
     statusHistory: [
       ...baseAppointment.statusHistory,
@@ -49,17 +59,45 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
         timestamp: getSimulatedNow().toISOString()
       }
     ]
-  })
+  }
+
+  if (
+    isNowAttended &&
+    !wasPreviouslyAttended &&
+    !baseAppointment.sessionDetails?.endedAt
+  ) {
+    updates.sessionDetails = {
+      ...baseAppointment.sessionDetails,
+      endedAt: getSimulatedNow().toISOString(),
+      ...(baseAppointment.sessionDetails?.startedAt && {
+        endedBy: data.currentUser?.id
+      })
+    }
+  } else if (wasPreviouslyAttended && !isNowAttended) {
+    const { endedAt, endedBy, ...sessionDetails } =
+      baseAppointment.sessionDetails || {}
+    updates.sessionDetails = sessionDetails
+    updates.screeningOrder = null
+  }
+
+  let updatedAppointment = updateAppointmentData(data, appointmentId, updates)
   if (!updatedAppointment) return null
 
-  // Attended not screened takes a place in the order of screening, unless it
-  // already has one from being started
-  if (
-    newStatus === 'attended_not_screened' &&
-    updatedAppointment.screeningOrder == null
-  ) {
-    updateAppointmentData(data, appointmentId, {
-      screeningOrder: getNextScreeningOrder(data, updatedAppointment.clinicId)
+  if (wasPreviouslyAttended || isNowAttended) {
+    const appointments = getAppointmentsInScreeningOrder(
+      getClinicAppointments(data.appointments, updatedAppointment.clinicId)
+    )
+    appointments.forEach((appointment, index) => {
+      if (appointment.screeningOrder !== index + 1) {
+        const updated = updateAppointment(data, appointment.id, {
+          ...appointment,
+          screeningOrder: index + 1
+        })
+        if (data.appointment?.id === appointment.id) {
+          data.appointment.screeningOrder = index + 1
+        }
+        if (appointment.id === appointmentId) updatedAppointment = updated
+      }
     })
   }
 

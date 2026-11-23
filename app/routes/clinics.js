@@ -635,7 +635,9 @@ module.exports = (router) => {
         if (!aCompleted && !bCompleted) return 0
         if (!aCompleted) return 1
         if (!bCompleted) return -1
-        const diff = new Date(aCompleted) - new Date(bCompleted)
+        const diff =
+          new Date(aCompleted) - new Date(bCompleted) ||
+          (a.screeningOrder ?? 0) - (b.screeningOrder ?? 0)
         return sortDescending ? -diff : diff
       })
     } else if (sort.startsWith('time')) {

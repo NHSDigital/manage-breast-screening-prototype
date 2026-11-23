@@ -17,7 +17,6 @@ const {
 const {
   updateAppointmentStatus
 } = require('../../lib/utils/appointment-status')
-const { getNextScreeningOrder } = require('../../lib/utils/clinics')
 const {
   getReturnUrl,
   urlWithReferrer,
@@ -31,6 +30,7 @@ const {
 const { captureSessionEndTime } = require('./shared')
 const { formatUserName } = require('../../lib/utils/users')
 const { hasMissingExpectedViews } = require('../../lib/utils/expected-views')
+const { getSimulatedNow } = require('../../lib/utils/status')
 
 module.exports = (router) => {
   // Main route for starting a new appointment
@@ -55,20 +55,11 @@ module.exports = (router) => {
         // Update status to in progress
         updateAppointmentStatus(data, req.params.appointmentId, 'in_progress')
 
-        // Assign the order of screening for the clinic, once. Starting is what
-        // fixes the order, so it never changes if the appointment is later
-        // paused, resumed or amended.
-        if (appointment.screeningOrder == null) {
-          updateAppointmentData(data, req.params.appointmentId, {
-            screeningOrder: getNextScreeningOrder(data, req.params.clinicId)
-          })
-        }
-
         // Store session details. The start goes in authors too, so authors
         // holds the full record of who ran it (see getAppointmentRunnerId)
         updateAppointmentData(data, req.params.appointmentId, {
           sessionDetails: {
-            startedAt: new Date().toISOString(),
+            startedAt: getSimulatedNow().toISOString(),
             startedBy: currentUser.id,
             pausedAt: null,
             pausedBy: null,
@@ -76,7 +67,7 @@ module.exports = (router) => {
               {
                 userId: currentUser.id,
                 action: 'started',
-                timestamp: new Date().toISOString()
+                timestamp: getSimulatedNow().toISOString()
               }
             ]
           }
@@ -152,7 +143,7 @@ module.exports = (router) => {
           {
             userId: currentUser.id,
             action: 'resumed',
-            timestamp: new Date().toISOString()
+            timestamp: getSimulatedNow().toISOString()
           }
         ]
 
@@ -175,14 +166,6 @@ module.exports = (router) => {
             pausedBy: null,
             authors: authors
           }
-        }
-
-        // Starting assigns the order, so this only catches one without it
-        if (appointment.screeningOrder == null) {
-          updates.screeningOrder = getNextScreeningOrder(
-            data,
-            req.params.clinicId
-          )
         }
 
         updateAppointmentData(data, req.params.appointmentId, updates)
@@ -238,7 +221,7 @@ module.exports = (router) => {
           {
             userId: data.currentUser?.id,
             action: 'paused',
-            timestamp: new Date().toISOString()
+            timestamp: getSimulatedNow().toISOString()
           }
         ]
 
@@ -248,7 +231,7 @@ module.exports = (router) => {
           sessionDetails: {
             startedAt: existingDetails.startedAt || null,
             startedBy: existingDetails.startedBy || null,
-            pausedAt: new Date().toISOString(),
+            pausedAt: getSimulatedNow().toISOString(),
             pausedBy: data.currentUser?.id || null,
             authors: authors
           }
@@ -327,7 +310,7 @@ module.exports = (router) => {
             {
               userId: data.currentUser?.id,
               action: 'paused',
-              timestamp: new Date().toISOString()
+              timestamp: getSimulatedNow().toISOString()
             }
           ]
 
@@ -337,7 +320,7 @@ module.exports = (router) => {
             sessionDetails: {
               startedAt: existingDetails.startedAt || null,
               startedBy: existingDetails.startedBy || null,
-              pausedAt: new Date().toISOString(),
+              pausedAt: getSimulatedNow().toISOString(),
               pausedBy: data.currentUser?.id || null,
               authors: authors
             }
@@ -604,7 +587,7 @@ module.exports = (router) => {
       updateAppointmentData(data, appointmentId, {
         sessionDetails: {
           ...getAppointment(data, appointmentId).sessionDetails,
-          endedAt: new Date().toISOString(),
+          endedAt: getSimulatedNow().toISOString(),
           endedBy: currentUser.id
         }
       })

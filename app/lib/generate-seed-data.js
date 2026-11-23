@@ -25,6 +25,7 @@ const {
 const { generateIssues, checkIssues } = require('./generators/issue-generator')
 const { getCurrentRiskLevel } = require('./utils/participants')
 const { isInProgress, isCompleted } = require('./utils/status')
+const { getAppointmentsInScreeningOrder } = require('./utils/clinics')
 const {
   generateReadingData,
   generateSingleRead
@@ -525,24 +526,9 @@ const generateClinicsForDay = (
       }
     }
 
-    // Assign the order of screening for this clinic: a single 1 to N sequence
-    // across all its mammographers, in the order appointments were started.
-    // This mirrors what the running app does the moment an appointment starts.
-    const screenedAppointments = appointments
-      .filter((appointment) => appointment.clinicId === clinic.id)
-      .filter(
-        (appointment) =>
-          isInProgress(appointment) ||
-          isCompleted(appointment) ||
-          appointment.status === 'attended_not_screened'
-      )
-      .sort((a, b) => {
-        const aStart =
-          a.timing?.actualStartTime || a.sessionDetails?.startedAt || 0
-        const bStart =
-          b.timing?.actualStartTime || b.sessionDetails?.startedAt || 0
-        return new Date(aStart) - new Date(bStart)
-      })
+    const screenedAppointments = getAppointmentsInScreeningOrder(
+      appointments.filter((appointment) => appointment.clinicId === clinic.id)
+    )
     screenedAppointments.forEach((appointment, index) => {
       appointment.screeningOrder = index + 1
     })

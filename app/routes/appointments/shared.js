@@ -6,6 +6,7 @@ const {
   getAppointment,
   updateAppointmentData
 } = require('../../lib/utils/appointment-data')
+const { getSimulatedNow } = require('../../lib/utils/status')
 
 /**
  * Capture session end time for an appointment
@@ -18,7 +19,7 @@ function captureSessionEndTime(data, appointmentId, userId) {
   updateAppointmentData(data, appointmentId, {
     sessionDetails: {
       ...appointment.sessionDetails,
-      endedAt: new Date().toISOString(),
+      endedAt: getSimulatedNow().toISOString(),
       endedBy: userId
     }
   })

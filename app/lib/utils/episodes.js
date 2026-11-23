@@ -207,6 +207,30 @@ const isLastScreening = (appointment, data) =>
   Boolean(getEpisode(data, appointment?.episodeId)?.isLastScreening)
 
 /**
+ * Get a participant's screening programme status based on their episodes
+ *
+ * Returns 'new' if the participant's current or only episode is their first
+ * screening, 'final' if it is their last routine screening, or null if
+ * neither category applies (hidden when null)
+ *
+ * @param {object} data - Session data
+ * @param {string} participantId - Participant ID
+ * @returns {string | null} 'new', 'final', or null
+ */
+const getParticipantScreeningProgrammeStatus = (data, participantId) => {
+  const episodes = getEpisodesForParticipant(data, participantId)
+  if (!episodes.length) return null
+
+  // Check if the first episode is marked as first screening (new participant)
+  if (episodes[0]?.isFirstScreening) return 'new'
+
+  // Check if the last episode is marked as last screening (final invite)
+  if (episodes[episodes.length - 1]?.isLastScreening) return 'final'
+
+  return null
+}
+
+/**
  * Get all of a participant's episodes, oldest first
  *
  * @param {object} data - Session data
@@ -790,6 +814,7 @@ module.exports = {
   getEpisode,
   isFirstScreening,
   isLastScreening,
+  getParticipantScreeningProgrammeStatus,
   getEpisodesForParticipant,
   getCurrentEpisode,
   getEpisodeAppointments,

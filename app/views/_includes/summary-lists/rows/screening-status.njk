@@ -1,0 +1,23 @@
+{# app/views/_includes/summary-lists/rows/screening-status.njk #}
+
+{% set screeningProgrammeStatus = data | getParticipantScreeningProgrammeStatus(participant.id) %}
+
+{% if screeningProgrammeStatus %}
+  {% set statusLabels = {
+    'new': 'New to screening',
+    'final': 'Final screening invite'
+  } %}
+
+  {% set screeningStatusRow = {
+    classes: "nhsuk-summary-list__row--no-border" if noBorder,
+    key: {
+      text: "Programme status"
+    },
+    value: {
+      text: statusLabels[screeningProgrammeStatus]
+    },
+    anyRowHasActions: false
+  } %}
+
+  {{ appSummaryListRow(screeningStatusRow) }}
+{% endif %}
