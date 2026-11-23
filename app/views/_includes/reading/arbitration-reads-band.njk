@@ -34,7 +34,7 @@
         <dt class="nhsuk-summary-list__key">{{ "First read" if loop.first else "Second read" }}</dt>
         <dd class="nhsuk-summary-list__value">
           {{ read.timestamp | formatDate }} –
-          {{ read.readerId | getUsername({ format: "short" }) }}
+          {{ read.readerId | getUsername }}
         </dd>
       </div>
     {% endfor %}

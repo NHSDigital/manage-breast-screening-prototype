@@ -23,10 +23,7 @@
   {% if (appointment | isInProgressNotPaused) and not appointment | isRunByCurrentUser %}
     {% set notificationBannerHtml %}
       <p class="nhsuk-notification-banner__heading">
-        This appointment is currently being run by {{ appointment | getAppointmentRunnerId | getUsername({
-          format: 'short',
-          identifyCurrentUser: true
-        }) }}.
+        This appointment is currently being run by {{ appointment | getAppointmentRunnerId | getUsername({ identifyCurrentUser: true }) }}.
       </p>
     {% endset %}
 
@@ -41,7 +38,7 @@
       <span class="nhsuk-caption-l">
         {{ clinic.clinicType | sentenceCase }} appointment
       </span>
-      {{ participant | getFullNameReversed }}
+      {{ participant | getShortNameReversed }}
     </h1>
 
     <div class="app-header-with-status__status-tag">
@@ -143,7 +140,7 @@
       </div>
     {% elseif appointment.status == 'did_not_attend' %}
       {{ insetText({
-        html: (participant | getFullName | safe) + ' did not attend this appointment<br><a href="' + ((appointmentUrl + '/undo-did-not-attend') | urlWithReferrer(currentUrl)) + '" class="nhsuk-link nhsuk-link--no-visited-state">Undo</a>',
+        html: (participant | getShortName | safe) + ' did not attend this appointment<br><a href="' + ((appointmentUrl + '/undo-did-not-attend') | urlWithReferrer(currentUrl)) + '" class="nhsuk-link nhsuk-link--no-visited-state">Undo</a>',
         classes: 'nhsuk-body'
       }) }}
     {% endif %}

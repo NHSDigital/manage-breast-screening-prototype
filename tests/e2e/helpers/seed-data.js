@@ -33,7 +33,7 @@ const readCollection = (filename, key) => {
  * @param {string} [options.status] - Appointment status to look for
  * @param {number} [options.index] - Which match to take, so two specs running
  *   in parallel can work on different appointments
- * @returns {{clinic: object, appointment: object, participant: object, fullName: string}} The subject
+ * @returns {{clinic: object, appointment: object, participant: object, fullName: string, shortName: string}} The subject
  */
 const findTodayAppointment = ({ status = 'scheduled', index = 0 } = {}) => {
   const today = dayjs().format('YYYY-MM-DD')
@@ -69,12 +69,10 @@ const findTodayAppointment = ({ status = 'scheduled', index = 0 } = {}) => {
     clinic,
     appointment,
     participant,
-    // Natural order for flash messages (getFullName format)
+    // With middle names, for 'Full name' rows (getFullName format)
     fullName: [firstName, middleName, lastName].filter(Boolean).join(' '),
-    // Reversed format for identity displays (getFullNameReversed format)
-    fullNameReversed: [`${lastName.toUpperCase()},`, firstName, middleName]
-      .filter(Boolean)
-      .join(' ')
+    // For names in sentences, such as flash messages (getShortName format)
+    shortName: `${firstName} ${lastName}`
   }
 }
 

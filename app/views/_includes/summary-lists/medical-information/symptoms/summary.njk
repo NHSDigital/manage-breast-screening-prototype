@@ -22,7 +22,7 @@
 
     {# Sign noted by the mammographer rather than reported by the participant #}
     {% if symptom.isMammographerObserved %}
-      {% set notedByName = (symptom.addedByUserId | getUsername({ format: "short", useYou: true })) or "mammographer" %}
+      {% set notedByName = (symptom.addedByUserId | getUsername({ useYou: true })) or "mammographer" %}
       {% set valueLines = valueLines | push("Sign noted by " + notedByName) %}
     {% endif %}
 
@@ -145,7 +145,7 @@
     {# Build the Change action #}
     {% set editUrl = contextUrl + "/medical-information/symptoms/edit/" + symptom.id %}
     {% set changeItem = {
-      href: editUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
+      href: editUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo),
       text: "Change",
       visuallyHiddenText: symptom.type | lower
     } %}

@@ -26,9 +26,17 @@ const endOpenStreams = () => {
   }
   openStreams.clear()
 }
-// The kit stops the server on these (SIGUSR2 is nodemon's restart)
-for (const signal of ['SIGINT', 'SIGUSR2']) {
-  process.on(signal, endOpenStreams)
+
+// The kit stops the server on these (SIGUSR2 is nodemon's restart). Listened
+// for only once a stream opens: this file also loads in the kit's watch
+// process, where any SIGINT listener stops Ctrl+C from quitting.
+let isListeningForStop = false
+const listenForStop = () => {
+  if (isListeningForStop) return
+  isListeningForStop = true
+  for (const signal of ['SIGINT', 'SIGUSR2']) {
+    process.on(signal, endOpenStreams)
+  }
 }
 
 module.exports = (router) => {
@@ -100,6 +108,7 @@ module.exports = (router) => {
       sharedData.touchPresence(sessionId)
     }, HEARTBEAT_MS)
 
+    listenForStop()
     openStreams.add(res)
 
     req.on('close', () => {

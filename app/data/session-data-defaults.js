@@ -104,19 +104,20 @@ const defaultSettings = {
     }
   },
   reading: {
-    indexLayout: 'complex', // 'simple' | 'complex'
     blindReading: config.reading.blindReading,
+    mammogramImageSource: config.reading.mammogramImageSource, // 'diagrams' | 'real'
     confirmNormal: 'false',
     confirmNormalWithDetails: 'false',
     confirmTechnicalRecall: 'false',
     confirmRecallForAssessment: 'true',
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
+    pacsScreens: 'two', // 'two' (a window per monitor) | 'one' (one landscape window)
     enableOpinionDelay: 'true',
     annotationsMode: 'with-images-simple', // 'without-images' | 'with-images-simple' | 'with-images' | 'with-images-progressive'
     secondReaderComparison: 'off', // 'early' | 'late' | 'off'
     compareWhen: 'non_normal', // 'non_normal' | 'discordant_only'
-    finalisationDelay: '60', // minutes before reads auto-finalise; '0' immediate | 'never' manual only
+    finalisationDelay: 'never', // minutes before reads auto-finalise; '0' immediate | 'never' manual only
     lazySessions: 'true',
     defaultSessionSize: '25',
     arbitration: {

@@ -17,7 +17,7 @@
 
   <h1 class="nhsuk-heading-l">
     {% if issueParticipants | length %}
-      <span class="nhsuk-caption-l">{{ issueParticipants[0].participant | getFullNameReversed }}</span>
+      <span class="nhsuk-caption-l">{{ issueParticipants[0].participant | getShortNameReversed }}</span>
     {% endif %}
     {{ pageHeading }}
   </h1>

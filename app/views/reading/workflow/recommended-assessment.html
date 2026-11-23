@@ -3,7 +3,7 @@
 {% extends parentLayout or 'layout-reading.html' %}
 
 {% set pageHeading -%}
-  Recommended assessment for {{ participant | getFullName }}
+  Recommended assessment for {{ participant | getShortName }}
 {%- endset %}
 
 {% set gridColumn = "nhsuk-grid-column-two-thirds" %}

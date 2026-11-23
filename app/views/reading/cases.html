@@ -43,8 +43,7 @@
       }) }}
 
     </div>
-    {# Custom top margin to push column down to line up with start of search card (minus feature outdent) #}
-    <div class="nhsuk-grid-column-two-thirds nhsuk-u-margin-top-4">
+    <div class="nhsuk-grid-column-two-thirds">
 
       {% include "_includes/selected-filters.njk" %}
 
@@ -109,7 +108,7 @@
             {{ button({
               text: "Sort",
               small: true,
-              classes: "app-results-bar__sort-button nhsuk-u-margin-bottom-0"
+              classes: "app-results-bar__sort-button nhsuk-u-margin-bottom-1"
             }) }}
           </form>
         </div>
@@ -120,7 +119,7 @@
              The row's link to the case sits in the action column instead #}
           {% set participantHtml %}
             <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
-              {{ row.participant | getFullNameReversed }}
+              {{ row.participant | getShortNameReversed }}
             </p>
             <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
               NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}

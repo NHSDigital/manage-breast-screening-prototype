@@ -94,10 +94,7 @@
       Added {{ previousMammogram.dateAdded | formatDate }}
       {% if previousMammogram.addedBy %}
         <span class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-body-s nhsuk-u-font-weight-normal nhsuk-u-margin-bottom-0 ">by {{ previousMammogram.addedBy
-          | getUsername({
-          format: 'short',
-          identifyCurrentUser: true
-          }) }}</span>
+          | getUsername({ identifyCurrentUser: true }) }}</span>
       {% endif %}
     {% endset %}
       

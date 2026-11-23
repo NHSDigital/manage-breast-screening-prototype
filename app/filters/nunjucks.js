@@ -1,6 +1,7 @@
 // app/filters/nunjucks.js
 
 const { safe: nunjucksSafe } = require('nunjucks/src/filters')
+const { formatUserName } = require('../lib/utils/users')
 
 /**
  * Render a value to the browser console via an inline script tag (for template debugging)
@@ -96,14 +97,13 @@ const join = (input, delimiter = '', attribute = null, options = {}) => {
 }
 
 /**
- * Get user name by user ID with format options
+ * Get a user's name by user ID, as 'Firstname Lastname'
  *
  * @param {string} userId - ID of the user
  * @param {object} [options] - Display options
  * @param {boolean} [options.identifyCurrentUser] - Whether to add "(you)" for current user
  * @param {boolean} [options.useYou] - Return just "you" for the current user
- * @param {string} [options.format] - Name format: 'full', 'short', or 'initial'
- * @returns {string} User's name in requested format
+ * @returns {string} User's name
  */
 const getUsername = function (userId, options = {}) {
   if (!userId) return ''
@@ -114,24 +114,7 @@ const getUsername = function (userId, options = {}) {
   const user = users.find((u) => u.id === userId)
   if (!user) return userId
 
-  // Format options: full (default), short (initial + surname), initial (just initials), reversed (SURNAME, First)
-  const format = options.format || 'full'
-
-  let formattedName
-  switch (format) {
-    case 'short':
-      formattedName = `${user.firstName.charAt(0)}. ${user.lastName}`
-      break
-    case 'initial':
-      formattedName = `${user.firstName.charAt(0)}${user.lastName.charAt(0)}`
-      break
-    case 'reversed':
-      formattedName = `${user.lastName.toUpperCase()}, ${user.firstName}`
-      break
-    case 'full':
-    default:
-      formattedName = `${user.firstName} ${user.lastName}`
-  }
+  const formattedName = formatUserName(user)
 
   const currentUser = this.ctx.data.currentUser
   if (currentUser && user.id === currentUser.id) {

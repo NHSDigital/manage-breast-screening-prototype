@@ -9,7 +9,7 @@
 {% block pageContent %}
 
   {# Serialise image paths and existing annotations for JS #}
-  {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+  {% set mammogramImages = getImagesForAppointment(appointmentId, getMammogramImageSource(), { appointment: appointment }) %}
   {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
 
   {% set existingLeft = data.imageReadingTemp.left.annotations | default([]) %}
@@ -59,7 +59,7 @@
     ] %}
 
   <span class="nhsuk-caption-l">
-    {{ participant | getFullNameReversed }}
+    {{ participant | getShortNameReversed }}
   </span>
   <h1 class="nhsuk-heading-l">Annotate images</h1>
 
@@ -556,7 +556,7 @@
 
       if (isIncomplete) {
         html += '<div class="app-ann-v2__annotation-actions">' +
-          '<button class="nhsuk-button nhsuk-button--small nhsuk-u-margin-bottom-0" type="button" data-action="edit" data-ann-id="' + ann.id + '">Add details</button>' +
+          '<button class="nhsuk-button nhsuk-button--small nhsuk-u-margin-bottom-1" type="button" data-action="edit" data-ann-id="' + ann.id + '">Add details</button>' +
           '<button class="app-link-button app-link-button--warning" type="button" data-action="delete-annotation" data-ann-id="' + ann.id + '">Remove</button>' +
           '</div>'
       } else {

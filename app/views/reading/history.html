@@ -48,9 +48,7 @@
       {% for session in sessions %}
         {% set p = session.progress %}
         {% set sessionTotal = p.effectiveTargetSize if p else null %}
-        {# A session is done with once it has been ended - whether it was
-           worked through or stopped early #}
-        {% set isComplete = session.endedAt or (p and session.userCompletedCount >= sessionTotal) %}
+        {% set isComplete = session.state == "complete" %}
         {% set isArbitration = session.type === 'arbitration' %}
 
         {# When the session started leads the row, matching the reads tables -
@@ -67,10 +65,10 @@
             <span class="nhsuk-u-font-weight-bold">Arbitration</span>
             <br>
             <span class="nhsuk-u-secondary-text-colour nhsuk-body-s">
-              {{- "Group" if session.arbitration.mode === 'panel' else "On your own" }}
+              {{- "Group" if session.arbitration.mode === 'panel' else "Solo" }}
               {%- if session.arbitration.arbitratorIds | length %} &ndash;
                 {%- for userId in session.arbitration.arbitratorIds %}
-                  {{ userId | getUsername({ format: 'short', identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+                  {{ userId | getUsername({ identifyCurrentUser: true }) }}{{ "," if not loop.last }}
                 {%- endfor %}
               {%- endif %}
             </span>
@@ -108,8 +106,8 @@
           {% endif %}
         {% endset %}
 
-        {# Ending a session doesn't finalise what was recorded in it, so
-           outstanding records are noted under the status #}
+        {# Where reads finalise themselves, a session can be complete with some
+           still outstanding, so they are noted under the status #}
         {% set statusHtml %}
           {% if isComplete %}
             {{ "Complete" | toTag }}
@@ -119,6 +117,8 @@
                 Unfinalised {{ "outcomes" if isArbitration else "reads" }}
               </span>
             {% endif %}
+          {% elseif session.state == "awaiting_finalisation" %}
+            {{ "Awaiting finalisation" | toTag }}
           {% else %}
             {{ "Incomplete" | toTag }}
           {% endif %}
@@ -191,7 +191,7 @@
          row's link to the case sits in the last column instead #}
       {% set participantHtml %}
         <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
-          {{ reading.participant | getFullNameReversed }}
+          {{ reading.participant | getShortNameReversed }}
         </p>
         <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
           NHS: {{ reading.participant.medicalInformation.nhsNumber | formatNhsNumber }}
@@ -200,10 +200,7 @@
 
       {% set readerHtml %}
         {%- for authorId in reading | getReadAuthorIds %}
-          {{ authorId | getUsername({
-            format: 'short',
-            identifyCurrentUser: true
-          }) }}{{ "," if not loop.last }}
+          {{ authorId | getUsername({ identifyCurrentUser: true }) }}{{ "," if not loop.last }}
         {%- endfor %}
       {% endset %}
 

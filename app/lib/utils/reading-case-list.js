@@ -30,6 +30,7 @@ const {
   getAwaitingPriorsStatus
 } = require('./prior-mammograms')
 const { participantMatchesQuery } = require('./search')
+const { formatUserName, sortUsersByName } = require('./users')
 const { applyFilterGroups } = require('./filter-list')
 
 // Which population the list draws on. Historic episodes are seeded summaries of
@@ -295,13 +296,9 @@ const getReadingCaseFilterGroups = (data = {}) => {
 
   const currentUserId = data.currentUser?.id
 
-  const otherReaders = (data.users || [])
-    .filter((user) => user.id !== currentUserId)
-    .sort((a, b) =>
-      `${a.lastName} ${a.firstName}`.localeCompare(
-        `${b.lastName} ${b.firstName}`
-      )
-    )
+  const otherReaders = sortUsersByName(
+    (data.users || []).filter((user) => user.id !== currentUserId)
+  )
 
   if (currentUserId) {
     groups.push({
@@ -353,7 +350,7 @@ const getReadingCaseFilterGroups = (data = {}) => {
       style: 'select',
       emptyLabel: 'Select a reader',
       options: otherReaders.map((user) => {
-        const name = `${user.firstName} ${user.lastName}`.trim()
+        const name = formatUserName(user)
 
         return {
           value: user.id,
@@ -518,9 +515,12 @@ const getReadingCaseList = (data, filters = {}) => {
 /**
  * The arbitration backlog and what's holding parts of it up.
  *
- * One count for every surface that talks about arbitration - the reading index
- * card, the arbitration setup page and the case list - so they can't drift
- * apart. `available` is what an arbitration session would actually offer.
+ * One set of counts for every surface that talks about arbitration - the
+ * reading index card, the arbitration setup page and the case list - so they
+ * can't drift apart. `total` is every row the case list shows; `reached` is
+ * what the index card and setup page call awaiting arbitration - finalised
+ * disagreements, plus any held by an issue or priors; `available` is what an
+ * arbitration session would actually offer.
  *
  * A plain state match covers the whole backlog: a disagreeing case is
  * awaiting_arbitration from the moment the disagreement exists, finalised or
@@ -528,7 +528,7 @@ const getReadingCaseList = (data, filters = {}) => {
  *
  * @param {object} data - Session data
  * @param {object} [filters] - View and query, as getReadingCaseRows documents
- * @returns {object} `{ total, available, unfinalised, blocked, hasIssue, awaitingPriors }`
+ * @returns {object} `{ total, reached, available, unfinalised, blocked, hasIssue, awaitingPriors }`
  */
 const getArbitrationBacklogCounts = (data, filters = {}) => {
   const rows = getReadingCaseRows(data, filters).filter(
@@ -545,6 +545,9 @@ const getArbitrationBacklogCounts = (data, filters = {}) => {
 
   return {
     total: rows.length,
+    // Cases that have reached arbitration: finalised disagreements, plus any
+    // held by an issue or priors whether finalised or not
+    reached: rows.length - unfinalisedRows.length,
     available: rows.length - blockedRows.length - unfinalisedRows.length,
     unfinalised: unfinalisedRows.length,
     blocked: blockedRows.length,

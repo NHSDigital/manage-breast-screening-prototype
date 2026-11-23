@@ -75,7 +75,7 @@
     <div class="nhsuk-grid-column-two-thirds">
 
       <span class="nhsuk-caption-l">
-        {{ participant | getFullNameReversed }}
+        {{ participant | getShortNameReversed }}
       </span>
       <h1 class="nhsuk-heading-l">{{ pageHeading }}</h1>
 
@@ -85,7 +85,7 @@
   {# Get image paths for annotation thumbnails #}
   {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
   {% if withImages %}
-    {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+    {% set mammogramImages = getImagesForAppointment(appointmentId, getMammogramImageSource(), { appointment: appointment }) %}
     {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
   {% endif %}
 
@@ -158,7 +158,7 @@
         {% endset %}
         {{ button({
           text: buttonText,
-          classes: "nhsuk-u-margin-bottom-0"
+          classes: "nhsuk-u-margin-bottom-1"
         }) }}
       </form>
       {# <p class="nhsuk-body nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">{{ keepLabelHtml | safe }}</p>
@@ -174,7 +174,7 @@
         <input type="hidden" name="compareDecision" value="adopt">
         {{ button({
           text: "Use their details" if comparisonType == "agreeing" else "Change to this opinion",
-          classes: "nhsuk-u-margin-bottom-0"
+          classes: "nhsuk-u-margin-bottom-1"
         }) }}
       </form>
       {# <p class="nhsuk-body nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">{{ adoptLabelHtml | safe }}</p> #}

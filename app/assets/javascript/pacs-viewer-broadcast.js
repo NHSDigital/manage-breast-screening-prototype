@@ -17,8 +17,9 @@
   if (!appointmentId || !participantName) return
 
   const allPaths = getMeta('mammogram-all-paths')
+  const fullPaths = getMeta('mammogram-full-paths')
+  const priors = getMeta('mammogram-priors')
   const context = getMeta('mammogram-context')
-  const notExpected = getMeta('mammogram-not-expected')
 
   new BroadcastChannel('mammogram-viewer').postMessage({
     type: 'show',
@@ -27,6 +28,7 @@
     nhsNumber: getMeta('mammogram-nhs-number'),
     sxNumber: getMeta('mammogram-sx-number'),
     dateOfBirth: getMeta('mammogram-date-of-birth'),
+    studyDateText: getMeta('mammogram-study-date'),
     images: {
       rcc: getMeta('mammogram-image-rcc') || null,
       lcc: getMeta('mammogram-image-lcc') || null,
@@ -34,8 +36,9 @@
       lmlo: getMeta('mammogram-image-lmlo') || null
     },
     allPaths: allPaths ? JSON.parse(allPaths) : null,
+    fullPaths: fullPaths ? JSON.parse(fullPaths) : null,
+    priors: priors ? JSON.parse(priors) : [],
     hasAdditionalImages: getMeta('mammogram-has-additional') === 'true',
-    notExpected: notExpected ? JSON.parse(notExpected) : null,
     setId: getMeta('mammogram-set-id'),
     setDescription: getMeta('mammogram-set-description'),
     setTag: getMeta('mammogram-set-tag'),

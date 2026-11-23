@@ -1,0 +1,20 @@
+{# app/views/_includes/reading/session-timing.njk #}
+{# When a reading or arbitration session ran. Expects `session` in context #}
+
+{% set startDate = session.createdAt | formatDate %}
+{% set startTime = session.createdAt | formatTime %}
+
+<p class="nhsuk-u-secondary-text-colour">
+  {%- if session.endedAt -%}
+    {%- set endDate = session.endedAt | formatDate -%}
+    {%- set endTime = session.endedAt | formatTime -%}
+    {%- if endDate == startDate -%}
+      {{ startDate }}, {{ startTime }} to {{ endTime }}
+    {%- else -%}
+      {{ startDate }} at {{ startTime }} to {{ endDate }} at {{ endTime }}
+    {%- endif %}
+    ({{ session.createdAt | formatDuration(session.endedAt) }})
+  {%- else -%}
+    Started on {{ startDate }} at {{ startTime }} ({{ session.createdAt | formatDuration }} ago)
+  {%- endif -%}
+</p>

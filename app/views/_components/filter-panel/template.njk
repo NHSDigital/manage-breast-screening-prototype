@@ -116,7 +116,7 @@
     {{ button({
       text: "Apply filters",
       small: true,
-      classes: "app-filter-panel__apply nhsuk-u-margin-bottom-0"
+      classes: "app-filter-panel__apply nhsuk-u-margin-bottom-1"
     }) }}
 
     {# Clearing keeps the view - it's the filters and the search being cleared,
@@ -127,7 +127,7 @@
         href: params.action | buildFilterUrl({}, params.hiddenFields),
         variant: "secondary",
         small: true,
-        classes: "nhsuk-u-margin-bottom-0"
+        classes: "nhsuk-u-margin-bottom-1"
       }) }}
     {% endif %}
   </div>

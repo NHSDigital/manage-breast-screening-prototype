@@ -1,0 +1,10 @@
+{# app/views/_includes/appointment-mammographers.njk #}
+{# Expects `mammographerSummary` from getAppointmentMammographerSummary. Roles
+   are only shown when more than one person was involved #}
+{% if mammographerSummary.people | length == 1 %}
+  {{ mammographerSummary.people[0].name }}
+{% else %}
+  {% for person in mammographerSummary.people %}
+    <p class="nhsuk-u-margin-bottom-1">{{ person.name }} ({{ person.roles | join(" and ") }})</p>
+  {% endfor %}
+{% endif %}

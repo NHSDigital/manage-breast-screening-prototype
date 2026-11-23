@@ -85,12 +85,16 @@ const getHistoricReadingSessions = (data) => {
       progress: { effectiveTargetSize: shape.size },
       userCompletedCount: shape.size,
       unfinalisedReadCount: 0,
+      state: 'complete',
       arbitration:
         shape.type === 'arbitration'
           ? {
               mode: shape.mode,
-              arbitratorIds:
-                shape.mode === 'panel' ? otherReaders.slice(0, 2) : []
+              // As in a real session, the current user is always on it
+              arbitratorIds: [
+                data.currentUser?.id,
+                ...(shape.mode === 'panel' ? otherReaders.slice(0, 2) : [])
+              ].filter(Boolean)
             }
           : undefined
     }

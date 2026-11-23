@@ -10,6 +10,9 @@ const {
   getCompletedTime,
   getSimulatedNow
 } = require('../../app/lib/utils/status')
+const {
+  getAppointmentRunByIds
+} = require('../../app/lib/utils/roles-and-permissions')
 
 test('numbers attended outcomes by completion time and closes gaps after undo', () => {
   const appointment = (id, status, extra = {}) => ({
@@ -47,18 +50,74 @@ test('numbers attended outcomes by completion time and closes gaps after undo', 
   expect(get('not-screened').sessionDetails.endedAt).toBe(
     getSimulatedNow().toISOString()
   )
+  expect(getAppointmentRunByIds(get('not-screened'))).toEqual([])
   updateAppointmentStatus(data, 'cancelled', 'cancelled')
   expect(get('cancelled').screeningOrder).toBeUndefined()
 
+  data.appointment = {
+    ...get('first'),
+    appointmentStopped: { stoppedReason: ['Unsaved'] }
+  }
   updateAppointmentStatus(data, 'second', 'checked_in')
   expect(get('second').screeningOrder).toBeNull()
   expect(get('first').screeningOrder).toBe(1)
   expect(get('not-screened').screeningOrder).toBe(2)
   expect(data._changes.appointments.first.screeningOrder).toBe(1)
+  expect(data._changes.appointments.first.appointmentStopped).toBeUndefined()
+  expect(data.appointment.appointmentStopped.stoppedReason).toEqual(['Unsaved'])
+  expect(data.appointment.screeningOrder).toBe(1)
   expect(get('other-clinic').screeningOrder).toBeUndefined()
 
+  delete data.appointment
+  updateAppointmentStatus(data, 'not-screened', 'rescheduled')
+  expect(get('not-screened').screeningOrder).toBe(2)
+  expect(get('not-screened').sessionDetails.endedAt).toBeTruthy()
   updateAppointmentStatus(data, 'second', 'rescheduled')
   expect(get('second').screeningOrder).toBe(3)
+})
+
+test('orders outcomes completed at the same simulated time', async ({
+  page
+}) => {
+  const { clinic } = findTodayAppointment({ status: 'scheduled' })
+  const appointments = readCollection('appointments.json', 'appointments')
+    .filter(
+      (appointment) =>
+        appointment.clinicId === clinic.id && appointment.status === 'scheduled'
+    )
+    .slice(0, 2)
+  expect(appointments).toHaveLength(2)
+  const clinicUrl = `/clinics/${clinic.id}`
+
+  for (const appointment of [...appointments].reverse()) {
+    const field = `closeReasonForm[${appointment.id}]`
+    await page.goto(`${clinicUrl}/check-in/${appointment.id}`)
+    await page.goto(`${clinicUrl}/close/reason/${appointment.id}`)
+    const response = await page.request.post(
+      `${clinicUrl}/close/reason/${appointment.id}`,
+      {
+        form: {
+          [`${field}[stoppedReason]`]: 'Consent withdrawn',
+          [`${field}[needsReschedule]`]: 'no-invite'
+        }
+      }
+    )
+    expect(response.ok()).toBeTruthy()
+  }
+
+  for (const [direction, expected] of [
+    ['ascending', [...appointments].reverse()],
+    ['descending', appointments]
+  ]) {
+    await page.goto(`${clinicUrl}/complete?sort=completed-${direction}`)
+    const ids = await page
+      .locator('tbody tr[data-fragment-id]')
+      .evaluateAll((rows) => rows.map((row) => row.dataset.fragmentId))
+    expect(ids.indexOf(expected[0].id)).toBeLessThan(
+      ids.indexOf(expected[1].id)
+    )
+    expect(ids.indexOf(expected[1].id)).toBeGreaterThanOrEqual(0)
+  }
 })
 
 test('seeded completion numbers are consecutive and the list sorts by completion time', async ({

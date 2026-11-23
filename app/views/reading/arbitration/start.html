@@ -21,6 +21,12 @@
     <a href="/reading/cases?status=awaiting_arbitration" class="nhsuk-link--no-visited-state">View arbitration case list</a>
   </p>
 
+  {# Disagreements whose reads aren't finalised show in the case list but
+     haven't reached arbitration, so the count above leaves them out #}
+  {% if backlog.unfinalised %}
+    <p>{{ backlog.unfinalised }} more {{ "case is" if backlog.unfinalised == 1 else "cases are" }} waiting for {{ "its" if backlog.unfinalised == 1 else "their" }} reads to be finalised before {{ "it" if backlog.unfinalised == 1 else "they" }} can be arbitrated.</p>
+  {% endif %}
+
   {# Blocked cases stay in the backlog but arbitration can't offer them #}
   {% if backlog.blocked %}
     {{ insetText({

@@ -6,7 +6,7 @@
 // routes between automatic and manual flows.
 
 const dayjs = require('dayjs')
-const { getFullName, getShortName } = require('../../lib/utils/participants')
+const { getShortName } = require('../../lib/utils/participants')
 const {
   createIssue,
   getOpenIssuesFor,
@@ -18,7 +18,8 @@ const {
 const { getAppointmentData } = require('../../lib/utils/appointment-data')
 const { getReturnUrl, urlWithReferrer } = require('../../lib/utils/referrers')
 const {
-  getImageSetForAppointment
+  getImageSetForAppointment,
+  getMammogramImageSource
 } = require('../../lib/utils/mammogram-images')
 const { getExpectedViews } = require('../../lib/utils/expected-views')
 const {
@@ -162,7 +163,7 @@ module.exports = (router) => {
       if (!data.appointment.mammogramData.selectedSetId) {
         const selectedSet = getImageSetForAppointment(
           appointmentId,
-          'diagrams',
+          getMammogramImageSource('screening'),
           {
             appointment: data.appointment
           }
@@ -213,7 +214,7 @@ module.exports = (router) => {
       // Mark this appointment as reconnected (per-appointment, doesn't change the global setting)
       data.appointment.isOnWorklist = true
 
-      const participantName = getFullName(data.participant)
+      const participantName = getShortName(data.participant)
       req.flash('success', {
         html: `<p class="nhsuk-notification-banner__heading">${participantName} is now on the worklist</p>
 <p>Image information will be sent automatically from the mammogram machine</p>`

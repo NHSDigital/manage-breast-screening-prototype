@@ -11,7 +11,11 @@
 // appointment-data.js it needed a lazy require of episodes.js to dodge the
 // resulting cycle.
 
-const { getAppointment, updateAppointmentData } = require('./appointment-data')
+const {
+  getAppointment,
+  updateAppointment,
+  updateAppointmentData
+} = require('./appointment-data')
 const {
   syncEpisodeMammogramsForAppointment,
   syncReadingCasesForAppointment,
@@ -65,7 +69,9 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
     updates.sessionDetails = {
       ...baseAppointment.sessionDetails,
       endedAt: getSimulatedNow().toISOString(),
-      endedBy: data.currentUser?.id
+      ...(baseAppointment.sessionDetails?.startedAt && {
+        endedBy: data.currentUser?.id
+      })
     }
   } else if (wasPreviouslyAttended && !isNowAttended) {
     const { endedAt, endedBy, ...sessionDetails } =
@@ -83,9 +89,13 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
     )
     appointments.forEach((appointment, index) => {
       if (appointment.screeningOrder !== index + 1) {
-        const updated = updateAppointmentData(data, appointment.id, {
+        const updated = updateAppointment(data, appointment.id, {
+          ...appointment,
           screeningOrder: index + 1
         })
+        if (data.appointment?.id === appointment.id) {
+          data.appointment.screeningOrder = index + 1
+        }
         if (appointment.id === appointmentId) updatedAppointment = updated
       }
     })

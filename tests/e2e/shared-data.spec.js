@@ -203,7 +203,7 @@ test.describe('Shared data', () => {
     const [firstUser, secondUser] = users.filter((user) =>
       user.role.includes('clinician')
     )
-    const shortName = (user) => `${user.firstName.charAt(0)}. ${user.lastName}`
+    const userName = (user) => `${user.firstName} ${user.lastName}`
 
     await pinSettings(page, settings)
     const originalMode = await switchToRoomMode(page)
@@ -223,7 +223,7 @@ test.describe('Shared data', () => {
       await page.goto(`${appointmentUrl}/start`)
       await otherPage.goto(`${appointmentUrl}/appointment`)
       await expect(
-        otherPage.getByText(`currently being run by ${shortName(firstUser)}`)
+        otherPage.getByText(`currently being run by ${userName(firstUser)}`)
       ).toBeVisible()
       await page.request.post(`${appointmentUrl}/exit-appointment-answer`, {
         form: { _exitAction: 'save' }
@@ -235,7 +235,7 @@ test.describe('Shared data', () => {
       await expect(otherPage.locator('.app-workflow-container')).toBeVisible()
       await page.goto(`${appointmentUrl}/appointment`)
       await expect(
-        page.getByText(`currently being run by ${shortName(secondUser)}`)
+        page.getByText(`currently being run by ${userName(secondUser)}`)
       ).toBeVisible()
     } finally {
       await secondRoom.context.close()
@@ -294,7 +294,7 @@ test.describe('Shared data', () => {
         .click()
       await expect(page).toHaveURL(/\/dashboard/)
       await expect(page.locator('.nhsuk-header__account')).toContainText(
-        `${userInSameRoom.lastName.toUpperCase()}, ${userInSameRoom.firstName}`
+        fullName(userInSameRoom)
       )
     } finally {
       await sameRoom.context.close()

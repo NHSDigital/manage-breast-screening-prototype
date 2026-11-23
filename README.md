@@ -24,6 +24,8 @@ You can [read our design histories](https://design-history.prevention-services.n
 
 The prototype will generate example data on first run, and from then on once per day.
 
+If a copy of the prototype is left running after you quit, `npm run kill` stops it (macOS and Linux).
+
 ## Features
 
 - View all clinics or today's clinics

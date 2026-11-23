@@ -22,7 +22,7 @@
   {% set isAwaitingPriors = appointment | awaitingPriors %}
 
   <span class="nhsuk-caption-l">
-    {{ participant | getFullNameReversed }}
+    {{ participant | getShortNameReversed }}
   </span>
 
   {% if openIssues | length and not hasUserRead %}
@@ -155,7 +155,7 @@
     {# Read summary card #}
     {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
     {% if withImages %}
-      {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+      {% set mammogramImages = getImagesForAppointment(appointmentId, getMammogramImageSource(), { appointment: appointment }) %}
       {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
     {% endif %}
 

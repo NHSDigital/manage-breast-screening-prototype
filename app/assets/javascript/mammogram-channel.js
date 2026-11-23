@@ -23,10 +23,12 @@ const getChannel = () => {
  * @param {string} data.nhsNumber - NHS number (optional)
  * @param {string} data.sxNumber - SX number (optional)
  * @param {string} data.dateOfBirth - Date of birth with age (optional)
+ * @param {string} data.studyDateText - Date of the current study, shown on its images (optional)
  * @param {object} data.images - Image paths (rcc, lcc, rmlo, lmlo) - latest images
  * @param {object} data.allPaths - All image paths including additional images
+ * @param {object} data.fullPaths - Full-resolution path for each display path, loaded on zoom (optional)
+ * @param {Array<object>} data.priors - Earlier studies, newest first, from getPriorImagesForAppointment (optional)
  * @param {boolean} data.hasAdditionalImages - Whether there are additional images
- * @param {Array<string>} data.notExpected - Views that weren't expected, left blank (e.g. ['rcc', 'rmlo'])
  */
 const broadcastShowParticipant = (data) => {
   const ch = getChannel()
@@ -39,10 +41,12 @@ const broadcastShowParticipant = (data) => {
     nhsNumber: data.nhsNumber || null,
     sxNumber: data.sxNumber || null,
     dateOfBirth: data.dateOfBirth || null,
+    studyDateText: data.studyDateText || null,
     images: data.images || null,
     allPaths: data.allPaths || null,
+    fullPaths: data.fullPaths || null,
+    priors: data.priors || [],
     hasAdditionalImages: data.hasAdditionalImages || false,
-    notExpected: data.notExpected || null,
     setId: data.setId || null,
     setDescription: data.setDescription || null,
     setTag: data.setTag || null,
@@ -111,14 +115,25 @@ const closeChannel = () => {
 }
 
 /**
- * Open the mammogram viewer window
+ * Open the mammogram viewer window. With two screens it takes the left half
+ * of the display and opens screen 2 in the right half itself; with one it
+ * takes the whole display
  * @returns {Window|null} - The opened window or null if blocked
  */
 const openViewer = () => {
+  const isOneScreen =
+    document
+      .querySelector('meta[name="pacs-viewer-screens"]')
+      ?.getAttribute('content') === 'one'
+  const width = isOneScreen
+    ? window.screen.availWidth
+    : Math.floor(window.screen.availWidth / 2)
+  const left = window.screen.availLeft ?? 0
+  const top = window.screen.availTop ?? 0
   return window.open(
     '/reading/mammogram-viewer',
     'mammogram-viewer',
-    'width=800,height=900,resizable=yes'
+    `left=${left},top=${top},width=${width},height=${window.screen.availHeight},resizable=yes`
   )
 }
 
@@ -136,7 +151,8 @@ const isViewerOpen = () => {
 
     let resolved = false
     const handler = (event) => {
-      if (event.data.type === 'pong' && !resolved) {
+      // Screen 2 answers too, but it's screen 1 that would be opened
+      if (event.data.type === 'pong' && event.data.screen !== 2 && !resolved) {
         resolved = true
         ch.removeEventListener('message', handler)
         resolve(true)
@@ -187,6 +203,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const dateOfBirth = document
       .querySelector('meta[name="mammogram-date-of-birth"]')
       ?.getAttribute('content')
+    const studyDateText = document
+      .querySelector('meta[name="mammogram-study-date"]')
+      ?.getAttribute('content')
     const images = {
       rcc: document
         .querySelector('meta[name="mammogram-image-rcc"]')
@@ -228,13 +247,24 @@ document.addEventListener('DOMContentLoaded', () => {
         .querySelector('meta[name="mammogram-has-additional"]')
         ?.getAttribute('content') === 'true'
 
-    // Views that weren't expected, for example after a mastectomy
-    const notExpectedRaw = document
-      .querySelector('meta[name="mammogram-not-expected"]')
+    // Full-resolution images, real images only
+    const fullPathsRaw = document
+      .querySelector('meta[name="mammogram-full-paths"]')
       ?.getAttribute('content')
-    let notExpected = null
+    let fullPaths = null
     try {
-      notExpected = notExpectedRaw ? JSON.parse(notExpectedRaw) : null
+      fullPaths = fullPathsRaw ? JSON.parse(fullPathsRaw) : null
+    } catch (e) {
+      // Invalid JSON, ignore
+    }
+
+    // Earlier studies the viewer can page back to
+    const priorsRaw = document
+      .querySelector('meta[name="mammogram-priors"]')
+      ?.getAttribute('content')
+    let priors = []
+    try {
+      priors = priorsRaw ? JSON.parse(priorsRaw) : []
     } catch (e) {
       // Invalid JSON, ignore
     }
@@ -256,10 +286,12 @@ document.addEventListener('DOMContentLoaded', () => {
       nhsNumber,
       sxNumber,
       dateOfBirth,
+      studyDateText,
       images,
       allPaths,
+      fullPaths,
+      priors,
       hasAdditionalImages,
-      notExpected,
       setId,
       setDescription,
       setTag,
@@ -276,6 +308,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (data) {
           broadcastShowParticipant(data)
         }
+      } else if (event.data.type === 'screen-mode') {
+        // The viewer changed the setting, so reopening it uses the new size
+        document
+          .querySelector('meta[name="pacs-viewer-screens"]')
+          ?.setAttribute('content', event.data.mode)
       }
     })
   }

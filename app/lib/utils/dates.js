@@ -756,6 +756,48 @@ const calculateDurationMinutes = (startTime, endTime) => {
 }
 
 /**
+ * Format how long something took, or has taken so far, in words
+ *
+ * @param {string} startInput - ISO date string for the start
+ * @param {string} [endInput] - ISO date string for the end; defaults to now
+ * @param {object} [options]
+ * @param {boolean} [options.short=false] - Abbreviate units for tight spaces ('mins', 'hrs')
+ * @returns {string} Duration, or empty string if no start
+ * @example
+ * formatDuration('2026-11-09T10:00:00', '2026-11-09T10:47:00') // '47 minutes'
+ * formatDuration('2026-11-09T10:00:00', '2026-11-09T12:05:00') // '2 hours 5 minutes'
+ * formatDuration('2026-11-09T10:00:00', '2026-11-09T12:05:00', { short: true }) // '2 hrs 5 mins'
+ * {{ session.createdAt | formatDuration }} ago
+ */
+const formatDuration = (startInput, endInput = null, { short = false } = {}) => {
+  if (!startInput) return ''
+
+  const totalMinutes = calculateDurationMinutes(
+    startInput,
+    endInput || dayjs().toISOString()
+  )
+  const days = Math.floor(totalMinutes / (24 * 60))
+  const hours = Math.floor((totalMinutes % (24 * 60)) / 60)
+  const minutes = totalMinutes % 60
+
+  const hourUnit = short ? 'hr' : 'hour'
+  const minuteUnit = short ? 'min' : 'minute'
+  const describe = (count, unit) => `${count} ${unit}${count === 1 ? '' : 's'}`
+
+  if (days > 0) {
+    return hours > 0
+      ? `${describe(days, 'day')} ${describe(hours, hourUnit)}`
+      : describe(days, 'day')
+  }
+  if (hours > 0) {
+    return minutes > 0
+      ? `${describe(hours, hourUnit)} ${describe(minutes, minuteUnit)}`
+      : describe(hours, hourUnit)
+  }
+  return describe(minutes, minuteUnit)
+}
+
+/**
  * Add or subtract time from a date
  *
  * @param {string | Array | object} dateInput - ISO date string, array [day, month, year], [month, year], or object {day, month, year}, {month, year}
@@ -873,6 +915,7 @@ module.exports = {
   daysSince,
   isWithinDayRange,
   calculateDurationMinutes,
+  formatDuration,
   add,
   remove,
   toSeason

@@ -18,7 +18,7 @@
   {% for user in availableUsers %}
     {% set userItems = userItems | push({
       value: user.id,
-      text: user.firstName + " " + user.lastName
+      text: user | formatUserName
     }) %}
   {% endfor %}
 

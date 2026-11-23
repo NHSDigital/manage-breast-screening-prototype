@@ -13,6 +13,10 @@
     </div>
   {% endif %}
 
+  {% if not hideRealImagesLockBanner %}
+    {% include "_includes/real-images-lock-banner.njk" %}
+  {% endif %}
+
   {# Awkwardly test if pageNavigation is set. This is a workaround for Nunjucks
     not having a way to check if a block is defined or not.
 

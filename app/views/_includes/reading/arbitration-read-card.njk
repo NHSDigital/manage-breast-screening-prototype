@@ -15,7 +15,7 @@
 {# Get image paths for annotation thumbnails #}
 {% set withImages = data.settings.reading.annotationsMode != 'without-images' %}
 {% if withImages %}
-  {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+  {% set mammogramImages = getImagesForAppointment(appointmentId, getMammogramImageSource(), { appointment: appointment }) %}
   {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
 {% endif %}
 
@@ -42,7 +42,7 @@
           text: adoptButtonText or defaultAdoptButtonText or "Use this read as outcome",
           name: "agreedReaderId",
           value: read.readerId,
-          classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary",
+          classes: "nhsuk-u-margin-bottom-1 nhsuk-button--secondary",
           attributes: { formaction: "./arbitration-adopt-read" | urlWithReferrer(referrerChain) }
         }) }}
       {% else %}
@@ -51,7 +51,7 @@
             text: adoptButtonText or defaultAdoptButtonText or "Use this read as outcome",
             name: "agreedReaderId",
             value: read.readerId,
-            classes: "nhsuk-u-margin-bottom-0 nhsuk-button--secondary"
+            classes: "nhsuk-u-margin-bottom-1 nhsuk-button--secondary"
           }) }}
         </form>
       {% endif %}
@@ -63,7 +63,7 @@
   <h3 class="nhsuk-u-margin-bottom-0 nhsuk-heading-s">
     {{ readLabel }}
     <span class="nhsuk-u-font-weight-normal nhsuk-u-font-size-19">
-      – {{ read.readerId | getUsername({ format: "short" }) }},
+      – {{ read.readerId | getUsername }},
       {{ read.timestamp | formatDate }}
     </span>
   </h3>

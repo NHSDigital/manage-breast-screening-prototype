@@ -46,7 +46,7 @@
          last column #}
       {% set participantHtml %}
         <p class="nhsuk-u-font-weight-bold nhsuk-u-margin-bottom-1">
-          {{ row.participant | getFullNameReversed }}
+          {{ row.participant | getShortNameReversed }}
         </p>
         <p class="nhsuk-u-secondary-text-colour app-nowrap nhsuk-u-margin-bottom-0">
           NHS: {{ row.participant.medicalInformation.nhsNumber | formatNhsNumber }}

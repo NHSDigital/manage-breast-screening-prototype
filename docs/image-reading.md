@@ -47,8 +47,7 @@ app/
 │   └── prior-mammograms.js           # Prior mammogram utilities
 ├── views/
 │   ├── reading/
-│   │   ├── index-simple.html        # Reading dashboard/home (default layout)
-│   │   ├── index-complex.html       # Reading dashboard/home (via settings.reading.indexLayout)
+│   │   ├── index.html               # Reading dashboard/home
 │   │   ├── clinics.html             # Clinic list view
 │   │   ├── session.html             # Session view with appointment list
 │   │   ├── skipped-review.html      # End-of-session page when skipped cases remain
@@ -231,6 +230,7 @@ data.readingSessions = {
     targetSize: 25,                        // desired final size (clinic sessions: however many eligible appointments exist)
     clinicId: null,  // Only for clinic sessions
     createdAt: '2025-01-15T10:00:00.000Z',
+    createdBy: 'userId',                   // who started it - the reader it counts as open for
     endedAt: null,                         // set when the session is ended; absent while it is live
     endedBy: null,
     workedAppointmentIds: [...],           // set on ending: the cases worked in the session
@@ -240,7 +240,11 @@ data.readingSessions = {
 }
 ```
 
-**Ending a session**: a session is ended either by working it through or via "End session" on the overview (`/reading/session/:id/end`), which offers to finalise any outstanding reads first. A worked-through session only ends once every read in it is finalised; until then it shows as complete but stays open, so resolving an issue or undoing a priors request puts it back in progress. `endedAt`/`endedBy` record the act; an ended session refuses resume, top-up and case navigation, and its overview lists only the cases worked in it. Ending records those cases as `workedAppointmentIds`, so resolving an issue or undoing a priors request afterwards still keeps the case open in the session. Ending one with nothing recorded discards it. Clinic sessions are never ended - their cases are shared work.
+**Session state**: `getSessionState(data, session, userId)` is the one answer to whether a session is complete, and the dashboards, overviews, history and start guards all use it. A session is `in_progress` until it reaches its target, runs out of cases, or is ended. It is then `complete`, unless reads only finalise by hand (`finalisationDelay` `'never'`, the default) and some of the user's are still unfinalised, in which case it is `awaiting_finalisation`. Where reads finalise themselves, outstanding ones don't hold a session open. An ended session is always complete: resolving an issue on one of its cases later makes the case available to new sessions, not this one.
+
+**One open session at a time**: `getOpenSessionForUser(data, userId, kind)` finds the session a reader has to complete before starting another of the same kind (`reading` or `arbitration`): one that is theirs (they started it, `createdBy`, or are on its arbitration panel), with their own work in it (a read or arbitration outcome, a priors request or issue they raised, or a skip), that isn't complete. `/reading/create-session` and the arbitration setup pages send the reader back to it. Clinic sessions never count. An arbitration session counts for everyone on its panel. Starting a session discards the reader's untouched ones of that kind.
+
+**Ending a session**: a session is ended either by working it through or via "End session" on the overview (`/reading/session/:id/end`), which offers to finalise any outstanding reads first - or, where reads only finalise by hand, finalises them as part of ending. A worked-through session only ends once every read in it is finalised; until then it isn't ended (it shows as awaiting finalisation under Manual only, or complete where reads finalise themselves), so resolving an issue or undoing a priors request puts it back in progress. `endedAt`/`endedBy` record the act; an ended session refuses resume, top-up and case navigation, and its overview lists only the cases worked in it. Ending records those cases as `workedAppointmentIds`, so resolving an issue or undoing a priors request afterwards still keeps the case open in the session. Ending one with nothing recorded discards it. Clinic sessions are never ended - their cases are shared work.
 
 **Lazy sessions**: When `data.settings.reading.lazySessions === 'true'` (default), non-clinic sessions start with only the first appointment. `topUpSession()` is called after each read or skip to add the next eligible appointment, growing the session one case at a time up to `targetSize`. Clinic sessions are always fully populated at creation.
 
@@ -251,7 +255,7 @@ data.readingSessions = {
 ### URL Structure
 
 ```
-/reading                              # Dashboard (index-simple or index-complex via settings)
+/reading                              # Dashboard
 /reading/clinics                      # Clinic list (redirects to /mine)
 /reading/clinics/mine                 # Clinics with cases user can read
 /reading/clinics/all                  # All clinics
@@ -353,7 +357,7 @@ If user selects "Normal – add details": opinion normalised to `normal`, `wants
 Some appointments don't expect all four views, for example after a mastectomy on one side (see [expected views](data-conventions.md#expected-views)). Reading follows the images taken:
 
 - The warning callout (`_includes/mastectomy-imaging-warning.njk`) says which images to expect and why, from `getExpectedViews`
-- Reading pages say "Not imaged" for views that weren't expected, distinct from "No image" for a missing view: the opinion thumbnails, annotate page, technical recall and recall for assessment. Screening pages say "Not expected". The PACS viewer leaves them blank, as a PACS knows nothing of medical history
+- Reading pages say "Not imaged" for views that weren't expected, distinct from "No image" for a missing view: the opinion thumbnails, annotate page, technical recall and recall for assessment. Screening pages say "Not expected". The PACS viewer shows the same no-image symbol as for a missing view, as a PACS knows nothing of medical history
 - A case is only tagged "Incomplete" (and so complex) when the mammographer recorded "Not all mammograms taken" and an expected view is missing (`hasIncompleteMammography`). What the mammographer recorded, with their reasons, still shows in the image warnings either way
 - A breast with no images gets no opinion on the recall for assessment page, so a read has no `left` or `right` for it, and the read summary shows "Not imaged"
 - Technical recall offers views that were taken or expected, so a missing expected view can be recalled
@@ -486,6 +490,13 @@ All of these except `writeReading` (which is in `reading.js`) live in `app/lib/u
 - `topUpSession(data, sessionId)` - Adds next eligible appointment if session is below target size
 - `endSession(data, sessionId, userId)` - Ends a session, if it isn't ended already
 - `isSessionEnded(session)` - Whether a session has been ended
+- `getSessionState(data, session, userId, progress)` - `in_progress`, `awaiting_finalisation` or `complete`
+- `getOpenSessionForUser(data, userId, kind)` - The user's open reading or arbitration session, if any
+- `discardUntouchedSessions(data, userId, kind)` - Removes the user's sessions with no work in them
+- `wasWorkedInSession(data, session, appointment, userId)` - Whether a case carries work the session is judged by
+- `sessionHasWork(data, session, userId)` - Whether the user has done any work in a session
+- `isUsersSession(session, userId)` - Whether the user started a session or is on its arbitration panel
+- `topUpSessionUntilWorkable(data, session, userId)` - Tops a lazy session up until it has a case to work on
 - `getReadingSession(data, sessionId)` - Retrieves session
 - `getOrCreateClinicSession(data, clinicId)` - Gets/creates clinic-based session (keyed by clinicId)
 - `getFirstReadableAppointmentInSession(data, sessionId, userId)` - First appointment user can read
@@ -579,14 +590,15 @@ for both reading and arbitration, and the global dark-mode preference.
 - `confirmTechnicalRecall`, `confirmRecallForAssessment` - Require confirmation for those opinions
 - `showRemaining` - Show remaining counts
 - `autoOpenPacsViewer` - Auto-open PACS viewer when entering reading workflow (once per session)
+- `pacsScreens` - PACS viewer screens: `'two'` (default, a window per monitor) | `'one'` (one landscape window). See [pacs-viewer.md](pacs-viewer.md#screens)
 - `enableOpinionDelay` - Enforce lockout period before shortcuts/buttons become active
 - `annotationsMode` - Annotation UI variant: `'without-images'` | `'with-images-simple'` (default) | `'with-images'` | `'with-images-progressive'`
-- `indexLayout` - Reading dashboard layout: `'simple'` (default) | `'complex'`
 - `secondReaderComparison` - When to show compare page: `'early'` | `'late'` | `'off'` (default)
 - `compareWhen` - Which cases trigger compare: `'non_normal'` (default) | `'discordant_only'`
 - `lazySessions` - Build sessions lazily one case at a time: `'true'` (default) | `'false'`
 - `defaultSessionSize` - Default session size for reading and arbitration
   sessions (default: 25; dashboard options: 10, 25, 50 or 100)
+- `mammogramImageSource` - Mammogram images: `'diagrams'` | `'real'` (real only takes effect when a pack is present; see [mammogram-images.md](mammogram-images.md)). Defaults to `config.reading.mammogramImageSource`
 
 **Arbitration settings** (in `settings.reading.arbitration`):
 
@@ -601,7 +613,7 @@ for both reading and arbitration, and the global dark-mode preference.
 
 - `priorityThreshold` - Days until "due soon"
 - `urgentThreshold` - Days until "urgent"
-- `mammogramImageSource` - Image source: `'diagrams'` or `'real'`
+- `mammogramImageSource` - Default for the `mammogramImageSource` setting: `'diagrams'` or `'real'` (`MAMMOGRAM_IMAGE_SOURCE`)
 - `mammogramViewOrder` - View display order: `'cc-first'` or `'mlo-first'`
 - `mammogramTagWeights` - Distribution weights for image set tags (normal/abnormal/indeterminate/technical)
 
@@ -686,7 +698,7 @@ The mammogram viewer simulates a PACS viewer on a separate monitor, displaying m
 
 - **BroadcastChannel API**: Communication between reading pages and viewer window (channel: `mammogram-viewer`)
 - **Image selection utility**: `app/lib/utils/mammogram-images.js` - weighted seeded random selection based on appointment ID
-- **Viewer page**: `app/views/reading/mammogram-viewer.html` - standalone dark-themed page with 2×2 grid
+- **Viewer page**: `app/views/reading/mammogram-viewer.html` - standalone dark-themed page showing layouts across one or two screens
 
 Reading workflow pages broadcast participant/image data to the viewer via `BroadcastChannel` (`mammogram-channel.js`). The viewer updates on each navigation; a ping/pong mechanism prevents duplicate windows from opening. A `clear` message is sent when leaving the workflow. The viewer can be opened manually (header nav link) or automatically on workflow entry if `autoOpenPacsViewer` is enabled.
 
@@ -696,5 +708,5 @@ Image sets are in `app/assets/images/mammogram-diagrams/` with a `manifest.json`
 
 - `app/lib/utils/mammogram-images.js` - Weighted seeded image selection
 - `app/assets/javascript/mammogram-channel.js` - BroadcastChannel communication
-- `app/views/reading/mammogram-viewer.html` - Standalone viewer page (dark theme, 2×2 grid)
+- `app/views/reading/mammogram-viewer.html` - Standalone viewer page (dark theme, layouts across one or two screens)
 - `app/assets/images/mammogram-diagrams/manifest.json` - Image set metadata

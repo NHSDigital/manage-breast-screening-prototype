@@ -1,0 +1,34 @@
+{# app/views/admin/real-cases.html #}
+{# Real case annotator: clinicians mark abnormalities on real mammograms. Local only - see app/routes/admin-real-cases.js #}
+
+{% extends "layout-base.html" %}
+
+{% set pageHeading = "Real case annotator" %}
+{% set hideBackLink = true %}
+{% set containerClasses = "app-real-cases-container" %}
+
+{% block content %}
+  <h1 class="nhsuk-heading-m">{{ pageHeading }}</h1>
+
+  {% if not hasPack %}
+    <p>No real image pack found. See ‘Real mammogram images’ in <code>docs/mammogram-images.md</code> for where to put one.</p>
+  {% else %}
+    <noscript>
+      <p>The annotator needs JavaScript.</p>
+    </noscript>
+
+    <div class="app-real-cases js-real-cases">
+      <div class="app-real-cases__list js-real-cases-list">
+        <p>Loading cases…</p>
+      </div>
+      <div class="app-real-cases__images js-real-cases-images"></div>
+      <div class="app-real-cases__editor js-real-cases-editor"></div>
+    </div>
+  {% endif %}
+{% endblock %}
+
+{% block pageScripts %}
+  {% if hasPack %}
+    <script type="module" src="/assets/javascript/admin-real-cases.js"></script>
+  {% endif %}
+{% endblock %}

@@ -25,7 +25,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       <span class="nhsuk-caption-l">
-        {{ participant | getFullNameReversed }}
+        {{ participant | getShortNameReversed }}
       </span>
 
       <h1 class="nhsuk-heading-l">
@@ -50,7 +50,7 @@
           {% endif %}
 
           {# Get images for the annotation side #}
-          {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+          {% set mammogramImages = getImagesForAppointment(appointmentId, getMammogramImageSource(), { appointment: appointment }) %}
           {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
           {% set mammogramViewOrder = data.settings.mammogramViewOrder or "cc-first" %}
 
@@ -99,7 +99,7 @@
 
       <div class="nhsuk-button-group nhsuk-u-margin-top-7">
         {{ button({
-          text: "Save",
+          text: "Update annotation" if annotation.id else "Add annotation",
           attributes: {
             name: "action",
             value: "save"

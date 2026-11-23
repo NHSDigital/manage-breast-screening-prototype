@@ -18,12 +18,51 @@ const { recordChange } = require('../shared-data')
  * @returns {object | null} Participant object or null if not found
  */
 const getParticipant = (data, participantId) => {
-  return (
+  return withRealImageDateOfBirth(
+    data,
     data._changes?.participants?.[participantId] ??
-    dataStore.state.participantsById.get(participantId) ??
-    data.participants?.find((p) => p.id === participantId) ??
-    null
+      dataStore.state.participantsById.get(participantId) ??
+      data.participants?.find((p) => p.id === participantId) ??
+      null
   )
+}
+
+// Copies made by withRealImageDateOfBirth, so each record is copied once
+const realImageCopies = new WeakMap()
+
+/**
+ * A participant as shown while real mammogram images are on: with a date of
+ * birth that gives her real case's age. The dates come from
+ * `data._realImageDatesOfBirth`, which app/routes.js sets per request only
+ * when real images are on. Unchanged otherwise, or if her date of birth has
+ * been changed this session.
+ *
+ * @param {object} data - Session data
+ * @param {object | null} participant - Participant
+ * @returns {object | null} The participant, or a copy with another date of birth
+ */
+const withRealImageDateOfBirth = (data, participant) => {
+  const change =
+    participant && data?._realImageDatesOfBirth?.get(participant.id)
+  if (
+    !change ||
+    participant.demographicInformation?.dateOfBirth !== change.from
+  ) {
+    return participant
+  }
+
+  const copy = realImageCopies.get(participant)
+  if (copy?.demographicInformation.dateOfBirth === change.to) return copy
+
+  const newCopy = {
+    ...participant,
+    demographicInformation: {
+      ...participant.demographicInformation,
+      dateOfBirth: change.to
+    }
+  }
+  realImageCopies.set(participant, newCopy)
+  return newCopy
 }
 
 /**
@@ -41,33 +80,19 @@ const getFullName = (participant) => {
 }
 
 /**
- * Get first names (first + middle) of a participant as a Nunjucks-safe string
+ * Get short name in reversed 'LASTNAME, Firstname' format, with no middle names
+ *
+ * For lists, page headings and captions.
  *
  * @param {object} participant - Participant object
- * @returns {string} First names, or empty string if unavailable
- */
-const getFirstNames = (participant) => {
-  if (!participant?.demographicInformation) return ''
-  const { firstName, middleName } = participant.demographicInformation
-  return nunjucksSafe([firstName, middleName].filter(Boolean).join(' '))
-}
-
-/**
- * Get full name in reversed 'Last, First Middle' format
- *
- * @param {object} participant - Participant object
- * @returns {string} Reversed full name, or empty string if unavailable
+ * @returns {string} Reversed short name, or empty string if unavailable
  * @example
- * getFullNameReversed(participant) // 'SMITH, Jane Louise'
+ * getShortNameReversed(participant) // 'SMITH, Jane'
  */
-const getFullNameReversed = (participant) => {
+const getShortNameReversed = (participant) => {
   if (!participant?.demographicInformation) return ''
-  const { firstName, middleName, lastName } = participant.demographicInformation
-  return nunjucksSafe(
-    [`${lastName.toUpperCase()},`, firstName, middleName]
-      .filter(Boolean)
-      .join(' ')
-  )
+  const { firstName, lastName } = participant.demographicInformation
+  return nunjucksSafe(`${lastName.toUpperCase()}, ${firstName}`)
 }
 
 /**
@@ -159,6 +184,17 @@ const getCurrentRiskLevel = (participant, referenceDate = new Date()) => {
   return 'routine'
 }
 
+/**
+ * Get the display name of a participant's current screening protocol
+ *
+ * @param {object} participant - Participant object
+ * @param {Date} [referenceDate] - Date to work out their age at
+ * @returns {string} Protocol name, such as 'Routine' or 'Family history: moderate risk'
+ */
+const getScreeningProtocolName = (participant, referenceDate = new Date()) => {
+  return riskLevels[getCurrentRiskLevel(participant, referenceDate)].name
+}
+
 // Saving data
 
 /**
@@ -175,12 +211,31 @@ const updateParticipant = (data, participantId, updatedParticipant) => {
   )
   if (participantIndex === -1) return null
 
+  // Real image ages are shown, not saved (see withRealImageDateOfBirth)
+  const realImageChange = data._realImageDatesOfBirth?.get(participantId)
+  if (
+    realImageChange &&
+    updatedParticipant.demographicInformation?.dateOfBirth ===
+      realImageChange.to
+  ) {
+    updatedParticipant = {
+      ...updatedParticipant,
+      demographicInformation: {
+        ...updatedParticipant.demographicInformation,
+        dateOfBirth: realImageChange.from
+      }
+    }
+  }
+
   // Update in the attached array (same-request reads) and record the change
   // in data._changes (persistence - the attached array is rebuilt from the
   // shared data store on every request; see middleware in app/routes.js)
-  data.participants[participantIndex] = updatedParticipant
+  data.participants[participantIndex] = withRealImageDateOfBirth(
+    data,
+    updatedParticipant
+  )
   recordChange(data, 'participants', updatedParticipant)
-  return updatedParticipant
+  return data.participants[participantIndex]
 }
 
 /**
@@ -214,14 +269,15 @@ const saveTempParticipantToParticipant = (data) => {
 
 module.exports = {
   getParticipant,
+  withRealImageDateOfBirth,
   getFullName,
-  getFirstNames,
-  getFullNameReversed,
+  getShortNameReversed,
   getShortName,
   findBySXNumber,
   getAge,
   sortBySurname,
   getCurrentRiskLevel,
+  getScreeningProtocolName,
   updateParticipant,
   saveTempParticipantToParticipant
 }

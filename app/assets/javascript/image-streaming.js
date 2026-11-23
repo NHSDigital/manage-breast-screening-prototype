@@ -23,8 +23,32 @@ if (configEl) {
   }
 }
 
+// Progress is kept per appointment start (the key includes when it was
+// started), so that coming back to the page (for example after adding a
+// symptom) carries on where it left off, counting images that would have
+// arrived while the user was away. Starting the appointment again, such as
+// after resetting data, streams from the beginning
+function getStorageKey(progressKey) {
+  return `image-streaming-progress-${progressKey}`
+}
+
+function loadProgress(progressKey) {
+  try {
+    return JSON.parse(sessionStorage.getItem(getStorageKey(progressKey)))
+  } catch (e) {
+    return null
+  }
+}
+
+function saveProgress(progressKey, revealedCount, lastRevealedAt) {
+  sessionStorage.setItem(
+    getStorageKey(progressKey),
+    JSON.stringify({ revealedCount, lastRevealedAt })
+  )
+}
+
 function initStreaming(config) {
-  const { intervalMs = 3000, images = [], totalImages = images.length } = config
+  const { intervalMs = 3000, images = [], progressKey } = config
 
   // Find all view slots rendered by mammogram-image-display.njk
   const slots = document.querySelectorAll('[data-view]')
@@ -50,24 +74,42 @@ function initStreaming(config) {
   let nextIndex = 0
   let timer = null
 
-  const revealNext = (immediate = false) => {
+  const revealNext = (immediate = false, revealedAt = Date.now()) => {
     if (nextIndex >= images.length) return
     const image = images[nextIndex]
     nextIndex++
     revealImage(image, slotMap, immediate)
+    if (progressKey) {
+      saveProgress(progressKey, nextIndex, revealedAt)
+    }
   }
 
-  const scheduleNext = () => {
+  const scheduleNext = (delay = intervalMs) => {
     if (nextIndex >= images.length) return
     timer = setTimeout(() => {
       revealNext()
       scheduleNext()
-    }, intervalMs)
+    }, delay)
   }
 
-  // First image arrives immediately — we navigated to this page because one was received
-  revealNext(true)
-  scheduleNext()
+  const progress = progressKey ? loadProgress(progressKey) : null
+  if (progress && progress.revealedCount > 0) {
+    const elapsed = Date.now() - progress.lastRevealedAt
+    const arrivedWhileAway = Math.floor(elapsed / intervalMs)
+    const arrivedCount = Math.min(
+      images.length,
+      progress.revealedCount + arrivedWhileAway
+    )
+    while (nextIndex < arrivedCount) {
+      const arrivalsSoFar = nextIndex - progress.revealedCount + 1
+      revealNext(true, progress.lastRevealedAt + arrivalsSoFar * intervalMs)
+    }
+    scheduleNext(intervalMs - (elapsed % intervalMs))
+  } else {
+    // First image arrives immediately — we navigated to this page because one was received
+    revealNext(true)
+    scheduleNext()
+  }
 
   // Right arrow key immediately advances to the next image (useful for demos)
   document.addEventListener('keydown', (e) => {

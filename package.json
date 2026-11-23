@@ -5,6 +5,7 @@
   "main": "app.js",
   "scripts": {
     "start": "node .",
+    "kill": "node scripts/kill.js",
     "prepare": "git config core.hooksPath .githooks || exit 0",
     "generate": "node scripts/generate-data.js",
     "heroku-postbuild": "npm run generate",
@@ -38,7 +39,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@playwright/test": "^1.64.1",
+    "@playwright/test": "^1.65.0",
     "cssnano": "^9.0.5",
     "eslint": "^10.14.0",
     "globals": "^17.14.0",

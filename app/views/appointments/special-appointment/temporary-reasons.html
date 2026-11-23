@@ -49,7 +49,10 @@
     }) }}
   {% else %}
     <p>No support types were selected to mark as temporary.</p>
-    <a href="./edit" class="nhsuk-button">Go back</a>
+    {{ button({
+      text: "Go back",
+      href: "./edit"
+    }) }}
   {% endif %}
 
 {% endblock %}

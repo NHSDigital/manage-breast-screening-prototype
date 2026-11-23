@@ -15,7 +15,7 @@
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
-      {{ participant | getFullNameReversed }}
+      {{ participant | getShortNameReversed }}
     </span>
     {{ pageHeading }}
   </h1>
@@ -25,7 +25,7 @@
       name: "appointment[specialAppointment][supportTypes]",
       fieldset: {
         legend: {
-          text: "Why does " + (participant | getFullName) + " need additional support?",
+          text: "Why does " + (participant | getShortName) + " need additional support?",
           size: "m"
         }
       },

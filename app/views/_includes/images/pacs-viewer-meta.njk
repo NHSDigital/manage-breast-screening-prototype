@@ -8,12 +8,15 @@
    - viewerParticipant - whose they are
    - viewerAutoOpen - whether to open the viewer if it is not already open #}
 
-{% set mammogramImages = getImagesForAppointment(viewerAppointment.id, "diagrams", { appointment: viewerAppointment }) %}
+{% set mammogramImages = getImagesForAppointment(viewerAppointment.id, getMammogramImageSource(), { appointment: viewerAppointment }) %}
 <meta name="mammogram-appointment-id" content="{{ viewerAppointment.id }}">
-<meta name="mammogram-participant-name" content="{{ viewerParticipant | getFullNameReversed }}">
+<meta name="mammogram-participant-name" content="{{ viewerParticipant | getShortNameReversed }}">
 <meta name="mammogram-nhs-number" content="{{ viewerParticipant.medicalInformation.nhsNumber | formatNhsNumber }}">
 <meta name="mammogram-sx-number" content="{{ viewerParticipant.sxNumber }}">
 <meta name="mammogram-date-of-birth" content="{{ viewerParticipant.demographicInformation.dateOfBirth | formatDate }} ({{ viewerParticipant | getAge }} years)">
+{% if viewerAppointment.timing.startTime %}
+  <meta name="mammogram-study-date" content="{{ viewerAppointment.timing.startTime | formatDate('MMM YYYY') }}">
+{% endif %}
 <meta name="mammogram-auto-open" content="{{ 'true' if viewerAutoOpen else 'false' }}">
 {% if mammogramImages and mammogramImages.paths %}
   {# Pass image paths - util filters to only include views present in mammogram data #}
@@ -24,8 +27,15 @@
   {# Pass all image paths for additional images view #}
   <meta name="mammogram-all-paths" content="{{ mammogramImages.allPaths | dump | escape }}">
   <meta name="mammogram-has-additional" content="{{ 'true' if mammogramImages.hasAdditionalImages else 'false' }}">
-  {# Views that weren't expected and weren't taken, which the viewer leaves blank rather than showing "No image" #}
-  <meta name="mammogram-not-expected" content="{{ viewerAppointment | getNotExpectedViews | map("lower") | dump | escape }}">
+  {# Full-resolution image for each display image, which the viewer loads on zoom. Real images only #}
+  {% if mammogramImages.set.fullPaths %}
+    <meta name="mammogram-full-paths" content="{{ mammogramImages.set.fullPaths | dump | escape }}">
+  {% endif %}
+  {# Earlier studies the viewer can page back to, newest first #}
+  {% set viewerPriors = getPriorImagesForAppointment(viewerAppointment, getMammogramImageSource()) %}
+  {% if viewerPriors | length %}
+    <meta name="mammogram-priors" content="{{ viewerPriors | dump | escape }}">
+  {% endif %}
   {# Pass set info for debugging #}
   <meta name="mammogram-set-id" content="{{ mammogramImages.set.id }}">
   <meta name="mammogram-set-description" content="{{ mammogramImages.set.description }}">

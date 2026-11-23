@@ -19,7 +19,7 @@
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-m">
-      {{ participant | getFullNameReversed }}
+      {{ participant | getShortNameReversed }}
     </span>
     {{ pageHeading }}
   </h1>
@@ -37,7 +37,7 @@
   {% endmacro %}
 
   {% set ethnicityLegend %}
-    How does {{ participant | getFullName }} describe their ethnicity?
+    How does {{ participant | getShortName }} describe their ethnicity?
   {% endset %}
 
   {% set hasError = flash.error[0].name == "participant[demographicInformation][ethnicBackground]" %}

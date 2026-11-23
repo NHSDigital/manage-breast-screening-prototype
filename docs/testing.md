@@ -44,17 +44,22 @@ route on the Express router, fills the URL parameters from the seeded data, and
 requests each one. It also sweeps the pages served by the wildcard template
 routes, which the router alone does not reveal. Any 5xx fails the run; 404s are
 printed but tolerated, since some pages only resolve for particular ids.
+It also fails if a page title contains a participant's name, and lists pages
+whose title is only the service name because they set no `pageHeading` or
+`pageName`.
 
 Routes that change state — check-in, complete, regenerate — are skipped by
 name, and the skip list is printed on every run so it stays visible.
 
 **Journeys** (`tests/e2e/`) drive real flows in Chromium via Playwright. This is
 the only layer that exercises POST handlers, session state and the client-side
-JavaScript. Twenty-nine journeys, among them:
+JavaScript. Thirty journeys, among them:
 
 - a screening appointment recording medical history and a symptom, from
   check-in to completion
 - a screening appointment straight through with nothing to record
+- adding a symptom (in the modal) and a breast feature (on the diagram page)
+  from the imaging page, returning each time to the expander open
 - a bilateral mastectomy where no images are needed, ending the appointment as
   attended not screened
 - breast implants on both sides asking for consent before they are saved

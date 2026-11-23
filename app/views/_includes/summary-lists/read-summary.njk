@@ -106,7 +106,7 @@
 {# Build rows based on result type #}
 {% set rows = [] %}
 
-{% set readerRowHtml = (read.readerId | getUsername({ format: "short" })) + ", " + (read.timestamp | formatDate) %}
+{% set readerRowHtml = (read.readerId | getUsername) + ", " + (read.timestamp | formatDate) %}
 
 {# An arbitration read settles the case, so it is the outcome rather than one
    of several opinions - and its rows say so #}
@@ -332,7 +332,7 @@
 {% if read.arbitratorIds | length %}
   {% set arbitratorsHtml %}
     {%- for arbitratorId in read.arbitratorIds %}
-      {{ arbitratorId | getUsername({ format: "short", identifyCurrentUser: true }) }}{{ "," if not loop.last }}
+      {{ arbitratorId | getUsername({ identifyCurrentUser: true }) }}{{ "," if not loop.last }}
     {%- endfor %}
   {% endset %}
   {% set rows = rows | push({

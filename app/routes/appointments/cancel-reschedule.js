@@ -6,7 +6,7 @@
 // moves it off closed) - treat status changes here with extra care.
 
 const {
-  getFullName,
+  getShortName,
   saveTempParticipantToParticipant
 } = require('../../lib/utils/participants')
 const {
@@ -27,7 +27,7 @@ module.exports = (router) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
 
-      const participantName = getFullName(data.participant)
+      const participantName = getShortName(data.participant)
       const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
 
       const rescheduleChoice = data.appointment?.cancellation?.reschedule
@@ -88,7 +88,7 @@ module.exports = (router) => {
       const { clinicId, appointmentId } = req.params
       const data = req.session.data
 
-      const participantName = getFullName(data.participant)
+      const participantName = getShortName(data.participant)
       const participantAppointmentUrl = `/clinics/${clinicId}/appointments/${appointmentId}`
 
       const timing = data.appointment?.reschedule?.timing
@@ -198,7 +198,7 @@ module.exports = (router) => {
       const appointment = getAppointment(data, appointmentId)
 
       if (appointment) {
-        const participantName = getFullName(data.participant)
+        const participantName = getShortName(data.participant)
         updateAppointmentStatus(data, appointmentId, 'did_not_attend')
         req.flash('success', `${participantName} marked as did not attend`)
       }
@@ -220,7 +220,7 @@ module.exports = (router) => {
       const appointment = getAppointment(data, appointmentId)
 
       if (appointment && appointment.status === 'did_not_attend') {
-        const participantName = getFullName(data.participant)
+        const participantName = getShortName(data.participant)
         // Revert to scheduled status
         updateAppointmentStatus(data, appointmentId, 'scheduled')
         req.flash('success', `${participantName} did not attend status undone`)

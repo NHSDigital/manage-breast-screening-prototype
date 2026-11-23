@@ -257,7 +257,7 @@ const RUNNING_ACTIONS = ['started', 'resumed']
  * @param {object} appointment - Appointment object
  * @returns {string | null} User id, or null if it hasn't been started
  * @example
- * {{ appointment | getAppointmentRunnerId | getUsername({ format: "short" }) }}
+ * {{ appointment | getAppointmentRunnerId | getUsername }}
  */
 const getAppointmentRunnerId = (appointment) => {
   const sessionDetails = appointment?.sessionDetails
@@ -310,7 +310,7 @@ const getAppointmentRunByIds = (appointment) => {
  * @param {object} [options] - Display options, as accepted by getUsername
  * @returns {Array<string>} Names, in the order they joined the appointment
  * @example
- * {{ appointment | getAppointmentRunByNames({ format: "reversed" }) | formatList }}
+ * {{ appointment | getAppointmentRunByNames | formatList }}
  */
 const getAppointmentRunByNames = function (appointment, options = {}) {
   return getAppointmentRunByIds(appointment).map((userId) =>
@@ -326,12 +326,15 @@ const getAppointmentRunByNames = function (appointment, options = {}) {
  * having run the appointment is a practitioner.
  *
  * @param {object} appointment - Appointment object
+ * @param {object} [options] - Display options, as accepted by getUsername
  * @returns {{label: string, people: Array<{id: (string|null), name: string, roles: Array<string>}>}} Display label and people with their roles
+ * @example
+ * {{ appointment | getAppointmentMammographerSummary({ identifyCurrentUser: true }) }}
  */
-const getAppointmentMammographerSummary = function (appointment) {
+const getAppointmentMammographerSummary = function (appointment, options = {}) {
   const people = getAppointmentRunByIds(appointment).map((userId) => ({
     id: userId,
-    name: getUsername.call(this, userId),
+    name: getUsername.call(this, userId, options),
     roles: ['Practitioner']
   }))
 
@@ -343,8 +346,8 @@ const getAppointmentMammographerSummary = function (appointment) {
     (hasOtherNameOperator ? null : appointment?.sessionDetails?.endedBy) ||
     null
   const operatorName =
-    getAuthorisedMammographerName.call(this, appointment) ||
-    getScreenedByName.call(this, appointment)
+    getAuthorisedMammographerName.call(this, appointment, options) ||
+    getScreenedByName.call(this, appointment, options)
   const operator = people.find((person) => person.id === operatorId)
 
   if (operator) {
@@ -373,7 +376,7 @@ const getAppointmentMammographerSummary = function (appointment) {
  * @param {object} [options] - Display options, as accepted by getUsername
  * @returns {string} Name, or '' if the appointment hasn't been started
  * @example
- * {{ appointment | getScreenedByName({ format: "short", identifyCurrentUser: true }) }}
+ * {{ appointment | getScreenedByName({ identifyCurrentUser: true }) }}
  */
 const getScreenedByName = function (appointment, options = {}) {
   const endedBy = appointment?.sessionDetails?.endedBy
@@ -384,6 +387,51 @@ const getScreenedByName = function (appointment, options = {}) {
     getAuthorisedMammographerName.call(this, appointment, options) ||
     getUsername.call(this, endedBy, options)
   )
+}
+
+/**
+ * Get the names of everyone who screened an appointment, for a list where
+ * the most relevant person should come first. The current user comes first
+ * if they were involved, then whoever screened it (see getScreenedByName),
+ * then everyone else who ran it. People are matched by id, so nobody is
+ * listed twice.
+ *
+ * @param {object} appointment - Appointment object
+ * @param {object} [options] - Display options, as accepted by getUsername
+ * @returns {Array<string>} Names in display order
+ * @example
+ * {{ appointment | getAppointmentScreenedByNames({ identifyCurrentUser: true }) | join(", ") }}
+ */
+const getAppointmentScreenedByNames = function (appointment, options = {}) {
+  const runByIds = getAppointmentRunByIds(appointment)
+  const currentUser = this?.ctx?.data?.currentUser
+  const currentUserId =
+    typeof currentUser === 'string' ? currentUser : currentUser?.id
+  const hasEnded = Boolean(appointment?.sessionDetails?.endedBy)
+
+  // A nominated mammographer who isn't a user only has a name, no id
+  const otherName = hasEnded
+    ? !appointment?.authorisedMammographerId &&
+      appointment?.authorisedMammographerOtherName
+    : null
+  const screenedById = hasEnded
+    ? appointment?.authorisedMammographerId ||
+      (otherName ? null : appointment.sessionDetails.endedBy)
+    : getAppointmentRunnerId(appointment)
+
+  const leadingIds = runByIds.includes(currentUserId) ? [currentUserId] : []
+  const orderedIds = [
+    ...new Set([...leadingIds, screenedById, ...runByIds].filter(Boolean))
+  ]
+  const names = orderedIds.map((userId) =>
+    getUsername.call(this, userId, options)
+  )
+
+  if (otherName) {
+    names.splice(leadingIds.length, 0, otherName)
+  }
+
+  return names
 }
 
 module.exports = {
@@ -398,6 +446,7 @@ module.exports = {
   getAuthorisedMammographerName,
   canUserScreenAppointment,
   getAppointmentMammographerSummary,
+  getAppointmentScreenedByNames,
   isClinician,
   isAdministrative,
   isHybridUser,

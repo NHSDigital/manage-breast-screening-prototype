@@ -37,7 +37,7 @@ Prefer the simplest thing that makes the user journey work.
 
 ## Pages
 
-Pages are `.html` files in `app/views`. The URL comes from the file path, so `app/views/contact-preference.html` is served at `/contact-preference` with no route needed. Each page extends the layout, sets `pageName` (used for the `<title>`) and fills the content block. Back links go in the `beforeContent` block.
+Pages are `.html` files in `app/views`. The URL comes from the file path, so `app/views/contact-preference.html` is served at `/contact-preference` with no route needed. Each page extends the layout, sets `pageName` (used for the `<title>`) and fills the content block. This repo's layouts use `pageHeading` instead and build the title from it, see `docs/routing-and-forms.md`. Back links go in the `beforeContent` block.
 
 The layout provides the width container and main wrapper. Inside the content block, wrap content in a grid row and column. Question pages and body text use two thirds width.
 

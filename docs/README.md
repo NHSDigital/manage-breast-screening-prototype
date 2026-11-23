@@ -26,6 +26,7 @@ Reference for people and coding assistants working on the prototype. The always-
 
 - [image-reading.md](image-reading.md) - the reading section: sessions, cases, reads, arbitration, routes, layouts and data.
 - [pacs-viewer.md](pacs-viewer.md) - the simulated PACS viewer window and the mammogram image sets.
+- [mammogram-images.md](mammogram-images.md) - how appointments get their images, where images are shown, annotations, and the real images being added. Read before changing image sets or bringing in real images.
 
 ## Project components
 

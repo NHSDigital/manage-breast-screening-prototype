@@ -27,14 +27,14 @@
     {# Request timeline - what has happened to the request and when #}
     {% set requestTimelineHtml %}
       {% if mammogram.requestStatus == "received" %}
-        Requested {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}<br>
+        Requested {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ identifyCurrentUser: true }) }}{% endif %}<br>
         Received {{ mammogram.receivedDate | formatDate("D MMMM YYYY") }}
       {% elseif mammogram.requestStatus == "requested" %}
-        Requested {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+        Requested {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ identifyCurrentUser: true }) }}{% endif %}
       {% elseif mammogram.requestStatus == "pending" %}
-        Flagged for request {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+        Flagged for request {{ mammogram.requestedDate | formatDate("D MMMM YYYY") }}{% if mammogram.requestedBy %} by {{ mammogram.requestedBy | getUsername({ identifyCurrentUser: true }) }}{% endif %}
       {% elseif (mammogram.requestStatus == "not_available" or mammogram.requestStatus == "not_needed") and mammogram.statusChangedDate %}
-        Updated {{ mammogram.statusChangedDate | formatDate("D MMMM YYYY") }}{% if mammogram.statusChangedBy %} by {{ mammogram.statusChangedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+        Updated {{ mammogram.statusChangedDate | formatDate("D MMMM YYYY") }}{% if mammogram.statusChangedBy %} by {{ mammogram.statusChangedBy | getUsername({ identifyCurrentUser: true }) }}{% endif %}
       {% endif %}
       {%- if mammogram.requestReason %}<br>Reason: {{ mammogram.requestReason }}{% endif %}
     {% endset %}

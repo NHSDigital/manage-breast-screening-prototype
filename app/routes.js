@@ -7,17 +7,29 @@ const {
   needsRegeneration
 } = require('./lib/utils/regenerate-data')
 const { resetCallSequence } = require('./lib/utils/random')
+const { formatUserName } = require('./lib/utils/users')
 const dataStore = require('./lib/data-store')
 const sharedData = require('./lib/shared-data')
 const {
   restoreRememberedSignIn,
   rememberSignIn
 } = require('./lib/middleware/remembered-sign-in')
+const {
+  getMammogramImageSource,
+  getRealImageDatesOfBirth,
+  getRealAssignments
+} = require('./lib/utils/mammogram-images')
+const { withRealImageDateOfBirth } = require('./lib/utils/participants')
+const { withRealImageReads } = require('./lib/utils/real-image-reads')
 
 const router = express.Router()
 
 // Parse JSON request bodies (in addition to URL-encoded, which the kit handles)
 router.use(express.json())
+
+// Real mammogram images and their access code. Ahead of the session data
+// middleware below, which they don't need.
+require('./routes/real-images')(router)
 
 // Memory logging - tracks growth and logs significant changes. Logs at
 // startup, around regeneration, and whenever RSS jumps >20MB (a canary for
@@ -184,6 +196,41 @@ router.use((req, res, next) => {
     res.locals.data[name] = data[name]
   }
 
+  // While real mammogram images are on, participants' ages match their real
+  // cases (see withRealImageDateOfBirth), and seeded readers mark what
+  // clinicians marked on them (see withRealImageReads). Derived per request,
+  // never saved.
+  const isRealImages =
+    getMammogramImageSource.call({ ctx: { data } }) === 'real'
+  const realImageDatesOfBirth = isRealImages ? getRealImageDatesOfBirth() : null
+  const realImageReads = isRealImages ? getRealAssignments() : null
+  for (const target of [data, res.locals.data]) {
+    Object.defineProperty(target, '_realImageDatesOfBirth', {
+      value: realImageDatesOfBirth,
+      enumerable: false,
+      configurable: true,
+      writable: true
+    })
+    Object.defineProperty(target, '_realImageReads', {
+      value: realImageReads,
+      enumerable: false,
+      configurable: true,
+      writable: true
+    })
+  }
+  if (realImageDatesOfBirth) {
+    data.participants = data.participants.map((participant) =>
+      withRealImageDateOfBirth(data, participant)
+    )
+    res.locals.data.participants = data.participants
+  }
+  if (realImageReads) {
+    data.episodes = data.episodes.map((episode) =>
+      withRealImageReads(data, episode)
+    )
+    res.locals.data.episodes = data.episodes
+  }
+
   // Generation info also comes from the store, so every session sees the
   // current generation (not the one it was created under)
   data.generationInfo = dataStore.state.generationInfo
@@ -224,17 +271,12 @@ router.use((req, res, next) => {
     )
 
     if (selectedUser) {
-      console.log(
-        `Changing user to user ${selectedUser.firstName} ${selectedUser.lastName}`
-      )
+      console.log(`Changing user to user ${formatUserName(selectedUser)}`)
 
       data.currentUser = selectedUser
       res.locals.data.currentUser = selectedUser
 
-      req.flash(
-        'success',
-        `Signed in as ${selectedUser.firstName} ${selectedUser.lastName}`
-      )
+      req.flash('success', `Signed in as ${formatUserName(selectedUser)}`)
     } else {
       console.log(
         `Cannot find user ${data.currentUserId} to sign in. Reverting to user 1`
@@ -307,6 +349,7 @@ router.post(
   }
 )
 
+require('./routes/admin-real-cases')(router)
 require('./routes/settings')(router)
 require('./routes/users')(router)
 
@@ -321,11 +364,28 @@ require('./routes/users')(router)
 //   - Sets res.locals.parentLayout so templates use the modal fragment layout
 //   - Wraps res.redirect() to append ?_modal=1 to the target URL, threading
 //     the param through any server-side redirects in the request chain
+//
+// Otherwise (full-page requests), _modal_breakout is stripped from redirects,
+// as it only means something to modal.js.
 router.use((req, res, next) => {
   const isXhr = req.headers['x-requested-with'] === 'XMLHttpRequest'
   const hasModalParam = req.query._modal === '1' || req.body?._modal === '1'
 
-  if (!isXhr && !hasModalParam) return next()
+  if (!isXhr && !hasModalParam) {
+    const originalRedirect = res.redirect.bind(res)
+    res.redirect = (...args) => {
+      const urlIndex = typeof args[0] === 'number' ? 1 : 0
+      const url = args[urlIndex]
+      if (typeof url === 'string') {
+        args[urlIndex] = url.replace(
+          /([?&])_modal_breakout=1(&|#|$)/,
+          (match, separator, after) => (after === '&' ? separator : after)
+        )
+      }
+      originalRedirect(...args)
+    }
+    return next()
+  }
 
   res.locals.parentLayout = '_templates/layout-modal-form.html'
 

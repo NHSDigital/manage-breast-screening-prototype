@@ -1,0 +1,18 @@
+{# app/views/_includes/medical-information/add-symptom-buttons.njk #}
+{# One button per symptom type, each opening that symptom's form.
+   Reads `referrerChain`, `currentUrl` and `scrollTo` (the id to return to). #}
+
+<div class="nhsuk-button-group nhsuk-button-group--small">
+  {% for symptomType in data.symptomTypes %}
+
+    {% set addUrl = (contextUrl + "/medical-information/symptoms/add?symptomType=" + symptomType.slug) | urlWithReferrer(referrerChain | appendReferrer(currentUrl), scrollTo) %}
+
+    {{ button({
+      text: symptomType.name | sentenceCase,
+      href: addUrl,
+      variant: "secondary",
+      small: true
+    } | openInModal) }}
+
+  {% endfor %}
+</div>

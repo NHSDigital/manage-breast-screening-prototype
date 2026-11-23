@@ -29,7 +29,7 @@
     <p class="nhsuk-u-margin-top-3 nhsuk-u-margin-bottom-0">
       {% if changedDate %}
         {{- changedLabel }}
-        {%- if changedBy %} by {{ changedBy | getUsername({ format: "short", identifyCurrentUser: true }) }}{% endif %}
+        {%- if changedBy %} by {{ changedBy | getUsername({ identifyCurrentUser: true }) }}{% endif %}
         on {{ changedDate | formatDate("D MMMM YYYY") -}}
       {% endif %}
       {% if mammogram.requestReason %}

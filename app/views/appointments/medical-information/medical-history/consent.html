@@ -41,7 +41,7 @@
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
-      {{ participant | getFullNameReversed }}
+      {{ participant | getShortNameReversed }}
     </span>
     {{ pageHeading }}
   </h1>
@@ -60,7 +60,7 @@
 
   <p>If the participant notices any problems with their implants after the appointment, they should contact their GP.</p>
 
-  <h2 class="nhsuk-heading-m">Ask {{ participant.demographicInformation.firstName or "the participant" }} for their consent</h2>
+  <h2 class="nhsuk-heading-m">Ask {{ (participant | getShortName) or "the participant" }} for their consent</h2>
 
   <p>Once you've explained the process and the risks, ask them to read and complete your paper consent form.</p>
 

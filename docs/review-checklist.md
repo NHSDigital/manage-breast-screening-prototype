@@ -80,7 +80,7 @@ Spot it: `grep -nE 'data\.[a-zA-Z]+ *=|req\.session\[|req\.session\.[a-zA-Z]+ *=
 
 Spot it: string literals of people's names or list options in templates. For every new field read in a view, search `app/lib/generators/` for where it is created.
 
-> **Past example.** The "choose mammographer" radios listed five made-up names (`S. Patel`, `R. Thompson`, and so on). They became the real users able to screen the appointment, sorted by surname, using `canUserScreenAppointment`.
+> **Past example.** The "choose mammographer" radios listed five made-up names (`S. Patel`, `R. Thompson`, and so on). They became the real users able to screen the appointment, sorted by first name with `sortUsersByName`, using `canUserScreenAppointment`.
 >
 > **Past example.** Seed data gave attended-not-screened appointments a reason only 70% of the time. Once closing a clinic required a reason, that left records the new flow could not handle, so generation became unconditional.
 
@@ -103,6 +103,8 @@ Check [utils-filter-reference.md](utils-filter-reference.md) (table of contents 
 - Client-side JavaScript that recreates markup the server already renders (tags, action links, rows). It will drift from the server version. Fetch the server-rendered fragment instead (see section 5).
 - Hand-written HTML where an NHS.UK Frontend macro exists. Look up the parameters in [nhsuk-frontend/components/](nhsuk-frontend/index.md) rather than guessing.
 - A `radios` or `checkboxes` macro without `small: true`.
+- A button with `nhsuk-u-margin-bottom-0` or `margin-bottom: 0`. Use `nhsuk-u-margin-bottom-1` or `$nhsuk-button-shadow-size` so the 4px shadow keeps its space.
+- Links that look like buttons built with the `link` macro or a hand-written `<a class="nhsuk-button">`. Use the `button` macro with `href`, which adds `role="button"` and the JavaScript behaviour so screen readers announce a button.
 - Inline `<script>` blocks in views. Client-side code is a module in `app/assets/javascript/`, and the page must still work without it.
 
 > **Past example.** A 129-line inline script rebuilt status tags and action links as strings (`renderTag`, `renderActionCell`). It was replaced by a server-rendered row include and a small module that swaps the fragment in, later reused on two other pages.

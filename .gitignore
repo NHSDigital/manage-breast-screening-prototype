@@ -6,6 +6,7 @@
 .tmp
 /public
 app/data/generated/
+__pycache__/
 
 # Runtime data
 pids
@@ -77,6 +78,10 @@ reference/
 *.local.js
 # Local working notes (session notes, not for committing)
 notes/
+
+# Real mammogram data and anything derived from it - never commit (docs/mammogram-images.md)
+survey-output/
+/real-images/
 
 # Playwright output (traces and screenshots from failed runs)
 test-results/

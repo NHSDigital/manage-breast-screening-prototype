@@ -13,12 +13,12 @@
 
   <h1 class="nhsuk-heading-l">
     <span class="nhsuk-caption-l">
-      {{ participant | getFullNameReversed }}
+      {{ participant | getShortNameReversed }}
     </span>
     {{ pageHeading }}
   </h1>
 
-  <p>{{ participant | getFullName }} has been screened.</p>
+  <p>{{ participant | getShortName }} has been screened.</p>
 
   {% set clinicAppointments = data.appointments | getClinicAppointments(clinicId) %}
 
@@ -31,7 +31,7 @@
       <li><a href="/clinics/{{ clinicId }}/appointments/{{ checkedInParticipants[0].id }}">Open next checked-in participant</a></li>
     {% endif %}
 
-    <li><a href="./">View {{ participant | getFullName }}’s appointment</a></li>
+    <li><a href="./">View {{ participant | getShortName }}’s appointment</a></li>
   </ul>
 
 {#   {{ button({

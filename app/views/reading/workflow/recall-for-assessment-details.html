@@ -105,7 +105,6 @@
       level: 2
     },
     feature: true,
-    classes: "nhsuk-u-margin-top-3",
     descriptionHtml: breastDetailsHtml
   }) }}
 
@@ -117,7 +116,7 @@
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
       <span class="nhsuk-caption-l">
-        {{ participant | getFullNameReversed }}
+        {{ participant | getShortNameReversed }}
       </span>
       <h1 class="nhsuk-heading-l js-image-count">
         {{ pageHeading }}
@@ -135,7 +134,7 @@
 
   {# Set up annotation data early — needed by both breast cards and tab modes #}
   {% if annotationsMode != 'without-images' %}
-    {% set mammogramImages = getImagesForAppointment(appointmentId, "diagrams", { appointment: appointment }) %}
+    {% set mammogramImages = getImagesForAppointment(appointmentId, getMammogramImageSource(), { appointment: appointment }) %}
     {% set allPaths = mammogramImages.allPaths if mammogramImages else {} %}
     {% set mammogramViewOrder = data.settings.mammogramViewOrder or "cc-first" %}
   {% endif %}
@@ -209,7 +208,7 @@
             text: "Add another annotation" if sideAnnotations | length > 0 else "Add annotation",
             variant: "secondary",
             small: true,
-            classes: "nhsuk-u-margin-bottom-0 nhsuk-u-margin-top-3",
+            classes: "nhsuk-u-margin-bottom-1 nhsuk-u-margin-top-3",
             name: "addAnnotationSide",
             value: breastSide,
             attributes: { "data-modal-submit": "" } if data.settings.modalForms == 'true'
@@ -283,7 +282,7 @@
 
   <div class="nhsuk-grid-row">
     <div class="nhsuk-grid-column-two-thirds">
-      {{ button({ text: "Continue" }) }}
+      {{ button({ text: "Update" if isEditingExistingRead else "Continue" }) }}
     </div>
   </div>
 

@@ -87,6 +87,8 @@ Prefer a component's own options over modifier classes, for example `variant: "s
 
 Every component also takes `classes` (added to the root element) and `attributes` (an object of extra HTML attributes). Use `classes` for utility classes and your own classes.
 
+Buttons have a 4px shadow below them. To remove a button's bottom margin, use `nhsuk-u-margin-bottom-1`, not `nhsuk-u-margin-bottom-0`, so the shadow does not touch whatever comes next. In Sass, use `margin-bottom: $nhsuk-button-shadow-size`. Do not do this for a button group: it keeps the space for its buttons' shadows.
+
 ```njk
 {{ button({
   text: "Save and continue",

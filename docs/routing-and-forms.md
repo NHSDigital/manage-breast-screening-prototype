@@ -96,6 +96,7 @@ Page conventions:
 
 - Start the file with a comment naming it: `{# app/views/participants/show.html #}`.
 - `{% set pageHeading = "..." %}` and put content in `{% block pageContent %}`. Back links go in `{% block beforeContent %}`.
+- The `<title>` is `pageHeading – service name – NHS`. Set `pageName` to override it when the heading holds a name or other personal data, or needs more context to be unique, such as `"Your opinion – Reading case"`. Set `pageHeading` (and `pageName` if needed) at the top level of the page, not inside a block, or the title will not see it.
 - Setting `formAction` makes the layout wrap the page in a form posting there. Setting `isForm` does the same with the current URL. Do not add a second `<form>` inside.
 - Reuse `_includes/` and `_components/` before writing new markup. [components.md](components.md) lists every component and the style guide at `/style-guide/` shows the reusable ones.
 

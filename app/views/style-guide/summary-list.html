@@ -27,7 +27,7 @@
 <div class="sg-example">
   {{ appSummaryList({
     rows: [
-      { key: { text: "Name" }, value: { text: "Janet Williams" } },
+      { key: { text: "Full name" }, value: { text: "Janet Ann Williams" } },
       { key: { text: "Date of birth" }, value: { text: "12 March 1965" } },
       { key: { text: "NHS number" }, value: { text: "485 777 3456" } }
     ]
@@ -35,7 +35,7 @@
 </div>
 <pre class="sg-snippet"><code>{% raw %}{{ appSummaryList({
   rows: [
-    { key: { text: "Name" }, value: { text: "Janet Williams" } },
+    { key: { text: "Full name" }, value: { text: "Janet Ann Williams" } },
     { key: { text: "Date of birth" }, value: { text: "12 March 1965" } }
   ]
 }) }}{% endraw %}</code></pre>
@@ -83,9 +83,9 @@
   {{ appSummaryList({
     rows: [
       {
-        key: { text: "Name" },
-        value: { text: "Janet Williams" },
-        actions: { items: [{ text: "Change", href: "#", visuallyHiddenText: "name" }] }
+        key: { text: "Full name" },
+        value: { text: "Janet Ann Williams" },
+        actions: { items: [{ text: "Change", href: "#", visuallyHiddenText: "full name" }] }
       },
       {
         key: { text: "Date of birth" },
@@ -95,6 +95,6 @@
     ]
   }) }}
 </div>
-<pre class="sg-snippet"><code>{% raw %}actions: { items: [{ text: "Change", href: "#", visuallyHiddenText: "name" }] }{% endraw %}</code></pre>
+<pre class="sg-snippet"><code>{% raw %}actions: { items: [{ text: "Change", href: "#", visuallyHiddenText: "full name" }] }{% endraw %}</code></pre>
 
 {% endblock %}
