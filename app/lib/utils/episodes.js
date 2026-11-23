@@ -219,13 +219,9 @@ const isLastScreening = (appointment, data) =>
  */
 const getParticipantScreeningProgrammeStatus = (data, participantId) => {
   const episodes = getEpisodesForParticipant(data, participantId)
-  if (!episodes.length) return null
-
-  // Check if the first episode is marked as first screening (new participant)
-  if (episodes[0]?.isFirstScreening) return 'new'
-
-  // Check if the last episode is marked as last screening (final invite)
-  if (episodes[episodes.length - 1]?.isLastScreening) return 'final'
+  const episode = getCurrentEpisode(data, participantId) || episodes.at(-1)
+  if (episode?.isFirstScreening) return 'new'
+  if (episode?.isLastScreening) return 'final'
 
   return null
 }

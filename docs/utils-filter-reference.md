@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-23 13:16 UTC
+- **Generated:** 2026-11-23 13:22 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -137,29 +137,29 @@ Appointment status checks and display helpers. Use these instead of comparing st
 
 | Function | Description | Line |
 |---|---|---|
-| `hasNotStarted(input)` | Check if a status represents a not started appointment | 59 |
-| `isCompleted(input)` | Check if a status represents a completed appointment | 71 |
-| `isInProgress(input)` | Check if a status represents an in-progress appointment (includes paused) | 83 |
-| `isPaused(input)` | Check if a status represents a paused appointment | 95 |
-| `isInProgressNotPaused(input)` | Check if a status represents an in-progress appointment that is not paused | 107 |
-| `isFinal(input)` | Check if a status represents a final state | 119 |
-| `isActive(input)` | Check if a status represents an active appointment | 131 |
-| `isAppointmentWorkflow(appointment, currentUser)` | Check if an appointment is in the appointment workflow for the current user | 143 |
-| `eligibleForReading(appointment)` | Check if a status indicates reading is eligible | 175 |
-| `getStatusTagColour(status, [vocabulary])` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete', 'appointment') // 'green'` | 339 |
-| `getStatusText(status, [vocabulary])` | Map a status key to its display text — e.g. `getStatusText('complete', 'appointment') // 'Screened'` | 353 |
-| `describeReadingCaseStatus(status)` | The display facts for a reading case's status, composed from the facts | 379 |
-| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category; Remaining includes in-progress and paused appointments | 406 |
-| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 436 |
-| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 446 |
-| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 459 |
-| `hasStoppedDetails(appointment)` | Check if an attended-not-screened appointment has its reasons recorded | 473 |
-| `getStatusTime(appointment, status)` | When an appointment last moved to a status, taken from its status history. — e.g. `{{ appointment \| getStatusTime('cancelled') \| formatTimeString }}` | 483 |
-| `getCheckInTime(appointment)` | The timestamp an appointment was checked in, taken from its status history. | 500 |
-| `wasAttended(appointment)` | Whether an appointment that has ended was attended: screened, attended not | 508 |
-| `getCompletedTime(appointment)` | When an appointment reached its outcome, for the clinic list's Time | 537 |
-| `getSimulatedNow()` | The prototype's simulated "now" (config.clinics.simulatedTime on today's | 557 |
-| `getMinutesSince(timestamp)` | Whole minutes from a timestamp to the prototype's simulated "now" — e.g. `{{ appointment.sessionDetails.startedAt \| getMinutesSince \| formatWaitingTime }} ago` | 574 |
+| `hasNotStarted(input)` | Check if a status represents a not started appointment | 60 |
+| `isCompleted(input)` | Check if a status represents a completed appointment | 72 |
+| `isInProgress(input)` | Check if a status represents an in-progress appointment (includes paused) | 84 |
+| `isPaused(input)` | Check if a status represents a paused appointment | 96 |
+| `isInProgressNotPaused(input)` | Check if a status represents an in-progress appointment that is not paused | 108 |
+| `isFinal(input)` | Check if a status represents a final state | 120 |
+| `isActive(input)` | Check if a status represents an active appointment | 132 |
+| `isAppointmentWorkflow(appointment, currentUser)` | Check if an appointment is in the appointment workflow for the current user | 144 |
+| `eligibleForReading(appointment)` | Check if a status indicates reading is eligible | 176 |
+| `getStatusTagColour(status, [vocabulary])` | Map a status key to its NHS tag colour string — e.g. `getStatusTagColour('complete', 'appointment') // 'green'` | 340 |
+| `getStatusText(status, [vocabulary])` | Map a status key to its display text — e.g. `getStatusText('complete', 'appointment') // 'Screened'` | 354 |
+| `describeReadingCaseStatus(status)` | The display facts for a reading case's status, composed from the facts | 380 |
+| `filterAppointmentsByStatus(appointments, filter)` | Filter appointments by status category; Remaining includes in-progress and paused appointments | 407 |
+| `isSpecialAppointment(appointment)` | Check if an appointment is a special appointment | 437 |
+| `hasAppointmentNote(appointment)` | Check if an appointment has an appointment note | 447 |
+| `hasSymptoms(appointment)` | Check if an appointment has recorded symptoms | 460 |
+| `hasStoppedDetails(appointment)` | Check if an attended-not-screened appointment has its reasons recorded | 474 |
+| `getStatusTime(appointment, status)` | When an appointment last moved to a status, taken from its status history. — e.g. `{{ appointment \| getStatusTime('cancelled') \| formatTimeString }}` | 484 |
+| `getCheckInTime(appointment)` | The timestamp an appointment was checked in, taken from its status history. | 501 |
+| `wasAttended(appointment)` | Whether an appointment that has ended was attended: screened, attended not | 509 |
+| `getCompletedTime(appointment)` | When an appointment reached its outcome, for the clinic list's Time | 540 |
+| `getSimulatedNow()` | The simulated clinic clock starts at config.clinics.simulatedTime when the | 560 |
+| `getMinutesSince(timestamp)` | Whole minutes from a timestamp to the prototype's simulated clinic clock. — e.g. `{{ appointment.sessionDetails.startedAt \| getMinutesSince \| formatWaitingTime }} ago` | 576 |
 | `getElapsedSince(timestamp)` | A real-time anchor for an elapsed time: real now minus the minutes since the | 590 |
 | `getWaitingMinutes(appointment)` | How long a checked-in participant has been waiting, in whole minutes | 606 |
 | `getWaitingSince(appointment)` | A real-time anchor for the waiting figure (see getElapsedSince). | 616 |
@@ -226,31 +226,31 @@ Episode lookups and stage changes. An episode is one screening round - the conta
 | `isFirstScreening(appointment, data)` | Whether an appointment's episode is the participant's first screening - | 186 |
 | `isLastScreening(appointment, data)` | Whether an appointment's episode is the participant's last routine | 197 |
 | `getParticipantScreeningProgrammeStatus(data, participantId)` | Get a participant's screening programme status based on their episodes | 209 |
-| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 233 |
-| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 263 |
-| `getEpisodeAppointments(data, episode)` | Get an episode's appointments, oldest first | 279 |
-| `getReadingCase(data, appointment)` | Get the reading case covering an appointment's images. | 294 |
-| `getReadingCaseById(data, caseId)` | Find a reading case by its own id, with the episode that holds it. | 314 |
-| `getEpisodeReadingCases(episode)` | Get an episode's reading cases, oldest first | 349 |
-| `getEpisodeReadingCase(episode)` | Get the case that says where an episode's reading has got to - its latest. | 359 |
-| `getEpisodeReadingOutcome(episode, [settings], [issuePeriods])` | Get an episode's reading outcome, from its latest case. | 369 |
-| `updateReadingCase(data, episodeId, updatedCase)` | Save a changed reading case back to its episode. | 392 |
-| `syncReadingCasesForAppointment(data, appointment)` | Keep an episode's reading cases in step with one of its appointments. | 418 |
-| `isEpisodeClosed(episode)` | Whether an episode has closed | 457 |
-| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 467 |
-| `getEpisodeMammogramDate(episode)` | When this round's mammograms were taken, from the episode's own record. | 478 |
-| `getLastMammogram(data, participantId)` | The participant's last mammogram on record, before today. | 493 |
-| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 540 |
-| `getEpisodeLabel(episode)` | Human name for an episode. Episodes are named by date, not number - | 566 |
-| `getEpisodeStageText(stage)` | Display text for an episode's stage | 582 |
-| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 592 |
-| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 602 |
-| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 612 |
-| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change across requests. | 622 |
-| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 655 |
-| `syncEpisodeMammogramsForAppointment(data, appointment)` | Keep an episode's mammograms record in step with one of its appointments. | 704 |
-| `advanceEpisodeForAppointmentStatus(data, appointment)` | Move an appointment's episode to wherever the appointment's status leaves it. | 746 |
-| `advanceEpisodeForReadingOutcome(data, appointment, readingOutcome)` | Move an appointment's episode to wherever its reading outcome leaves it. | 780 |
+| `getEpisodesForParticipant(data, participantId)` | Get all of a participant's episodes, oldest first | 229 |
+| `getCurrentEpisode(data, participantId)` | Get a participant's current episode - their most recent one that hasn't | 259 |
+| `getEpisodeAppointments(data, episode)` | Get an episode's appointments, oldest first | 275 |
+| `getReadingCase(data, appointment)` | Get the reading case covering an appointment's images. | 290 |
+| `getReadingCaseById(data, caseId)` | Find a reading case by its own id, with the episode that holds it. | 310 |
+| `getEpisodeReadingCases(episode)` | Get an episode's reading cases, oldest first | 345 |
+| `getEpisodeReadingCase(episode)` | Get the case that says where an episode's reading has got to - its latest. | 355 |
+| `getEpisodeReadingOutcome(episode, [settings], [issuePeriods])` | Get an episode's reading outcome, from its latest case. | 365 |
+| `updateReadingCase(data, episodeId, updatedCase)` | Save a changed reading case back to its episode. | 388 |
+| `syncReadingCasesForAppointment(data, appointment)` | Keep an episode's reading cases in step with one of its appointments. | 414 |
+| `isEpisodeClosed(episode)` | Whether an episode has closed | 453 |
+| `isEpisodeOpen(episode)` | Whether an episode is still open - anything that hasn't closed, whatever | 463 |
+| `getEpisodeMammogramDate(episode)` | When this round's mammograms were taken, from the episode's own record. | 474 |
+| `getLastMammogram(data, participantId)` | The participant's last mammogram on record, before today. | 489 |
+| `getNextAppointment(data, participantId)` | The participant's next booked appointment, if they have one. | 536 |
+| `getEpisodeLabel(episode)` | Human name for an episode. Episodes are named by date, not number - | 562 |
+| `getEpisodeStageText(stage)` | Display text for an episode's stage | 578 |
+| `getEpisodeStageTagColour(stage)` | Tag colour for an episode's stage | 588 |
+| `getEpisodeOutcomeText(outcome)` | Display text for an episode's outcome | 598 |
+| `getEpisodeOutcomeTagColour(outcome)` | Tag colour for an episode's outcome | 608 |
+| `updateEpisode(data, episodeId, updates)` | Update an episode, persisting the change across requests. | 618 |
+| `updateEpisodeStage(data, episodeId, stage, [options])` | Advance an episode to a new stage, appending to its stageHistory. | 651 |
+| `syncEpisodeMammogramsForAppointment(data, appointment)` | Keep an episode's mammograms record in step with one of its appointments. | 700 |
+| `advanceEpisodeForAppointmentStatus(data, appointment)` | Move an appointment's episode to wherever the appointment's status leaves it. | 742 |
+| `advanceEpisodeForReadingOutcome(data, appointment, readingOutcome)` | Move an appointment's episode to wherever its reading outcome leaves it. | 776 |
 
 ### clinics.js
 

@@ -13,6 +13,9 @@ const {
 const {
   getAppointmentRunByIds
 } = require('../../app/lib/utils/roles-and-permissions')
+const {
+  getParticipantScreeningProgrammeStatus
+} = require('../../app/lib/utils/episodes')
 
 test('numbers attended outcomes by completion time and closes gaps after undo', () => {
   const appointment = (id, status, extra = {}) => ({
@@ -47,9 +50,11 @@ test('numbers attended outcomes by completion time and closes gaps after undo', 
   expect(get('first').screeningOrder).toBe(2)
   updateAppointmentStatus(data, 'not-screened', 'attended_not_screened')
   expect(get('not-screened').screeningOrder).toBe(3)
-  expect(get('not-screened').sessionDetails.endedAt).toBe(
-    getSimulatedNow().toISOString()
-  )
+  expect(
+    Math.abs(
+      new Date(get('not-screened').sessionDetails.endedAt) - getSimulatedNow()
+    )
+  ).toBeLessThan(1000)
   expect(getAppointmentRunByIds(get('not-screened'))).toEqual([])
   updateAppointmentStatus(data, 'cancelled', 'cancelled')
   expect(get('cancelled').screeningOrder).toBeUndefined()
@@ -74,6 +79,86 @@ test('numbers attended outcomes by completion time and closes gaps after undo', 
   expect(get('not-screened').sessionDetails.endedAt).toBeTruthy()
   updateAppointmentStatus(data, 'second', 'rescheduled')
   expect(get('second').screeningOrder).toBe(3)
+})
+
+test('programme status follows the current or latest screening episode', () => {
+  const first = {
+    id: 'screening-status-first',
+    participantId: 'screening-status-person',
+    openedDate: '2020-01-01',
+    stage: 'closed',
+    isFirstScreening: true
+  }
+  const last = {
+    id: 'screening-status-last',
+    participantId: first.participantId,
+    openedDate: '2023-01-01',
+    stage: 'scheduled',
+    isLastScreening: true
+  }
+  const data = {
+    _changes: { episodes: { [first.id]: first, [last.id]: last } }
+  }
+  expect(
+    getParticipantScreeningProgrammeStatus(data, first.participantId)
+  ).toBe('final')
+  last.stage = 'closed'
+  expect(
+    getParticipantScreeningProgrammeStatus(data, first.participantId)
+  ).toBe('final')
+  last.isLastScreening = false
+  expect(
+    getParticipantScreeningProgrammeStatus(data, first.participantId)
+  ).toBeNull()
+})
+
+test('the simulated clinic clock advances for live appointment durations', () => {
+  const start = getSimulatedNow()
+  const realNow = Date.now
+  try {
+    Date.now = () => realNow() + 5 * 60 * 1000
+    const end = getSimulatedNow()
+    expect(end.diff(start, 'minute')).toBe(5)
+  } finally {
+    Date.now = realNow
+  }
+})
+
+test('a stopped appointment rescheduled before screening is numbered', async ({
+  page
+}) => {
+  const { clinic, appointment } = findTodayAppointment({ status: 'scheduled' })
+  const clinicUrl = `/clinics/${clinic.id}`
+  const field = `closeReasonForm[${appointment.id}]`
+  await page.goto(`${clinicUrl}/check-in/${appointment.id}`)
+  await page.goto(`${clinicUrl}/close/reason/${appointment.id}`)
+  const reason = await page.request.post(
+    `${clinicUrl}/close/reason/${appointment.id}`,
+    {
+      form: {
+        [`${field}[stoppedReason]`]: 'Consent withdrawn',
+        [`${field}[needsReschedule]`]: 'yes'
+      }
+    }
+  )
+  expect(reason.ok()).toBeTruthy()
+  const reschedule = await page.request.post(
+    `${clinicUrl}/close/reschedule/${appointment.id}`,
+    {
+      form: { 'closeRescheduleForm[timing]': 'within-6-weeks' }
+    }
+  )
+  expect(reschedule.ok()).toBeTruthy()
+  await page.goto(`${clinicUrl}/complete?sort=completed-ascending`)
+  const row = page.locator(`tr[data-fragment-id="${appointment.id}"]`)
+  await expect(
+    row.locator('.app-clinic-appointments-table__completed-time')
+  ).not.toBeEmpty()
+  await expect(
+    row.locator(
+      '.app-clinic-appointments-table__completed-column .nhsapp-badge'
+    )
+  ).toHaveCount(1)
 })
 
 test('orders outcomes completed at the same simulated time', async ({
