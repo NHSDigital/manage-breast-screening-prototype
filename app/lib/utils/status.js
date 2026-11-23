@@ -3,7 +3,7 @@
 const dayjs = require('dayjs')
 const config = require('../../config')
 const { getAppointmentRunnerId } = require('./roles-and-permissions')
-const simulatedClockStartedAt = Date.now()
+let simulatedClockStartedAt = Date.now()
 
 /**
  * Define status groups for easier checking
@@ -565,12 +565,21 @@ const getCompletedTime = (appointment) => {
  */
 const getSimulatedNow = () => {
   const [hours, minutes] = config.clinics.simulatedTime.split(':')
-  return dayjs()
+  return dayjs(simulatedClockStartedAt)
     .hour(parseInt(hours, 10))
     .minute(parseInt(minutes, 10))
     .second(0)
     .millisecond(0)
     .add(Date.now() - simulatedClockStartedAt, 'millisecond')
+}
+
+/**
+ * Reset the simulated clock when seed data is regenerated.
+ *
+ * @returns {void}
+ */
+const resetSimulatedClock = () => {
+  simulatedClockStartedAt = Date.now()
 }
 
 /**
@@ -663,6 +672,7 @@ module.exports = {
   getCompletedTime,
   wasAttended,
   getSimulatedNow,
+  resetSimulatedClock,
   formatWaitingTime,
   // Export groups and display vocabularies for testing/reference
   STATUS_GROUPS,

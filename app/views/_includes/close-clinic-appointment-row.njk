@@ -7,21 +7,33 @@
   appointment - appointment record
   participant - participant the appointment belongs to
   clinicId - id of the clinic being closed
+  showCompleted - whether to show the completed column (only for completed appointments)
 
   Import with context so openInModal can read the modal forms setting.
 #}
 
 {%- from 'link/macro.njk' import link %}
+{%- from '_components/copy-to-clipboard/macro.njk' import appCopyToClipboard -%}
+{%- from '_includes/clinic-completed-cell.njk' import clinicCompletedCell with context %}
 
-{% macro closeClinicAppointmentRow(appointment, participant, clinicId) %}
+{% macro closeClinicAppointmentRow(appointment, participant, clinicId, showCompleted=false) %}
   {% set reasonUrl = "/clinics/" + clinicId + "/close/reason/" + appointment.id %}
   {% set setStatusUrl = "/clinics/" + clinicId + "/close/set-status/" + appointment.id + "/" %}
-  <tr class="nhsuk-table__row" data-fragment-id="{{ appointment.id }}">
+  {% set fragmentQuery = "?_completed=1" if showCompleted else "" %}
+  <tr class="nhsuk-table__row" data-fragment-id="{{ appointment.id }}"{% if showCompleted %} data-show-completed="true"{% endif %}>
     <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
     <td class="nhsuk-table__cell">
-      <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">{{ participant | getShortNameReversed }}</p>
-      <p class="nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-1">NHS: {{ participant.medicalInformation.nhsNumber | formatNhsNumber | noWrap }}</p>
-      <p class="nhsuk-u-margin-bottom-0 app-nowrap"><a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">View appointment</a></p>
+      <p class="nhsuk-u-margin-bottom-1 nhsuk-u-font-weight-bold">
+        <a href="/clinics/{{ clinicId }}/appointments/{{ appointment.id }}">{{ participant | getShortNameReversed }}</a>
+      </p>
+      <p class="nhsuk-u-secondary-text-colour nhsuk-body-s app-nowrap app-code-font nhsuk-u-margin-bottom-0">
+        {{ appCopyToClipboard({
+          text: participant.medicalInformation.nhsNumber,
+          type: "value",
+          html: '<span class="nhsuk-u-font-code nhsuk-u-nowrap">' + (participant.medicalInformation.nhsNumber | formatNhsNumber) + '</span>',
+          label: "NHS number"
+        }) }}
+      </p>
     </td>
     <td class="nhsuk-table__cell">
       {{ appointment.status | toTag({ vocabulary: "appointment" }) }}
@@ -36,14 +48,19 @@
       {% endif %}
       {% if appointment.status == "checked_in" %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-          <a href="{{ setStatusUrl }}scheduled" data-fragment-action>Change to scheduled</a>
+          <a href="{{ setStatusUrl }}scheduled{{ fragmentQuery }}" data-fragment-action>Change to scheduled</a>
         </p>
       {% elseif appointment.status == "scheduled" %}
         <p class="nhsuk-u-margin-top-2 nhsuk-u-margin-bottom-0">
-          <a href="{{ setStatusUrl }}checked_in" data-fragment-action>Change to checked in</a>
+          <a href="{{ setStatusUrl }}checked_in{{ fragmentQuery }}" data-fragment-action>Change to checked in</a>
         </p>
       {% endif %}
     </td>
+
+    {% if showCompleted %}
+      {{ clinicCompletedCell(appointment) }}
+    {% endif %}
+
     <td class="nhsuk-table__cell">
       {# Undoing attended not screened or rescheduled also clears the recorded details #}
       {% if appointment | isInProgress %}
@@ -54,11 +71,11 @@
           href: reasonUrl
         } | openInModal) }}
       {% elseif appointment.status == "scheduled" %}
-        <a href="{{ setStatusUrl }}did_not_attend" data-fragment-action>Mark as did not attend</a>
+        <a href="{{ setStatusUrl }}did_not_attend{{ fragmentQuery }}" data-fragment-action>Mark as did not attend</a>
       {% elseif appointment.status == "did_not_attend" %}
-        <a href="{{ setStatusUrl }}scheduled" data-fragment-action>Undo status</a>
+        <a href="{{ setStatusUrl }}scheduled{{ fragmentQuery }}" data-fragment-action>Undo status</a>
       {% elseif appointment.status == "attended_not_screened" or (appointment.status == "rescheduled" and appointment | hasStoppedDetails) %}
-        <a href="{{ setStatusUrl }}checked_in" data-fragment-action>Undo status</a>
+        <a href="{{ setStatusUrl }}checked_in{{ fragmentQuery }}" data-fragment-action>Undo status</a>
         <br>{{ link({
           text: "Change details",
           href: reasonUrl

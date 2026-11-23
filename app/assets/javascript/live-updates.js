@@ -77,7 +77,7 @@ const showBanner = () => {
 const refreshRegions = async (regions, options = {}) => {
   try {
     const response = await window.fetch(window.location.href, {
-      headers: { Accept: 'text/html' }
+      headers: { 'Accept': 'text/html', 'X-Live-Update': '1' }
     })
     if (!response.ok) throw new Error(`Request failed: ${response.status}`)
 

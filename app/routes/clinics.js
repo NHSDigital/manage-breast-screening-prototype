@@ -248,8 +248,38 @@ module.exports = (router) => {
     const data = req.session.data
     const { appointments, unit } = getClinicData(data, req.params.clinicId)
 
-    // Discard stop reasons from a flow abandoned before the reschedule step
-    delete data.closeReasonForm
+    // An in-place Actions refresh must not discard answers in an open modal
+    if (req.query._actions !== '1' && req.get('X-Live-Update') !== '1') {
+      delete data.closeReasonForm
+    }
+
+    // Get outcomeRecordedAppointments before sorting
+    let outcomeRecordedAppointments = appointments.filter((a) => isFinal(a))
+
+    // Handle sorting for completed appointments
+    const sort = ['completed-ascending', 'completed-descending'].includes(
+      req.query.sort
+    )
+      ? req.query.sort
+      : 'completed-ascending'
+    if (sort && outcomeRecordedAppointments.length > 0) {
+      const sortDescending = sort.endsWith('descending')
+      if (sort.startsWith('completed')) {
+        outcomeRecordedAppointments = [...outcomeRecordedAppointments].sort(
+          (a, b) => {
+            const timeA = getCompletedTime(a)
+            const timeB = getCompletedTime(b)
+            if (!timeA && !timeB) return 0
+            if (!timeA) return 1
+            if (!timeB) return -1
+            const diff =
+              new Date(timeA) - new Date(timeB) ||
+              (a.screeningOrder ?? 0) - (b.screeningOrder ?? 0)
+            return sortDescending ? -diff : diff
+          }
+        )
+      }
+    }
 
     res.render('clinics/close', {
       unit,
@@ -261,7 +291,8 @@ module.exports = (router) => {
       scheduledAppointments: appointments.filter(
         (a) => a.status === 'scheduled'
       ),
-      outcomeRecordedAppointments: appointments.filter((a) => isFinal(a))
+      outcomeRecordedAppointments: outcomeRecordedAppointments,
+      sort: sort
     })
   })
 

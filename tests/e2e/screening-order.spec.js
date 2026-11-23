@@ -8,7 +8,8 @@ const {
 const {
   wasAttended,
   getCompletedTime,
-  getSimulatedNow
+  getSimulatedNow,
+  resetSimulatedClock
 } = require('../../app/lib/utils/status')
 const {
   getAppointmentRunByIds
@@ -121,6 +122,23 @@ test('the simulated clinic clock advances for live appointment durations', () =>
     expect(end.diff(start, 'minute')).toBe(5)
   } finally {
     Date.now = realNow
+  }
+})
+
+test('the simulated clinic clock advances across midnight and resets with seed data', () => {
+  const realNow = Date.now
+  try {
+    const beforeMidnight = new Date(2026, 0, 1, 23, 59).getTime()
+    Date.now = () => beforeMidnight
+    resetSimulatedClock()
+    const start = getSimulatedNow()
+    Date.now = () => beforeMidnight + 2 * 60 * 1000
+    expect(getSimulatedNow().diff(start, 'minute')).toBe(2)
+    resetSimulatedClock()
+    expect(getSimulatedNow().format('YYYY-MM-DD')).toBe('2026-01-02')
+  } finally {
+    Date.now = realNow
+    resetSimulatedClock()
   }
 })
 

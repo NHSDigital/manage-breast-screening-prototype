@@ -238,6 +238,29 @@
   }
 }
 
+// The completed close clinic table needs space for names and appointment times
+.app-clinic-appointments-table--flush.app-clinic-appointments-table--with-completed {
+  .app-clinic-appointments-table__time-column {
+    width: 13%;
+  }
+
+  .app-clinic-appointments-table__details-column {
+    width: 25%;
+  }
+
+  .app-clinic-appointments-table__status-column {
+    width: 16%;
+  }
+
+  .app-clinic-appointments-table__completed-column {
+    width: 21%;
+  }
+
+  .app-clinic-appointments-table__actions-column {
+    width: 25%;
+  }
+}
+
 // Flush variant - sits at the bottom of a card, which provides the spacing,
 // so drop the final row border
 .app-clinic-appointments-table--flush .nhsuk-table__body tr:last-child .nhsuk-table__cell {
