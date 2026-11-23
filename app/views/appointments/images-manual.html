@@ -218,6 +218,28 @@
 
   {% include "_includes/medical-information/symptoms-and-breast-features-expander.njk" %}
 
+  {% set raiseIssueUrl = getRaiseIssueUrl({
+    appointment: appointment,
+    episode: episode,
+    participant: participant
+  }, "appointment") %}
+
+  {% if raiseIssueUrl %}
+    <div class="nhsuk-card">
+      <div class="nhsuk-card__content">
+        <h2>Is there a problem with imaging?</h2>
+        <p>
+          {{ link({
+            text: "Raise an issue",
+            href: raiseIssueUrl | urlWithReferrer(referrerChain | appendReferrer(currentUrl)),
+            classes: "nhsuk-link--no-visited-state"
+          } | openInModal) | trim | safe }}
+          then either continue or end this appointment.
+        </p>
+      </div>
+    </div>
+  {% endif %}
+
   {# The workflow side navigation has its own raise link #}
   {% if not isAppointmentWorkflow %}
     {{ raiseIssueLink("appointment", {
