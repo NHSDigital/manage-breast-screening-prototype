@@ -5,6 +5,7 @@ const dayjs = require('dayjs')
 const config = require('../../config')
 const dataStore = require('../data-store')
 const { recordChange } = require('../shared-data')
+const { wasAttended, getCompletedTime } = require('./status')
 
 /**
  * Get a clinic by ID
@@ -98,62 +99,20 @@ const getClinicAppointments = (appointments, clinicId) => {
 }
 
 /**
- * The next order-of-screening number for a clinic: one more than the highest
- * already assigned, or 1 if none. Numbers are never reused, so a removed or
- * changed appointment leaves a gap rather than renumbering the rest.
+ * Attended appointments in the order they reached a final outcome.
  *
- * @param {object} data - Session data
- * @param {string} clinicId - Clinic ID
- * @returns {number} The next screening order number
+ * @param {Array} appointments - Appointments from one clinic
+ * @returns {Array} Attended appointments sorted by completion time
  */
-const getNextScreeningOrder = (data, clinicId) => {
-  const clinicAppointments = getClinicAppointments(data.appointments, clinicId)
-  const highest = clinicAppointments.reduce((max, appointment) => {
-    const order = appointment.screeningOrder
-    return typeof order === 'number' && order > max ? order : max
-  }, 0)
-  return highest + 1
-}
-
-/**
- * Calculate screening order based on completion time (endedAt) for appointments
- * that were attended. This ensures the order reflects when they actually
- * completed, not when their status was updated. For use when assigning order
- * to attended_not_screened appointments that already have endedAt times.
- *
- * @param {object} data - Session data
- * @param {string} clinicId - Clinic ID
- * @param {string} appointmentId - The appointment to assign order to
- * @returns {number} The screening order based on completion time
- */
-const getScreeningOrderByCompletionTime = (data, clinicId, appointmentId) => {
-  const clinicAppointments = getClinicAppointments(data.appointments, clinicId)
-  const targetAppointment = clinicAppointments.find(a => a.id === appointmentId)
-
-  if (!targetAppointment?.sessionDetails?.endedAt) {
-    return getNextScreeningOrder(data, clinicId)
-  }
-
-  const targetEndTime = new Date(targetAppointment.sessionDetails.endedAt)
-
-  // Count how many appointments ended before this one (and have screening order)
-  const appointmentsBefore = clinicAppointments.filter(appointment => {
-    if (!appointment.sessionDetails?.endedAt) return false
-    if (appointment.id === appointmentId) return false
-    if (typeof appointment.screeningOrder !== 'number') return false
-
-    const endTime = new Date(appointment.sessionDetails.endedAt)
-    return endTime < targetEndTime
+const getAppointmentsInScreeningOrder = (appointments) => {
+  return appointments.filter(wasAttended).sort((a, b) => {
+    const difference =
+      new Date(getCompletedTime(a)) - new Date(getCompletedTime(b))
+    return (
+      difference ||
+      (a.screeningOrder ?? Infinity) - (b.screeningOrder ?? Infinity)
+    )
   })
-
-  if (appointmentsBefore.length === 0) {
-    // No earlier appointments - take the highest order and add 1
-    return getNextScreeningOrder(data, clinicId)
-  }
-
-  // Find the highest order among appointments before this one
-  const highestBefore = Math.max(...appointmentsBefore.map(a => a.screeningOrder))
-  return highestBefore + 1
 }
 
 /**
@@ -299,8 +258,7 @@ module.exports = {
   getTodaysClinics,
   getFilteredClinics,
   getClinicAppointments,
-  getNextScreeningOrder,
-  getScreeningOrderByCompletionTime,
+  getAppointmentsInScreeningOrder,
   getClinicTableColumns,
   formatTimeSlot,
   getClinicHours,
