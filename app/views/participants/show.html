@@ -70,6 +70,30 @@
         </a>
       {% endset %}
 
+      {% set screenedDate = currentEpisode | getEpisodeMammogramDate %}
+
+      {% if screenedDate %}
+        {% set appointmentRows = [
+          {
+            key: { text: "Screened" },
+            value: { text: screenedDate | formatDate }
+          }
+        ] %}
+        {% if nextAppointment %}
+          {% set appointmentRows = appointmentRows | push({
+            key: { text: "Next appointment" },
+            value: { text: nextAppointment.timing.startTime | formatDate }
+          }) %}
+        {% endif %}
+      {% else %}
+        {% set appointmentRows = [
+          {
+            key: { text: "Screening scheduled" },
+            value: { html: (nextAppointment.timing.startTime | formatDate) if nextAppointment else ("None booked" | asHint) }
+          }
+        ] %}
+      {% endif %}
+
       <h3 class="nhsuk-heading-s">Current episode</h3>
 
       {{ summaryList({
@@ -88,12 +112,8 @@
           {
             key: { text: "Opened" },
             value: { text: currentEpisode.openedDate | formatDate }
-          },
-          {
-            key: { text: "Next appointment" },
-            value: { text: nextAppointment.timing.startTime | formatDate if nextAppointment else "None booked" }
           }
-        ]
+        ].concat(appointmentRows)
       }) }}
 
       <h3 class="nhsuk-heading-s">Previous episodes</h3>
