@@ -113,6 +113,8 @@ const defaultSettings = {
     showRemaining: 'true',
     autoOpenPacsViewer: 'false',
     pacsScreens: 'two', // 'two' (a window per monitor) | 'one' (one landscape window)
+    pacsPriorsLayout: 'side', // 'side' (current on screen 1, prior on screen 2) | 'top' (prior above current)
+    pacsCurrentLayout: 'by-breast', // 'by-breast' (a breast per screen) | 'by-view' (CCs on one screen, MLOs on the other)
     enableOpinionDelay: 'true',
     annotationsMode: 'with-images-simple', // 'without-images' | 'with-images-simple' | 'with-images' | 'with-images-progressive'
     secondReaderComparison: 'off', // 'early' | 'late' | 'off'
