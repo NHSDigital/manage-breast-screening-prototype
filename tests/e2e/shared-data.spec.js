@@ -85,7 +85,7 @@ test.describe('Shared data', () => {
         .click()
 
       if (initialCount === 1) {
-        await expect(message.locator('.nhsuk-inset-text')).toHaveCount(0)
+        await expect(message).toHaveCount(0)
         await expect(
           otherBrowser.page.getByRole('button', {
             name: 'Confirm and close clinic'

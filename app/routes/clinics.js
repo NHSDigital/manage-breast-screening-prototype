@@ -97,10 +97,12 @@ const STOPPABLE_STATUSES = [
  * the status leaves no stale reason behind
  */
 const clearStoppedDetails = (data, appointmentId) => {
-  updateAppointmentData(data, appointmentId, {
-    appointmentStopped: null,
-    reschedule: null
-  })
+  updateAppointmentData(
+    data,
+    appointmentId,
+    { appointmentStopped: null, reschedule: null },
+    { useSavedAppointment: true }
+  )
 }
 
 module.exports = (router) => {
@@ -186,7 +188,9 @@ module.exports = (router) => {
     }
 
     // Update the appointment
-    updateAppointmentStatus(data, appointmentId, 'checked_in')
+    updateAppointmentStatus(data, appointmentId, 'checked_in', {
+      useSavedAppointment: true
+    })
 
     // Save back to session
     req.session.data = data
@@ -330,7 +334,9 @@ module.exports = (router) => {
       }
 
       const data = req.session.data
-      updateAppointmentStatus(data, appointmentId, status)
+      updateAppointmentStatus(data, appointmentId, status, {
+        useSavedAppointment: true
+      })
 
       // Back to checked in undoes attended not screened or rescheduled
       if (status === 'checked_in') {
@@ -435,16 +441,20 @@ module.exports = (router) => {
 
       // Save the whole form rather than maintaining a field list here. Clear any
       // reschedule answers from an earlier 'yes'.
-      updateAppointmentData(data, appointmentId, {
-        appointmentStopped: { ...formData },
-        reschedule: null
-      })
+      updateAppointmentData(
+        data,
+        appointmentId,
+        { appointmentStopped: { ...formData }, reschedule: null },
+        { useSavedAppointment: true }
+      )
       delete data.closeReasonForm
 
       // Skip when already in that status, so editing the details doesn't add a
       // redundant status history entry
       if (res.locals.appointment.status !== 'attended_not_screened') {
-        updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
+        updateAppointmentStatus(data, appointmentId, 'attended_not_screened', {
+          useSavedAppointment: true
+        })
       }
 
       // In modal context reply with an empty success, so the modal closes and
@@ -514,12 +524,19 @@ module.exports = (router) => {
         )
       }
 
-      updateAppointmentData(data, appointmentId, {
-        appointmentStopped: { ...stoppedAnswers },
-        reschedule: { ...formData }
-      })
+      updateAppointmentData(
+        data,
+        appointmentId,
+        {
+          appointmentStopped: { ...stoppedAnswers },
+          reschedule: { ...formData }
+        },
+        { useSavedAppointment: true }
+      )
       if (res.locals.appointment.status !== 'rescheduled') {
-        updateAppointmentStatus(data, appointmentId, 'rescheduled')
+        updateAppointmentStatus(data, appointmentId, 'rescheduled', {
+          useSavedAppointment: true
+        })
       }
 
       delete data.closeReasonForm

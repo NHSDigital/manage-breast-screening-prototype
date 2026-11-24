@@ -22,20 +22,6 @@
   <p class="nhsuk-body-m nhsuk-u-margin-bottom-1">{{ clinic.date | formatDate("dddd D MMMM YYYY") }}</p>
   <p class="nhsuk-u-secondary-text-colour nhsuk-body-m nhsuk-u-margin-bottom-4">{{ clinic.sessionTimes | formatTimeRange }}</p>
 
-  <div id="close-clinic-outstanding" data-live-region data-live-ids="{{ clinicId }}" data-live-fields="appointments.status">
-    {% if needsOutcomeCount %}
-      {% set introHtml %}
-        {% if needsOutcomeCount == 1 %}
-          <p>1 appointment needs a completed status before this clinic can be closed.</p>
-        {% else %}
-          <p>{{ needsOutcomeCount }} appointments need a completed status before this clinic can be closed.</p>
-        {% endif %}
-      {% endset %}
-      {{ insetText({
-        html: introHtml
-      }) }}
-    {% endif %}
-  </div>
   <div id="close-clinic-status" class="nhsuk-u-visually-hidden" role="status"></div>
 
   {# Table of appointments in one status group #}
@@ -134,7 +120,7 @@
 
   <div class="app-clinic-layout__sticky-footer">
     <div class="nhsuk-grid-row">
-      <div class="nhsuk-grid-column-two-thirds">
+      <div class="nhsuk-grid-column-full">
         <div id="close-clinic-actions" data-live-region data-live-ids="{{ clinicId }}" data-live-fields="appointments.status">
           <form method="post" action="/clinics/{{ clinicId }}/close">
             <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
@@ -143,9 +129,19 @@
                 disabled: true if needsOutcomeCount else false
               }) }}
               <a href="/clinics/{{ clinicId }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+              {% if needsOutcomeCount %}
+                <span id="close-clinic-outstanding" class="nhsuk-body-m">
+                  {% if needsOutcomeCount == 1 %}
+                    <strong>1 appointment</strong> needs a completed status before this clinic can be closed
+                  {% else %}
+                    <strong>{{ needsOutcomeCount }} appointments</strong> need a completed status before this clinic can be closed
+                  {% endif %}
+                </span>
+              {% endif %}
             </div>
           </form>
         </div>
+        <p id="close-clinic-refresh-error" role="alert" hidden>Could not update the clinic actions. <a href="">Refresh the page</a> to try again.</p>
       </div>
     </div>
   </div>

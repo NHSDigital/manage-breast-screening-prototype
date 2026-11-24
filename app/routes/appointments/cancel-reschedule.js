@@ -11,7 +11,8 @@ const {
 } = require('../../lib/utils/participants')
 const {
   getAppointment,
-  saveTempAppointmentToAppointment
+  saveTempAppointmentToAppointment,
+  updateAppointmentData
 } = require('../../lib/utils/appointment-data')
 const {
   updateAppointmentStatus
@@ -176,6 +177,8 @@ module.exports = (router) => {
 
         // Revert to scheduled status
         updateAppointmentStatus(data, appointmentId, 'scheduled')
+
+        updateAppointmentData(data, appointmentId, { appointmentStopped: null })
 
         req.flash('success', 'Appointment cancellation undone')
       }

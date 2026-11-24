@@ -82,6 +82,44 @@ test('numbers attended outcomes by completion time and closes gaps after undo', 
   expect(get('second').screeningOrder).toBe(3)
 })
 
+test('clinic actions use the saved appointment when a working copy is stale', () => {
+  const first = {
+    id: 'stale-first',
+    clinicId: 'stale-clinic',
+    status: 'attended_not_screened',
+    statusHistory: [],
+    sessionDetails: { endedAt: '2020-01-01T09:00:00Z' },
+    screeningOrder: 1
+  }
+  const second = {
+    id: 'stale-second',
+    clinicId: 'stale-clinic',
+    status: 'complete',
+    statusHistory: [],
+    sessionDetails: { endedAt: '2020-01-01T09:10:00Z' },
+    screeningOrder: 2
+  }
+  const data = {
+    _changes: { appointments: {} },
+    appointments: [first, second],
+    appointment: {
+      ...first,
+      status: 'checked_in',
+      sessionDetails: {},
+      draft: 'unsaved'
+    }
+  }
+
+  updateAppointmentStatus(data, first.id, 'checked_in', {
+    useSavedAppointment: true
+  })
+
+  expect(data.appointments[0].screeningOrder).toBeNull()
+  expect(data.appointments[1].screeningOrder).toBe(1)
+  expect(data.appointments[0].draft).toBeUndefined()
+  expect(data.appointment.draft).toBe('unsaved')
+})
+
 test('programme status follows the current or latest screening episode', () => {
   const first = {
     id: 'screening-status-first',
@@ -177,6 +215,25 @@ test('a stopped appointment rescheduled before screening is numbered', async ({
       '.app-clinic-appointments-table__completed-column .nhsapp-badge'
     )
   ).toHaveCount(1)
+
+  const appointmentUrl = `${clinicUrl}/appointments/${appointment.id}`
+  await page.goto(`${appointmentUrl}/undo-reschedule`)
+  await page.request.post(
+    `${appointmentUrl}/cancel-or-reschedule-appointment/reschedule-answer`,
+    {
+      form: { 'appointment[reschedule][timing]': 'within-6-weeks' }
+    }
+  )
+  await page.goto(`${clinicUrl}/complete?sort=completed-ascending`)
+  const rescheduledRow = page.locator(
+    `tr[data-fragment-id="${appointment.id}"]`
+  )
+  await expect(
+    rescheduledRow.locator(
+      '.app-clinic-appointments-table__completed-column .nhsapp-badge'
+    )
+  ).toHaveCount(0)
+  await expect(rescheduledRow).not.toContainText('Consent withdrawn')
 })
 
 test('orders outcomes completed at the same simulated time', async ({

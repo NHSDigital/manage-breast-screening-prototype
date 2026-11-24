@@ -19,8 +19,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const clinicId = container.dataset.clinicId
 
   const actions = document.getElementById('close-clinic-actions')
-  const outstanding = document.getElementById('close-clinic-outstanding')
   const status = document.getElementById('close-clinic-status')
+  const refreshError = document.getElementById('close-clinic-refresh-error')
   const stickyFooter = document.querySelector(
     '.app-clinic-layout__sticky-footer'
   )
@@ -44,7 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
   const stickyResizeObserver = new ResizeObserver(updateStickyFooter)
   stickyResizeObserver.observe(stickyFooter)
   stickyResizeObserver.observe(container)
-  stickyResizeObserver.observe(outstanding)
   updateStickyFooter()
 
   // Counts in the table card headings aren't updated in place
@@ -55,16 +54,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
   const announceOutcome = () => {
     status.textContent =
-      outstanding.querySelector('p')?.textContent.trim() ||
+      actions.querySelector('#close-clinic-outstanding')?.textContent.trim() ||
       'All appointments have a completed status. You can now close the clinic.'
   }
-  outstanding.addEventListener('fragment:swapped', announceOutcome)
+  actions.addEventListener('fragment:swapped', announceOutcome)
 
   // Read the latest outcome count from the server after a status change
   const refreshActions = async () => {
     const request = ++latestActionsRequest
     const actionsVersion = beginRegionRefresh(actions)
-    const outstandingVersion = beginRegionRefresh(outstanding)
     const button = actions.querySelector('button')
     if (button) button.disabled = true
 
@@ -76,29 +74,49 @@ document.addEventListener('DOMContentLoaded', () => {
       const html = await response.text()
       const freshPage = new DOMParser().parseFromString(html, 'text/html')
       const freshActions = freshPage.getElementById('close-clinic-actions')
-      const freshOutstanding = freshPage.getElementById(
-        'close-clinic-outstanding'
-      )
-      if (!freshActions || !freshOutstanding) {
-        throw new Error(
-          'Close clinic actions or outcome message missing from response'
-        )
-      }
+      if (!freshActions)
+        throw new Error('Close clinic actions missing from response')
       if (request === latestActionsRequest) {
         if (isCurrentRegionRefresh(actions, actionsVersion)) {
+          const freshRows = new Map(
+            [...freshPage.querySelectorAll('tr[data-fragment-id]')].map(
+              (row) => [row.dataset.fragmentId, row]
+            )
+          )
+          for (const row of container.querySelectorAll(
+            'tr[data-fragment-id]'
+          )) {
+            const completed = row.querySelector(
+              '.app-clinic-appointments-table__completed-column'
+            )
+            const freshCompleted = freshRows
+              .get(row.dataset.fragmentId)
+              ?.querySelector(
+                '.app-clinic-appointments-table__completed-column'
+              )
+            if (completed && freshCompleted) {
+              Idiomorph.morph(completed, freshCompleted.children, {
+                morphStyle: 'innerHTML'
+              })
+            }
+          }
           Idiomorph.morph(actions, freshActions.children, {
             morphStyle: 'innerHTML',
             ignoreActiveValue: true
           })
-        }
-        if (isCurrentRegionRefresh(outstanding, outstandingVersion)) {
-          outstanding.replaceChildren(...freshOutstanding.childNodes)
+          refreshError.hidden = true
           announceOutcome()
         }
       }
     } catch (error) {
       console.error('Could not update close clinic actions:', error)
-      showRefreshNotice()
+      if (
+        request === latestActionsRequest &&
+        isCurrentRegionRefresh(actions, actionsVersion)
+      ) {
+        refreshError.hidden = false
+        showRefreshNotice()
+      }
     }
   }
 

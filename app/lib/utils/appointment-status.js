@@ -34,13 +34,22 @@ const {
  * @param {object} data - Session data
  * @param {string} appointmentId - Appointment ID
  * @param {string} newStatus - New status
+ * @param {object} [options] - Update options
+ * @param {boolean} [options.useSavedAppointment=false] - Use the saved record rather than the working copy
  * @returns {object | null} Updated appointment or null if not found
  */
-const updateAppointmentStatus = (data, appointmentId, newStatus) => {
+const updateAppointmentStatus = (
+  data,
+  appointmentId,
+  newStatus,
+  options = {}
+) => {
   // Use temp appointment if it exists and matches, so unsaved status-relevant
   // history isn't lost
   const baseAppointment =
-    data.appointment && data.appointment.id === appointmentId
+    !options.useSavedAppointment &&
+    data.appointment &&
+    data.appointment.id === appointmentId
       ? data.appointment
       : getAppointment(data, appointmentId)
   if (!baseAppointment) return null
@@ -80,7 +89,12 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
     updates.screeningOrder = null
   }
 
-  let updatedAppointment = updateAppointmentData(data, appointmentId, updates)
+  let updatedAppointment = updateAppointmentData(
+    data,
+    appointmentId,
+    updates,
+    options
+  )
   if (!updatedAppointment) return null
 
   if (wasPreviouslyAttended || isNowAttended) {

@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-23 14:40 UTC
+- **Generated:** 2026-11-24 17:41 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -209,9 +209,9 @@ Appointment lookups and mutations in session data. Includes the temp appointment
 | `getAppointment(data, appointmentId)` | Get an appointment by ID | 22 |
 | `getAppointmentData(data, clinicId, appointmentId)` | Get appointment data bundle for a given clinic and appointment ID | 44 |
 | `updateAppointment(data, appointmentId, updatedAppointment)` | Find and update an appointment in session data | 68 |
-| `updateAppointmentData(data, appointmentId, updates)` | Update appointment with arbitrary data changes | 89 |
-| `saveTempAppointmentToAppointment(data)` | Save temporary appointment data back to the main appointment | 131 |
-| `getStoppedReasons()` | Reasons an appointment can be stopped (attended not screened), each with | 161 |
+| `updateAppointmentData(data, appointmentId, updates, [options], [options.useSavedAppointment])` | Update appointment with arbitrary data changes | 89 |
+| `saveTempAppointmentToAppointment(data)` | Save temporary appointment data back to the main appointment | 135 |
+| `getStoppedReasons()` | Reasons an appointment can be stopped (attended not screened), each with | 165 |
 
 ### episodes.js
 

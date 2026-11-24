@@ -46,6 +46,11 @@ test('sticky clinic actions show a shadow only while stuck', async ({
   const footer = page.locator('.app-clinic-layout__sticky-footer')
   const stuckClass = /app-clinic-layout__sticky-footer--stuck/
   await expect(footer).toHaveClass(stuckClass)
+  const message = footer.locator('#close-clinic-outstanding')
+  await expect(message).toHaveText(
+    /^\s*\d+ appointments? needs? a completed status before this clinic can be closed\s*$/
+  )
+  await expect(message.locator('strong')).toHaveText(/^\d+ appointments?$/)
 
   for (const width of [1400, 375]) {
     await page.setViewportSize({ width, height: 900 })
@@ -86,11 +91,7 @@ test('close clinic actions update when an appointment outcome is undone and rest
   const closeButton = actions.getByRole('button', {
     name: 'Confirm and close clinic'
   })
-  const message = page
-    .locator('#close-clinic-outstanding')
-    .getByText(
-      '1 appointment needs a completed status before this clinic can be closed.'
-    )
+  const message = page.locator('#close-clinic-outstanding')
   const row = page.locator(`tr[data-fragment-id="${appointment.id}"]`)
 
   await expect(actions.locator('.nhsuk-inset-text')).toHaveCount(0)
@@ -99,12 +100,17 @@ test('close clinic actions update when an appointment outcome is undone and rest
   await expect(row.locator('td')).toHaveCount(5)
   await row.getByRole('link', { name: 'Undo status' }).click()
   await expect(message).toBeVisible()
+  await expect(message).toHaveText(
+    '1 appointment needs a completed status before this clinic can be closed'
+  )
+  await expect(message.locator('strong')).toHaveText('1 appointment')
+  await expect(
+    actions.locator('.nhsuk-button-group #close-clinic-outstanding')
+  ).toHaveCount(1)
   await expect(page.locator('#close-clinic-status')).toContainText(
     '1 appointment needs a completed status'
   )
-  await expect(
-    page.locator('#close-clinic-outstanding .nhsuk-inset-text')
-  ).toHaveCount(1)
+  await expect(page.locator('#close-clinic-outstanding')).toBeVisible()
   await expect(closeButton).toBeDisabled()
   await expect(row.locator('td')).toHaveCount(5)
 
@@ -148,6 +154,74 @@ test('refreshing close clinic actions preserves keyboard focus', async ({
     '1 appointment needs a completed status'
   )
   await expect(cancel).toBeFocused()
+})
+
+test('undoing an attended outcome updates the other completion numbers', async ({
+  page
+}) => {
+  const appointments = readCollection('appointments.json', 'appointments')
+  const { clinic, appointment: first } = findTodayAppointment({
+    status: 'scheduled'
+  })
+  const second = appointments.find(
+    (appointment) =>
+      appointment.clinicId === clinic.id &&
+      appointment.status === 'scheduled' &&
+      appointment.id !== first.id
+  )
+  if (!second) {
+    throw new Error(
+      'Seed data has no second scheduled appointment in the clinic.'
+    )
+  }
+  const clinicUrl = `/clinics/${clinic.id}`
+  for (const appointment of [first, second]) {
+    await page.goto(`${clinicUrl}/check-in/${appointment.id}`)
+    await page.goto(`${clinicUrl}/close/reason/${appointment.id}`)
+    const field = `closeReasonForm[${appointment.id}]`
+    const response = await page.request.post(
+      `${clinicUrl}/close/reason/${appointment.id}`,
+      {
+        form: {
+          [`${field}[stoppedReason]`]: 'Consent withdrawn',
+          [`${field}[needsReschedule]`]: 'no-invite'
+        }
+      }
+    )
+    expect(response.ok()).toBeTruthy()
+  }
+  await page.goto(`${clinicUrl}/close`)
+  const nextBadge = page
+    .locator(`tr[data-fragment-id="${second.id}"]`)
+    .locator('.app-clinic-appointments-table__completed-column .nhsapp-badge')
+  const previousOrder = Number(
+    await nextBadge.locator('[aria-hidden]').innerText()
+  )
+  expect(previousOrder).toBeGreaterThan(1)
+  await page
+    .locator(`tr[data-fragment-id="${first.id}"]`)
+    .getByRole('link', { name: 'Undo status' })
+    .click()
+  await expect(nextBadge.locator('[aria-hidden]')).toHaveText(
+    String(previousOrder - 1)
+  )
+})
+
+test('a failed actions refresh offers a visible way to reload', async ({
+  page
+}) => {
+  const { clinic, appointment } = findCompletedClinic()
+  await page.goto(`/clinics/${clinic.id}/close`)
+  await page.route('**/close?_actions=1', (route) => route.abort())
+  await page
+    .locator(`tr[data-fragment-id="${appointment.id}"]`)
+    .getByRole('link', { name: 'Undo status' })
+    .click()
+  const error = page.locator('#close-clinic-refresh-error')
+  await expect(error).toBeVisible()
+  await expect(
+    error.getByRole('link', { name: 'Refresh the page' })
+  ).toBeVisible()
 })
 
 test('refreshing Actions preserves a reschedule draft', async ({ page }) => {
@@ -240,13 +314,9 @@ test.describe('without JavaScript', () => {
       .getByRole('link', { name: 'Undo status' })
       .click()
     await expect(closeButton).toBeDisabled()
-    await expect(
-      page
-        .locator('#close-clinic-outstanding')
-        .getByText(
-          '1 appointment needs a completed status before this clinic can be closed.'
-        )
-    ).toBeVisible()
+    await expect(page.locator('#close-clinic-outstanding')).toHaveText(
+      '1 appointment needs a completed status before this clinic can be closed'
+    )
 
     const response = await page.request.post(`/clinics/${clinic.id}/close`)
     expect(response.url()).toContain(`/clinics/${clinic.id}/close`)
