@@ -19,7 +19,7 @@
           {% if completedOrder %}
             <span class="nhsapp-badge nhsapp-badge--small nhsapp-badge--muted app-nowrap nhsuk-u-margin-right-1">
               <span aria-hidden="true">{{ completedOrder }}</span>
-              <span class="nhsuk-u-visually-hidden">{{ completedOrder | getOrdinalNumber }} in order of screening</span>
+              <span class="nhsuk-u-visually-hidden">{{ completedOrder | getOrdinalNumber }} in order of completion</span>
             </span>
           {% endif %}
           {% if completedByName %}

@@ -244,12 +244,14 @@ module.exports = (router) => {
   }
 
   // Close clinic page
-  router.get('/clinics/:clinicId/close', (req, res) => {
+  router.get('/clinics/:clinicId/close', (req, res, next) => {
     const data = req.session.data
     const { appointments, unit } = getClinicData(data, req.params.clinicId)
+    const isBackgroundRefresh =
+      req.query._actions === '1' || req.get('X-Live-Update') === '1'
 
     // An in-place Actions refresh must not discard answers in an open modal
-    if (req.query._actions !== '1' && req.get('X-Live-Update') !== '1') {
+    if (!isBackgroundRefresh) {
       delete data.closeReasonForm
     }
 
@@ -281,7 +283,7 @@ module.exports = (router) => {
       }
     }
 
-    res.render('clinics/close', {
+    const viewData = {
       unit,
       needsOutcomeCount: appointments.filter((a) => !isFinal(a)).length,
       inProgressAppointments: appointments.filter((a) => isInProgress(a)),
@@ -293,7 +295,25 @@ module.exports = (router) => {
       ),
       outcomeRecordedAppointments: outcomeRecordedAppointments,
       sort: sort
-    })
+    }
+
+    if (isBackgroundRefresh) {
+      // Avoid res.render's flash middleware consuming errors meant for a form.
+      const descriptors = Object.getOwnPropertyDescriptors(res.locals)
+      delete descriptors.flash
+      delete descriptors.messages
+      const locals = Object.defineProperties({}, descriptors)
+      return req.app.render(
+        'clinics/close',
+        { ...locals, ...viewData, flash: {} },
+        (error, html) => {
+          if (error) return next(error)
+          res.send(html)
+        }
+      )
+    }
+
+    res.render('clinics/close', viewData)
   })
 
   // Change one appointment's outcome from the close page. GET so the actions

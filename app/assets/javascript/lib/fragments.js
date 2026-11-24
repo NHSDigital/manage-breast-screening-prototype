@@ -9,6 +9,16 @@ export const fetchOptions = {
   headers: { 'X-Requested-With': 'XMLHttpRequest' }
 }
 
+// Shared by separately bundled entry points through the region itself.
+export const beginRegionRefresh = (region) => {
+  const version = Number(region.dataset.refreshVersion || 0) + 1
+  region.dataset.refreshVersion = version
+  return version
+}
+
+export const isCurrentRegionRefresh = (region, version) =>
+  Number(region.dataset.refreshVersion) === version
+
 // Swap target for the fragment contained in html, verifying the ids match
 // so an unexpected response (eg a redirect to a full page) never gets
 // injected into the table

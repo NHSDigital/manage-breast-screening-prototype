@@ -189,9 +189,9 @@
     {% endif %}
 
     {# Time completed - when the appointment ended (see getCompletedTime), then
-       the screening order badge and who it was, on the Complete and All tabs.
+       the completion order badge and who it was, on the Complete and All tabs.
        Attended appointments (see wasAttended) show their place in the order
-       of screening and who screened them; one cancelled before it started
+       of completion and who screened them; one cancelled before it started
        shows who cancelled it. The time sits on its own line above them. #}
     {% if columns.completed %}
       {{ clinicCompletedCell(appointment) }}

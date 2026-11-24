@@ -22,6 +22,22 @@
   <p class="nhsuk-body-m nhsuk-u-margin-bottom-1">{{ clinic.date | formatDate("dddd D MMMM YYYY") }}</p>
   <p class="nhsuk-u-secondary-text-colour nhsuk-body-m nhsuk-u-margin-bottom-4">{{ clinic.sessionTimes | formatTimeRange }}</p>
 
+  <div id="close-clinic-outstanding" data-live-region data-live-ids="{{ clinicId }}" data-live-fields="appointments.status">
+    {% if needsOutcomeCount %}
+      {% set introHtml %}
+        {% if needsOutcomeCount == 1 %}
+          <p>1 appointment needs a completed status before this clinic can be closed.</p>
+        {% else %}
+          <p>{{ needsOutcomeCount }} appointments need a completed status before this clinic can be closed.</p>
+        {% endif %}
+      {% endset %}
+      {{ insetText({
+        html: introHtml
+      }) }}
+    {% endif %}
+  </div>
+  <div id="close-clinic-status" class="nhsuk-u-visually-hidden" role="status"></div>
+
   {# Table of appointments in one status group #}
   {% macro statusGroupTable(appointments, clinicId, isSortable=false, sort="") %}
     {% set tableClasses = "nhsuk-table nhsuk-table--compact nhsuk-table--striped app-clinic-appointments-table app-clinic-appointments-table--flush nhsuk-u-margin-bottom-0" %}
@@ -56,8 +72,8 @@
     </table>
   {% endmacro %}
 
-  <div class="nhsuk-grid-row app-clinic-layout__row">
-    <div class="nhsuk-grid-column-two-thirds app-clinic-layout__main">
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-full">
 
       <div id="js-close-clinic-content" data-clinic-id="{{ clinicId }}">
 
@@ -114,43 +130,26 @@
       </div>
 
     </div>
-    <div class="nhsuk-grid-column-one-third app-clinic-layout__sidebar">
-      <div class="app-clinic-layout__sticky" id="close-clinic-actions" data-live-region data-live-ids="{{ clinicId }}" data-live-fields="appointments.status">
-        {% set actionsHtml %}
-          {% if needsOutcomeCount %}
-            {% set introHtml %}
-              {% if needsOutcomeCount == 1 %}
-                <p>1 appointment needs a completed status before this clinic can be closed.</p>
-              {% else %}
-                <p>{{ needsOutcomeCount }} appointments need a completed status before this clinic can be closed.</p>
-              {% endif %}
-            {% endset %}
-            {{ insetText({
-              html: introHtml
-            }) }}
-          {% endif %}
-          <form method="post" action="/clinics/{{ clinicId }}/close">
-            {{ button({
-              text: "Confirm and close clinic",
-              disabled: true if needsOutcomeCount else false
-            }) }}
-          </form>
-          <p class="nhsuk-u-margin-bottom-0">
-            <a href="/clinics/{{ clinicId }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
-          </p>
-        {% endset %}
+  </div>
 
-        {{ card({
-          heading: {
-            text: "Actions",
-            level: 2
-          },
-          feature: true,
-          descriptionHtml: actionsHtml
-        }) }}
+  <div class="app-clinic-layout__sticky-footer">
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-two-thirds">
+        <div id="close-clinic-actions" data-live-region data-live-ids="{{ clinicId }}" data-live-fields="appointments.status">
+          <form method="post" action="/clinics/{{ clinicId }}/close">
+            <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+              {{ button({
+                text: "Confirm and close clinic",
+                disabled: true if needsOutcomeCount else false
+              }) }}
+              <a href="/clinics/{{ clinicId }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   </div>
+  <div class="app-clinic-layout__sticky-end" aria-hidden="true"></div>
 
 {% endblock %}
 

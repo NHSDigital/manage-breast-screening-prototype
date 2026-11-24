@@ -26,6 +26,7 @@
 // Without JavaScript nothing here runs, and pages show current data on reload.
 
 import { Idiomorph } from 'idiomorph'
+import { beginRegionRefresh, isCurrentRegionRefresh } from './lib/fragments.js'
 
 // Saving one thing can change several records, so notices arriving close
 // together are handled as one
@@ -75,6 +76,9 @@ const showBanner = () => {
 }
 
 const refreshRegions = async (regions, options = {}) => {
+  const versions = new Map(
+    regions.map((region) => [region, beginRegionRefresh(region)])
+  )
   try {
     const response = await window.fetch(window.location.href, {
       headers: { 'Accept': 'text/html', 'X-Live-Update': '1' }
@@ -86,6 +90,7 @@ const refreshRegions = async (regions, options = {}) => {
     const announcements = []
 
     for (const region of regions) {
+      if (!isCurrentRegionRefresh(region, versions.get(region))) continue
       const freshRegion = region.id
         ? freshDocument.getElementById(region.id)
         : null

@@ -54,6 +54,62 @@ test.describe('Shared data', () => {
   // Both tests change the server-wide mode, so they mustn't overlap
   test.describe.configure({ mode: 'serial' })
 
+  test('close clinic outcome message updates when another browser records an outcome', async ({
+    browser,
+    page
+  }) => {
+    const { clinic, appointment } = findTodayAppointment({
+      status: 'scheduled'
+    })
+    const originalMode = await switchToRoomMode(page)
+    await page.goto(`/clinics/${clinic.id}/close?room=research-1`)
+    const otherBrowser = await openBrowser(browser)
+
+    try {
+      const eventStream = otherBrowser.page.waitForResponse(
+        (response) =>
+          response.url().includes('/shared-data/events') && response.ok()
+      )
+      await otherBrowser.page.goto(
+        `/clinics/${clinic.id}/close?room=research-1`
+      )
+      await eventStream
+      const message = otherBrowser.page.locator('#close-clinic-outstanding')
+      const initialText = await message.innerText()
+      const initialCount = Number(initialText.match(/\d+/)?.[0])
+      expect(initialCount).toBeGreaterThan(0)
+
+      await page
+        .locator(`tr[data-fragment-id="${appointment.id}"]`)
+        .getByRole('link', { name: 'Mark as did not attend' })
+        .click()
+
+      if (initialCount === 1) {
+        await expect(message.locator('.nhsuk-inset-text')).toHaveCount(0)
+        await expect(
+          otherBrowser.page.getByRole('button', {
+            name: 'Confirm and close clinic'
+          })
+        ).toBeEnabled()
+      } else {
+        await expect(message).toContainText(`${initialCount - 1} appointment`)
+      }
+      await expect(
+        otherBrowser.page.locator('#close-clinic-status')
+      ).toContainText(
+        initialCount === 1
+          ? 'All appointments have a completed status'
+          : `${initialCount - 1} appointment`
+      )
+    } finally {
+      await otherBrowser.context.close()
+      await page.request.post('/shared-data/reset')
+      await page.goto(
+        `/settings/shared-data?settings[sharedData][mode]=${originalMode}`
+      )
+    }
+  })
+
   test('a check-in in one browser shows live in another in the same room, and nowhere else', async ({
     browser,
     page
