@@ -591,6 +591,8 @@ for both reading and arbitration, and the global dark-mode preference.
 - `showRemaining` - Show remaining counts
 - `autoOpenPacsViewer` - Auto-open PACS viewer when entering reading workflow (once per session)
 - `pacsScreens` - PACS viewer screens: `'two'` (default, a window per monitor) | `'one'` (one landscape window). See [pacs-viewer.md](pacs-viewer.md#screens)
+- `pacsPriorsLayout` - PACS viewer Priors layout: `'side'` (default, current on screen 1, prior on screen 2) | `'top'` (prior above current). See [pacs-viewer.md](pacs-viewer.md#layouts-hanging-protocol)
+- `pacsCurrentLayout` - PACS viewer Current layout: `'by-breast'` (default, a breast per screen) | `'by-view'` (CCs on one screen, MLOs on the other). See [pacs-viewer.md](pacs-viewer.md#layouts-hanging-protocol)
 - `enableOpinionDelay` - Enforce lockout period before shortcuts/buttons become active
 - `annotationsMode` - Annotation UI variant: `'without-images'` | `'with-images-simple'` (default) | `'with-images'` | `'with-images-progressive'`
 - `secondReaderComparison` - When to show compare page: `'early'` | `'late'` | `'off'` (default)
