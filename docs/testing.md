@@ -27,6 +27,22 @@ starting, so it crashes with a segmentation fault and every journey fails.
 No sandbox setting fixes this, so agents should run `npm run test:journeys`,
 or `npm test`, outside the sandbox and ask for approval to do so.
 
+The sandbox also stops a command sending signals to processes started by any
+other command, including ones from earlier in the session or from a subagent.
+`kill <pid>` fails with "Operation not permitted", and no sandbox setting
+changes this. So an agent that starts a server must stop it from the shell
+that started it, before it finishes: use the agent's own stop tool for that
+shell, not `kill`. A subagent must stop its own servers before it reports
+back, because the parent cannot. For a throwaway server, add an exit timer so
+it stops itself even if it is forgotten:
+
+```sh
+PORT=3020 node --import 'data:text/javascript,setTimeout(()=>process.exit(0),600000).unref()' .
+```
+
+This stops it after 10 minutes. If servers are still left running,
+`npm run kill` stops them, but it must run outside the sandbox.
+
 ## The four layers
 
 **Lint** (`eslint.config.mjs`) exists mainly for `no-undef`. It ignores
