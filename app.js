@@ -1,7 +1,9 @@
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
 
+const nunjucks = require('nunjucks')
 const NHSPrototypeKit = require('nhsuk-prototype-kit')
+const { searchPaths: kitSearchPaths } = require('nhsuk-prototype-kit/config')
 
 // Local dependencies
 const config = require('./app/config')
@@ -59,8 +61,25 @@ async function init() {
     await ignoreRealImagesPack()
   }
 
+  // Our own Nunjucks environment, set up as the kit sets up its default one,
+  // so we control the template cache. The kit's default always sets noCache,
+  // which recompiles every template on every request - most of a page's
+  // render time. Development needs that, because nodemon does not restart on
+  // template edits. Production and the test servers never see an edit, so
+  // they cache. Only compiled templates are cached; every page still renders
+  // with its own request's data.
+  const cacheTemplates =
+    process.env.NODE_ENV === 'production' ||
+    process.env.CACHE_TEMPLATES === 'true'
+  const nunjucksEnv = nunjucks.configure([...viewsPath, ...kitSearchPaths], {
+    noCache: !cacheTemplates,
+    lstripBlocks: true,
+    trimBlocks: true
+  })
+
   const prototype = await NHSPrototypeKit.init({
     serviceName: config.serviceName,
+    nunjucks: nunjucksEnv,
     buildOptions: {
       entryPoints
     },
@@ -74,20 +93,6 @@ async function init() {
   // Temporary: expose filters as globals until kit supports globals directly
   for (const [name, global] of Object.entries(filters(prototype.nunjucks))) {
     prototype.nunjucks.addGlobal(name, global)
-  }
-
-  // The kit always sets noCache, so every request recompiles every template
-  // it uses - most of a page's render time. That is needed in development,
-  // where nodemon does not restart on template edits. Production and the test
-  // servers never see an edit, so they turn the cache on. Only the compiled
-  // templates are cached; every page still renders with its own request's data
-  if (
-    process.env.NODE_ENV === 'production' ||
-    process.env.CACHE_TEMPLATES === 'true'
-  ) {
-    for (const loader of prototype.nunjucks.loaders) {
-      loader.noCache = false
-    }
   }
 
   prototype.start(port)
