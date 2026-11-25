@@ -20,6 +20,7 @@ const {
   getOpenIssuePeriods
 } = require('./issues')
 const { hasIncompleteMammography } = require('./expected-views')
+const { getBreastImplantSides } = require('./medical-information')
 const {
   getReadingCase,
   getReadingCaseById,
@@ -1335,9 +1336,7 @@ const isComplexCase = (appointment) => {
   const isImperfect =
     appointment?.mammogramData?.isImperfectButBestPossible?.includes?.('yes')
   const isIncomplete = hasIncompleteMammography(appointment)
-  const hasImplants =
-    appointment?.medicalInformation?.medicalHistory?.breastImplantsAugmentation
-      ?.length > 0
+  const hasImplants = getBreastImplantSides(appointment).length > 0
 
   return (
     hasSymptoms ||

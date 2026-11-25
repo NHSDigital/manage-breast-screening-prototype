@@ -245,9 +245,15 @@ def usable_images(study, client, log):
 
 
 def pixel_digest(dicom_path):
-    """A hash of an image's pixel data, or None if it can't be read."""
+    """A hash of an image's decoded pixels, or None if it can't be read.
+
+    Decoded rather than the raw PixelData bytes, which differ between copies stored
+    with different compression. --remove-duplicates compares rendered JPEGs, so it
+    would drop those copies and leave a later build listing images the pack lacks.
+    """
     try:
-        return hashlib.sha1(pydicom.dcmread(dicom_path).PixelData).hexdigest()
+        pixels = pydicom.dcmread(dicom_path).pixel_array
+        return hashlib.sha1(str(pixels.shape).encode() + pixels.tobytes()).hexdigest()
     except Exception:  # noqa: BLE001
         return None
 
@@ -614,11 +620,28 @@ def file_digest(path):
         return hashlib.sha1(f.read()).hexdigest()
 
 
+def missing_copies(images, pack_root, marked):
+    """Images whose display JPEG isn't in the pack but another image with the same
+    duplicate key is: copies an earlier --remove-duplicates deleted, listed again by a
+    manifest built somewhere else. Images with annotation markers are left for --check
+    to report, so their markers aren't lost."""
+    def key(i):
+        return duplicate_key(i["view"], i["modifiers"], i["synthetic2D"], i["instance"])
+
+    def on_disk(i):
+        return os.path.exists(os.path.join(pack_root, i["files"]["display"]))
+
+    present_keys = {key(i) for i in images if on_disk(i)}
+    return [i for i in images
+            if not on_disk(i) and key(i) in present_keys and i["id"] not in marked]
+
+
 def remove_duplicates(pack_root, manifest):
     """Take images the builder would now drop as duplicates out of a pack built before it did.
 
     Copies render to identical JPEGs, so this needs only the pack, not the source data.
-    The same images are kept as the builder keeps. Returns the removed images.
+    The same images are kept as the builder keeps. Also takes out copies whose files
+    are already gone (see missing_copies). Returns the removed images.
     """
     marked = marked_image_ids(read_json(os.path.join(pack_root, "annotations.json"), {}))
     removed = []
@@ -626,6 +649,10 @@ def remove_duplicates(pack_root, manifest):
     for p in manifest.get("participants", []):
         for s in p.get("studies", []):
             studies_by_id[s["id"]] = s
+            gone = missing_copies(s["images"], pack_root, marked)
+            gone_ids = {i["id"] for i in gone}
+            s["images"] = [i for i in s["images"] if i["id"] not in gone_ids]
+            removed += gone
             copies = find_copies(
                 s["images"],
                 key=lambda i: duplicate_key(i["view"], i["modifiers"], i["synthetic2D"], i["instance"]),

@@ -13,26 +13,26 @@
     side: "right",
     count: _rightCount,
     hasError: params.rightError,
-    views: [
+    views: ([
       { key: "rcc", label: "RCC" },
       { key: "rmlo", label: "RMLO" }
     ] if _viewOrder == "cc-first" else [
       { key: "rmlo", label: "RMLO" },
       { key: "rcc", label: "RCC" }
-    ]
+    ]) | push({ key: "rccid", label: "RCCID", optional: true })
   },
   {
     label: "Left breast",
     side: "left",
     count: _leftCount,
     hasError: params.leftError,
-    views: [
+    views: ([
       { key: "lcc", label: "LCC" },
       { key: "lmlo", label: "LMLO" }
     ] if _viewOrder == "cc-first" else [
       { key: "lmlo", label: "LMLO" },
       { key: "lcc", label: "LCC" }
-    ]
+    ]) | push({ key: "lccid", label: "LCCID", optional: true })
   }
 ] %}
 
@@ -65,7 +65,7 @@
                   <img src="{{ viewPath }}" alt="{{ view.label }}" draggable="false">
                 </span>
               {% endif %}
-            {% else %}
+            {% elseif not view.optional %}
               <span class="app-ann-v2__tab-thumb app-ann-v2__tab-thumb--missing">
               </span>
             {% endif %}

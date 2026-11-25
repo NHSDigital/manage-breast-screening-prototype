@@ -2635,6 +2635,426 @@
       "left": {
         "status": "normal"
       }
+    },
+    {
+      "id": "repeat-implants-normal-rmlo",
+      "tag": "normal",
+      "hasImplants": true,
+      "hasRepeat": true,
+      "description": "Implants, RMLO retaken (same image shown twice)",
+      "views": {
+        "rmlo": [
+          {
+            "from": "set-02"
+          },
+          {
+            "from": "set-02"
+          }
+        ],
+        "lmlo": {
+          "from": "set-02"
+        },
+        "rcc": {
+          "from": "set-02"
+        },
+        "lcc": {
+          "from": "set-02"
+        },
+        "rccid": {
+          "from": "set-02"
+        },
+        "lccid": {
+          "from": "set-02"
+        }
+      },
+      "right": {
+        "status": "normal"
+      },
+      "left": {
+        "status": "normal"
+      }
+    },
+    {
+      "id": "repeat-implants-normal-lmlo",
+      "tag": "normal",
+      "hasImplants": true,
+      "hasRepeat": true,
+      "description": "Implants, LMLO retaken (same image shown twice)",
+      "views": {
+        "rmlo": {
+          "from": "set-02"
+        },
+        "lmlo": [
+          {
+            "from": "set-02"
+          },
+          {
+            "from": "set-02"
+          }
+        ],
+        "rcc": {
+          "from": "set-02"
+        },
+        "lcc": {
+          "from": "set-02"
+        },
+        "rccid": {
+          "from": "set-02"
+        },
+        "lccid": {
+          "from": "set-02"
+        }
+      },
+      "right": {
+        "status": "normal"
+      },
+      "left": {
+        "status": "normal"
+      }
+    },
+    {
+      "id": "repeat-implants-normal-rcc",
+      "tag": "normal",
+      "hasImplants": true,
+      "hasRepeat": true,
+      "description": "Implants, RCC retaken (same image shown twice)",
+      "views": {
+        "rmlo": {
+          "from": "set-02"
+        },
+        "lmlo": {
+          "from": "set-02"
+        },
+        "rcc": [
+          {
+            "from": "set-02"
+          },
+          {
+            "from": "set-02"
+          }
+        ],
+        "lcc": {
+          "from": "set-02"
+        },
+        "rccid": {
+          "from": "set-02"
+        },
+        "lccid": {
+          "from": "set-02"
+        }
+      },
+      "right": {
+        "status": "normal"
+      },
+      "left": {
+        "status": "normal"
+      }
+    },
+    {
+      "id": "repeat-implants-normal-lcc",
+      "tag": "normal",
+      "hasImplants": true,
+      "hasRepeat": true,
+      "description": "Implants, LCC retaken (same image shown twice)",
+      "views": {
+        "rmlo": {
+          "from": "set-02"
+        },
+        "lmlo": {
+          "from": "set-02"
+        },
+        "rcc": {
+          "from": "set-02"
+        },
+        "lcc": [
+          {
+            "from": "set-02"
+          },
+          {
+            "from": "set-02"
+          }
+        ],
+        "rccid": {
+          "from": "set-02"
+        },
+        "lccid": {
+          "from": "set-02"
+        }
+      },
+      "right": {
+        "status": "normal"
+      },
+      "left": {
+        "status": "normal"
+      }
+    },
+    {
+      "id": "extra-implants-normal",
+      "tag": "normal",
+      "hasImplants": true,
+      "hasExtraImages": true,
+      "description": "Implants, two images per view (same image shown twice)",
+      "views": {
+        "rmlo": [
+          {
+            "from": "set-02"
+          },
+          {
+            "from": "set-02"
+          }
+        ],
+        "lmlo": [
+          {
+            "from": "set-02"
+          },
+          {
+            "from": "set-02"
+          }
+        ],
+        "rcc": [
+          {
+            "from": "set-02"
+          },
+          {
+            "from": "set-02"
+          }
+        ],
+        "lcc": [
+          {
+            "from": "set-02"
+          },
+          {
+            "from": "set-02"
+          }
+        ],
+        "rccid": {
+          "from": "set-02"
+        },
+        "lccid": {
+          "from": "set-02"
+        }
+      },
+      "right": {
+        "status": "normal"
+      },
+      "left": {
+        "status": "normal"
+      }
+    },
+    {
+      "id": "repeat-implants-abnormal-right-rmlo",
+      "tag": "abnormal",
+      "hasImplants": true,
+      "hasRepeat": true,
+      "description": "Implants + cancer RUOQ M5, RMLO retaken (same image shown twice)",
+      "views": {
+        "rmlo": [
+          {
+            "from": "set-03"
+          },
+          {
+            "from": "set-03"
+          }
+        ],
+        "lmlo": {
+          "from": "set-03"
+        },
+        "rcc": {
+          "from": "set-03"
+        },
+        "lcc": {
+          "from": "set-03"
+        },
+        "rccid": {
+          "from": "set-03"
+        },
+        "lccid": {
+          "from": "set-03"
+        }
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "UOQ"
+      },
+      "left": {
+        "status": "normal"
+      }
+    },
+    {
+      "id": "repeat-implants-abnormal-right-lmlo",
+      "tag": "abnormal",
+      "hasImplants": true,
+      "hasRepeat": true,
+      "description": "Implants + cancer RUOQ M5, LMLO retaken (same image shown twice)",
+      "views": {
+        "rmlo": {
+          "from": "set-03"
+        },
+        "lmlo": [
+          {
+            "from": "set-03"
+          },
+          {
+            "from": "set-03"
+          }
+        ],
+        "rcc": {
+          "from": "set-03"
+        },
+        "lcc": {
+          "from": "set-03"
+        },
+        "rccid": {
+          "from": "set-03"
+        },
+        "lccid": {
+          "from": "set-03"
+        }
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "UOQ"
+      },
+      "left": {
+        "status": "normal"
+      }
+    },
+    {
+      "id": "repeat-implants-abnormal-right-rcc",
+      "tag": "abnormal",
+      "hasImplants": true,
+      "hasRepeat": true,
+      "description": "Implants + cancer RUOQ M5, RCC retaken (same image shown twice)",
+      "views": {
+        "rmlo": {
+          "from": "set-03"
+        },
+        "lmlo": {
+          "from": "set-03"
+        },
+        "rcc": [
+          {
+            "from": "set-03"
+          },
+          {
+            "from": "set-03"
+          }
+        ],
+        "lcc": {
+          "from": "set-03"
+        },
+        "rccid": {
+          "from": "set-03"
+        },
+        "lccid": {
+          "from": "set-03"
+        }
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "UOQ"
+      },
+      "left": {
+        "status": "normal"
+      }
+    },
+    {
+      "id": "repeat-implants-abnormal-right-lcc",
+      "tag": "abnormal",
+      "hasImplants": true,
+      "hasRepeat": true,
+      "description": "Implants + cancer RUOQ M5, LCC retaken (same image shown twice)",
+      "views": {
+        "rmlo": {
+          "from": "set-03"
+        },
+        "lmlo": {
+          "from": "set-03"
+        },
+        "rcc": {
+          "from": "set-03"
+        },
+        "lcc": [
+          {
+            "from": "set-03"
+          },
+          {
+            "from": "set-03"
+          }
+        ],
+        "rccid": {
+          "from": "set-03"
+        },
+        "lccid": {
+          "from": "set-03"
+        }
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "UOQ"
+      },
+      "left": {
+        "status": "normal"
+      }
+    },
+    {
+      "id": "extra-implants-abnormal-right",
+      "tag": "abnormal",
+      "hasImplants": true,
+      "hasExtraImages": true,
+      "description": "Implants + cancer RUOQ M5, two images per view (same image shown twice)",
+      "views": {
+        "rmlo": [
+          {
+            "from": "set-03"
+          },
+          {
+            "from": "set-03"
+          }
+        ],
+        "lmlo": [
+          {
+            "from": "set-03"
+          },
+          {
+            "from": "set-03"
+          }
+        ],
+        "rcc": [
+          {
+            "from": "set-03"
+          },
+          {
+            "from": "set-03"
+          }
+        ],
+        "lcc": [
+          {
+            "from": "set-03"
+          },
+          {
+            "from": "set-03"
+          }
+        ],
+        "rccid": {
+          "from": "set-03"
+        },
+        "lccid": {
+          "from": "set-03"
+        }
+      },
+      "right": {
+        "status": "abnormal",
+        "finding": "mass",
+        "location": "UOQ"
+      },
+      "left": {
+        "status": "normal"
+      }
     }
   ]
 }

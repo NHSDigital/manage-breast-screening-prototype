@@ -733,27 +733,56 @@
     }
 
     /**
-     * Every image of a view in a study, oldest first, so the last is the latest
+     * A study's own images of one view key, oldest first
+     * @param {number} studyIndex - Index in currentStudies
+     * @param {string} viewKey - Such as "rcc" or "rccid"
+     * @returns {Array<string>}
+     */
+    const getStudyPaths = (studyIndex, viewKey) => {
+      const study = currentStudies[studyIndex]
+      const allPaths = study?.allPaths?.[viewKey]
+      if (Array.isArray(allPaths) && allPaths.length > 1) return allPaths
+      const path = study?.images?.[viewKey]
+      return path ? [path] : []
+    }
+
+    // Implant displaced views are shown as extra images of their CC
+    const IMPLANT_DISPLACED_VIEWS = { rcc: "rccid", lcc: "lccid" }
+
+    /**
+     * Every image of a view in a study: its own, oldest first, then any
+     * implant displaced images of a CC
      * @param {number} studyIndex - Index in currentStudies
      * @param {string} view - "rcc", "lcc", "rmlo" or "lmlo"
      * @returns {Array<string>}
      */
     const getViewPaths = (studyIndex, view) => {
-      const study = currentStudies[studyIndex]
-      const allPaths = study?.allPaths?.[view]
-      if (Array.isArray(allPaths) && allPaths.length > 1) return allPaths
-      const path = study?.images?.[view]
-      return path ? [path] : []
+      const implantDisplacedView = IMPLANT_DISPLACED_VIEWS[view]
+      return [
+        ...getStudyPaths(studyIndex, view),
+        ...(implantDisplacedView ? getStudyPaths(studyIndex, implantDisplacedView) : [])
+      ]
     }
 
     /**
-     * Which of a view's images is showing: the one chosen, or the latest
+     * Whether an image of a view is an implant displaced one
+     * @param {number} index - Index in getViewPaths
+     */
+    const isImplantDisplacedImage = (studyIndex, view, index) => {
+      return index >= getStudyPaths(studyIndex, view).length
+    }
+
+    /**
+     * Which of a view's images is showing: the one chosen, or the latest of
+     * its own (so a CC shows before its implant displaced images)
      * @returns {number} Index in getViewPaths
      */
     const getImageChoice = (studyIndex, view) => {
       const paths = getViewPaths(studyIndex, view)
       const choice = imageChoices[`${studyIndex}:${view}`]
-      return choice >= 0 && choice < paths.length ? choice : paths.length - 1
+      if (choice >= 0 && choice < paths.length) return choice
+      const ownCount = getStudyPaths(studyIndex, view).length
+      return ownCount ? ownCount - 1 : paths.length - 1
     }
 
     /**
@@ -767,9 +796,13 @@
     const getImageLabel = (view, studyIndex) => {
       const study = currentStudies[studyIndex]
       const imageCount = getViewPaths(studyIndex, view).length
-      const imageText = imageCount > 1 ? ` (${getImageChoice(studyIndex, view) + 1} of ${imageCount})` : ""
+      const choice = getImageChoice(studyIndex, view)
+      const imageText = imageCount > 1 ? ` (${choice + 1} of ${imageCount})` : ""
+      const viewLabel = isImplantDisplacedImage(studyIndex, view, choice)
+        ? `${VIEW_LABELS[view]}ID`
+        : VIEW_LABELS[view]
       return {
-        view: `${VIEW_LABELS[view]}${imageText}`,
+        view: `${viewLabel}${imageText}`,
         date: study?.dateText || ""
       }
     }
@@ -1128,13 +1161,19 @@
       groupEl.setAttribute("role", "group")
       groupEl.setAttribute("aria-label", `${VIEW_LABELS[view]} images`)
 
+      const ownCount = getStudyPaths(studyIndex, view).length
       paths.forEach((path, index) => {
-        const isLatest = index === paths.length - 1
+        const isLatest = index === ownCount - 1 && ownCount > 1
+        const isImplantDisplaced = isImplantDisplacedImage(studyIndex, view, index)
         const buttonEl = document.createElement("button")
         buttonEl.type = "button"
         buttonEl.className = "viewer-button"
-        buttonEl.textContent = isLatest ? `${index + 1} (latest)` : `${index + 1}`
-        buttonEl.title = `Image ${index + 1} of ${paths.length}`
+        buttonEl.textContent = isImplantDisplaced
+          ? `${index + 1} (ID)`
+          : isLatest ? `${index + 1} (latest)` : `${index + 1}`
+        buttonEl.title = isImplantDisplaced
+          ? `Image ${index + 1} of ${paths.length}, implant displaced`
+          : `Image ${index + 1} of ${paths.length}`
         buttonEl.setAttribute("aria-pressed", index === choice ? "true" : "false")
         buttonEl.dataset.imageChoice = `${studyIndex}:${view}:${index}`
         buttonEl.addEventListener("click", (e) => {

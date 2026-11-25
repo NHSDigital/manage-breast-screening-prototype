@@ -26,10 +26,11 @@
 {# Build ordered image list for streaming simulation - bookmatched arrival order #}
 {# CC first: RCC > RMLO > LMLO > LCC (right side then left mirrored) #}
 {# MLO first: RMLO > RCC > LCC > LMLO #}
+{# Implant displaced views are taken after the standard set #}
 {% if data.settings.mammogramViewOrder == 'mlo-first' %}
-  {% set streamViewOrder = ['rmlo', 'rcc', 'lcc', 'lmlo'] %}
+  {% set streamViewOrder = ['rmlo', 'rcc', 'lcc', 'lmlo', 'rccid', 'lccid'] %}
 {% else %}
-  {% set streamViewOrder = ['rcc', 'rmlo', 'lmlo', 'lcc'] %}
+  {% set streamViewOrder = ['rcc', 'rmlo', 'lmlo', 'lcc', 'rccid', 'lccid'] %}
 {% endif %}
 
 {% set streamingImages = [] %}

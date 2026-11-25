@@ -9,20 +9,31 @@
 
 {# View order from config - determines if CC or MLO comes first #}
 {# Right breast views on left, left breast views on right #}
+{% set ccViews = [
+  { key: 'rcc', label: 'RCC', side: 'right' },
+  { key: 'lcc', label: 'LCC', side: 'left' }
+] %}
+{% set mloViews = [
+  { key: 'rmlo', label: 'RMLO', side: 'right' },
+  { key: 'lmlo', label: 'LMLO', side: 'left' }
+] %}
+
+{# Implant displaced views sit after the CCs, when any were taken or the image
+   set has them. They are never expected, so a breast without one gets an
+   empty cell, and one taken with no image in the set shows “No image” #}
+{% set takenViews = appointment.mammogramData.views if appointment.mammogramData else {} %}
+{% set idViews = [] %}
+{% if takenViews.rightCCID or takenViews.leftCCID or (mammogramImages and (mammogramImages.allPaths.rccid or mammogramImages.allPaths.lccid)) %}
+  {% set idViews = [
+    { key: 'rccid', label: 'RCCID', side: 'right', optional: true, isTaken: takenViews.rightCCID },
+    { key: 'lccid', label: 'LCCID', side: 'left', optional: true, isTaken: takenViews.leftCCID }
+  ] %}
+{% endif %}
+
 {% if data.settings.mammogramViewOrder == 'mlo-first' %}
-  {% set viewOrder = [
-    { key: 'rmlo', label: 'RMLO', side: 'right' },
-    { key: 'lmlo', label: 'LMLO', side: 'left' },
-    { key: 'rcc', label: 'RCC', side: 'right' },
-    { key: 'lcc', label: 'LCC', side: 'left' }
-  ] %}
+  {% set viewOrder = mloViews.concat(ccViews, idViews) %}
 {% else %}
-  {% set viewOrder = [
-    { key: 'rcc', label: 'RCC', side: 'right' },
-    { key: 'lcc', label: 'LCC', side: 'left' },
-    { key: 'rmlo', label: 'RMLO', side: 'right' },
-    { key: 'lmlo', label: 'LMLO', side: 'left' }
-  ] %}
+  {% set viewOrder = ccViews.concat(idViews, mloViews) %}
 {% endif %}
 
 {# Count total images #}
@@ -78,6 +89,8 @@
             </div>
           {% endfor %}
         {% endif %}
+      {% elseif view.optional and not view.isTaken %}
+        {# Nothing for an optional view this breast does not have #}
       {% else %}
         {# Missing or not expected placeholder #}
         <div class="app-mammogram-thumbnail__image-wrapper app-mammogram-thumbnail__image-wrapper--placeholder">

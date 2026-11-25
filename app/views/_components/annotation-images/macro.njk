@@ -6,7 +6,9 @@
   Params:
     side          — "right" or "left" (required)
     imagePaths    — object of image paths keyed by view (e.g. { rcc: "/path.jpg", rmlo: "/path.jpg" })
-                    Values can be a string (single image) or array (multiple images per view)
+                    Values can be a string (single image) or array (multiple images per view).
+                    An implant displaced view (rccid or lccid), when present, is shown as a last panel
+                    that can be marked but isn't needed for a marker's details to open
     viewOrder     — "cc-first" (default) or "mlo-first"
     annotations   — array of annotation objects for this side (optional, for rendering markers)
     startNumber   — number to start annotation badge numbering from (default: 1)

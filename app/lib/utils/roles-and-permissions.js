@@ -1,6 +1,9 @@
 // app/lib/utils/roles-and-permissions.js
 
-const { isMedicalHistoryItemRemoved } = require('./medical-information')
+const {
+  getBreastImplantSides,
+  isMedicalHistoryItemRemoved
+} = require('./medical-information')
 const { getUsername } = require('../../filters/nunjucks')
 
 // Implanted devices that need a mammographer with implant imaging training.
@@ -85,9 +88,7 @@ const hasAnyPermission = (user, permissions) => {
 const getImplantImagingNeeds = (appointment) => {
   const medicalHistory = appointment?.medicalInformation?.medicalHistory || {}
 
-  const hasActiveBreastImplants = (
-    medicalHistory.breastImplantsAugmentation || []
-  ).some((item) => !isMedicalHistoryItemRemoved(item))
+  const hasActiveBreastImplants = getBreastImplantSides(appointment).length > 0
 
   const hasActiveDevice = (medicalHistory.implantedMedicalDevice || []).some(
     (item) => {
