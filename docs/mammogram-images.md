@@ -30,7 +30,7 @@ The set ID is stored when appointments are generated (`appointment-generator.js`
 
 `getImagesForAppointment` then returns the paths for the views present in `mammogramData`, the latest attempt for each view, and every attempt, which the viewer lets the reader flick between.
 
-Implant displaced views (`rccid`, `lccid`, see [data-conventions.md](data-conventions.md#implant-displaced-views)) are included only when the appointment took them and the set has an image for them. Diagram sets `set-02` and `set-03` have them, using the library's `positioning-short` CCs, which show the front of the breast without the implant.
+Implant displaced views (`rccid`, `lccid`, see [data-conventions.md](data-conventions.md#implant-displaced-views)) are included only when the appointment took them and the set has an image for them. Diagram sets `set-02` and `set-03` have them, using the library's `positioning-short` CCs, which show the front of the breast without the implant. There are no implant images of retakes or large breasts, so the composites `repeat-implants-*` and `extra-implants-*` reuse `set-02` and `set-03`, showing the same image twice for the repeated view, so implant appointments with repeats or extra images still get an implant set.
 
 ### Where images are shown
 
