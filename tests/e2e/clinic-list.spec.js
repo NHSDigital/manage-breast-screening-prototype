@@ -198,6 +198,43 @@ test.describe('Clinic appointment list', () => {
     await expect(startedAtColumn).toContainText(runnerName)
   })
 
+  test('does not show a date for a cancelled appointment', async ({ page }) => {
+    const { clinic, appointment } = findTodayAppointment({ status: 'scheduled' })
+    const appointmentUrl = `/clinics/${clinic.id}/appointments/${appointment.id}`
+    await page.goto(
+      `${appointmentUrl}/cancel-or-reschedule-appointment/details`
+    )
+    const response = await page.request.post(
+      `${appointmentUrl}/cancel-or-reschedule-appointment/cancel-or-reschedule-appointment-answer`,
+      {
+        form: {
+          'appointment[cancellation][reason]': 'Unable to attend',
+          'appointment[cancellation][reschedule]': 'no-invite'
+        }
+      }
+    )
+    expect(response.ok()).toBeTruthy()
+
+    const row = page.locator(`tr[data-fragment-id="${appointment.id}"]`)
+    const completedColumn = row.locator(
+      '.app-clinic-appointments-table__completed-column'
+    )
+
+    await page.goto(`/clinics/${clinic.id}/complete`)
+
+    await expect(row).toBeVisible()
+    await expect(
+      completedColumn.locator(
+        '.app-clinic-appointments-table__completed-time'
+      )
+    ).toBeEmpty()
+    await expect(
+      completedColumn.locator(
+        '.app-clinic-appointments-table__completed-details'
+      )
+    ).toBeVisible()
+  })
+
   test('keeps mammographer options visible on every tab', async ({ page }) => {
     const clinic = findTodayClinicWithMammographerAndRemainingAppointments()
 

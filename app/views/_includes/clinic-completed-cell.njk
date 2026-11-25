@@ -1,7 +1,7 @@
 {# app/views/_includes/clinic-completed-cell.njk #}
 
 {% macro clinicCompletedCell(appointment) %}
-  {% set completedTime = appointment | getCompletedTime %}
+  {% set completedTime = appointment | getCompletedTime if appointment.status != "cancelled" %}
   {% set attended = appointment | wasAttended %}
   {% set completedOrder = appointment.screeningOrder if attended %}
   {% set completedByName = "" %}
