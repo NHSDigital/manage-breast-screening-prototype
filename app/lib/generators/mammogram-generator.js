@@ -30,6 +30,16 @@ const STANDARD_VIEWS = [
   { side: 'left', view: 'mediolateral oblique' }
 ]
 
+// Short code and mammogramData.views key part for each view name. Implant
+// displaced keys match what manual entry saves (rightCCID)
+const VIEW_TYPES = {
+  'mediolateral oblique': { viewShort: 'MLO', keyPart: 'MediolateralOblique' },
+  'craniocaudal': { viewShort: 'CC', keyPart: 'Craniocaudal' },
+  'craniocaudal implant displaced': { viewShort: 'CCID', keyPart: 'CCID' }
+}
+
+const IMPLANT_DISPLACED_VIEW_SIDES = { RCCID: 'right', LCCID: 'left' }
+
 // Image scenarios - mutually exclusive categories
 // - standard: 4 views, 1 image each (normal case)
 // - extraImages: 2 images per view (large breasts - not a problem, just needed for coverage)
@@ -44,25 +54,21 @@ const IMAGE_SCENARIO_WEIGHTS = {
   incompleteImperfect: 0.03
 }
 
-const generateViewKey = (side, view) => {
-  const prefix = side === 'right' ? 'right' : 'left'
-  const viewName =
-    view === 'mediolateral oblique' ? 'MediolateralOblique' : 'Craniocaudal'
-  return `${prefix}${viewName}`
-}
+const generateViewKey = (side, view) =>
+  `${side === 'right' ? 'right' : 'left'}${VIEW_TYPES[view].keyPart}`
 
-const generateImageUrl = (side, view, accessionNumber) => {
-  const sideCode = side === 'right' ? 'R' : 'L'
-  const viewCode = view === 'mediolateral oblique' ? 'MLO' : 'CC'
-  return `/assets/images/mammograms/${sideCode}-${viewCode}-${accessionNumber.replace('/', '-')}.dcm`
-}
+const getViewShortWithSide = (side, view) =>
+  `${side === 'right' ? 'R' : 'L'}${VIEW_TYPES[view].viewShort}`
+
+const generateImageUrl = (side, view, accessionNumber) =>
+  `/assets/images/mammograms/${side === 'right' ? 'R' : 'L'}-${VIEW_TYPES[view].viewShort}-${accessionNumber.replace('/', '-')}.dcm`
 
 /**
  * Generate images for a single view
  *
  * @param {object} params - Parameters for image generation
  * @param {string} params.side - Breast side ('right' or 'left')
- * @param {string} params.view - View type ('mediolateral oblique' or 'craniocaudal')
+ * @param {string} params.view - View type, a key of VIEW_TYPES
  * @param {string} params.accessionBase - Base accession number
  * @param {number} params.startIndex - Starting index for image numbering
  * @param {string} params.startTime - Start timestamp
@@ -129,8 +135,8 @@ const generateViewImages = ({
   return {
     side,
     view,
-    viewShort: view === 'mediolateral oblique' ? 'MLO' : 'CC',
-    viewShortWithSide: `${side === 'right' ? 'R' : 'L'}${view === 'mediolateral oblique' ? 'MLO' : 'CC'}`,
+    viewShort: VIEW_TYPES[view].viewShort,
+    viewShortWithSide: getViewShortWithSide(side, view),
     images,
     count: images.length,
     repeatCount,
@@ -154,6 +160,7 @@ const generateViewImages = ({
  * @param {string[]} [options.config.missingViews] - Array of views to omit (e.g. ['RMLO'])
  * @param {boolean} [options.config.allViewsExtra] - If true, all views get extra images
  * @param {string[]} [options.expectedViews] - View codes the appointment expects, from getExpectedViews. Others are not taken
+ * @param {string[]} [options.implantDisplacedViews] - Implant displaced view codes to take as well, from getImplantDisplacedViews
  * @returns {object} Complete mammogram data
  */
 const generateMammogramImages = ({
@@ -162,6 +169,7 @@ const generateMammogramImages = ({
   isSeedData = false,
   config = {},
   expectedViews = STANDARD_VIEW_CODES,
+  implantDisplacedViews = [],
   scenarioWeights = null,
   imperfectChanceForTechnicalOrIncomplete = 0.15,
   notesForReaderChanceWithoutImperfect = 0.05
@@ -223,7 +231,7 @@ const generateMammogramImages = ({
   // Generate each standard view
   STANDARD_VIEWS.forEach(({ side, view }) => {
     const viewKey = generateViewKey(side, view)
-    const viewShortWithSide = `${side === 'right' ? 'R' : 'L'}${view === 'mediolateral oblique' ? 'MLO' : 'CC'}`
+    const viewShortWithSide = getViewShortWithSide(side, view)
 
     // Skip if this view is in missingViews or not expected
     if (
@@ -253,6 +261,37 @@ const generateMammogramImages = ({
       'seconds'
     )
   })
+
+  // Implant displaced views come after the standard set, one image each, and
+  // only for a breast whose CC was taken
+  implantDisplacedViews
+    .filter((code) => IMPLANT_DISPLACED_VIEW_SIDES[code])
+    .filter(
+      (code) =>
+        views[
+          generateViewKey(IMPLANT_DISPLACED_VIEW_SIDES[code], 'craniocaudal')
+        ]
+    )
+    .forEach((code) => {
+      const side = IMPLANT_DISPLACED_VIEW_SIDES[code]
+      const view = 'craniocaudal implant displaced'
+      const viewData = generateViewImages({
+        side,
+        view,
+        accessionBase,
+        startIndex: currentIndex,
+        startTime: currentTime.toISOString(),
+        isSeedData
+      })
+
+      views[generateViewKey(side, view)] = viewData
+
+      currentIndex += viewData.images.length
+      currentTime = currentTime.add(
+        faker.number.int({ min: 45, max: 70 }),
+        'seconds'
+      )
+    })
 
   // Calculate metadata
   const totalImages = Object.values(views).reduce(

@@ -15,6 +15,11 @@ const config = require('../config')
 
 const STANDARD_VIEWS = ['rcc', 'lcc', 'rmlo', 'lmlo']
 
+// Implant displaced (Eklund) views, and the standard view the pack labels
+// them as. The pack marks them with an 'Implant Displaced' modifier
+const IMPLANT_DISPLACED_PACK_VIEWS = { rccid: 'rcc', lccid: 'lcc' }
+const IMPLANT_DISPLACED_MODIFIER = 'Implant Displaced'
+
 // The URL the route serves a pack's images/ folder at
 const URL_PREFIX = '/real-images/'
 
@@ -66,8 +71,32 @@ const getStandardViewImages = (study) =>
   )
 
 /**
- * A study's standard views, in the shape image sets use: a URL per view, or
- * an array of URLs ordered by instance when the view was taken more than once.
+ * The images a study has labelled as implant displaced, for each implant
+ * displaced view, ordered by instance
+ *
+ * @param {object} study - Study from the manifest
+ * @returns {object} Array of manifest images per view, empty if none
+ */
+const getImplantDisplacedImages = (study) =>
+  Object.fromEntries(
+    Object.entries(IMPLANT_DISPLACED_PACK_VIEWS).map(([view, standardView]) => [
+      view,
+      study.images
+        .filter(
+          (image) =>
+            image.view === standardView &&
+            image.files?.display &&
+            !image.synthetic2D &&
+            image.modifiers?.includes(IMPLANT_DISPLACED_MODIFIER)
+        )
+        .sort((a, b) => a.instance - b.instance)
+    ])
+  )
+
+/**
+ * A study's standard views, and any implant displaced views, in the shape
+ * image sets use: a URL per view, or an array of URLs ordered by instance when
+ * the view was taken more than once.
  *
  * @param {object} study - Study from the manifest
  * @returns {{ paths: object, fullPaths: object, imageViewKeys: Map<string, string> }}
@@ -103,6 +132,24 @@ const getStudyViews = (study) => {
         imageViewKeys.set(image.id, `${view}-${index + 1}`)
       )
     }
+  }
+
+  // Implant displaced views are only included when the study has them, and
+  // aren't annotated, so get no view keys
+  const implantDisplacedImages = getImplantDisplacedImages(study)
+  for (const view of Object.keys(IMPLANT_DISPLACED_PACK_VIEWS)) {
+    const images = implantDisplacedImages[view]
+    if (images.length === 0) continue
+
+    for (const image of images) {
+      if (image.files.full) {
+        fullPaths[getImageUrl(image.files.display)] = getImageUrl(
+          image.files.full
+        )
+      }
+    }
+    const urls = images.map((image) => getImageUrl(image.files.display))
+    paths[view] = urls.length === 1 ? urls[0] : urls
   }
 
   return { paths, fullPaths, imageViewKeys }
@@ -218,7 +265,13 @@ const buildSets = (manifest, annotations, curation) => {
         description: `Real images, ${readingCase.result}`,
         right: readingCase.right,
         left: readingCase.left,
-        hasRepeat: STANDARD_VIEWS.some((view) => Array.isArray(paths[view])),
+        // Implant studies often have an extra CC that the pack doesn't label
+        // as implant displaced. It shows as an extra image, not a repeat
+        hasRepeat: STANDARD_VIEWS.some(
+          (view) =>
+            Array.isArray(paths[view]) &&
+            !(readingCase.hasImplants && ['rcc', 'lcc'].includes(view))
+        ),
         hasImplants: readingCase.hasImplants,
         higherRisk: readingCase.higherRisk,
         participantId: readingCase.participantId,

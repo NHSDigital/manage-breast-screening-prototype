@@ -1,7 +1,10 @@
 // app/lib/utils/expected-views.js
 
 const { formatList } = require('./arrays')
-const { isMedicalHistoryItemRemoved } = require('./medical-information')
+const {
+  isMedicalHistoryItemRemoved,
+  getBreastImplantSides
+} = require('./medical-information')
 const {
   MASTECTOMY_HISTORY_TYPES,
   getMastectomyHeading
@@ -9,6 +12,9 @@ const {
 
 // The 4 views in a standard set, using the viewShortWithSide codes
 const STANDARD_VIEW_CODES = ['RCC', 'RMLO', 'LCC', 'LMLO']
+
+// Implant displaced (Eklund) views taken as well as the standard set
+const IMPLANT_DISPLACED_VIEW_CODES = ['RCCID', 'LCCID']
 
 // Breasts each mastectomy imaging answer allows images of
 const IMAGED_SIDES = {
@@ -169,6 +175,33 @@ const getExpectedViews = (appointment) => {
 }
 
 /**
+ * Get the implant displaced (Eklund) views an appointment takes as extras
+ *
+ * A CC implant displaced view of each imaged breast with implants in place.
+ * These are extra to the expected views, so they never count as missing.
+ * A technical recall retakes only the requested views, so takes none.
+ *
+ * @param {object} appointment - The appointment (or its working copy)
+ * @returns {Array<string>} View codes, 'RCCID' and/or 'LCCID'
+ * @example
+ * {% set implantDisplacedViews = appointment | getImplantDisplacedViews %}
+ */
+const getImplantDisplacedViews = (appointment) => {
+  const expected = getExpectedViews(appointment)
+  if (expected.reasons.some((reason) => reason.type === 'technicalRecall')) {
+    return []
+  }
+
+  const implantSides = getBreastImplantSides(appointment)
+  const imagedSides = expected.views.map(getViewSide)
+
+  return IMPLANT_DISPLACED_VIEW_CODES.filter((code) => {
+    const side = getViewSide(code)
+    return implantSides.includes(side) && imagedSides.includes(side)
+  })
+}
+
+/**
  * Get the codes of the views taken in a set of mammogram data
  *
  * @param {object} mammogramData - Appointment mammogram data
@@ -295,6 +328,7 @@ module.exports = {
   STANDARD_VIEW_CODES,
   describeViewCode,
   getExpectedViews,
+  getImplantDisplacedViews,
   getTakenViews,
   getExpectedViewStates,
   getNotExpectedViews,

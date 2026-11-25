@@ -22,6 +22,7 @@ const {
 } = require('../utils/mammogram-images')
 const {
   getExpectedViews,
+  getImplantDisplacedViews,
   hasMissingExpectedViews
 } = require('../utils/expected-views')
 const users = require('../../data/users')
@@ -467,6 +468,7 @@ const generateAppointment = ({
         isSeedData: true,
         config: participant.config,
         expectedViews: getExpectedViews(appointment).views,
+        implantDisplacedViews: getImplantDisplacedViews(appointment),
         scenarioWeights: seedDataProfile?.mammogram?.scenarioWeights,
         imperfectChanceForTechnicalOrIncomplete:
           seedDataProfile?.mammogram?.imperfectChanceForTechnicalOrIncomplete,
@@ -532,6 +534,7 @@ const generateAppointment = ({
           isSeedData: true,
           config: participant.config,
           expectedViews: getExpectedViews(appointment).views,
+          implantDisplacedViews: getImplantDisplacedViews(appointment),
           scenarioWeights: seedDataProfile?.mammogram?.scenarioWeights,
           imperfectChanceForTechnicalOrIncomplete:
             seedDataProfile?.mammogram?.imperfectChanceForTechnicalOrIncomplete,

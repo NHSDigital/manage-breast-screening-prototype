@@ -61,6 +61,37 @@ const isMedicalHistoryItemRemoved = (item) => {
 }
 
 /**
+ * Get the breasts that have breast implants in place
+ *
+ * Reads the appointment's breast implants history, ignoring implants that have
+ * been removed.
+ *
+ * @param {object} appointment - The appointment (or its working copy)
+ * @returns {Array<string>} 'right' and/or 'left', in that order
+ * @example
+ * {% if (appointment | getBreastImplantSides) | length %}Has implants{% endif %}
+ */
+const getBreastImplantSides = (appointment) => {
+  const items = (
+    appointment?.medicalInformation?.medicalHistory
+      ?.breastImplantsAugmentation || []
+  ).filter((item) => !isMedicalHistoryItemRemoved(item))
+
+  const hasImplants = (procedures) =>
+    [].concat(procedures || []).includes('Breast implants')
+
+  return ['right', 'left'].filter((side) =>
+    items.some((item) =>
+      hasImplants(
+        side === 'right'
+          ? item.proceduresRightBreast
+          : item.proceduresLeftBreast
+      )
+    )
+  )
+}
+
+/**
  * Summarise a single medical history item into a concise string
  *
  * @param {Object} item - The medical history item (must have medicalHistoryType property)
@@ -618,6 +649,7 @@ module.exports = {
   getMedicalHistoryType,
   getMedicalHistoryKeyFromSlug,
   isMedicalHistoryItemRemoved,
+  getBreastImplantSides,
   summariseMedicalHistoryItem,
   summariseMedicalHistory,
   getMedicalHistoryItems,

@@ -3,7 +3,7 @@
 const path = require('path')
 const fs = require('fs')
 const config = require('../../config')
-const { isMedicalHistoryItemRemoved } = require('./medical-information')
+const { getBreastImplantSides } = require('./medical-information')
 const { getImagedSides } = require('./expected-views')
 const { formatDate, formatRelativeDate } = require('./dates')
 const realImages = require('../real-images')
@@ -21,6 +21,10 @@ const IMAGE_SOURCES = {
 
 // Standard view names
 const VIEWS = ['rcc', 'lcc', 'rmlo', 'lmlo']
+
+// Implant displaced (Eklund) views. Optional: only sets for breasts with
+// implants have them, and paths only include them when the set has the image
+const IMPLANT_DISPLACED_VIEWS = ['rccid', 'lccid']
 
 // Path to assets folder
 const ASSETS_PATH = path.join(__dirname, '../../assets/images')
@@ -132,16 +136,9 @@ const extractAppointmentContext = (appointment) => {
     context.symptomSides = Array.from(sides)
   }
 
-  // Check for breast implants still in place - removed implants do not need
-  // the implant image sets
-  const implants =
-    appointment.medicalInformation?.medicalHistory
-      ?.breastImplantsAugmentation || []
-  if (implants.length > 0) {
-    context.hasImplants = implants.some(
-      (implant) => !isMedicalHistoryItemRemoved(implant)
-    )
-  }
+  // Breast implants still in place - removed implants do not need the
+  // implant image sets
+  context.hasImplants = getBreastImplantSides(appointment).length > 0
 
   // Check for imperfect images
   // Value can be array ['yes'] or string 'yes' depending on source
@@ -1191,6 +1188,14 @@ const getImagePaths = (setId, source = 'diagrams') => {
       }
     }
 
+    for (const view of IMPLANT_DISPLACED_VIEWS) {
+      const viewDef = set.views[view]
+      if (!viewDef) continue
+      paths[view] = Array.isArray(viewDef)
+        ? viewDef.map((def) => resolveViewPath(def, view, source))
+        : resolveViewPath(viewDef, view, source)
+    }
+
     return paths
   }
 
@@ -1200,9 +1205,10 @@ const getImagePaths = (setId, source = 'diagrams') => {
   // Try to detect file extension by checking what exists
   const setFolderPath = path.join(ASSETS_PATH, sourceFolder, setId)
   let extension = 'png' // default
+  let files = []
 
   try {
-    const files = fs.readdirSync(setFolderPath)
+    files = fs.readdirSync(setFolderPath)
     // Check first view file to determine extension
     const rccFile = files.find((f) => f.startsWith('rcc.'))
     if (rccFile) {
@@ -1216,6 +1222,11 @@ const getImagePaths = (setId, source = 'diagrams') => {
   for (const view of VIEWS) {
     paths[view] = `${basePath}/${view}.${extension}`
   }
+  for (const view of IMPLANT_DISPLACED_VIEWS) {
+    if (files.includes(`${view}.${extension}`)) {
+      paths[view] = `${basePath}/${view}.${extension}`
+    }
+  }
 
   return paths
 }
@@ -1227,7 +1238,9 @@ const VIEW_TO_MAMMOGRAM_DATA_KEY = {
   rcc: 'rightCraniocaudal',
   lcc: 'leftCraniocaudal',
   rmlo: 'rightMediolateralOblique',
-  lmlo: 'leftMediolateralOblique'
+  lmlo: 'leftMediolateralOblique',
+  rccid: 'rightCCID',
+  lccid: 'leftCCID'
 }
 
 /**
@@ -1298,6 +1311,9 @@ const getImagesForAppointment = function (
         paths[view] = rawPaths[view]
       }
     }
+    for (const view of IMPLANT_DISPLACED_VIEWS) {
+      if (rawPaths[view]) paths[view] = getLatestPath(rawPaths[view])
+    }
 
     return {
       set,
@@ -1317,10 +1333,14 @@ const getImagesForAppointment = function (
     hasAdditionalImages = true
   }
 
-  for (const view of VIEWS) {
+  for (const view of [...VIEWS, ...IMPLANT_DISPLACED_VIEWS]) {
     const mammogramDataKey = VIEW_TO_MAMMOGRAM_DATA_KEY[view]
-    // Only include path if this view was captured
-    if (mammogramViews[mammogramDataKey]) {
+    // Only include path if this view was captured. Implant displaced views
+    // also need the set to have an image
+    if (
+      mammogramViews[mammogramDataKey] &&
+      (VIEWS.includes(view) || rawPaths[view])
+    ) {
       const rawPath = rawPaths[view]
 
       if (Array.isArray(rawPath)) {
@@ -1353,6 +1373,9 @@ const splitLatestPaths = (rawPaths) => {
   const paths = {}
   for (const view of VIEWS) {
     paths[view] = getLatestPath(rawPaths[view])
+  }
+  for (const view of IMPLANT_DISPLACED_VIEWS) {
+    if (rawPaths[view]) paths[view] = getLatestPath(rawPaths[view])
   }
   return {
     paths,
