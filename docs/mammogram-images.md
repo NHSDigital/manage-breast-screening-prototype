@@ -130,6 +130,7 @@ pack-env/bin/python scripts/real-images/build-pack.py /path/to/participant-folde
 ```
 
 - `--display-only` for a quick, small pack; `--skip-existing` to render only what's missing, so on an existing pack it rebuilds just the manifest in minutes (it still needs the raw data); `--limit N` for a trial run; `--check` to validate an existing pack's manifest; `--remove-duplicates` to take duplicate images out of a pack built before the builder dropped them (needs only the pack, not the raw data).
+- When you copy a newly built `manifest.json` onto a pack somewhere else, without its images, run `--check` on that pack. It lists any files the manifest names but the pack lacks. If they're copies an earlier `--remove-duplicates` deleted, running `--remove-duplicates` again takes them out of the manifest.
 - It drops 'for processing' images, tomosynthesis slices, non-mammogram studies and images too small to be a full view, and mirrors images so a right breast's chest wall is on the right and a left's on the left. Images it can't orient are left as they are and flagged in `build.log`.
 - The raw data sometimes holds the same image more than once, as separate files with their own IDs. Where images share a view and instance number and have identical pixels, it keeps the first and logs the rest in `build.log`; otherwise the copies would show as repeated views.
 - A screening study within 60 days of a recalled one is treated as assessment, because the raw data rarely marks magnification or spot views. It isn't used as a case or a prior.
