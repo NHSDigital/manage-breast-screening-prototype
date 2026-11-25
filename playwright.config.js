@@ -54,8 +54,9 @@ module.exports = defineConfig({
     // this is a single plain Express process that Playwright can start and kill.
     // Sharing is pinned off so parallel tests keep their own changes; the
     // shared data spec switches it to By room itself. Images are pinned to
-    // diagrams, whatever image pack is present locally.
-    command: `PORT=${port} PROXY=true SHARED_DATA_MODE=off MAMMOGRAM_IMAGE_SOURCE=diagrams node .`,
+    // diagrams, whatever image pack is present locally. Templates are cached,
+    // which is safe because this server never sees a template edit.
+    command: `PORT=${port} PROXY=true CACHE_TEMPLATES=true SHARED_DATA_MODE=off MAMMOGRAM_IMAGE_SOURCE=diagrams node .`,
     url: baseURL,
 
     // Always start a fresh server. Without the watch wrapper the app loads its
