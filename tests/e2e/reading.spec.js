@@ -181,8 +181,14 @@ const recordRecallOpinions = async (page) => {
  * @param {import('@playwright/test').Locator} modal - The open modal container
  * @param {string} view - View code to mark for retaking, eg 'RMLO'
  * @param {string} reason - Reason to select from the dropdown
+ * @param {string} [submitText] - Submit button text: 'Update' when changing a read
  */
-const recordTechnicalRecallDetails = async (modal, view, reason) => {
+const recordTechnicalRecallDetails = async (
+  modal,
+  view,
+  reason,
+  submitText = 'Continue'
+) => {
   await modal
     .locator(
       `input[name="imageReadingTemp[technicalRecall][selectedViews]"][value="${view}"]`
@@ -197,7 +203,10 @@ const recordTechnicalRecallDetails = async (modal, view, reason) => {
     )
     .selectOption(reason)
 
-  await modal.getByRole('button', { name: 'Continue' }).first().click()
+  await modal
+    .getByRole('button', { name: submitText, exact: true })
+    .first()
+    .click()
 }
 
 test.describe('Image reading', () => {
@@ -490,6 +499,88 @@ test.describe('Image reading', () => {
     await expect(page).toHaveURL(/\/existing-read/)
     await expect(page.getByText('Recall for assessment').first()).toBeVisible()
     await expect(page.getByText('Level 4 (suspicious)')).toHaveCount(1)
+  })
+
+  test('changes a normal read to technical recall, then to normal with details', async ({
+    page
+  }) => {
+    // The details pages say Update rather than Continue when changing a read,
+    // and the save goes straight back to the read, skipping the review step
+    await pinSettings(page, {
+      ...readingSettings,
+      'settings[reading][finalisationDelay]': '60',
+      'settings[reading][confirmTechnicalRecall]': 'true'
+    })
+
+    await page.goto('/reading/create-session?type=all_reads&limit=1&lazy=false')
+    await expect(page).toHaveURL(/\/reading\/session\/[^/]+\/appointments\//)
+    const caseUrl = page
+      .url()
+      .match(/\/reading\/session\/[^/]+\/appointments\/[^/?]+/)[0]
+
+    await recordNormal(page)
+    await expect(
+      page.getByRole('heading', { name: 'Session complete' })
+    ).toBeVisible()
+
+    await page.goto(caseUrl)
+    await expect(page).toHaveURL(/\/existing-read/)
+    await page.locator('a[href^="./opinion?referrerChain="]').first().click()
+
+    await page.getByLabel('Technical recall (T)').check()
+    const recallModal = await clickToOpenModal(page, 'Update opinion')
+    await expect(
+      recallModal.getByRole('heading', { name: 'Technical recall' })
+    ).toBeVisible()
+
+    const offeredMlo = await recallModal
+      .locator(
+        'input[name="imageReadingTemp[technicalRecall][selectedViews]"][value$="MLO"]'
+      )
+      .first()
+      .getAttribute('value')
+    await recordTechnicalRecallDetails(
+      recallModal,
+      offeredMlo,
+      'Image blurred',
+      'Update'
+    )
+
+    await expect(page).toHaveURL(/\/existing-read/)
+    await expect(page.getByText('Technical recall').first()).toBeVisible()
+    await expect(page.getByText('Image blurred')).toBeVisible()
+
+    // The radio is labelled differently when the participant has symptoms,
+    // so target it by value
+    await page.locator('a[href^="./opinion?referrerChain="]').first().click()
+    await page
+      .locator(
+        'input[name="imageReadingTemp[opinion]"][value="normal_with_details"]'
+      )
+      .check()
+    const detailsModal = await clickToOpenModal(page, 'Update opinion')
+    await expect(
+      detailsModal.getByRole('heading', { name: 'Normal with details' })
+    ).toBeVisible()
+
+    const normalDetails = 'Benign calcification, no change from prior'
+    await detailsModal
+      .locator('textarea[name="imageReadingTemp[normalDetails]"]')
+      .fill(normalDetails)
+    const acknowledgeSymptoms = detailsModal.locator(
+      'input[name="imageReadingTemp[symptomsAcknowledged]"][value="true"]'
+    )
+    if (await acknowledgeSymptoms.isVisible()) {
+      await acknowledgeSymptoms.check()
+    }
+    await detailsModal
+      .getByRole('button', { name: 'Update', exact: true })
+      .first()
+      .click()
+
+    await expect(page).toHaveURL(/\/existing-read/)
+    await expect(page.getByText(normalDetails)).toBeVisible()
+    await expect(page.getByText('Image blurred')).toHaveCount(0)
   })
 
   test('records a technical recall', async ({ page }) => {
@@ -1174,7 +1265,9 @@ test.describe('Image reading', () => {
     await page.getByRole('link', { name: 'Finalise opinions now' }).click()
 
     // Finalised: the prompt gives way to the settled state
-    await expect(page.getByText('Opinions recorded and finalised')).toBeVisible()
+    await expect(
+      page.getByText('Opinions recorded and finalised')
+    ).toBeVisible()
 
     // Both reads now finalised, so the case has settled. The case header shows
     // a single tag: the outcome once concluded (the agreed opinion), or
