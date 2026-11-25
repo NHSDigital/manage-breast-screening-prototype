@@ -5,7 +5,7 @@
   {% set attended = appointment | wasAttended %}
   {% set completedOrder = appointment.screeningOrder if attended %}
   {% set completedByName = "" %}
-  {% if attended and appointment.sessionDetails.startedBy %}
+  {% if attended and appointment.sessionDetails and appointment.sessionDetails.startedBy %}
     {% set completedByName = appointment | getAppointmentScreenedByNames({ identifyCurrentUser: true }) | join(", ") %}
   {% elseif appointment.status == "cancelled" and appointment.cancellation.cancelledBy %}
     {% set completedByName = appointment.cancellation.cancelledBy | getUsername({ identifyCurrentUser: true }) %}

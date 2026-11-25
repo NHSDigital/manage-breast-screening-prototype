@@ -166,12 +166,16 @@ test('the simulated clinic clock advances for live appointment durations', () =>
 test('the simulated clinic clock advances across midnight and resets with seed data', () => {
   const realNow = Date.now
   try {
-    const beforeMidnight = new Date(2026, 0, 1, 23, 59).getTime()
-    Date.now = () => beforeMidnight
+    // The simulated clock anchors at config.clinics.simulatedTime (10:30),
+    // so to test midnight rollover, set Date.now to a time where 10:30 on
+    // that date plus elapsed time crosses midnight to the next day.
+    // 23:00 on 2026-01-01 + 1 hour elapsed = 00:30 on 2026-01-02 (at 10:30 offset).
+    const before = new Date(2026, 0, 1, 23, 0).getTime()
+    Date.now = () => before
     resetSimulatedClock()
     const start = getSimulatedNow()
-    Date.now = () => beforeMidnight + 2 * 60 * 1000
-    expect(getSimulatedNow().diff(start, 'minute')).toBe(2)
+    Date.now = () => before + 60 * 60 * 1000
+    expect(getSimulatedNow().diff(start, 'minute')).toBe(60)
     resetSimulatedClock()
     expect(getSimulatedNow().format('YYYY-MM-DD')).toBe('2026-01-02')
   } finally {
