@@ -33,7 +33,9 @@
       rcc: getMeta('mammogram-image-rcc') || null,
       lcc: getMeta('mammogram-image-lcc') || null,
       rmlo: getMeta('mammogram-image-rmlo') || null,
-      lmlo: getMeta('mammogram-image-lmlo') || null
+      lmlo: getMeta('mammogram-image-lmlo') || null,
+      rccid: getMeta('mammogram-image-rccid') || null,
+      lccid: getMeta('mammogram-image-lccid') || null
     },
     allPaths: allPaths ? JSON.parse(allPaths) : null,
     fullPaths: fullPaths ? JSON.parse(fullPaths) : null,

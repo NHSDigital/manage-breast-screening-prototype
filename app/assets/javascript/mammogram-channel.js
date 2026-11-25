@@ -24,7 +24,7 @@ const getChannel = () => {
  * @param {string} data.sxNumber - SX number (optional)
  * @param {string} data.dateOfBirth - Date of birth with age (optional)
  * @param {string} data.studyDateText - Date of the current study, shown on its images (optional)
- * @param {object} data.images - Image paths (rcc, lcc, rmlo, lmlo) - latest images
+ * @param {object} data.images - Image paths (rcc, lcc, rmlo, lmlo, and rccid and lccid when taken) - latest images
  * @param {object} data.allPaths - All image paths including additional images
  * @param {object} data.fullPaths - Full-resolution path for each display path, loaded on zoom (optional)
  * @param {Array<object>} data.priors - Earlier studies, newest first, from getPriorImagesForAppointment (optional)
@@ -218,6 +218,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ?.getAttribute('content'),
       lmlo: document
         .querySelector('meta[name="mammogram-image-lmlo"]')
+        ?.getAttribute('content'),
+      rccid: document
+        .querySelector('meta[name="mammogram-image-rccid"]')
+        ?.getAttribute('content'),
+      lccid: document
+        .querySelector('meta[name="mammogram-image-lccid"]')
         ?.getAttribute('content')
     }
 
