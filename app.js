@@ -76,6 +76,20 @@ async function init() {
     prototype.nunjucks.addGlobal(name, global)
   }
 
+  // The kit always sets noCache, so every request recompiles every template
+  // it uses - most of a page's render time. That is needed in development,
+  // where nodemon does not restart on template edits. Production and the test
+  // servers never see an edit, so they turn the cache on. Only the compiled
+  // templates are cached; every page still renders with its own request's data
+  if (
+    process.env.NODE_ENV === 'production' ||
+    process.env.CACHE_TEMPLATES === 'true'
+  ) {
+    for (const loader of prototype.nunjucks.loaders) {
+      loader.noCache = false
+    }
+  }
+
   prototype.start(port)
 }
 

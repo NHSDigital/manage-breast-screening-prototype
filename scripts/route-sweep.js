@@ -75,6 +75,8 @@ const startServer = async () => {
       ...process.env,
       PORT: String(port),
       PROXY: 'true',
+      // Safe because this server never sees a template edit
+      CACHE_TEMPLATES: 'true',
       SHARED_DATA_MODE: 'off',
       // The sweep runs on diagrams, whatever image pack is present locally
       MAMMOGRAM_IMAGE_SOURCE: 'diagrams'
