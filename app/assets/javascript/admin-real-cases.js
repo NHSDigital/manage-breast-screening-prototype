@@ -5,10 +5,24 @@
 // alongside, and saves each change to the pack's annotations.json. The page
 // and its data come from app/routes/admin-real-cases.js.
 
+// Rows after the first two only show when the case has images for them
 const VIEW_ROWS = [
   ['rcc', 'lcc'],
-  ['rmlo', 'lmlo']
+  ['rmlo', 'lmlo'],
+  ['rccid', 'lccid'],
+  ['rother', 'lother']
 ]
+
+const VIEW_LABELS = {
+  rcc: 'RCC',
+  lcc: 'LCC',
+  rmlo: 'RMLO',
+  lmlo: 'LMLO',
+  rccid: 'RCCID',
+  lccid: 'LCCID',
+  rother: 'other right views',
+  lother: 'other left views'
+}
 
 const CLASSIFICATIONS = {
   N: 'normal',
@@ -248,19 +262,29 @@ const renderListItem = (readingCase) => {
 
 // ─── Images ────────────────────────────────────────────────────────────────
 
-const getImages = (readingCase) =>
-  VIEW_ROWS.flat().flatMap((view) =>
-    readingCase.images[view].map((image, index) => ({
-      ...image,
-      view,
-      side: view.startsWith('r') ? 'right' : 'left',
-      label:
-        view.toUpperCase() +
-        (readingCase.images[view].length > 1
-          ? ` ${index + 1} of ${readingCase.images[view].length}`
-          : '')
-    }))
+const getViewRows = (readingCase) =>
+  VIEW_ROWS.filter(
+    (row, index) =>
+      index < 2 || row.some((view) => readingCase.images[view]?.length)
   )
+
+const getImages = (readingCase) =>
+  getViewRows(readingCase)
+    .flat()
+    .flatMap((view) => {
+      const viewImages = readingCase.images[view] || []
+      return viewImages.map((image, index) => ({
+        ...image,
+        view,
+        side: view.startsWith('r') ? 'right' : 'left',
+        label:
+          image.label ||
+          VIEW_LABELS[view] +
+            (viewImages.length > 1
+              ? ` ${index + 1} of ${viewImages.length}`
+              : '')
+      }))
+    })
 
 const renderImage = (image, enlarged) => `
   <div class="app-real-cases__view-header">
@@ -309,13 +333,14 @@ const renderImages = () => {
     elements.images.innerHTML = `
       ${navigation}
       <div class="app-real-cases__grid">
-        ${VIEW_ROWS.flat()
+        ${getViewRows(readingCase)
+          .flat()
           .map((view) => {
             const viewImages = images.filter((image) => image.view === view)
             const side = view.startsWith('r') ? 'right' : 'left'
             return `
               <div class="app-real-cases__view app-real-cases__view--${side}">
-                ${viewImages.length ? viewImages.map((image) => renderImage(image, false)).join('') : `<p class="app-real-cases__no-image">No ${view.toUpperCase()}</p>`}
+                ${viewImages.length ? viewImages.map((image) => renderImage(image, false)).join('') : `<p class="app-real-cases__no-image">No ${VIEW_LABELS[view]}</p>`}
               </div>
             `
           })

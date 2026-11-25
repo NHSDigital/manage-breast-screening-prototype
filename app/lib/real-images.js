@@ -57,8 +57,13 @@ const getImageUrl = (packFile) => URL_PREFIX + packFile.replace(/^images\//, '')
 const getStandardViewImages = (study) =>
   Object.fromEntries(
     STANDARD_VIEWS.map((view) => {
+      // Implant displaced images belong to their own view, even when a view
+      // has no plain image and falls back to ones with modifiers
       const viewImages = study.images.filter(
-        (image) => image.view === view && image.files?.display
+        (image) =>
+          image.view === view &&
+          image.files?.display &&
+          !image.modifiers?.includes(IMPLANT_DISPLACED_MODIFIER)
       )
       const plainImages = viewImages.filter(
         (image) => !image.synthetic2D && !image.modifiers?.length
@@ -134,8 +139,7 @@ const getStudyViews = (study) => {
     }
   }
 
-  // Implant displaced views are only included when the study has them, and
-  // aren't annotated, so get no view keys
+  // Implant displaced views are only included when the study has them
   const implantDisplacedImages = getImplantDisplacedImages(study)
   for (const view of Object.keys(IMPLANT_DISPLACED_PACK_VIEWS)) {
     const images = implantDisplacedImages[view]
@@ -150,6 +154,12 @@ const getStudyViews = (study) => {
     }
     const urls = images.map((image) => getImageUrl(image.files.display))
     paths[view] = urls.length === 1 ? urls[0] : urls
+    images.forEach((image, index) =>
+      imageViewKeys.set(
+        image.id,
+        images.length === 1 ? view : `${view}-${index + 1}`
+      )
+    )
   }
 
   return { paths, fullPaths, imageViewKeys }
@@ -373,6 +383,7 @@ module.exports = {
   getManifest,
   getImageSource,
   getImageUrl,
+  getImplantDisplacedImages,
   getStandardViewImages,
   readersDisagreed
 }

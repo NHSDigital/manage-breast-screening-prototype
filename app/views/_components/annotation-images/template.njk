@@ -14,12 +14,26 @@
 {# Determine view keys for this side based on view order #}
 {% if _side == "right" %}
   {% set _viewKeys = ["rcc", "rmlo"] if _viewOrder == "cc-first" else ["rmlo", "rcc"] %}
+  {% set _implantDisplacedView = "rccid" %}
 {% else %}
   {% set _viewKeys = ["lcc", "lmlo"] if _viewOrder == "cc-first" else ["lmlo", "lcc"] %}
+  {% set _implantDisplacedView = "lccid" %}
+{% endif %}
+
+{# An implant displaced view comes last, and only when it was taken #}
+{% if _imagePaths[_implantDisplacedView] %}
+  {% set _viewKeys = _viewKeys | push(_implantDisplacedView) %}
 {% endif %}
 
 {# View labels lookup #}
-{% set _viewLabels = { "rmlo": "RMLO", "rcc": "RCC", "lmlo": "LMLO", "lcc": "LCC" } %}
+{% set _viewLabels = {
+  "rmlo": "RMLO",
+  "rcc": "RCC",
+  "lmlo": "LMLO",
+  "lcc": "LCC",
+  "rccid": "RCCID",
+  "lccid": "LCCID"
+} %}
 
 {# Build flat list of image panels to render #}
 {% set _panels = [] %}
@@ -74,7 +88,8 @@
       {% if panel.path %}
         <div class="app-annotation-images__panel app-annotation-images__panel--{{ _side }}"
              data-view="{{ panel.viewKey }}"
-             data-base-view="{{ panel.baseView }}">
+             data-base-view="{{ panel.baseView }}"
+             {{- ' data-optional-view' if panel.baseView == _implantDisplacedView }}>
           <img src="{{ panel.path }}" alt="{{ panel.label }}" draggable="false">
           {% if _showLabels %}
             <span class="app-annotation-images__label">{{ panel.label }}</span>
