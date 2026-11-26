@@ -12,11 +12,33 @@ const abnormalityTypes = require('../data/abnormality-types')
 const {
   STANDARD_VIEWS,
   getImageUrl,
+  getImplantDisplacedImages,
   getStandardViewImages,
   readersDisagreed
 } = require('./real-images')
 
 const DAYS_PER_YEAR = 365.25
+
+// Pack views start with the breast's letter, eg "llm" or "rxccl". The few
+// with no side are shown with the right breast
+const getPackImageSide = (image) =>
+  image.view?.startsWith('l') ? 'left' : 'right'
+
+/**
+ * A label for an image the reading screens don't show, from its pack view and
+ * modifiers, eg "LCC spot compression"
+ *
+ * @param {object} image - Image from the manifest
+ * @returns {string} Label
+ */
+const describePackImage = (image) =>
+  [
+    image.view ? image.view.toUpperCase() : 'View not recorded',
+    ...(image.modifiers || []).map((modifier) => modifier.toLowerCase()),
+    image.synthetic2D ? 'C-View' : null
+  ]
+    .filter(Boolean)
+    .join(' ')
 
 // Filters on the case list. A case can be in several.
 const ANNOTATION_GROUPS = [
@@ -197,18 +219,41 @@ const getAnnotatorData = () => {
       const participant = participantsById.get(readingCase.participantId)
       if (!study || !participant) return null
 
-      const imagesByView = getStandardViewImages(study)
+      const toAnnotatorImage = (image) => ({
+        id: image.id,
+        url: getImageUrl(image.files.display),
+        fullUrl: image.files.full ? getImageUrl(image.files.full) : null
+      })
+      const imagesByView = {
+        ...getStandardViewImages(study),
+        ...getImplantDisplacedImages(study)
+      }
       const images = Object.fromEntries(
-        STANDARD_VIEWS.map((view) => [
+        Object.entries(imagesByView).map(([view, viewImages]) => [
           view,
-          imagesByView[view].map((image) => ({
-            id: image.id,
-            url: getImageUrl(image.files.display),
-            fullUrl: image.files.full ? getImageUrl(image.files.full) : null
-          }))
+          viewImages.map(toAnnotatorImage)
         ])
       )
       if (!STANDARD_VIEWS.some((view) => images[view].length)) return null
+
+      // Every other image in the study, such as spot compression or lateral
+      // views, so clinicians can mark everything that was taken
+      const shownIds = new Set(
+        Object.values(imagesByView)
+          .flat()
+          .map((image) => image.id)
+      )
+      const otherImages = study.images
+        .filter((image) => image.files?.display && !shownIds.has(image.id))
+        .sort((a, b) => a.instance - b.instance)
+      for (const side of ['right', 'left']) {
+        images[`${side[0]}other`] = otherImages
+          .filter((image) => getPackImageSide(image) === side)
+          .map((image) => ({
+            ...toAnnotatorImage(image),
+            label: describePackImage(image)
+          }))
+      }
 
       const groups = getCaseGroups(
         readingCase,

@@ -28,11 +28,13 @@
 
   {% include "_includes/images/expected-views-inset.njk" %}
 
-  {# Standard views - order matches config setting #}
+  {# Standard and implant displaced views - order matches config setting #}
   {% if data.settings.mammogramViewOrder == 'mlo-first' %}
     {% set views = ['RMLO', 'LMLO', 'RCC', 'LCC'] %}
+    {% set implantDisplacedViewTypes = ['MLOID', 'CCID'] %}
   {% else %}
     {% set views = ['RCC', 'LCC', 'RMLO', 'LMLO'] %}
+    {% set implantDisplacedViewTypes = ['CCID', 'MLOID'] %}
   {% endif %}
 
   {% set recallReasons = [
@@ -61,6 +63,8 @@
   {# Build checkbox items with conditional fields for each view #}
   {% set rightCheckboxItems = [] %}
   {% set leftCheckboxItems = [] %}
+  {% set rightOtherCheckboxItems = [] %}
+  {% set leftOtherCheckboxItems = [] %}
   {% set currentTechRecall = data.imageReadingTemp.technicalRecall.views | default({}) %}
 
   {# Normalize selectedViews to array — needed to correctly pre-check boxes after a validation error,
@@ -82,9 +86,37 @@
     {% endif %}
   {% endfor %}
 
-  {% for viewCode in offeredViews %}
+  {# Implant displaced (Eklund) views, offered for each breast with standard views offered #}
+  {% set implantDisplacedViews = [] %}
+  {% for sideCode in ['R', 'L'] %}
+    {% set sideHasOfferedViews = false %}
+    {% for viewCode in offeredViews %}
+      {% if viewCode | first == sideCode %}
+        {% set sideHasOfferedViews = true %}
+      {% endif %}
+    {% endfor %}
+    {% if sideHasOfferedViews %}
+      {% for viewType in implantDisplacedViewTypes %}
+        {% set implantDisplacedViews = implantDisplacedViews | push(sideCode + viewType) %}
+      {% endfor %}
+    {% endif %}
+  {% endfor %}
+
+  {# Open the other views if the participant has implants, implant displaced views were taken, or one is already selected #}
+  {% set showOtherViews = (appointment | getBreastImplantSides | length) > 0 %}
+  {% for viewKey, view in appointment.mammogramData.views %}
+    {% if view.viewShortWithSide in implantDisplacedViews %}
+      {% set showOtherViews = true %}
+    {% endif %}
+  {% endfor %}
+
+  {% for viewCode in offeredViews.concat(implantDisplacedViews) %}
+    {% set isImplantDisplaced = viewCode in implantDisplacedViews %}
     {% set viewData = currentTechRecall[viewCode] | default({}) %}
     {% set isChecked = viewData.reason or viewCode in currentSelectedViews %}
+    {% if isImplantDisplaced and isChecked %}
+      {% set showOtherViews = true %}
+    {% endif %}
 
     {% set conditionalHtml %}
       {{ select({
@@ -114,7 +146,11 @@
       }
     } %}
 
-    {% if viewCode | first == "R" %}
+    {% if isImplantDisplaced and viewCode | first == "R" %}
+      {% set rightOtherCheckboxItems = rightOtherCheckboxItems | push(checkboxItem) %}
+    {% elseif isImplantDisplaced %}
+      {% set leftOtherCheckboxItems = leftOtherCheckboxItems | push(checkboxItem) %}
+    {% elseif viewCode | first == "R" %}
       {% set rightCheckboxItems = rightCheckboxItems | push(checkboxItem) %}
     {% else %}
       {% set leftCheckboxItems = leftCheckboxItems | push(checkboxItem) %}
@@ -139,7 +175,8 @@
       }) }}
     {% endif %}
 
-    <div class="nhsuk-grid-row">
+    {# Nested form groups lose their bottom margin, so restore it above the other views #}
+    <div class="nhsuk-grid-row{{ ' nhsuk-u-margin-bottom-5' if implantDisplacedViews | length }}">
       <div class="nhsuk-grid-column-one-half">
         <h2 class="nhsuk-heading-s">Right breast</h2>
 
@@ -172,11 +209,43 @@
       </div>
     </div>
 
+    {% if implantDisplacedViews | length %}
+      {% call details({
+        summary: "Other views",
+        open: showOtherViews
+      }) %}
+        <div class="nhsuk-grid-row">
+          <div class="nhsuk-grid-column-one-half">
+            {% if rightOtherCheckboxItems | length %}
+              <h2 class="nhsuk-heading-s">Right breast</h2>
+              {{ checkboxes({
+                small: true,
+                idPrefix: "technicalRecall-selectedViews-right-other",
+                name: "imageReadingTemp[technicalRecall][selectedViews]",
+                items: rightOtherCheckboxItems
+              }) }}
+            {% endif %}
+          </div>
+          <div class="nhsuk-grid-column-one-half">
+            {% if leftOtherCheckboxItems | length %}
+              <h2 class="nhsuk-heading-s">Left breast</h2>
+              {{ checkboxes({
+                small: true,
+                idPrefix: "technicalRecall-selectedViews-left-other",
+                name: "imageReadingTemp[technicalRecall][selectedViews]",
+                items: leftOtherCheckboxItems
+              }) }}
+            {% endif %}
+          </div>
+        </div>
+      {% endcall %}
+    {% endif %}
+
   {% endcall %}
   </div>
 
   {{ button({
-    text: "Continue"
+    text: "Update" if isEditingExistingRead else "Continue"
   }) }}
 
 {% endblock %}

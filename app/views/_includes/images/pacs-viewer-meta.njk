@@ -24,6 +24,9 @@
   <meta name="mammogram-image-lcc" content="{{ mammogramImages.paths.lcc or '' }}">
   <meta name="mammogram-image-rmlo" content="{{ mammogramImages.paths.rmlo or '' }}">
   <meta name="mammogram-image-lmlo" content="{{ mammogramImages.paths.lmlo or '' }}">
+  {# Implant displaced views, when taken #}
+  <meta name="mammogram-image-rccid" content="{{ mammogramImages.paths.rccid or '' }}">
+  <meta name="mammogram-image-lccid" content="{{ mammogramImages.paths.lccid or '' }}">
   {# Pass all image paths for additional images view #}
   <meta name="mammogram-all-paths" content="{{ mammogramImages.allPaths | dump | escape }}">
   <meta name="mammogram-has-additional" content="{{ 'true' if mammogramImages.hasAdditionalImages else 'false' }}">

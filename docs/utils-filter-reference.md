@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-26 15:54 UTC
+- **Generated:** 2026-11-26 16:15 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -28,27 +28,27 @@
 | `prior-mammograms.js` | Prior mammogram request state (awaiting, unrequested, resolved) and one-line summary helpers. | 388 |
 | `issues.js` | Issues raised against a participant, episode, appointment or reading case: types, creating and resolving, and whether a record has an open issue | 410 |
 | `medical-information.js` | Summarise medical history items, symptoms, breast features, and other clinical information into concise display strings. | 436 |
-| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 463 |
-| `expected-views.js` | Which mammogram views an appointment is expected to produce (after a mastectomy or for a technical recall), and how the views taken compare. | 481 |
-| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 499 |
-| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 511 |
-| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 524 |
-| `objects.js` | Object utilities for extracting and flattening values. | 543 |
-| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 554 |
-| `random.js` | Seeded random functions for stable prototype data | 564 |
-| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 581 |
-| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 596 |
-| `referrers.js` | Referrer chain navigation for multi-level back links | 606 |
-| `roles-and-permissions.js` | User role checks | 619 |
-| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 650 |
-| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 666 |
-| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 678 |
+| `mastectomy.js` | Mastectomy imaging follow-up question, its display text, and the bilateral mastectomy outcome. | 464 |
+| `expected-views.js` | Which mammogram views an appointment is expected to produce (after a mastectomy or for a technical recall), and how the views taken compare. | 482 |
+| `sided-medical-history.js` | Convert medical-history forms with per-procedure side answers to and from the stored per-breast fields, and validate missing sides. | 501 |
+| `annotation-summary.js` | Summarise image reading annotations (abnormality type, level of concern, location) into concise display strings. | 513 |
+| `arrays.js` | Array helpers: find by key/id, filter, push (immutable), remove empty | 526 |
+| `objects.js` | Object utilities for extracting and flattening values. | 545 |
+| `summary-list.js` | NHS summary list helpers: replace empty row values with "Enter X" links or "Not provided" text, and remove the bottom border from the last row. | 556 |
+| `random.js` | Seeded random functions for stable prototype data | 566 |
+| `urls.js` | Canonical URLs for the main pages (participant, episode, clinic, appointment, reading case) | 583 |
+| `breadcrumbs.js` | The participant-rooted breadcrumb trail case pages carry | 598 |
+| `referrers.js` | Referrer chain navigation for multi-level back links | 608 |
+| `roles-and-permissions.js` | User role checks | 621 |
+| `filter-list.js` | Generic checkbox filtering for index pages: parse selected values from the query, apply filter groups, count options (faceted), and describe what is selected | 652 |
+| `search.js` | Shared free-text participant search: name orderings (including “SURNAME, Firstname”) and NHS number. | 668 |
+| `utility.js` | General-purpose type coercion (`falsify`) and limiting utilities. | 680 |
 | | | |
-| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 694 |
-| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 707 |
-| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 719 |
-| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 733 |
-| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 743 |
+| `formatting.js` | Display formatting for yes/no answers and ordinal names. (filter only) | 696 |
+| `forms.js` | Injects matching flash error messages into NHS form component configs by field name. (filter only) | 709 |
+| `nunjucks.js` | Nunjucks-specific helpers: joining arrays, resolving user names from IDs, template debugging, and template literal support. (filter only) | 721 |
+| `tags.js` | Convert status strings to NHS `<strong class="nhsuk-tag">` HTML elements. (filter only) | 735 |
+| `markdown.js` | Convert markdown strings to Nunjucks-safe HTML using markdown-it (filter only) | 745 |
 
 ---
 
@@ -329,61 +329,61 @@ Image reading workflow: read state, progress tracking, batch management, per-use
 
 | Function | Description | Line |
 |---|---|---|
-| `getAppointmentReadingMetadata(data, appointment)` | Get the reading metadata for an appointment's case | 61 |
-| `writeReading(data, appointment, userId, reading, [sessionId])` | Save a user's read of an appointment's images, and take the appointment off | 76 |
-| `unskipAppointmentInSession(data, sessionId, appointmentId)` | Take an appointment off a session's skipped list. | 117 |
-| `getUnfinalisedUserReadsForSession(data, sessionId, userId)` | The user's not-yet-finalised reads in a session, each with the appointment | 139 |
-| `finaliseReadOnCase(data, appointment, readingCase, userId, [finalisedAt])` | Finalise the user's read on one case, and settle what that makes true: a case | 197 |
-| `finaliseUserReadsForSession(data, sessionId, userId)` | Finalise all the user's outstanding reads from a session. | 268 |
-| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode. | 300 |
-| `hasOpenIssueOnEpisode(data, appointment)` | Whether an appointment's episode has an open issue - what holds its case out | 341 |
-| `getReadingCaseIssuePeriods(data, readingCase)` | The periods during which a case's episode had an open issue. — e.g. `{% set issuePeriods = data \| getReadingCaseIssuePeriods(readingCase) %}` | 354 |
-| `enhanceAppointmentsWithReadingData(data, appointments, participants, userId)` | Enhance appointments with their reading case and pre-calculated metadata. | 376 |
-| `getReadingStatusForAppointments(data, appointments, [userId])` | Get detailed reading status for a group of appointments | 571 |
-| `getReadingProgress(data, appointments, skippedAppointments, [userId])` | Get progress through reading a set of appointments. | 622 |
-| `sortAppointmentsByScreeningDate(appointments)` | Sort appointments by screening date (oldest first) | 655 |
-| `getFirstAvailableClinic(data)` | Get the first clinic that still has appointments needing reads | 679 |
-| `getReadingClinics(data, [options])` | Get all clinics available for reading, enriched with unit, location, and reading status | 690 |
-| `getReadableAppointmentsForClinic(data, clinicId)` | Get readable appointments for a clinic with pre-calculated metadata | 728 |
-| `filterAppointmentsByEligibleForReading(appointments)` | Filter appointments that are eligible for reading | 761 |
-| `filterAppointmentsByNeedsAnyRead(data, appointments, maxReadsPerCase)` | Filter appointments that need any read (first or second) | 770 |
-| `filterAppointmentsByNeedsFirstRead(data, appointments)` | Filter appointments that need a first read | 789 |
-| `filterAppointmentsByNeedsSecondRead(data, appointments)` | Filter appointments that need a second read | 802 |
-| `filterAppointmentsByNeedsArbitration(data, appointments, [userId])` | Filter appointments whose case sits in the arbitration backlog and which | 815 |
-| `filterAppointmentsByFullyRead(data, appointments, requiredReads)` | Filter appointments that are fully read (have all required reads) | 842 |
-| `filterAppointmentsByUserCanRead(data, appointments, userId)` | Filter appointments that a specific user can read | 861 |
-| `filterAppointmentsByClinic(appointments, clinicId)` | Filter appointments for a specific clinic | 875 |
-| `filterAppointmentsByDayRange(appointments, minDays, [maxDays])` | Filter appointments that are within a specific day range | 886 |
-| `getFirstUserReadableAppointment(data, appointments, userId)` | Get first appointment from an array that a user can read | 914 |
-| `getNextUserReadableAppointment(data, appointments, currentAppointmentId, [userId])` | Get the next appointment the user can read after the current appointment, wrapping to start if needed | 938 |
-| `getNextCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The next case to work on in a session, after the current one. | 972 |
-| `canOpenCaseInSession(data, session, appointment, userId)` | Whether a case in a session can be opened by the reader. | 1025 |
-| `getPreviousCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The case before the current one in a session, if there is one to go back to. | 1052 |
-| `getFollowingCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The case after the current one in a session, if there is one to open. | 1086 |
-| `getFirstOutstandingCaseInSession(data, session, sessionAppointments, userId)` | The first case still to work on in a session, wherever it sits. | 1120 |
-| `getResumeAppointmentForUser(data, appointments, [userId], [skippedAppointments], [session])` | Get the appointment the user should resume reading from. | 1147 |
-| `appointmentHasBeenArbitrated(data, appointment)` | Whether an appointment's case has been arbitrated. | 1236 |
-| `canArbitrateAppointment(data, appointment)` | Whether an appointment's case can be arbitrated now. | 1250 |
-| `canUserReadAppointment(data, appointment, [userId], [options])` | Check if a user can read an appointment's images. | 1284 |
-| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible appointment candidates for a session based on its type and filters | 1351 |
-| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of appointments for reading based on specified criteria | 1439 |
-| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1537 |
-| `generateSessionId()` | Generate a unique ID for a session | 1574 |
-| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1583 |
-| `getFirstReadableAppointmentInSession(data, sessionId, [userId])` | Get the first appointment in a session that a user can read | 1620 |
-| `skipAppointmentInSession(data, sessionId, appointmentId)` | Mark an appointment as skipped in a session | 1653 |
-| `isSessionEnded(session)` | Whether a session has been ended. | 1676 |
-| `endSession(data, sessionId, userId, [endedAt])` | End a session, if it isn't ended already. | 1690 |
-| `wasWorkedInSession(data, session, appointment, userId)` | Whether a case carries any of the work a session is judged by. Reading | 1714 |
-| `sessionHasWork(data, session, userId)` | Whether the user has done any work in a session - skipped a case, or acted | 1745 |
-| `getSessionState(data, session, [userId], [progress])` | Where a session has got to - the one answer to whether it is complete. | 1783 |
-| `getSessionKind(session)` | Whether a session is reading or arbitration - what decides which other | 1823 |
-| `isUsersSession(session, userId)` | Whether a session belongs to the user - they started it, or, for an | 1834 |
-| `getOpenSessionForUser(data, userId, kind, [stateById])` | The user's open session of a kind, if they have one: a session that is | 1849 |
-| `discardUntouchedSessions(data, userId, kind)` | Remove the user's untouched sessions of a kind - ones started and left | 1880 |
-| `topUpSessionUntilWorkable(data, session, userId)` | Top a lazy session up until it has a case the user can work on, or can grow | 1904 |
-| `topUpSession(data, sessionId, [currentAppointmentId])` | Add the next eligible appointment to a session if it needs one | 1941 |
-| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 2031 |
+| `getAppointmentReadingMetadata(data, appointment)` | Get the reading metadata for an appointment's case | 62 |
+| `writeReading(data, appointment, userId, reading, [sessionId])` | Save a user's read of an appointment's images, and take the appointment off | 77 |
+| `unskipAppointmentInSession(data, sessionId, appointmentId)` | Take an appointment off a session's skipped list. | 118 |
+| `getUnfinalisedUserReadsForSession(data, sessionId, userId)` | The user's not-yet-finalised reads in a session, each with the appointment | 140 |
+| `finaliseReadOnCase(data, appointment, readingCase, userId, [finalisedAt])` | Finalise the user's read on one case, and settle what that makes true: a case | 198 |
+| `finaliseUserReadsForSession(data, sessionId, userId)` | Finalise all the user's outstanding reads from a session. | 269 |
+| `getEpisodeReadingStatus(data, episode, [userId])` | Get the reading status of an episode. | 301 |
+| `hasOpenIssueOnEpisode(data, appointment)` | Whether an appointment's episode has an open issue - what holds its case out | 342 |
+| `getReadingCaseIssuePeriods(data, readingCase)` | The periods during which a case's episode had an open issue. — e.g. `{% set issuePeriods = data \| getReadingCaseIssuePeriods(readingCase) %}` | 355 |
+| `enhanceAppointmentsWithReadingData(data, appointments, participants, userId)` | Enhance appointments with their reading case and pre-calculated metadata. | 377 |
+| `getReadingStatusForAppointments(data, appointments, [userId])` | Get detailed reading status for a group of appointments | 572 |
+| `getReadingProgress(data, appointments, skippedAppointments, [userId])` | Get progress through reading a set of appointments. | 623 |
+| `sortAppointmentsByScreeningDate(appointments)` | Sort appointments by screening date (oldest first) | 656 |
+| `getFirstAvailableClinic(data)` | Get the first clinic that still has appointments needing reads | 680 |
+| `getReadingClinics(data, [options])` | Get all clinics available for reading, enriched with unit, location, and reading status | 691 |
+| `getReadableAppointmentsForClinic(data, clinicId)` | Get readable appointments for a clinic with pre-calculated metadata | 729 |
+| `filterAppointmentsByEligibleForReading(appointments)` | Filter appointments that are eligible for reading | 762 |
+| `filterAppointmentsByNeedsAnyRead(data, appointments, maxReadsPerCase)` | Filter appointments that need any read (first or second) | 771 |
+| `filterAppointmentsByNeedsFirstRead(data, appointments)` | Filter appointments that need a first read | 790 |
+| `filterAppointmentsByNeedsSecondRead(data, appointments)` | Filter appointments that need a second read | 803 |
+| `filterAppointmentsByNeedsArbitration(data, appointments, [userId])` | Filter appointments whose case sits in the arbitration backlog and which | 816 |
+| `filterAppointmentsByFullyRead(data, appointments, requiredReads)` | Filter appointments that are fully read (have all required reads) | 843 |
+| `filterAppointmentsByUserCanRead(data, appointments, userId)` | Filter appointments that a specific user can read | 862 |
+| `filterAppointmentsByClinic(appointments, clinicId)` | Filter appointments for a specific clinic | 876 |
+| `filterAppointmentsByDayRange(appointments, minDays, [maxDays])` | Filter appointments that are within a specific day range | 887 |
+| `getFirstUserReadableAppointment(data, appointments, userId)` | Get first appointment from an array that a user can read | 915 |
+| `getNextUserReadableAppointment(data, appointments, currentAppointmentId, [userId])` | Get the next appointment the user can read after the current appointment, wrapping to start if needed | 939 |
+| `getNextCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The next case to work on in a session, after the current one. | 973 |
+| `canOpenCaseInSession(data, session, appointment, userId)` | Whether a case in a session can be opened by the reader. | 1026 |
+| `getPreviousCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The case before the current one in a session, if there is one to go back to. | 1053 |
+| `getFollowingCaseInSession(data, session, sessionAppointments, currentAppointmentId, userId)` | The case after the current one in a session, if there is one to open. | 1087 |
+| `getFirstOutstandingCaseInSession(data, session, sessionAppointments, userId)` | The first case still to work on in a session, wherever it sits. | 1121 |
+| `getResumeAppointmentForUser(data, appointments, [userId], [skippedAppointments], [session])` | Get the appointment the user should resume reading from. | 1148 |
+| `appointmentHasBeenArbitrated(data, appointment)` | Whether an appointment's case has been arbitrated. | 1237 |
+| `canArbitrateAppointment(data, appointment)` | Whether an appointment's case can be arbitrated now. | 1251 |
+| `canUserReadAppointment(data, appointment, [userId], [options])` | Check if a user can read an appointment's images. | 1285 |
+| `getEligibleCandidatesForSession(data, sessionOptions)` | Get eligible appointment candidates for a session based on its type and filters | 1350 |
+| `createReadingSession(data, options, options.type, [options.name], [options.clinicId], [options.sessionId], [options.limit], [options.filters])` | Create a session of appointments for reading based on specified criteria | 1438 |
+| `getDefaultSessionName(type, clinicId, data)` | Generate a default name for a session based on its type | 1536 |
+| `generateSessionId()` | Generate a unique ID for a session | 1573 |
+| `getReadingSession(data, sessionId)` | Get a reading session by ID | 1582 |
+| `getFirstReadableAppointmentInSession(data, sessionId, [userId])` | Get the first appointment in a session that a user can read | 1619 |
+| `skipAppointmentInSession(data, sessionId, appointmentId)` | Mark an appointment as skipped in a session | 1652 |
+| `isSessionEnded(session)` | Whether a session has been ended. | 1675 |
+| `endSession(data, sessionId, userId, [endedAt])` | End a session, if it isn't ended already. | 1689 |
+| `wasWorkedInSession(data, session, appointment, userId)` | Whether a case carries any of the work a session is judged by. Reading | 1713 |
+| `sessionHasWork(data, session, userId)` | Whether the user has done any work in a session - skipped a case, or acted | 1744 |
+| `getSessionState(data, session, [userId], [progress])` | Where a session has got to - the one answer to whether it is complete. | 1782 |
+| `getSessionKind(session)` | Whether a session is reading or arbitration - what decides which other | 1822 |
+| `isUsersSession(session, userId)` | Whether a session belongs to the user - they started it, or, for an | 1833 |
+| `getOpenSessionForUser(data, userId, kind, [stateById])` | The user's open session of a kind, if they have one: a session that is | 1848 |
+| `discardUntouchedSessions(data, userId, kind)` | Remove the user's untouched sessions of a kind - ones started and left | 1879 |
+| `topUpSessionUntilWorkable(data, session, userId)` | Top a lazy session up until it has a case the user can work on, or can grow | 1903 |
+| `topUpSession(data, sessionId, [currentAppointmentId])` | Add the next eligible appointment to a session if it needs one | 1940 |
+| `getSessionReadingProgress(data, sessionId, currentAppointmentId, [userId])` | Get reading progress for a session | 2030 |
 
 ### prior-mammograms.js
 
@@ -445,20 +445,21 @@ Summarise medical history items, symptoms, breast features, and other clinical i
 | `getMedicalHistoryType(type)` | Get a medical history type object, by type or slug | 19 |
 | `getMedicalHistoryKeyFromSlug(slug)` | Get the camelCase data key for a medical history type from its slug | 32 |
 | `isMedicalHistoryItemRemoved(item)` | Check whether a medical history item records something that has since been removed | 43 |
-| `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 63 |
-| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 244 |
-| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 273 |
-| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 295 |
-| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 317 |
-| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 398 |
-| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 412 |
-| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 434 |
-| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 490 |
-| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 509 |
-| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 536 |
-| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 558 |
-| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 572 |
-| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 598 |
+| `getBreastImplantSides(appointment)` | Get the breasts that have breast implants in place — e.g. `{% if (appointment \| getBreastImplantSides) \| length %}Has implants{% endif %}` | 63 |
+| `summariseMedicalHistoryItem(item)` | Summarise a single medical history item into a concise string | 94 |
+| `summariseMedicalHistory(medicalHistory)` | Summarise all medical history items into an array of summary strings | 275 |
+| `getMedicalHistoryItems(medicalHistory)` | Get all medical history items as a flat array | 304 |
+| `countMedicalHistoryItems(medicalHistory)` | Count total number of medical history items | 326 |
+| `summariseSymptom(symptom)` | Summarise a single symptom into a concise string | 348 |
+| `summariseSymptoms(symptoms)` | Summarise all symptoms into an array of summary strings | 429 |
+| `summariseBreastFeature(feature)` | Summarise a single breast feature into a concise string | 443 |
+| `summariseBreastFeatures(features)` | Summarise all breast features into an array of summary strings | 465 |
+| `getPregnancyAndBreastfeeding(medicalInformation)` | Read the pregnancy and breastfeeding answers off an appointment's medical | 521 |
+| `getBreastDensityFactors(medicalInformation)` | Read the breast density factors off an appointment's medical information | 540 |
+| `summarisePregnancyAndBreastfeeding(medicalInformation)` | Summarise the pregnancy and breastfeeding answers into an array of labels | 567 |
+| `summariseBreastDensityFactors(medicalInformation)` | Summarise breast density factors into an array of summary strings | 589 |
+| `summariseHrt(medicalInformation)` | Summarise the HRT answer, including the year if one was recorded | 603 |
+| `summariseOtherMedicalInformation(medicalInformation)` | Summarise the free-text other medical information, truncating if long | 629 |
 
 ### mastectomy.js
 
@@ -486,15 +487,16 @@ Which mammogram views an appointment is expected to produce (after a mastectomy 
 
 | Function | Description | Line |
 |---|---|---|
-| `describeViewCode(code)` | Describe a mammogram view code in words — e.g. `{{ "RMLO" \| describeViewCode }}` | 26 |
-| `getExpectedViews(appointment)` | Work out which mammogram views an appointment is expected to produce, and why — e.g. `{% set expectedViews = appointment \| getExpectedViews %}` | 86 |
-| `getTakenViews(mammogramData)` | Get the codes of the views taken in a set of mammogram data | 171 |
-| `getExpectedViewStates(appointment, [mammogramData])` | Compare the views taken with the views expected, for each of the 4 standard views — e.g. `{% set viewStates = appointment \| getExpectedViewStates %}` | 183 |
-| `getNotExpectedViews(appointment)` | Get the views that weren't expected and weren't taken — e.g. `{{ appointment \| getNotExpectedViews \| map("lower") \| dump }}` | 216 |
-| `hasMissingExpectedViews(appointment, [mammogramData])` | Check whether any expected view has no images | 231 |
-| `getImagedSides(mammogramData)` | Get the breasts that have at least one standard view taken — e.g. `{% set imagedSides = appointment.mammogramData \| getImagedSides %}` | 245 |
-| `getReadableSides(mammogramData)` | Get the breasts a reader can give an opinion on and annotate — e.g. `{% set readableSides = appointment.mammogramData \| getReadableSides %}` | 261 |
-| `hasIncompleteMammography(appointment)` | Check whether an appointment's mammography was incomplete — e.g. `{% if appointment \| hasIncompleteMammography %}Incomplete mammography{% endif %}` | 277 |
+| `describeViewCode(code)` | Describe a mammogram view code in words — e.g. `{{ "RMLO" \| describeViewCode }}` | 32 |
+| `getExpectedViews(appointment)` | Work out which mammogram views an appointment is expected to produce, and why — e.g. `{% set expectedViews = appointment \| getExpectedViews %}` | 92 |
+| `getImplantDisplacedViews(appointment)` | Get the implant displaced (Eklund) views an appointment takes as extras — e.g. `{% set implantDisplacedViews = appointment \| getImplantDisplacedViews %}` | 177 |
+| `getTakenViews(mammogramData)` | Get the codes of the views taken in a set of mammogram data | 204 |
+| `getExpectedViewStates(appointment, [mammogramData])` | Compare the views taken with the views expected, for each of the 4 standard views — e.g. `{% set viewStates = appointment \| getExpectedViewStates %}` | 216 |
+| `getNotExpectedViews(appointment)` | Get the views that weren't expected and weren't taken — e.g. `{{ appointment \| getNotExpectedViews \| map("lower") \| dump }}` | 249 |
+| `hasMissingExpectedViews(appointment, [mammogramData])` | Check whether any expected view has no images | 264 |
+| `getImagedSides(mammogramData)` | Get the breasts that have at least one standard view taken — e.g. `{% set imagedSides = appointment.mammogramData \| getImagedSides %}` | 278 |
+| `getReadableSides(mammogramData)` | Get the breasts a reader can give an opinion on and annotate — e.g. `{% set readableSides = appointment.mammogramData \| getReadableSides %}` | 294 |
+| `hasIncompleteMammography(appointment)` | Check whether an appointment's mammography was incomplete — e.g. `{% if appointment \| hasIncompleteMammography %}Incomplete mammography{% endif %}` | 310 |
 
 ### sided-medical-history.js
 
@@ -624,28 +626,28 @@ User role checks. Use these instead of comparing role strings directly.
 
 | Function | Description | Line |
 |---|---|---|
-| `hasRole(user, role)` | Check if a user has a specific role | 11 |
-| `hasAnyRole(user, roles)` | Check if a user has any of the specified roles | 25 |
-| `hasAllRoles(user, roles)` | Check if a user has all of the specified roles | 39 |
-| `hasPermission(user, permission)` | Check if a user has a specific permission | 53 |
-| `hasAnyPermission(user, permissions)` | Check if a user has any of the specified permissions | 71 |
-| `requiresImplantImaging(appointment)` | Check whether an appointment needs a user with implant imaging training | 103 |
-| `getImplantImagingReason(appointment)` | Describe why an appointment needs a mammographer with implant imaging | 120 |
-| `hasNominatedAuthorisedMammographer(appointment)` | Check whether an authorised mammographer other than the current user has | 139 |
-| `getAuthorisedMammographerName(appointment, [options])` | Get the display name of the authorised mammographer nominated for an | 153 |
-| `canUserScreenAppointment(user, appointment)` | Check whether a user is able to screen a given appointment | 171 |
-| `isClinician(user)` | Check if a user is a clinician | 189 |
-| `isAdministrative(user)` | Check if a user has an administrative role | 199 |
-| `isHybridUser(user)` | Check if a user has both clinical and administrative roles | 209 |
-| `getRolesText(user, separator)` | Get all roles for a user as formatted string | 219 |
-| `isCurrentUser(user)` | Check if a user is the current user | 233 |
-| `getAppointmentRunnerId(appointment)` | Get the id of the user running an appointment now: whoever last started or — e.g. `{{ appointment \| getAppointmentRunnerId \| getUsername }}` | 250 |
-| `isRunByCurrentUser(appointment)` | Check if an appointment is being run by the current user, meaning they | 270 |
-| `getAppointmentRunByIds(appointment)` | Get the ids of everyone who ran an appointment, in the order they joined | 285 |
-| `getAppointmentRunByNames(appointment, [options])` | Get the names of everyone who ran an appointment, for showing everyone — e.g. `{{ appointment \| getAppointmentRunByNames \| formatList }}` | 305 |
-| `getAppointmentMammographerSummary(appointment, [options])` | Get the people and roles to show for a completed appointment — e.g. `{{ appointment \| getAppointmentMammographerSummary({ identifyCurrentUser: true }) }}` | 321 |
-| `getScreenedByName(appointment, [options])` | Get the name of whoever screened an appointment, for showing one name in a — e.g. `{{ appointment \| getScreenedByName({ identifyCurrentUser: true }) }}` | 369 |
-| `getAppointmentScreenedByNames(appointment, [options])` | Get the names of everyone who screened an appointment, for a list where — e.g. `{{ appointment \| getAppointmentScreenedByNames({ identifyCurrentUser: true }) \| join(", ") }}` | 392 |
+| `hasRole(user, role)` | Check if a user has a specific role | 14 |
+| `hasAnyRole(user, roles)` | Check if a user has any of the specified roles | 28 |
+| `hasAllRoles(user, roles)` | Check if a user has all of the specified roles | 42 |
+| `hasPermission(user, permission)` | Check if a user has a specific permission | 56 |
+| `hasAnyPermission(user, permissions)` | Check if a user has any of the specified permissions | 74 |
+| `requiresImplantImaging(appointment)` | Check whether an appointment needs a user with implant imaging training | 104 |
+| `getImplantImagingReason(appointment)` | Describe why an appointment needs a mammographer with implant imaging | 121 |
+| `hasNominatedAuthorisedMammographer(appointment)` | Check whether an authorised mammographer other than the current user has | 140 |
+| `getAuthorisedMammographerName(appointment, [options])` | Get the display name of the authorised mammographer nominated for an | 154 |
+| `canUserScreenAppointment(user, appointment)` | Check whether a user is able to screen a given appointment | 172 |
+| `isClinician(user)` | Check if a user is a clinician | 190 |
+| `isAdministrative(user)` | Check if a user has an administrative role | 200 |
+| `isHybridUser(user)` | Check if a user has both clinical and administrative roles | 210 |
+| `getRolesText(user, separator)` | Get all roles for a user as formatted string | 220 |
+| `isCurrentUser(user)` | Check if a user is the current user | 234 |
+| `getAppointmentRunnerId(appointment)` | Get the id of the user running an appointment now: whoever last started or — e.g. `{{ appointment \| getAppointmentRunnerId \| getUsername }}` | 251 |
+| `isRunByCurrentUser(appointment)` | Check if an appointment is being run by the current user, meaning they | 271 |
+| `getAppointmentRunByIds(appointment)` | Get the ids of everyone who ran an appointment, in the order they joined | 286 |
+| `getAppointmentRunByNames(appointment, [options])` | Get the names of everyone who ran an appointment, for showing everyone — e.g. `{{ appointment \| getAppointmentRunByNames \| formatList }}` | 306 |
+| `getAppointmentMammographerSummary(appointment, [options])` | Get the people and roles to show for a completed appointment — e.g. `{{ appointment \| getAppointmentMammographerSummary({ identifyCurrentUser: true }) }}` | 322 |
+| `getScreenedByName(appointment, [options])` | Get the name of whoever screened an appointment, for showing one name in a — e.g. `{{ appointment \| getScreenedByName({ identifyCurrentUser: true }) }}` | 370 |
+| `getAppointmentScreenedByNames(appointment, [options])` | Get the names of everyone who screened an appointment, for a list where — e.g. `{{ appointment \| getAppointmentScreenedByNames({ identifyCurrentUser: true }) \| join(", ") }}` | 393 |
 
 ### filter-list.js
 

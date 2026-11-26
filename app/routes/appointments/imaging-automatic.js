@@ -21,7 +21,10 @@ const {
   getImageSetForAppointment,
   getMammogramImageSource
 } = require('../../lib/utils/mammogram-images')
-const { getExpectedViews } = require('../../lib/utils/expected-views')
+const {
+  getExpectedViews,
+  getImplantDisplacedViews
+} = require('../../lib/utils/expected-views')
 const {
   ensureSeedProfilesState,
   getSeedDataProfileFromState
@@ -104,6 +107,7 @@ module.exports = (router) => {
           isSeedData: false,
           config: appointmentData?.participant?.config,
           expectedViews: getExpectedViews(data.appointment).views,
+          implantDisplacedViews: getImplantDisplacedViews(data.appointment),
           scenarioWeights: mammogramProfile.scenarioWeights || null,
           imperfectChanceForTechnicalOrIncomplete:
             mammogramProfile.imperfectChanceForTechnicalOrIncomplete,

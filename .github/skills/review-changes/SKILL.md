@@ -46,13 +46,12 @@ Tell the designer, in plain language and briefly:
 - anything left unfixed and why
 - decisions they made, and any left open
 
-Then give them review notes to paste into the pull request description, as a fenced markdown block:
+Then give them review notes to paste into the pull request description, as a fenced markdown block. The notes are for pull request reviewers, so leave out findings that have been fixed and cover only what remains:
 
 ```markdown
 ## Review notes
 
 - Reviewed with the review-changes skill. `npm test`: [passing / failing, and what fails / not run, and why]
-- Fixed: [one line per fix]
 - Not fixed: [item and reason, or "nothing"]
 - Decisions: [choices made during the review and why, or "none"]
 - Open questions: [numbered list of anything left for reviewers to weigh in on, or "none"]

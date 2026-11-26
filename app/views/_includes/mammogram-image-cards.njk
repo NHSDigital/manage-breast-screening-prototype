@@ -12,19 +12,25 @@
   - hideAdditionalDetails: boolean - suppresses repeat/extra details in each view
 #}
 
-{# Build ordered standard views, respecting the mammogramViewOrder config #}
+{# Build ordered standard views, respecting the mammogramViewOrder config.
+   Implant displaced views follow their CC, and are optional: shown only when
+   taken #}
 {% if data.settings.mammogramViewOrder == 'mlo-first' %}
   {% set standardViews = [
     { side: 'right', viewShort: 'MLO', viewShortWithSide: 'RMLO' },
     { side: 'right', viewShort: 'CC', viewShortWithSide: 'RCC' },
+    { side: 'right', viewShort: 'CCID', viewShortWithSide: 'RCCID', optional: true },
     { side: 'left', viewShort: 'MLO', viewShortWithSide: 'LMLO' },
-    { side: 'left', viewShort: 'CC', viewShortWithSide: 'LCC' }
+    { side: 'left', viewShort: 'CC', viewShortWithSide: 'LCC' },
+    { side: 'left', viewShort: 'CCID', viewShortWithSide: 'LCCID', optional: true }
   ] %}
 {% else %}
   {% set standardViews = [
     { side: 'right', viewShort: 'CC', viewShortWithSide: 'RCC' },
+    { side: 'right', viewShort: 'CCID', viewShortWithSide: 'RCCID', optional: true },
     { side: 'right', viewShort: 'MLO', viewShortWithSide: 'RMLO' },
     { side: 'left', viewShort: 'CC', viewShortWithSide: 'LCC' },
+    { side: 'left', viewShort: 'CCID', viewShortWithSide: 'LCCID', optional: true },
     { side: 'left', viewShort: 'MLO', viewShortWithSide: 'LMLO' }
   ] %}
 {% endif %}
@@ -42,7 +48,9 @@
     {% endif %}
   {% endfor %}
 
-  {% if not viewData %}
+  {% if standardView.optional and not viewData %}
+    {# Not taken, so not shown #}
+  {% elseif not viewData %}
     {% set viewData = {
       side: standardView.side,
       viewShort: standardView.viewShort,
@@ -53,7 +61,9 @@
     } %}
   {% endif %}
 
-  {% if standardView.side == 'right' %}
+  {% if not viewData %}
+    {# Optional view not taken #}
+  {% elseif standardView.side == 'right' %}
     {% set rightViews = rightViews | push(viewData) %}
   {% else %}
     {% set leftViews = leftViews | push(viewData) %}

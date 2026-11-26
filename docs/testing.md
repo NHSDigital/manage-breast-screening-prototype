@@ -16,8 +16,8 @@ own:
 | ----------------------- | ---------------------------------------------------- | ----- |
 | `npm run lint`          | ESLint over app, lib, scripts and tests              | ~2s   |
 | `npm run test:docs`     | Checks the component and modifier docs are complete  | <1s   |
-| `npm run test:routes`   | Requests every GET page and checks for server errors | ~20s  |
-| `npm run test:journeys` | Drives the core journeys in a browser                | ~10s  |
+| `npm run test:routes`   | Requests every GET page and checks for server errors | ~5s   |
+| `npm run test:journeys` | Drives the core journeys in a browser                | ~25s  |
 
 ### Running the suite from an AI agent
 
@@ -26,6 +26,22 @@ the one in VS Code. The journeys do not: on macOS the sandbox stops Chromium
 starting, so it crashes with a segmentation fault and every journey fails.
 No sandbox setting fixes this, so agents should run `npm run test:journeys`,
 or `npm test`, outside the sandbox and ask for approval to do so.
+
+The sandbox also stops a command sending signals to processes started by any
+other command, including ones from earlier in the session or from a subagent.
+`kill <pid>` fails with "Operation not permitted", and no sandbox setting
+changes this. So an agent that starts a server must stop it from the shell
+that started it, before it finishes: use the agent's own stop tool for that
+shell, not `kill`. A subagent must stop its own servers before it reports
+back, because the parent cannot. For a throwaway server, add an exit timer so
+it stops itself even if it is forgotten:
+
+```sh
+PORT=3020 node --import 'data:text/javascript,setTimeout(()=>process.exit(0),600000).unref()' .
+```
+
+This stops it after 10 minutes. If servers are still left running,
+`npm run kill` stops them, but it must run outside the sandbox.
 
 ## The four layers
 
@@ -53,7 +69,7 @@ name, and the skip list is printed on every run so it stays visible.
 
 **Journeys** (`tests/e2e/`) drive real flows in Chromium via Playwright. This is
 the only layer that exercises POST handlers, session state and the client-side
-JavaScript. Thirty journeys, among them:
+JavaScript. The journeys include:
 
 - a screening appointment recording medical history and a symptom, from
   check-in to completion
@@ -86,9 +102,16 @@ JavaScript. Thirty journeys, among them:
 - moving on from a settled arbitration case, which advances the session rather
   than looping back through finished ones
 - a decision submitted twice landing where the first submit did
+- the clinic appointment list's tabs, search and filters: what each tab shows,
+  filtering by tag and appointment type, removing filters one at a time,
+  clearing them while keeping the tab and sort, and checking in a row that
+  live search added
 - a check-in in one browser appearing live on another browser's checked-in
   list in the same room, and not in a different room or none, then a reset
   clearing it
+- other shared data behaviour: live status changes on an appointment page,
+  another user taking over a paused appointment, who is signed in elsewhere
+  in the room, and the Browsers that join mode
 
 Between them the reading journeys cover all four ways a reader can leave a case
 — normal, recall for assessment, technical recall and raising an issue — which is what
@@ -122,6 +145,13 @@ gives a single process that can be started and killed cleanly. It loads its
 modules once at boot, so the suite always starts a fresh server rather than
 reusing one — otherwise it would test the code as it was when that server
 started.
+
+**The test server caches templates.** The kit recompiles every template on
+every request, so template edits show without a restart. That recompiling was
+most of a page's render time, and the suite's. Both test servers set
+`CACHE_TEMPLATES=true`, which turns Nunjucks' cache on, as production does
+(see `app.js`). It is safe there because each run starts a fresh server. Only
+the compiled templates are cached, never the rendered pages.
 
 **Sessions are isolated.** Per-session changes live in `data._changes`, overlaid
 on the shared read-only store, so tests running in parallel do not tread on each

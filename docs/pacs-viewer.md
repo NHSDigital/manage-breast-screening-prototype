@@ -35,18 +35,24 @@ Most units read on two portrait monitors side by side. The `pacsScreens` setting
 - **Two** (default): the viewer opens on the left half of the screen as screen 1 (`/reading/mammogram-viewer`), then opens screen 2 (`?screen=2`, window name `mammogram-viewer-2`) on the right half. Browsers allow one pop-up per click, so screen 1 opens screen 2 itself; if that is blocked, an “Open screen 2” button appears in screen 1's header. Screen 2 gets its study and layout from screen 1. Closing either with “Close viewer” closes both.
 - **One**: a single landscape window showing screen 1 and screen 2 side by side. Opening it closes any screen 2 left over from two-screen mode.
 
-“Use one screen” or “Use two screens” in the viewer header switches mode. It saves the setting through the URL, then reloads the viewer, resizing the window and opening or closing screen 2. Layout, prior and image choices are kept across the reload (in `sessionStorage`). Screen 2's button asks screen 1 to switch, since screen 1 does the work. The reading page updates its `pacs-viewer-screens` meta, so reopening the viewer uses the new size. Changing the setting elsewhere takes effect when the viewer next loads.
+“Use one screen” or “Use two screens” in the viewer header switches mode. It saves the setting through the URL, then reloads the viewer, resizing the window and opening or closing screen 2. Layout, prior and image choices are kept across the reload (in `sessionStorage`). Screen 2's button asks screen 1 to switch, since screen 1 does the work. The reading page updates its `pacs-viewer-screens` meta, so reopening the viewer uses the new size. Changing the setting elsewhere takes effect when the viewer next loads. The two screens also compare their Priors layout, Current layout and view order settings: if they loaded with different ones, the screen that loaded first reloads, keeping its study and layout.
 
 ### Layouts (hanging protocol)
 
-| Layout  | Screen 1                                       | Screen 2               | Shown                        |
-| ------- | ---------------------------------------------- | ---------------------- | ---------------------------- |
-| Priors  | MLOs: prior on top (RMLO, LMLO), current below | CCs, the same way      | First, when there are priors |
-| Current | Right breast: RCC on top, RMLO below           | Left breast: LCC, LMLO | First, when there are none   |
-| MLO     | RMLO                                           | LMLO                   |                              |
-| CC      | RCC                                            | LCC                    |                              |
+| Layout  | Screen 1                                                               | Screen 2                     | Shown                                 |
+| ------- | ---------------------------------------------------------------------- | ---------------------------- | ------------------------------------- |
+| Priors  | On the side: current study, right and left side by side, in view order | The prior, the same way      | First, when there are priors          |
+| Priors  | On top: first view in view order, prior above current                  | The other view, the same way | First, when there are priors          |
+| Current | By breast: right breast, first view in view order on top               | Left breast, the same way    | First, when there are none            |
+| Current | By view: first view in view order, right and left side by side         | The other view, the same way | First, when there are none            |
+| MLO     | RMLO                                                                   | LMLO                         |                                       |
+| CC      | RCC                                                                    | LCC                          |                                       |
+| RMLO    | Current RMLO                                                           | Prior RMLO                   | When current and a prior have an RMLO |
+| LMLO    | Current LMLO                                                           | Prior LMLO                   | When current and a prior have an LMLO |
+| RCC     | Current RCC                                                            | Prior RCC                    | When current and a prior have an RCC  |
+| LCC     | Current LCC                                                            | Prior LCC                    | When current and a prior have an LCC  |
 
-Header buttons or ← → switch layout, in both screens at once. Right-breast images sit against the right edge of their panel and left-breast images against the left, so the pair is bookmatched. Every panel is labelled with its view, and its study date (“Nov 2026”) on a second line, the same for current and prior images. Current panels have a blue outline and prior panels a yellow one. Layouts are fixed in `LAYOUTS` in the viewer script; the viewer doesn't use `mammogramViewOrder`.
+Header buttons or ← → switch layout, in both screens at once. Right-breast images sit against the right edge of their panel and left-breast images against the left, so a left and right pair is bookmatched; in the single-view layouts current and prior are the same breast, so they sit against the same edge. Every panel is labelled with its view, and its study date (“Nov 2026”) on a second line, the same for current and prior images. Current panels have a blue outline and prior panels a yellow one. Layouts are in `LAYOUTS` in the viewer script. The “Priors layout” and “Current layout” settings choose between the two arrangements of Priors and Current, read when the viewer loads. Both arrangements of each follow `mammogramViewOrder`: CC first puts CCs on top, or on screen 1.
 
 Pages give the viewer their study with `_includes/images/pacs-viewer-meta.njk`, included in the head after setting `viewerAppointment`, `viewerParticipant` and `viewerAutoOpen`. The reading layout and the issue page use it.
 
@@ -82,23 +88,23 @@ When the viewer opens (manually or auto), it requests current participant data:
 - **Zoom in and pan**: In the fullscreen view, scroll the mouse wheel or pinch on a trackpad to zoom towards the pointer, or press + and - to zoom on the centre, up to 8 times the fitted size; 0 goes back to fit. Drag to pan. A small indicator shows the zoom level (“Fit” or a percentage of the fitted size). Moving to another image opens it fitted. If a set has a full-resolution file for an image (real images do), it's loaded the first time that image is zoomed in
 - **Keyboard navigation**: In the grid, ← → change layout. Fullscreen, ← → move through the images on this screen, in layout order; they don't pan.
 - **Opinion shortcuts**: Press N (normal), D (normal, but add details), T (technical recall), or R (recall for assessment) to trigger the corresponding opinion on the reading page - works even when PACS viewer is focused. When the participant has symptoms, plain Normal is not offered: “Normal, and add details” replaces it, and both N and D trigger it
-- **Additional images**: A panel whose view has more than one image (a repeat, or extra images of a large breast), in the current study or a prior, shows the latest with numbered buttons (“1”, “2 (latest)”) to flick between them in place, so a prior stays alongside. The label says which (“RMLO (1 of 2)”). The choice holds across layouts, fullscreen and both screens, and resets for the next participant
-- **Priors**: When the participant has earlier studies, the Priors layout compares the current study with one of them, the most recent by default. Buttons in the header (“Prior: 3 years ago”, with the date on hover, newest on the left) choose which, up to `config.reading.maxPriorStudiesInViewer` (3) priors; [ and ] step newer or older, matching the buttons. The buttons only show in the Priors layout; [ or ] from another layout switches to it. When there are none, the header says “No priors” and the Priors layout isn't offered. Fullscreen, [ and ] show the same view from a newer or older study at the same zoom and position, skipping studies without that view. A new participant always opens on the default layout and most recent prior
+- **Additional images**: A panel whose view has more than one image (a repeat, or extra images of a large breast), in the current study or a prior, shows the latest with numbered buttons (“1”, “2 (latest)”) to flick between them in place, so a prior stays alongside. The label says which (“RMLO (1 of 2)”). The choice holds across layouts, fullscreen and both screens, and resets for the next participant. Implant displaced views (RCCID, LCCID) show as extra images of their CC, after its own images, with buttons such as “2 (ID)”; the panel opens on the CC
+- **Priors**: When the participant has earlier studies, the Priors layout and the single-view layouts (RMLO, LMLO, RCC, LCC) compare the current study with one of them, the most recent by default. Buttons in the header (“Prior: 3 years ago”, with the date on hover, newest on the left) choose which, up to `config.reading.maxPriorStudiesInViewer` (3) priors; [ and ] step newer or older, matching the buttons. The buttons only show in layouts with priors; [ or ] from another layout switches to Priors. A single-view layout is offered when the current study and at least one prior have that view; if the chosen prior doesn't, its panel shows “No image”. When there are no priors, the header says “No priors” and none of these layouts are offered. Fullscreen, [ and ] show the same view from a newer or older study at the same zoom and position, skipping studies without that view. A new participant always opens on the default layout and most recent prior
 - **Debug mode**: Press 'i' to toggle debug bar showing set ID, tag, description, and context flags
 
 #### Keyboard shortcuts
 
-| Key        | Where      | Does                                            |
-| ---------- | ---------- | ----------------------------------------------- |
-| ← →        | Grid       | Previous or next layout, on both screens        |
-| ← →        | Fullscreen | Previous or next image on this screen           |
-| + -        | Fullscreen | Zoom in or out                                  |
-| 0          | Fullscreen | Back to fit                                     |
-| [ ]        | Grid       | Newer ([) or older (]) prior, or back to Priors |
-| [ ]        | Fullscreen | Same view from a newer ([) or older (]) study   |
-| Escape     | Fullscreen | Close                                           |
-| N, D, T, R | Anywhere   | Opinion shortcuts, sent to the reading page     |
-| i          | Anywhere   | Toggle the debug bar                            |
+| Key        | Where      | Does                                                                         |
+| ---------- | ---------- | ---------------------------------------------------------------------------- |
+| ← →        | Grid       | Previous or next layout, on both screens                                     |
+| ← →        | Fullscreen | Previous or next image on this screen                                        |
+| + -        | Fullscreen | Zoom in or out                                                               |
+| 0          | Fullscreen | Back to fit                                                                  |
+| [ ]        | Grid       | Newer ([) or older (]) prior, or back to Priors from a layout without priors |
+| [ ]        | Fullscreen | Same view from a newer ([) or older (]) study                                |
+| Escape     | Fullscreen | Close                                                                        |
+| N, D, T, R | Anywhere   | Opinion shortcuts, sent to the reading page                                  |
+| i          | Anywhere   | Toggle the debug bar                                                         |
 
 Full-resolution images reach the viewer as `fullPaths`, a map from display path to full path, in the `mammogram-full-paths` meta tag. Only real image sets have them (`fullPaths` in `app/lib/real-images.js`).
 
@@ -120,7 +126,7 @@ Priors show even when the case is waiting for priors to be requested (`appointme
   - Image library: `image-library/` folder with individual images
 - **Real images**: a pack outside the app, served by the `/real-images/` route, image reading only. See [mammogram-images.md](mammogram-images.md#showing-a-pack-in-the-prototype)
 
-Each complete set contains four views: `rcc.png`, `lcc.png`, `rmlo.png`, `lmlo.png`
+Each complete set contains four views: `rcc.png`, `lcc.png`, `rmlo.png`, `lmlo.png`. Sets with implants can also have implant displaced views, `rccid.png` and `lccid.png`, which are only used when present. Composite sets can define `rccid` and `lccid` in `views` the same way. Implant displaced views aren't annotated.
 
 ### Manifest
 
@@ -231,17 +237,19 @@ When sets have arrays for views (repeat scenarios), the viewer:
 
 ### User Settings (`data.settings`)
 
-| Setting              | Default      | Description                                                                                                    |
-| -------------------- | ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `debugMode`          | `'false'`    | Show debug info (tags like Has repeat, Imperfect, etc.)                                                        |
-| `mammogramViewOrder` | `'cc-first'` | View order on reading pages: `'cc-first'` (CC on top) or `'mlo-first'` (MLO on top). The viewer doesn't use it |
+| Setting              | Default      | Description                                                                                                                                       |
+| -------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `debugMode`          | `'false'`    | Show debug info (tags like Has repeat, Imperfect, etc.)                                                                                           |
+| `mammogramViewOrder` | `'cc-first'` | View order on reading pages: `'cc-first'` (CC on top) or `'mlo-first'` (MLO on top). In the viewer, sets the order of views in Priors and Current |
 
 ### User Settings (`data.settings.reading`)
 
-| Setting              | Default   | Description                                                   |
-| -------------------- | --------- | ------------------------------------------------------------- |
-| `autoOpenPacsViewer` | `'false'` | Auto-open viewer when entering reading workflow               |
-| `pacsScreens`        | `'two'`   | `'two'` windows, one per monitor, or `'one'` landscape window |
+| Setting              | Default       | Description                                                                                               |
+| -------------------- | ------------- | --------------------------------------------------------------------------------------------------------- |
+| `autoOpenPacsViewer` | `'false'`     | Auto-open viewer when entering reading workflow                                                           |
+| `pacsScreens`        | `'two'`       | `'two'` windows, one per monitor, or `'one'` landscape window                                             |
+| `pacsPriorsLayout`   | `'side'`      | Priors layout: `'side'` (current on screen 1, prior on screen 2) or `'top'` (prior above current)         |
+| `pacsCurrentLayout`  | `'by-breast'` | Current layout: `'by-breast'` (a breast per screen) or `'by-view'` (CCs on one screen, MLOs on the other) |
 
 ### Hard Config (`config.reading`)
 
@@ -277,7 +285,7 @@ When sets have arrays for views (repeat scenarios), the viewer:
 | File                                                 | Purpose                                                                     |
 | ---------------------------------------------------- | --------------------------------------------------------------------------- |
 | `app/assets/images/mammogram-diagrams/manifest.json` | Image set metadata (90 sets)                                                |
-| `app/data/session-data-defaults.js`                  | `autoOpenPacsViewer` and `pacsScreens` setting defaults                     |
+| `app/data/session-data-defaults.js`                  | PACS viewer setting defaults                                                |
 | `app/config.js`                                      | `mammogramImageSource`, `mammogramTagWeights` and `maxPriorStudiesInViewer` |
 
 ### Scripts
@@ -359,7 +367,7 @@ The `scripts/process-mammogram-images.sh` script processes individual mammogram 
 - [ ] Test/verify probability distribution (debug route to sample many appointments)
 - [ ] Hiding priors while a case is waiting for them
 - [ ] Layouts for more than one prior
-- [ ] Settings for screen and layout order
+- [ ] Settings for screen order
 - [ ] Annotation inheritance for composite sets (abnormality markers)
 - [ ] Breast features alignment (moles, scars visible in mammograms)
 

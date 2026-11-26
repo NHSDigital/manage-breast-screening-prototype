@@ -130,6 +130,9 @@
       })
     }
 
+    // Panels a marker needs to be on before its details open by themselves.
+    // Optional views, such as implant displaced ones, can be marked but
+    // aren't needed
     function getPanelKeysForSide(side) {
       var panels = container.querySelectorAll(
         '[data-panel-side="' +
@@ -138,7 +141,10 @@
       )
       var keys = []
       panels.forEach(function (p) {
-        if (!p.classList.contains('app-annotation-images__panel--no-image')) {
+        if (
+          !p.classList.contains('app-annotation-images__panel--no-image') &&
+          !p.hasAttribute('data-optional-view')
+        ) {
           keys.push(p.dataset.view)
         }
       })

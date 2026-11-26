@@ -37,24 +37,24 @@
       {
         label: "Right breast",
         side: "right",
-        views: [
+        views: ([
           { key: "rcc",  label: "RCC" },
           { key: "rmlo", label: "RMLO" }
         ] if mammogramViewOrder == 'cc-first' else [
           { key: "rmlo", label: "RMLO" },
           { key: "rcc",  label: "RCC" }
-        ]
+        ]) | push({ key: "rccid", label: "RCCID", optional: true })
       },
       {
         label: "Left breast",
         side: "left",
-        views: [
+        views: ([
           { key: "lcc",  label: "LCC" },
           { key: "lmlo", label: "LMLO" }
         ] if mammogramViewOrder == 'cc-first' else [
           { key: "lmlo", label: "LMLO" },
           { key: "lcc",  label: "LCC" }
-        ]
+        ]) | push({ key: "lccid", label: "LCCID", optional: true })
       }
     ] %}
 
@@ -89,7 +89,7 @@
                   <img src="{{ path }}" alt="{{ view.label }}" draggable="false">
                 </span>
               {% endfor %}
-            {% else %}
+            {% elseif not view.optional %}
               <span class="app-ann-v2__tab-thumb app-ann-v2__tab-thumb--missing{{ ' app-ann-v2__tab-thumb--not-expected' if view.key in notExpectedViews }}" data-thumb-side="{{ group.side }}" data-thumb-view="{{ view.key }}">
               </span>
             {% endif %}
@@ -157,12 +157,15 @@
   // ─── constants ─────────────────────────────────────────────────────────────
 
   const ccFirst = V2.viewOrder === 'cc-first'
+  // An implant displaced view comes last, and only when it was taken. It can
+  // be marked, but isn't needed before a marker's details open
+  const OPTIONAL_VIEWS = { right: 'rccid', left: 'lccid' }
   const SIDE_VIEWS = {
-    right: ccFirst ? ['rcc', 'rmlo'] : ['rmlo', 'rcc'],
-    left: ccFirst ? ['lcc', 'lmlo'] : ['lmlo', 'lcc']
+    right: (ccFirst ? ['rcc', 'rmlo'] : ['rmlo', 'rcc']).concat(V2.imagePaths.rccid ? ['rccid'] : []),
+    left: (ccFirst ? ['lcc', 'lmlo'] : ['lmlo', 'lcc']).concat(V2.imagePaths.lccid ? ['lccid'] : [])
   }
 
-  const VIEW_LABELS = { rmlo: 'RMLO', rcc: 'RCC', lmlo: 'LMLO', lcc: 'LCC' }
+  const VIEW_LABELS = { rmlo: 'RMLO', rcc: 'RCC', lmlo: 'LMLO', lcc: 'LCC', rccid: 'RCCID', lccid: 'LCCID' }
 
   // Resolves a view key (including subkeys like 'rcc-1') to a display label
   function getViewLabel(key) {
@@ -221,7 +224,7 @@
   // Returns all expected panel view keys for a given side (expanding multi-image views)
   function getPanelKeysForSide(side) {
     const keys = []
-    SIDE_VIEWS[side].forEach(viewKey => {
+    SIDE_VIEWS[side].filter(viewKey => viewKey !== OPTIONAL_VIEWS[side]).forEach(viewKey => {
       const rawPath = V2.imagePaths[viewKey]
       const paths = rawPath ? (Array.isArray(rawPath) ? rawPath : [rawPath]) : []
       if (paths.length > 1) {

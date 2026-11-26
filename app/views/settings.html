@@ -236,12 +236,6 @@
     {# Auto-open annotation form when marking a breast as abnormal #}
     {{ settingToggle("Auto-open annotation form on abnormal", "settings[reading][autoOpenAnnotationForm]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenAnnotationForm, "false") }}
 
-    {# Auto-open PACS viewer #}
-    {{ settingToggle("Auto-open PACS viewer", "settings[reading][autoOpenPacsViewer]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenPacsViewer, "false") }}
-
-    {# PACS screens - reopen the viewer after changing #}
-    {{ settingToggle("PACS screens", "settings[reading][pacsScreens]", [{value: "two", label: "Two"}, {value: "one", label: "One"}], data.settings.reading.pacsScreens, "two") }}
-
     {# Opinion delay #}
     {{ settingToggle("Opinion delay", "settings[reading][enableOpinionDelay]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.enableOpinionDelay, "false") }}
 
@@ -287,6 +281,20 @@
       {value: "cc-first", label: "CC first"},
       {value: "mlo-first", label: "MLO first"}
     ], data.settings.mammogramViewOrder, "mlo-first") }}
+
+    {# Layout settings take effect when the viewer next loads #}
+    <h2>PACS viewer</h2>
+    {# Auto-open PACS viewer #}
+    {{ settingToggle("Auto-open PACS viewer", "settings[reading][autoOpenPacsViewer]", [{value: "true", label: "Enabled"}, {value: "false", label: "Disabled"}], data.settings.reading.autoOpenPacsViewer, "false") }}
+
+    {# PACS screens #}
+    {{ settingToggle("PACS screens", "settings[reading][pacsScreens]", [{value: "two", label: "Two"}, {value: "one", label: "One"}], data.settings.reading.pacsScreens, "two") }}
+
+    {# Priors layout - on the side follows the mammogram view order #}
+    {{ settingToggle("Priors layout", "settings[reading][pacsPriorsLayout]", [{value: "side", label: "On the side"}, {value: "top", label: "On top"}], data.settings.reading.pacsPriorsLayout, "side") }}
+
+    {# Current layout - by view follows the mammogram view order #}
+    {{ settingToggle("Current layout", "settings[reading][pacsCurrentLayout]", [{value: "by-breast", label: "By breast"}, {value: "by-view", label: "By view"}], data.settings.reading.pacsCurrentLayout, "by-breast") }}
 
     <h2>Arbitration</h2>
 

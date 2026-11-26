@@ -122,7 +122,6 @@
       background-color: #fff;
       border-color: #fff;
       color: #000;
-      font-weight: 600;
     }
 
     .viewer-studies .viewer-button[aria-pressed="true"] {
@@ -526,33 +525,109 @@
 
     const panel = (study, view) => ({ study, view })
 
-    // The hanging protocol: layouts the reader steps through with ← and →.
-    // Each panel shows a view from the current study or from the prior being
-    // compared. Right breast views sit on the left, as if facing the woman
-    const LAYOUTS = [
-      {
-        name: "Priors",
-        title: "Prior above current. MLOs on screen 1, CCs on screen 2",
-        needsPriors: true,
-        screens: {
-          1: {
-            columns: 2,
-            panels: [panel("prior", "rmlo"), panel("prior", "lmlo"), panel("current", "rmlo"), panel("current", "lmlo")]
-          },
-          2: {
-            columns: 2,
-            panels: [panel("prior", "rcc"), panel("prior", "lcc"), panel("current", "rcc"), panel("current", "lcc")]
+    // Layout settings, read when the viewer loads
+    const PRIORS_LAYOUT = "{{ 'top' if data.settings.reading.pacsPriorsLayout == 'top' else 'side' }}"
+    const CURRENT_LAYOUT = "{{ 'by-view' if data.settings.reading.pacsCurrentLayout == 'by-view' else 'by-breast' }}"
+    // From the Mammogram view order setting: which of CC and MLO comes first
+    const [FIRST_VIEW, SECOND_VIEW] =
+      "{{ 'mlo-first' if data.settings.mammogramViewOrder == 'mlo-first' else 'cc-first' }}" === "mlo-first"
+        ? ["mlo", "cc"]
+        : ["cc", "mlo"]
+    const FIRST_LABEL = FIRST_VIEW.toUpperCase()
+    const SECOND_LABEL = SECOND_VIEW.toUpperCase()
+    // Sent with the viewer state, so two screens loaded with different
+    // settings can tell, and which loaded first
+    const LAYOUT_SETTINGS = `${PRIORS_LAYOUT}/${CURRENT_LAYOUT}/${FIRST_VIEW}`
+    const LOADED_AT = Date.now()
+
+    /**
+     * Compare all four views, in view order. On the side: the current study
+     * on screen 1 and the prior on screen 2, each with right and left side by
+     * side. On top: one view type on each screen, prior above current
+     */
+    const priorsLayout = () => {
+      if (PRIORS_LAYOUT === "top") {
+        const viewPanels = (view) => [
+          panel("prior", `r${view}`),
+          panel("prior", `l${view}`),
+          panel("current", `r${view}`),
+          panel("current", `l${view}`)
+        ]
+        return {
+          name: "Priors",
+          title: `Prior above current. ${FIRST_LABEL}s on screen 1, ${SECOND_LABEL}s on screen 2`,
+          needsPriors: true,
+          screens: {
+            1: { columns: 2, panels: viewPanels(FIRST_VIEW) },
+            2: { columns: 2, panels: viewPanels(SECOND_VIEW) }
           }
         }
-      },
-      {
-        name: "Current",
-        title: "Right breast on screen 1, left on screen 2. CC above MLO",
+      }
+      const studyPanels = (study) => [
+        panel(study, `r${FIRST_VIEW}`),
+        panel(study, `l${FIRST_VIEW}`),
+        panel(study, `r${SECOND_VIEW}`),
+        panel(study, `l${SECOND_VIEW}`)
+      ]
+      return {
+        name: "Priors",
+        title: `Current on screen 1, prior on screen 2. ${FIRST_LABEL} above ${SECOND_LABEL}`,
+        needsPriors: true,
         screens: {
-          1: { columns: 1, panels: [panel("current", "rcc"), panel("current", "rmlo")] },
-          2: { columns: 1, panels: [panel("current", "lcc"), panel("current", "lmlo")] }
+          1: { columns: 2, panels: studyPanels("current") },
+          2: { columns: 2, panels: studyPanels("prior") }
         }
-      },
+      }
+    }
+
+    /**
+     * The current study's four views, in view order. By breast: right on
+     * screen 1 and left on screen 2. By view: one view type on each screen,
+     * with right and left side by side
+     */
+    const currentLayout = () => {
+      if (CURRENT_LAYOUT === "by-view") {
+        return {
+          name: "Current",
+          title: `${FIRST_LABEL}s on screen 1, ${SECOND_LABEL}s on screen 2`,
+          screens: {
+            1: { columns: 2, panels: [panel("current", `r${FIRST_VIEW}`), panel("current", `l${FIRST_VIEW}`)] },
+            2: { columns: 2, panels: [panel("current", `r${SECOND_VIEW}`), panel("current", `l${SECOND_VIEW}`)] }
+          }
+        }
+      }
+      return {
+        name: "Current",
+        title: `Right breast on screen 1, left on screen 2. ${FIRST_LABEL} above ${SECOND_LABEL}`,
+        screens: {
+          1: { columns: 1, panels: [panel("current", `r${FIRST_VIEW}`), panel("current", `r${SECOND_VIEW}`)] },
+          2: { columns: 1, panels: [panel("current", `l${FIRST_VIEW}`), panel("current", `l${SECOND_VIEW}`)] }
+        }
+      }
+    }
+
+    /**
+     * One view, current on screen 1 and the compared prior on screen 2.
+     * Offered when any prior has that view
+     */
+    const priorViewLayout = (view) => ({
+      name: VIEW_LABELS[view],
+      title: `${VIEW_LABELS[view]}: current on screen 1, prior on screen 2`,
+      needsPriors: true,
+      priorView: view,
+      screens: {
+        1: { columns: 1, panels: [panel("current", view)] },
+        2: { columns: 1, panels: [panel("prior", view)] }
+      }
+    })
+
+    // The hanging protocol: layouts the reader steps through with ← and →.
+    // Each panel shows a view from the current study or from the prior being
+    // compared. Right breast views sit on the left, as if facing the woman.
+    // Layouts with needsPriors show the prior buttons
+    const LAYOUTS = [
+      priorsLayout(),
+      currentLayout(),
       {
         name: "MLO",
         title: "RMLO on screen 1, LMLO on screen 2",
@@ -568,7 +643,11 @@
           1: { columns: 1, panels: [panel("current", "rcc")] },
           2: { columns: 1, panels: [panel("current", "lcc")] }
         }
-      }
+      },
+      priorViewLayout("rmlo"),
+      priorViewLayout("lmlo"),
+      priorViewLayout("rcc"),
+      priorViewLayout("lcc")
     ]
 
     let currentAppointmentId = null
@@ -605,14 +684,14 @@
     // Any priors, oldest first, then the current study last
     let currentStudies = []
 
-    // The prior the Priors layout compares with: the most recent by default
+    // The prior that layouts with priors compare with: the most recent by default
     let comparisonStudyIndex = -1
 
     // Which image shows for a view that has more than one (such as a repeat),
     // by "studyIndex:view". A view not listed shows its latest image
     let imageChoices = {}
 
-    // Layouts this participant can have (Priors only when there are priors),
+    // Layouts this participant can have (see isLayoutAvailable),
     // and which is showing
     let availableLayouts = []
     let layoutIndex = 0
@@ -654,27 +733,56 @@
     }
 
     /**
-     * Every image of a view in a study, oldest first, so the last is the latest
+     * A study's own images of one view key, oldest first
+     * @param {number} studyIndex - Index in currentStudies
+     * @param {string} viewKey - Such as "rcc" or "rccid"
+     * @returns {Array<string>}
+     */
+    const getStudyPaths = (studyIndex, viewKey) => {
+      const study = currentStudies[studyIndex]
+      const allPaths = study?.allPaths?.[viewKey]
+      if (Array.isArray(allPaths) && allPaths.length > 1) return allPaths
+      const path = study?.images?.[viewKey]
+      return path ? [path] : []
+    }
+
+    // Implant displaced views are shown as extra images of their CC
+    const IMPLANT_DISPLACED_VIEWS = { rcc: "rccid", lcc: "lccid" }
+
+    /**
+     * Every image of a view in a study: its own, oldest first, then any
+     * implant displaced images of a CC
      * @param {number} studyIndex - Index in currentStudies
      * @param {string} view - "rcc", "lcc", "rmlo" or "lmlo"
      * @returns {Array<string>}
      */
     const getViewPaths = (studyIndex, view) => {
-      const study = currentStudies[studyIndex]
-      const allPaths = study?.allPaths?.[view]
-      if (Array.isArray(allPaths) && allPaths.length > 1) return allPaths
-      const path = study?.images?.[view]
-      return path ? [path] : []
+      const implantDisplacedView = IMPLANT_DISPLACED_VIEWS[view]
+      return [
+        ...getStudyPaths(studyIndex, view),
+        ...(implantDisplacedView ? getStudyPaths(studyIndex, implantDisplacedView) : [])
+      ]
     }
 
     /**
-     * Which of a view's images is showing: the one chosen, or the latest
+     * Whether an image of a view is an implant displaced one
+     * @param {number} index - Index in getViewPaths
+     */
+    const isImplantDisplacedImage = (studyIndex, view, index) => {
+      return index >= getStudyPaths(studyIndex, view).length
+    }
+
+    /**
+     * Which of a view's images is showing: the one chosen, or the latest of
+     * its own (so a CC shows before its implant displaced images)
      * @returns {number} Index in getViewPaths
      */
     const getImageChoice = (studyIndex, view) => {
       const paths = getViewPaths(studyIndex, view)
       const choice = imageChoices[`${studyIndex}:${view}`]
-      return choice >= 0 && choice < paths.length ? choice : paths.length - 1
+      if (choice >= 0 && choice < paths.length) return choice
+      const ownCount = getStudyPaths(studyIndex, view).length
+      return ownCount ? ownCount - 1 : paths.length - 1
     }
 
     /**
@@ -688,9 +796,13 @@
     const getImageLabel = (view, studyIndex) => {
       const study = currentStudies[studyIndex]
       const imageCount = getViewPaths(studyIndex, view).length
-      const imageText = imageCount > 1 ? ` (${getImageChoice(studyIndex, view) + 1} of ${imageCount})` : ""
+      const choice = getImageChoice(studyIndex, view)
+      const imageText = imageCount > 1 ? ` (${choice + 1} of ${imageCount})` : ""
+      const viewLabel = isImplantDisplacedImage(studyIndex, view, choice)
+        ? `${VIEW_LABELS[view]}ID`
+        : VIEW_LABELS[view]
       return {
-        view: `${VIEW_LABELS[view]}${imageText}`,
+        view: `${viewLabel}${imageText}`,
         date: study?.dateText || ""
       }
     }
@@ -870,7 +982,7 @@
       ]
       comparisonStudyIndex = currentStudies.length - 2
       imageChoices = {}
-      availableLayouts = LAYOUTS.filter((layout) => !layout.needsPriors || currentStudies.length > 1)
+      availableLayouts = LAYOUTS.filter(isLayoutAvailable)
       layoutIndex = 0
 
       renderLayoutSwitcher()
@@ -889,6 +1001,20 @@
       currentAppointmentId = data.appointmentId
       currentData = data
       updateStatus(`Viewing: ${data.participantName}`)
+    }
+
+    /**
+     * Whether this participant's studies can fill a layout: layouts with
+     * priors need one, and a single-view comparison needs that view in the
+     * current study and in at least one prior
+     */
+    const isLayoutAvailable = (layout) => {
+      if (!layout.needsPriors) return true
+      const currentIndex = currentStudies.length - 1
+      const priorIndexes = currentStudies.slice(0, -1).map((study, index) => index)
+      if (!layout.priorView) return priorIndexes.length > 0
+      if (getViewPaths(currentIndex, layout.priorView).length === 0) return false
+      return priorIndexes.some((index) => getViewPaths(index, layout.priorView).length > 0)
     }
 
     /**
@@ -911,7 +1037,7 @@
     }
 
     /**
-     * Buttons to choose which prior the Priors layout compares with, or a
+     * Buttons to choose which prior to compare with, or a
      * note when there are no priors
      */
     const renderStudySwitcher = () => {
@@ -942,16 +1068,16 @@
 
     /**
      * Mark the showing layout and compared prior as pressed. The prior
-     * buttons only show in the Priors layout
+     * buttons only show in layouts with priors
      */
     const updateSwitchers = () => {
-      const isPriorsLayout = Boolean(availableLayouts[layoutIndex]?.needsPriors)
-      studiesEl.hidden = currentStudies.length > 1 && !isPriorsLayout
+      const showsPriors = Boolean(availableLayouts[layoutIndex]?.needsPriors)
+      studiesEl.hidden = currentStudies.length > 1 && !showsPriors
       Array.from(layoutsEl.children).forEach((buttonEl, index) => {
         buttonEl.setAttribute("aria-pressed", index === layoutIndex ? "true" : "false")
       })
       Array.from(studiesEl.querySelectorAll("button")).forEach((buttonEl) => {
-        const isPressed = isPriorsLayout && Number(buttonEl.dataset.studyIndex) === comparisonStudyIndex
+        const isPressed = showsPriors && Number(buttonEl.dataset.studyIndex) === comparisonStudyIndex
         buttonEl.setAttribute("aria-pressed", isPressed ? "true" : "false")
       })
     }
@@ -1035,13 +1161,19 @@
       groupEl.setAttribute("role", "group")
       groupEl.setAttribute("aria-label", `${VIEW_LABELS[view]} images`)
 
+      const ownCount = getStudyPaths(studyIndex, view).length
       paths.forEach((path, index) => {
-        const isLatest = index === paths.length - 1
+        const isLatest = index === ownCount - 1 && ownCount > 1
+        const isImplantDisplaced = isImplantDisplacedImage(studyIndex, view, index)
         const buttonEl = document.createElement("button")
         buttonEl.type = "button"
         buttonEl.className = "viewer-button"
-        buttonEl.textContent = isLatest ? `${index + 1} (latest)` : `${index + 1}`
-        buttonEl.title = `Image ${index + 1} of ${paths.length}`
+        buttonEl.textContent = isImplantDisplaced
+          ? `${index + 1} (ID)`
+          : isLatest ? `${index + 1} (latest)` : `${index + 1}`
+        buttonEl.title = isImplantDisplaced
+          ? `Image ${index + 1} of ${paths.length}, implant displaced`
+          : `Image ${index + 1} of ${paths.length}`
         buttonEl.setAttribute("aria-pressed", index === choice ? "true" : "false")
         buttonEl.dataset.imageChoice = `${studyIndex}:${view}:${index}`
         buttonEl.addEventListener("click", (e) => {
@@ -1142,15 +1274,18 @@
     }
 
     /**
-     * Compare with another prior, moving to the Priors layout to show it
+     * Compare with another prior. From a layout without priors, moves to the
+     * Priors layout to show it
      * @param {number} index - Index in currentStudies
      */
     const setComparisonStudy = (index) => {
       if (index < 0 || index >= currentStudies.length - 1) return
       closeZoomOverlay()
       comparisonStudyIndex = index
-      const priorsIndex = availableLayouts.findIndex((layout) => layout.needsPriors)
-      if (priorsIndex !== -1) layoutIndex = priorsIndex
+      if (!availableLayouts[layoutIndex]?.needsPriors) {
+        const priorsIndex = availableLayouts.findIndex((layout) => layout.name === "Priors")
+        if (priorsIndex !== -1) layoutIndex = priorsIndex
+      }
       renderScreens()
     }
 
@@ -1182,8 +1317,28 @@
       appointmentId: currentAppointmentId,
       layoutName: availableLayouts[layoutIndex]?.name,
       comparisonStudyIndex,
-      imageChoices
+      imageChoices,
+      layoutSettings: LAYOUT_SETTINGS,
+      loadedAt: LOADED_AT
     })
+
+    /**
+     * Match the other screen, unless it loaded with different layout
+     * settings. Then the window that loaded first reloads to pick up the
+     * current settings, so the two screens always arrange layouts alike
+     */
+    const applyOtherScreenState = (state) => {
+      if (state?.layoutSettings && state.layoutSettings !== LAYOUT_SETTINGS) {
+        if (state.loadedAt > LOADED_AT) {
+          sessionStorage.setItem(RESTORE_STATE_KEY, JSON.stringify(getViewerState()))
+          window.location.reload()
+        } else {
+          broadcastViewerState()
+        }
+        return
+      }
+      applyViewerState(state)
+    }
 
     /**
      * After switching screen mode, put back the layout, prior and images
@@ -1292,17 +1447,21 @@
           if (SCREEN === 1 && !data.viewerState) broadcastViewerState()
         }
         // Screen 1 sends its layout along when screen 2 opens
-        if (data.viewerState) applyViewerState(data.viewerState)
+        if (data.viewerState) applyOtherScreenState(data.viewerState)
       } else if (data.type === "clear") {
         showPlaceholder()
       } else if (data.type === "inspect-toggle") {
         // Sync inspect state from reading page (don't re-broadcast)
         setDebugState(data.open, false)
       } else if (data.type === "viewer-state") {
-        applyViewerState(data)
+        applyOtherScreenState(data)
       } else if (data.type === "request-current" && data.screen === 2 && SCREEN === 1 && currentData) {
         // Screen 2 has just opened: give it the study and layout
         channel.postMessage({ ...currentData, type: "show", viewerState: getViewerState(), timestamp: Date.now() })
+      } else if (data.type === "request-current" && data.screen === 1 && SCREEN === 2 && currentData) {
+        // Screen 1 has reloaded: give it the study back, so it isn't left
+        // empty when no reading page is open to send it
+        channel.postMessage({ ...currentData, type: "show", timestamp: Date.now() })
       } else if (data.type === "screen-ping" && SCREEN === 2) {
         channel.postMessage({ type: "screen-opened", screen: SCREEN, timestamp: Date.now() })
       } else if (data.type === "screen-opened" && data.screen === 2) {
@@ -1593,8 +1752,9 @@
 
     /**
      * Keys for the grid: ← and → step through the layouts, [ and ] compare
-     * with a newer or older prior, matching the newest-first buttons. From another layout, [ and ] first go
-     * back to the Priors layout. The zoom view handles its own keys
+     * with a newer or older prior, matching the newest-first buttons. From a
+     * layout without priors, [ and ] first go back to the Priors layout. The
+     * zoom view handles its own keys
      */
     const setupGridKeys = () => {
       document.addEventListener("keydown", (e) => {
@@ -1610,8 +1770,8 @@
           broadcastViewerState()
         } else if ((e.key === "[" || e.key === "]") && currentStudies.length > 1) {
           e.preventDefault()
-          const isPriorsLayout = Boolean(availableLayouts[layoutIndex]?.needsPriors)
-          const step = isPriorsLayout ? (e.key === "[" ? 1 : -1) : 0
+          const showsPriors = Boolean(availableLayouts[layoutIndex]?.needsPriors)
+          const step = showsPriors ? (e.key === "[" ? 1 : -1) : 0
           setComparisonStudy(comparisonStudyIndex + step)
           broadcastViewerState()
         }

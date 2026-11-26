@@ -11,6 +11,7 @@ This is an advanced prototype, so some things differ from a plain prototype kit 
 - Aiming for outward realism; internals can be faked. It may be hacky in places, and that is fine, but the codebase must stay maintainable because it is large and long-lived.
 - There is a lint step and a small smoke suite (`npm test`: eslint, a component docs check, a route sweep, Playwright journeys). Keep them passing. Run them before opening a PR and after refactors that move code between modules. See [docs/testing.md](../docs/testing.md).
 - Agents: run `npm run test:journeys` and `npm test` outside the terminal sandbox and ask for approval. Chromium cannot start inside the sandbox, so the journeys crash there.
+- Agents and subagents: stop any server you start before finishing, using the shell that started it. The sandbox blocks `kill` on other commands' processes. See [docs/testing.md](../docs/testing.md).
 - Layouts live in `app/views/_templates/`, not the kit's single `layout.html`. Routes are split by area under `app/routes/`.
 - Seed data is shared and read only. Writes go through working copies and update helpers. See [docs/data-conventions.md](../docs/data-conventions.md).
 - No backwards compatibility needed for old seed data. Data regenerates daily, from `/settings`, and when the tests run, so never rely on a specific generated record or id persisting.

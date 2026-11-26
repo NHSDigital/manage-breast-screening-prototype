@@ -302,7 +302,19 @@ taken" answer as well as a missing view (`hasIncompleteMammography`).
 There is no override: if the mammographer takes something different from the
 plan, the images taken say so, and "Not all mammograms taken" and notes for
 readers explain why. Seed data generates medical information before images, so
-the generator only takes expected views.
+the generator takes only expected views, plus any implant displaced views below.
+
+#### Implant displaced views
+
+A breast with implants in place also gets a CC implant displaced (Eklund) view,
+`RCCID` or `LCCID`, taken after the standard set. `getImplantDisplacedViews(appointment)`
+says which: breasts with implants (`getBreastImplantSides`) that are imaged, and
+none for a technical recall. They are extras, not expected views, so they never
+count as missing and `getExpectedViewStates` ignores them. They are stored in
+`mammogramData.views` as `rightCCID` and `leftCCID`, the keys manual entry uses.
+`getBreastImplantSides` also decides implant image sets, whether the appointment
+needs an implant-trained mammographer, and reading's complex case flag, so only
+items recorded as "Breast implants" count.
 
 ### Advancing an episode
 
