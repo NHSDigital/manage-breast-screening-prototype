@@ -3,14 +3,14 @@
 {% macro clinicCompletedCell(appointment) %}
   {% set completedTime = appointment | getCompletedTime if appointment.status != "cancelled" %}
   {% set attended = appointment | wasAttended %}
-  {% set completedOrder = appointment.screeningOrder if attended %}
+  {% set completedOrder = appointment.completionOrder if attended %}
   {% set completedByName = "" %}
   {% if attended and appointment.sessionDetails and appointment.sessionDetails.startedBy %}
     {% set completedByName = appointment | getAppointmentScreenedByNames({ identifyCurrentUser: true }) | join(", ") %}
   {% elseif appointment.status == "cancelled" and appointment.cancellation.cancelledBy %}
     {% set completedByName = appointment.cancellation.cancelledBy | getUsername({ identifyCurrentUser: true }) %}
   {% endif %}
-  <td class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
+  <td id="completed-{{ appointment.id }}" class="nhsuk-table__cell app-clinic-appointments-table__completed-column">
     {% if completedTime or completedByName %}
       {% set completedOnAnotherDay = completedTime and (completedTime | formatDate("YYYY-MM-DD")) != (appointment.timing.startTime | formatDate("YYYY-MM-DD")) %}
       <span class="app-clinic-appointments-table__completed-time">{% if completedOnAnotherDay %}{{ completedTime | formatDate("D MMM") }}{% elseif completedTime %}{{ completedTime | formatTimeString }}{% endif %}</span>

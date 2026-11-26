@@ -4,12 +4,11 @@
 
 {% if screeningProgrammeStatus %}
   {% set statusLabels = {
-    'new': 'New to screening',
-    'final': 'Final screening invite'
+    "new": "New to screening",
+    "final": "Final screening invite"
   } %}
 
   {% set screeningStatusRow = {
-    classes: "nhsuk-summary-list__row--no-border" if noBorder,
     key: {
       text: "Programme status"
     },

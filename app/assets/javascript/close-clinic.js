@@ -5,12 +5,8 @@
 // file reveals the refresh notice when counts go stale, refreshes the outcome
 // message and actions, and refreshes a row after its details modal saves.
 
-import {
-  beginRegionRefresh,
-  isCurrentRegionRefresh,
-  refreshFragment
-} from './lib/fragments.js'
-import { Idiomorph } from 'idiomorph'
+import { refreshFragment } from './lib/fragments.js'
+import { refreshRegionsFromPage } from './lib/regions.js'
 
 document.addEventListener('DOMContentLoaded', () => {
   const container = document.getElementById('js-close-clinic-content')
@@ -25,7 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     '.app-clinic-layout__sticky-footer'
   )
   const stickyEnd = document.querySelector('.app-clinic-layout__sticky-end')
-  let latestActionsRequest = 0
 
   // The marker is at the footer's natural position, not its sticky position.
   const updateStickyFooter = () => {
@@ -59,64 +54,30 @@ document.addEventListener('DOMContentLoaded', () => {
   }
   actions.addEventListener('fragment:swapped', announceOutcome)
 
-  // Read the latest outcome count from the server after a status change
+  // A status change can change the outstanding count and renumber the other
+  // completed appointments, so refresh those from the server
   const refreshActions = async () => {
-    const request = ++latestActionsRequest
-    const actionsVersion = beginRegionRefresh(actions)
     const button = actions.querySelector('button')
     if (button) button.disabled = true
+    const completedCells = [
+      ...container.querySelectorAll(
+        'td.app-clinic-appointments-table__completed-column'
+      )
+    ]
 
     try {
-      const url = new URL(window.location.href)
-      url.searchParams.set('_actions', '1')
-      const response = await fetch(url)
-      if (!response.ok) throw new Error(`Request failed: ${response.status}`)
-      const html = await response.text()
-      const freshPage = new DOMParser().parseFromString(html, 'text/html')
-      const freshActions = freshPage.getElementById('close-clinic-actions')
-      if (!freshActions)
-        throw new Error('Close clinic actions missing from response')
-      if (request === latestActionsRequest) {
-        if (isCurrentRegionRefresh(actions, actionsVersion)) {
-          const freshRows = new Map(
-            [...freshPage.querySelectorAll('tr[data-fragment-id]')].map(
-              (row) => [row.dataset.fragmentId, row]
-            )
-          )
-          for (const row of container.querySelectorAll(
-            'tr[data-fragment-id]'
-          )) {
-            const completed = row.querySelector(
-              '.app-clinic-appointments-table__completed-column'
-            )
-            const freshCompleted = freshRows
-              .get(row.dataset.fragmentId)
-              ?.querySelector(
-                '.app-clinic-appointments-table__completed-column'
-              )
-            if (completed && freshCompleted) {
-              Idiomorph.morph(completed, freshCompleted.children, {
-                morphStyle: 'innerHTML'
-              })
-            }
-          }
-          Idiomorph.morph(actions, freshActions.children, {
-            morphStyle: 'innerHTML',
-            ignoreActiveValue: true
-          })
-          refreshError.hidden = true
-          announceOutcome()
-        }
+      const refreshed = await refreshRegionsFromPage(
+        [actions, ...completedCells],
+        { optional: completedCells }
+      )
+      if (refreshed.some(({ region }) => region === actions)) {
+        refreshError.hidden = true
+        announceOutcome()
       }
     } catch (error) {
       console.error('Could not update close clinic actions:', error)
-      if (
-        request === latestActionsRequest &&
-        isCurrentRegionRefresh(actions, actionsVersion)
-      ) {
-        refreshError.hidden = false
-        showRefreshNotice()
-      }
+      refreshError.hidden = false
+      showRefreshNotice()
     }
   }
 
@@ -131,8 +92,8 @@ document.addEventListener('DOMContentLoaded', () => {
       `tr[data-fragment-id="${appointmentId}"]`
     )
     if (!row) return window.location.reload()
-    const completedQuery = row.dataset.showCompleted ? '?_completed=1' : ''
-    const url = `/clinics/${clinicId}/close/appointment-row/${appointmentId}${completedQuery}`
+    const query = row.dataset.showCompleted ? '?_showCompleted=1' : ''
+    const url = `/clinics/${clinicId}/close/appointment-row/${appointmentId}${query}`
     refreshFragment(row, url).catch(() => window.location.reload())
   }
 

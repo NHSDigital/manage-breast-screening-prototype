@@ -104,13 +104,13 @@ const getClinicAppointments = (appointments, clinicId) => {
  * @param {Array} appointments - Appointments from one clinic
  * @returns {Array} Attended appointments sorted by completion time
  */
-const getAppointmentsInScreeningOrder = (appointments) => {
+const getAppointmentsInCompletionOrder = (appointments) => {
   return appointments.filter(wasAttended).sort((a, b) => {
     const difference =
       new Date(getCompletedTime(a)) - new Date(getCompletedTime(b))
     return (
       difference ||
-      (a.screeningOrder ?? Infinity) - (b.screeningOrder ?? Infinity)
+      (a.completionOrder ?? Infinity) - (b.completionOrder ?? Infinity)
     )
   })
 }
@@ -127,7 +127,7 @@ const getClinicTableColumns = (filter) => {
   return {
     // Remaining and Checked in show the check-in time as its own column
     checkedIn: filter === 'remaining' || filter === 'checked-in',
-    // In progress, Complete and All show the mammographer and screening order
+    // In progress, Complete and All show the mammographer and completion order
     screenedBy:
       filter === 'in-progress' || filter === 'complete' || filter === 'all',
     // In progress shows when screening started
@@ -258,7 +258,7 @@ module.exports = {
   getTodaysClinics,
   getFilteredClinics,
   getClinicAppointments,
-  getAppointmentsInScreeningOrder,
+  getAppointmentsInCompletionOrder,
   getClinicTableColumns,
   formatTimeSlot,
   getClinicHours,

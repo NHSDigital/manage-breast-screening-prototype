@@ -3,7 +3,7 @@
 ---
 **Auto-generated** — do not edit manually.
 
-- **Generated:** 2026-11-24 17:41 UTC
+- **Generated:** 2026-11-26 15:54 UTC
 - **Source:** `app/lib/utils/` and `app/filters/`
 - **Regenerate:** `npm run docs`
 
@@ -266,7 +266,7 @@ Clinic filtering by time period, slot formatting, and opening hours calculation.
 | `getBreastScreeningUnitName(data, unitId)` | Get a breast screening unit's name by id. | 59 |
 | `getTodaysClinics(clinics)` | Get today's clinics | 76 |
 | `getClinicAppointments(appointments, clinicId)` | Get appointments for a specific clinic | 87 |
-| `getAppointmentsInScreeningOrder(appointments)` | Attended appointments in the order they reached a final outcome. | 101 |
+| `getAppointmentsInCompletionOrder(appointments)` | Attended appointments in the order they reached a final outcome. | 101 |
 | `getClinicTableColumns(filter)` | Which broken-out columns the clinic appointments table shows for a tab. | 118 |
 | `formatTimeSlot(dateTime)` | Format clinic time slot | 142 |
 | `getClinicHours(clinic)` | Get clinic opening hours | 168 |

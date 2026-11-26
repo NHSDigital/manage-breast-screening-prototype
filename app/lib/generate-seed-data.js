@@ -24,8 +24,7 @@ const {
 } = require('./generators/episode-generator')
 const { generateIssues, checkIssues } = require('./generators/issue-generator')
 const { getCurrentRiskLevel } = require('./utils/participants')
-const { isInProgress, isCompleted } = require('./utils/status')
-const { getAppointmentsInScreeningOrder } = require('./utils/clinics')
+const { getAppointmentsInCompletionOrder } = require('./utils/clinics')
 const {
   generateReadingData,
   generateSingleRead
@@ -526,11 +525,11 @@ const generateClinicsForDay = (
       }
     }
 
-    const screenedAppointments = getAppointmentsInScreeningOrder(
+    const screenedAppointments = getAppointmentsInCompletionOrder(
       appointments.filter((appointment) => appointment.clinicId === clinic.id)
     )
     screenedAppointments.forEach((appointment, index) => {
-      appointment.screeningOrder = index + 1
+      appointment.completionOrder = index + 1
     })
 
     clinics.push(clinic)

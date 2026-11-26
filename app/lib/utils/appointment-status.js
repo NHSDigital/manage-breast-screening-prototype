@@ -24,7 +24,7 @@ const {
 const { getSimulatedNow, wasAttended } = require('./status')
 const {
   getClinicAppointments,
-  getAppointmentsInScreeningOrder
+  getAppointmentsInCompletionOrder
 } = require('./clinics')
 
 /**
@@ -83,10 +83,11 @@ const updateAppointmentStatus = (
       })
     }
   } else if (wasPreviouslyAttended && !isNowAttended) {
-    const { endedAt, endedBy, ...sessionDetails } =
-      baseAppointment.sessionDetails || {}
+    const sessionDetails = { ...baseAppointment.sessionDetails }
+    delete sessionDetails.endedAt
+    delete sessionDetails.endedBy
     updates.sessionDetails = sessionDetails
-    updates.screeningOrder = null
+    updates.completionOrder = null
   }
 
   let updatedAppointment = updateAppointmentData(
@@ -98,17 +99,17 @@ const updateAppointmentStatus = (
   if (!updatedAppointment) return null
 
   if (wasPreviouslyAttended || isNowAttended) {
-    const appointments = getAppointmentsInScreeningOrder(
+    const appointments = getAppointmentsInCompletionOrder(
       getClinicAppointments(data.appointments, updatedAppointment.clinicId)
     )
     appointments.forEach((appointment, index) => {
-      if (appointment.screeningOrder !== index + 1) {
+      if (appointment.completionOrder !== index + 1) {
         const updated = updateAppointment(data, appointment.id, {
           ...appointment,
-          screeningOrder: index + 1
+          completionOrder: index + 1
         })
         if (data.appointment?.id === appointment.id) {
-          data.appointment.screeningOrder = index + 1
+          data.appointment.completionOrder = index + 1
         }
         if (appointment.id === appointmentId) updatedAppointment = updated
       }

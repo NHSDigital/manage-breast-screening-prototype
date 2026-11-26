@@ -25,18 +25,18 @@
   <div id="close-clinic-status" class="nhsuk-u-visually-hidden" role="status"></div>
 
   {# Table of appointments in one status group #}
-  {% macro statusGroupTable(appointments, clinicId, isSortable=false, sort="") %}
+  {% macro statusGroupTable(appointments, clinicId, showCompleted=false, sort="") %}
     {% set tableClasses = "nhsuk-table nhsuk-table--compact nhsuk-table--striped app-clinic-appointments-table app-clinic-appointments-table--flush nhsuk-u-margin-bottom-0" %}
-    {% if isSortable %}
+    {% if showCompleted %}
       {% set tableClasses = tableClasses + " app-clinic-appointments-table--with-completed" %}
     {% endif %}
     <table class="{{ tableClasses }}">
       <thead class="nhsuk-table__head">
         <tr class="nhsuk-table__row">
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
-          <th scope="col" class="nhsuk-table__header{{ ' app-clinic-appointments-table__details-column' if isSortable }}">Details</th>
+          <th scope="col" class="nhsuk-table__header{{ ' app-clinic-appointments-table__details-column' if showCompleted }}">Details</th>
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__status-column">Status</th>
-          {% if isSortable %}
+          {% if showCompleted %}
             {# Sortable completed column for completed appointments #}
             {% set completedDirection = "ascending" if sort == "completed-ascending" else ("descending" if sort == "completed-descending" else none) %}
             {% set completedNext = ("descending" if completedDirection == "ascending" else "ascending") if completedDirection else "ascending" %}
@@ -52,7 +52,7 @@
       </thead>
       <tbody class="nhsuk-table__body">
         {% for appointment in appointments %}
-          {{ closeClinicAppointmentRow(appointment, appointment.participant, clinicId, isSortable) }}
+          {{ closeClinicAppointmentRow(appointment, appointment.participant, clinicId, showCompleted) }}
         {% endfor %}
       </tbody>
     </table>

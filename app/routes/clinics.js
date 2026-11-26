@@ -248,14 +248,14 @@ module.exports = (router) => {
   }
 
   // Close clinic page
-  router.get('/clinics/:clinicId/close', (req, res, next) => {
+  router.get('/clinics/:clinicId/close', (req, res) => {
     const data = req.session.data
     const { appointments, unit } = getClinicData(data, req.params.clinicId)
-    const isBackgroundRefresh =
-      req.query._actions === '1' || req.get('X-Live-Update') === '1'
 
-    // An in-place Actions refresh must not discard answers in an open modal
-    if (!isBackgroundRefresh) {
+    // Discard stop reasons from a flow abandoned before the reschedule step.
+    // A background region refresh is not a visit, and a modal may still be
+    // using them.
+    if (!res.locals.isRegionRefresh) {
       delete data.closeReasonForm
     }
 
@@ -280,14 +280,14 @@ module.exports = (router) => {
             if (!timeB) return -1
             const diff =
               new Date(timeA) - new Date(timeB) ||
-              (a.screeningOrder ?? 0) - (b.screeningOrder ?? 0)
+              (a.completionOrder ?? 0) - (b.completionOrder ?? 0)
             return sortDescending ? -diff : diff
           }
         )
       }
     }
 
-    const viewData = {
+    res.render('clinics/close', {
       unit,
       needsOutcomeCount: appointments.filter((a) => !isFinal(a)).length,
       inProgressAppointments: appointments.filter((a) => isInProgress(a)),
@@ -299,25 +299,7 @@ module.exports = (router) => {
       ),
       outcomeRecordedAppointments: outcomeRecordedAppointments,
       sort: sort
-    }
-
-    if (isBackgroundRefresh) {
-      // Avoid res.render's flash middleware consuming errors meant for a form.
-      const descriptors = Object.getOwnPropertyDescriptors(res.locals)
-      delete descriptors.flash
-      delete descriptors.messages
-      const locals = Object.defineProperties({}, descriptors)
-      return req.app.render(
-        'clinics/close',
-        { ...locals, ...viewData, flash: {} },
-        (error, html) => {
-          if (error) return next(error)
-          res.send(html)
-        }
-      )
-    }
-
-    res.render('clinics/close', viewData)
+    })
   })
 
   // Change one appointment's outcome from the close page. GET so the actions
@@ -705,7 +687,7 @@ module.exports = (router) => {
         if (!bCompleted) return -1
         const diff =
           new Date(aCompleted) - new Date(bCompleted) ||
-          (a.screeningOrder ?? 0) - (b.screeningOrder ?? 0)
+          (a.completionOrder ?? 0) - (b.completionOrder ?? 0)
         return sortDescending ? -diff : diff
       })
     } else if (sort.startsWith('time')) {

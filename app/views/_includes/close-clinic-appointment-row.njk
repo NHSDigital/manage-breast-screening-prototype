@@ -19,7 +19,7 @@
 {% macro closeClinicAppointmentRow(appointment, participant, clinicId, showCompleted=false) %}
   {% set reasonUrl = "/clinics/" + clinicId + "/close/reason/" + appointment.id %}
   {% set setStatusUrl = "/clinics/" + clinicId + "/close/set-status/" + appointment.id + "/" %}
-  {% set fragmentQuery = "?_completed=1" if showCompleted else "" %}
+  {% set fragmentQuery = "?_showCompleted=1" if showCompleted else "" %}
   <tr class="nhsuk-table__row" data-fragment-id="{{ appointment.id }}"{% if showCompleted %} data-show-completed="true"{% endif %}>
     <td class="nhsuk-table__cell">{{ appointment.statusHistory[0].timestamp | formatTimeString }}</td>
     <td class="nhsuk-table__cell">

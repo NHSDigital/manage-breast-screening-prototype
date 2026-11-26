@@ -284,7 +284,7 @@ const generateAppointment = ({
   // For in-progress appointments, add session details. Started a few minutes
   // before the simulated "now" so they sit on the clinic's timeline, after the
   // morning's completed appointments - an in-progress participant is the one
-  // being screened right now, so they come last in the order of screening.
+  // being screened right now, so they have no completion order yet.
   if (appointmentStatus === 'in_progress') {
     const startedAt = screenedAt
       ? onClinicDay(screenedAt)
@@ -420,7 +420,7 @@ const generateAppointment = ({
         ? faker.number.int({ min: -3, max: 10 })
         : faker.number.int({ min: -3, max: 5 })
 
-      // A scenario can pin when screening started, so the order of screening
+      // A scenario can pin when screening started, so the completion order
       // can be made to differ from the scheduled time and check-in order
       const actualStartTime = screenedAt
         ? onClinicDay(screenedAt)
@@ -599,7 +599,7 @@ const generateAppointment = ({
     ) {
       // A screened participant was checked in before screening. A scenario can
       // pin that time so the check-in order can be made to differ from the
-      // order of screening.
+      // completion order.
       appointment.statusHistory = [
         ...appointment.statusHistory,
         {
