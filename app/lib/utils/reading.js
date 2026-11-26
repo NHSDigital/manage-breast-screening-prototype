@@ -1544,7 +1544,7 @@ const createReadingSession = (data, options) => {
 const getDefaultSessionName = (type, clinicId, data) => {
   switch (type) {
     case 'all_reads':
-      return 'Session overview'
+      return 'Reading session overview'
     case 'first_reads':
       return '1st reads session'
     case 'second_reads':
