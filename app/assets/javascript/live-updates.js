@@ -25,7 +25,7 @@
 //
 // Without JavaScript nothing here runs, and pages show current data on reload.
 
-import { Idiomorph } from 'idiomorph'
+import { refreshRegionsFromPage } from './lib/regions.js'
 
 // Saving one thing can change several records, so notices arriving close
 // together are handled as one
@@ -76,30 +76,12 @@ const showBanner = () => {
 
 const refreshRegions = async (regions, options = {}) => {
   try {
-    const response = await window.fetch(window.location.href, {
-      headers: { Accept: 'text/html' }
-    })
-    if (!response.ok) throw new Error(`Request failed: ${response.status}`)
-
-    const html = await response.text()
-    const freshDocument = new DOMParser().parseFromString(html, 'text/html')
+    const refreshed = await refreshRegionsFromPage(regions)
     const announcements = []
 
-    for (const region of regions) {
-      const freshRegion = region.id
-        ? freshDocument.getElementById(region.id)
-        : null
-      if (!freshRegion) throw new Error('Region missing from the response')
-
+    for (const { region, freshRegion } of refreshed) {
       const announcement = freshRegion.dataset.liveAnnouncement
       if (announcement) announcements.push(announcement)
-
-      // innerHTML keeps the region element and any listeners on it. Ignoring
-      // the active value stops a refresh overwriting what is being typed.
-      Idiomorph.morph(region, freshRegion.children, {
-        morphStyle: 'innerHTML',
-        ignoreActiveValue: true
-      })
 
       region.dispatchEvent(
         new CustomEvent('fragment:swapped', {

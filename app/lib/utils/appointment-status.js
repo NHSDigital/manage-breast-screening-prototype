@@ -11,14 +11,21 @@
 // appointment-data.js it needed a lazy require of episodes.js to dodge the
 // resulting cycle.
 
-const { getAppointment, updateAppointmentData } = require('./appointment-data')
+const {
+  getAppointment,
+  updateAppointment,
+  updateAppointmentData
+} = require('./appointment-data')
 const {
   syncEpisodeMammogramsForAppointment,
   syncReadingCasesForAppointment,
   advanceEpisodeForAppointmentStatus
 } = require('./episodes')
-const { getSimulatedNow } = require('./status')
-const { getNextScreeningOrder } = require('./clinics')
+const { getSimulatedNow, wasAttended } = require('./status')
+const {
+  getClinicAppointments,
+  getAppointmentsInCompletionOrder
+} = require('./clinics')
 
 /**
  * Update appointment status and add to history
@@ -27,18 +34,30 @@ const { getNextScreeningOrder } = require('./clinics')
  * @param {object} data - Session data
  * @param {string} appointmentId - Appointment ID
  * @param {string} newStatus - New status
+ * @param {object} [options] - Update options
+ * @param {boolean} [options.useSavedAppointment=false] - Use the saved record rather than the working copy
  * @returns {object | null} Updated appointment or null if not found
  */
-const updateAppointmentStatus = (data, appointmentId, newStatus) => {
+const updateAppointmentStatus = (
+  data,
+  appointmentId,
+  newStatus,
+  options = {}
+) => {
   // Use temp appointment if it exists and matches, so unsaved status-relevant
   // history isn't lost
   const baseAppointment =
-    data.appointment && data.appointment.id === appointmentId
+    !options.useSavedAppointment &&
+    data.appointment &&
+    data.appointment.id === appointmentId
       ? data.appointment
       : getAppointment(data, appointmentId)
   if (!baseAppointment) return null
 
-  const updatedAppointment = updateAppointmentData(data, appointmentId, {
+  const nextAppointment = { ...baseAppointment, status: newStatus }
+  const wasPreviouslyAttended = wasAttended(baseAppointment)
+  const isNowAttended = wasAttended(nextAppointment)
+  const updates = {
     status: newStatus,
     statusHistory: [
       ...baseAppointment.statusHistory,
@@ -49,17 +68,51 @@ const updateAppointmentStatus = (data, appointmentId, newStatus) => {
         timestamp: getSimulatedNow().toISOString()
       }
     ]
-  })
+  }
+
+  if (
+    isNowAttended &&
+    !wasPreviouslyAttended &&
+    !baseAppointment.sessionDetails?.endedAt
+  ) {
+    updates.sessionDetails = {
+      ...baseAppointment.sessionDetails,
+      endedAt: getSimulatedNow().toISOString(),
+      ...(baseAppointment.sessionDetails?.startedAt && {
+        endedBy: data.currentUser?.id
+      })
+    }
+  } else if (wasPreviouslyAttended && !isNowAttended) {
+    const sessionDetails = { ...baseAppointment.sessionDetails }
+    delete sessionDetails.endedAt
+    delete sessionDetails.endedBy
+    updates.sessionDetails = sessionDetails
+    updates.completionOrder = null
+  }
+
+  let updatedAppointment = updateAppointmentData(
+    data,
+    appointmentId,
+    updates,
+    options
+  )
   if (!updatedAppointment) return null
 
-  // Attended not screened takes a place in the order of screening, unless it
-  // already has one from being started
-  if (
-    newStatus === 'attended_not_screened' &&
-    updatedAppointment.screeningOrder == null
-  ) {
-    updateAppointmentData(data, appointmentId, {
-      screeningOrder: getNextScreeningOrder(data, updatedAppointment.clinicId)
+  if (wasPreviouslyAttended || isNowAttended) {
+    const appointments = getAppointmentsInCompletionOrder(
+      getClinicAppointments(data.appointments, updatedAppointment.clinicId)
+    )
+    appointments.forEach((appointment, index) => {
+      if (appointment.completionOrder !== index + 1) {
+        const updated = updateAppointment(data, appointment.id, {
+          ...appointment,
+          completionOrder: index + 1
+        })
+        if (data.appointment?.id === appointment.id) {
+          data.appointment.completionOrder = index + 1
+        }
+        if (appointment.id === appointmentId) updatedAppointment = updated
+      }
     })
   }
 

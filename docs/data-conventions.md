@@ -183,6 +183,13 @@ To make another page update live, mark the part that changes as a live region.
 No server change is needed. Keep form inputs out of live regions: a refresh
 resets any input that isn't being typed in.
 
+Regions are refreshed by fetching the current page again with an
+`X-Region-Refresh` header (`refreshRegionsFromPage` in
+[lib/regions.js](../app/assets/javascript/lib/regions.js), which a page's own
+script can also use, as the close clinic page does). That request does not use
+up flash messages, and a route can check `res.locals.isRegionRefresh` to skip
+anything that should only happen on a real visit.
+
 Each open tab holds one connection to the stream, and browsers allow about six
 connections to one address. With six or more prototype tabs open while sharing,
 pages can stall until a tab is closed. Keep to a few tabs per browser.
@@ -197,7 +204,7 @@ has gone 40 seconds without a heartbeat.
 (`data.appointment`) is taken when it first opens that appointment. The
 appointment context middleware in
 [app/routes/appointments/index.js](../app/routes/appointments/index.js) keeps
-its status, status history, session details and screening order in step with
+its status, status history, session details and completion order in step with
 the saved record, since only the update helpers change those. Anything else
 another browser saves, such as medical information, is not picked up until
 the working copy is taken again. Last save wins.

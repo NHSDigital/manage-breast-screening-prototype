@@ -5,6 +5,7 @@ const dayjs = require('dayjs')
 const config = require('../../config')
 const dataStore = require('../data-store')
 const { recordChange } = require('../shared-data')
+const { wasAttended, getCompletedTime } = require('./status')
 
 /**
  * Get a clinic by ID
@@ -98,21 +99,20 @@ const getClinicAppointments = (appointments, clinicId) => {
 }
 
 /**
- * The next order-of-screening number for a clinic: one more than the highest
- * already assigned, or 1 if none. Numbers are never reused, so a removed or
- * changed appointment leaves a gap rather than renumbering the rest.
+ * Attended appointments in the order they reached a final outcome.
  *
- * @param {object} data - Session data
- * @param {string} clinicId - Clinic ID
- * @returns {number} The next screening order number
+ * @param {Array} appointments - Appointments from one clinic
+ * @returns {Array} Attended appointments sorted by completion time
  */
-const getNextScreeningOrder = (data, clinicId) => {
-  const clinicAppointments = getClinicAppointments(data.appointments, clinicId)
-  const highest = clinicAppointments.reduce((max, appointment) => {
-    const order = appointment.screeningOrder
-    return typeof order === 'number' && order > max ? order : max
-  }, 0)
-  return highest + 1
+const getAppointmentsInCompletionOrder = (appointments) => {
+  return appointments.filter(wasAttended).sort((a, b) => {
+    const difference =
+      new Date(getCompletedTime(a)) - new Date(getCompletedTime(b))
+    return (
+      difference ||
+      (a.completionOrder ?? Infinity) - (b.completionOrder ?? Infinity)
+    )
+  })
 }
 
 /**
@@ -127,7 +127,7 @@ const getClinicTableColumns = (filter) => {
   return {
     // Remaining and Checked in show the check-in time as its own column
     checkedIn: filter === 'remaining' || filter === 'checked-in',
-    // In progress, Complete and All show the mammographer and screening order
+    // In progress, Complete and All show the mammographer and completion order
     screenedBy:
       filter === 'in-progress' || filter === 'complete' || filter === 'all',
     // In progress shows when screening started
@@ -258,7 +258,7 @@ module.exports = {
   getTodaysClinics,
   getFilteredClinics,
   getClinicAppointments,
-  getNextScreeningOrder,
+  getAppointmentsInCompletionOrder,
   getClinicTableColumns,
   formatTimeSlot,
   getClinicHours,

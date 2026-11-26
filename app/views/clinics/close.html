@@ -19,43 +19,47 @@
     {{ pageHeading }}
   </h1>
 
-  <p>{{ clinic.sessionTimes | formatTimeRange }} - {{ clinic.date | formatDate }}</p>
+  <p class="nhsuk-body-m nhsuk-u-margin-bottom-1">{{ clinic.date | formatDate("dddd D MMMM YYYY") }}</p>
+  <p class="nhsuk-u-secondary-text-colour nhsuk-body-m nhsuk-u-margin-bottom-4">{{ clinic.sessionTimes | formatTimeRange }}</p>
+
+  <div id="close-clinic-status" class="nhsuk-u-visually-hidden" role="status"></div>
 
   {# Table of appointments in one status group #}
-  {% macro statusGroupTable(appointments, clinicId) %}
-    <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped app-clinic-appointments-table app-clinic-appointments-table--flush nhsuk-u-margin-bottom-0">
+  {% macro statusGroupTable(appointments, clinicId, showCompleted=false, sort="") %}
+    {% set tableClasses = "nhsuk-table nhsuk-table--compact nhsuk-table--striped app-clinic-appointments-table app-clinic-appointments-table--flush nhsuk-u-margin-bottom-0" %}
+    {% if showCompleted %}
+      {% set tableClasses = tableClasses + " app-clinic-appointments-table--with-completed" %}
+    {% endif %}
+    <table class="{{ tableClasses }}">
       <thead class="nhsuk-table__head">
         <tr class="nhsuk-table__row">
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__time-column">Time</th>
-          <th scope="col" class="nhsuk-table__header">Details</th>
+          <th scope="col" class="nhsuk-table__header{{ ' app-clinic-appointments-table__details-column' if showCompleted }}">Details</th>
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__status-column">Status</th>
+          {% if showCompleted %}
+            {# Sortable completed column for completed appointments #}
+            {% set completedDirection = "ascending" if sort == "completed-ascending" else ("descending" if sort == "completed-descending" else none) %}
+            {% set completedNext = ("descending" if completedDirection == "ascending" else "ascending") if completedDirection else "ascending" %}
+            {% set completedHref = currentUrl | buildFilterUrl({}, {
+              sort: "completed-" + completedNext
+            }) %}
+            <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__completed-column" data-sort aria-sort="{{ completedDirection or 'none' }}">
+              <a class="nhsuk-link" href="{{ completedHref }}">Completed</a>
+            </th>
+          {% endif %}
           <th scope="col" class="nhsuk-table__header app-clinic-appointments-table__actions-column">Actions</th>
         </tr>
       </thead>
       <tbody class="nhsuk-table__body">
         {% for appointment in appointments %}
-          {{ closeClinicAppointmentRow(appointment, appointment.participant, clinicId) }}
+          {{ closeClinicAppointmentRow(appointment, appointment.participant, clinicId, showCompleted) }}
         {% endfor %}
       </tbody>
     </table>
   {% endmacro %}
 
-  {% if needsOutcomeCount %}
-    {% set introHtml %}
-      {% if needsOutcomeCount == 1 %}
-        <p>1 appointment needs a completed status before this clinic can be closed.</p>
-      {% else %}
-        <p>{{ needsOutcomeCount }} appointments need a completed status before this clinic can be closed.</p>
-      {% endif %}
-    {% endset %}
-
-    {{ insetText({
-      html: introHtml
-    }) }}
-  {% endif %}
-
-  <div class="nhsuk-grid-row app-clinic-layout__row">
-    <div class="nhsuk-grid-column-two-thirds app-clinic-layout__main">
+  <div class="nhsuk-grid-row">
+    <div class="nhsuk-grid-column-full">
 
       <div id="js-close-clinic-content" data-clinic-id="{{ clinicId }}">
 
@@ -95,7 +99,7 @@
         {% set outcomeRecordedHtml %}
           <p class="js-refresh-notice" hidden>Some appointment statuses have been updated. <a href="">Refresh list</a></p>
           {% if outcomeRecordedAppointments | length %}
-            {{ statusGroupTable(outcomeRecordedAppointments, clinicId) }}
+            {{ statusGroupTable(outcomeRecordedAppointments, clinicId, true, sort) }}
           {% endif %}
         {% endset %}
 
@@ -112,30 +116,36 @@
       </div>
 
     </div>
-    <div class="nhsuk-grid-column-one-third app-clinic-layout__sidebar">
-      <div class="app-clinic-layout__sticky">
-        {% set actionsHtml %}
-          <form method="post" action="/clinics/{{ clinicId }}/close">
-            {{ button({
-              text: "Confirm and close clinic"
-            }) }}
-          </form>
-          <p class="nhsuk-u-margin-bottom-0">
-            <a href="/clinics/{{ clinicId }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
-          </p>
-        {% endset %}
+  </div>
 
-        {{ card({
-          heading: {
-            text: "Actions",
-            level: 2
-          },
-          feature: true,
-          descriptionHtml: actionsHtml
-        }) }}
+  <div class="app-clinic-layout__sticky-footer">
+    <div class="nhsuk-grid-row">
+      <div class="nhsuk-grid-column-full">
+        <div id="close-clinic-actions" data-live-region data-live-ids="{{ clinicId }}" data-live-fields="appointments.status">
+          <form method="post" action="/clinics/{{ clinicId }}/close">
+            <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+              {{ button({
+                text: "Confirm and close clinic",
+                disabled: true if needsOutcomeCount else false
+              }) }}
+              <a href="/clinics/{{ clinicId }}" class="nhsuk-link nhsuk-link--no-visited-state">Cancel</a>
+              {% if needsOutcomeCount %}
+                <span id="close-clinic-outstanding" class="nhsuk-body-m">
+                  {% if needsOutcomeCount == 1 %}
+                    <strong>1 appointment</strong> needs a completed status before this clinic can be closed
+                  {% else %}
+                    <strong>{{ needsOutcomeCount }} appointments</strong> need a completed status before this clinic can be closed
+                  {% endif %}
+                </span>
+              {% endif %}
+            </div>
+          </form>
+        </div>
+        <p id="close-clinic-refresh-error" role="alert" hidden>Could not update the clinic actions. <a href="">Refresh the page</a> to try again.</p>
       </div>
     </div>
   </div>
+  <div class="app-clinic-layout__sticky-end" aria-hidden="true"></div>
 
 {% endblock %}
 

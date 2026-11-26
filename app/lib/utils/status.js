@@ -3,6 +3,7 @@
 const dayjs = require('dayjs')
 const config = require('../../config')
 const { getAppointmentRunnerId } = require('./roles-and-permissions')
+let simulatedClockStartedAt = Date.now()
 
 /**
  * Define status groups for easier checking
@@ -507,11 +508,11 @@ const getCheckInTime = (appointment) => getStatusTime(appointment, 'checked_in')
 
 /**
  * Whether an appointment that has ended was attended: screened, attended not
- * screened, or started and then rescheduled or cancelled. An attended
- * appointment keeps its place in the order of screening.
+ * screened, or started and then rescheduled or cancelled. Attended
+ * appointments are numbered by the time they reached their outcome.
  *
- * Stopping an appointment can end in a reschedule or cancellation rather than
- * attended not screened, so having been started is what counts for those.
+ * A reschedule can also follow an attended-not-screened outcome recorded
+ * before the screening started.
  *
  * @param {object} appointment - Appointment object to check
  * @returns {boolean} Whether the appointment was attended
@@ -527,7 +528,12 @@ const wasAttended = (appointment) => {
 
   return (
     ['cancelled', 'rescheduled'].includes(status) &&
-    Boolean(appointment.sessionDetails?.startedAt)
+    Boolean(
+      appointment.sessionDetails?.startedAt ||
+      appointment.sessionDetails?.endedAt ||
+      (status === 'rescheduled' &&
+        appointment.appointmentStopped?.stoppedReason?.length)
+    )
   )
 }
 
@@ -552,26 +558,32 @@ const getCompletedTime = (appointment) => {
 }
 
 /**
- * The prototype's simulated "now" (config.clinics.simulatedTime on today's
- * date), so every timestamp and duration is measured against one clock rather
- * than the real time of viewing. Status changes made at runtime stamp this too,
- * so a live check-in lines up with the seed data's simulated times.
+ * The simulated clinic clock starts at config.clinics.simulatedTime when the
+ * app starts and advances in real time, so live durations and seed times agree.
  *
  * @returns {object} dayjs instance for the simulated current time
  */
 const getSimulatedNow = () => {
   const [hours, minutes] = config.clinics.simulatedTime.split(':')
-  return dayjs()
+  return dayjs(simulatedClockStartedAt)
     .hour(parseInt(hours, 10))
     .minute(parseInt(minutes, 10))
     .second(0)
     .millisecond(0)
+    .add(Date.now() - simulatedClockStartedAt, 'millisecond')
 }
 
 /**
- * Whole minutes from a timestamp to the prototype's simulated "now"
- * (config.clinics.simulatedTime), so the figure stays stable whatever the real
- * time of viewing.
+ * Reset the simulated clock when seed data is regenerated.
+ *
+ * @returns {void}
+ */
+const resetSimulatedClock = () => {
+  simulatedClockStartedAt = Date.now()
+}
+
+/**
+ * Whole minutes from a timestamp to the prototype's simulated clinic clock.
  *
  * @param {string} timestamp - ISO timestamp
  * @returns {number | null} Whole minutes since, or null if no timestamp
@@ -660,6 +672,7 @@ module.exports = {
   getCompletedTime,
   wasAttended,
   getSimulatedNow,
+  resetSimulatedClock,
   formatWaitingTime,
   // Export groups and display vocabularies for testing/reference
   STATUS_GROUPS,

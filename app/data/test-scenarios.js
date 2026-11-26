@@ -89,7 +89,7 @@ module.exports = [
     }
   },
   {
-    // Screened pair that shows screening order differs from arrival order:
+    // Screened pair that shows completion order differs from arrival order:
     // Harriet checked in first (9:00) but was screened later (9:30)
     participant: {
       id: 'f1a2b3c4',

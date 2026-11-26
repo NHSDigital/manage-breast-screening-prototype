@@ -97,10 +97,12 @@ const STOPPABLE_STATUSES = [
  * the status leaves no stale reason behind
  */
 const clearStoppedDetails = (data, appointmentId) => {
-  updateAppointmentData(data, appointmentId, {
-    appointmentStopped: null,
-    reschedule: null
-  })
+  updateAppointmentData(
+    data,
+    appointmentId,
+    { appointmentStopped: null, reschedule: null },
+    { useSavedAppointment: true }
+  )
 }
 
 module.exports = (router) => {
@@ -186,7 +188,9 @@ module.exports = (router) => {
     }
 
     // Update the appointment
-    updateAppointmentStatus(data, appointmentId, 'checked_in')
+    updateAppointmentStatus(data, appointmentId, 'checked_in', {
+      useSavedAppointment: true
+    })
 
     // Save back to session
     req.session.data = data
@@ -248,8 +252,40 @@ module.exports = (router) => {
     const data = req.session.data
     const { appointments, unit } = getClinicData(data, req.params.clinicId)
 
-    // Discard stop reasons from a flow abandoned before the reschedule step
-    delete data.closeReasonForm
+    // Discard stop reasons from a flow abandoned before the reschedule step.
+    // A background region refresh is not a visit, and a modal may still be
+    // using them.
+    if (!res.locals.isRegionRefresh) {
+      delete data.closeReasonForm
+    }
+
+    // Get outcomeRecordedAppointments before sorting
+    let outcomeRecordedAppointments = appointments.filter((a) => isFinal(a))
+
+    // Handle sorting for completed appointments
+    const sort = ['completed-ascending', 'completed-descending'].includes(
+      req.query.sort
+    )
+      ? req.query.sort
+      : 'completed-ascending'
+    if (sort && outcomeRecordedAppointments.length > 0) {
+      const sortDescending = sort.endsWith('descending')
+      if (sort.startsWith('completed')) {
+        outcomeRecordedAppointments = [...outcomeRecordedAppointments].sort(
+          (a, b) => {
+            const timeA = getCompletedTime(a)
+            const timeB = getCompletedTime(b)
+            if (!timeA && !timeB) return 0
+            if (!timeA) return 1
+            if (!timeB) return -1
+            const diff =
+              new Date(timeA) - new Date(timeB) ||
+              (a.completionOrder ?? 0) - (b.completionOrder ?? 0)
+            return sortDescending ? -diff : diff
+          }
+        )
+      }
+    }
 
     res.render('clinics/close', {
       unit,
@@ -261,7 +297,8 @@ module.exports = (router) => {
       scheduledAppointments: appointments.filter(
         (a) => a.status === 'scheduled'
       ),
-      outcomeRecordedAppointments: appointments.filter((a) => isFinal(a))
+      outcomeRecordedAppointments: outcomeRecordedAppointments,
+      sort: sort
     })
   })
 
@@ -279,7 +316,9 @@ module.exports = (router) => {
       }
 
       const data = req.session.data
-      updateAppointmentStatus(data, appointmentId, status)
+      updateAppointmentStatus(data, appointmentId, status, {
+        useSavedAppointment: true
+      })
 
       // Back to checked in undoes attended not screened or rescheduled
       if (status === 'checked_in') {
@@ -384,16 +423,20 @@ module.exports = (router) => {
 
       // Save the whole form rather than maintaining a field list here. Clear any
       // reschedule answers from an earlier 'yes'.
-      updateAppointmentData(data, appointmentId, {
-        appointmentStopped: { ...formData },
-        reschedule: null
-      })
+      updateAppointmentData(
+        data,
+        appointmentId,
+        { appointmentStopped: { ...formData }, reschedule: null },
+        { useSavedAppointment: true }
+      )
       delete data.closeReasonForm
 
       // Skip when already in that status, so editing the details doesn't add a
       // redundant status history entry
       if (res.locals.appointment.status !== 'attended_not_screened') {
-        updateAppointmentStatus(data, appointmentId, 'attended_not_screened')
+        updateAppointmentStatus(data, appointmentId, 'attended_not_screened', {
+          useSavedAppointment: true
+        })
       }
 
       // In modal context reply with an empty success, so the modal closes and
@@ -463,12 +506,19 @@ module.exports = (router) => {
         )
       }
 
-      updateAppointmentData(data, appointmentId, {
-        appointmentStopped: { ...stoppedAnswers },
-        reschedule: { ...formData }
-      })
+      updateAppointmentData(
+        data,
+        appointmentId,
+        {
+          appointmentStopped: { ...stoppedAnswers },
+          reschedule: { ...formData }
+        },
+        { useSavedAppointment: true }
+      )
       if (res.locals.appointment.status !== 'rescheduled') {
-        updateAppointmentStatus(data, appointmentId, 'rescheduled')
+        updateAppointmentStatus(data, appointmentId, 'rescheduled', {
+          useSavedAppointment: true
+        })
       }
 
       delete data.closeReasonForm
@@ -635,7 +685,9 @@ module.exports = (router) => {
         if (!aCompleted && !bCompleted) return 0
         if (!aCompleted) return 1
         if (!bCompleted) return -1
-        const diff = new Date(aCompleted) - new Date(bCompleted)
+        const diff =
+          new Date(aCompleted) - new Date(bCompleted) ||
+          (a.completionOrder ?? 0) - (b.completionOrder ?? 0)
         return sortDescending ? -diff : diff
       })
     } else if (sort.startsWith('time')) {

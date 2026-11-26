@@ -4,11 +4,20 @@ const environmentMiddleware = require('./lib/middleware/environment')
 module.exports = (req, res, next) => {
   environmentMiddleware(req, res, () => {})
 
+  // A region refresh (see app/assets/javascript/lib/regions.js) re-renders the
+  // current page in the background, so it must not use up flash messages meant
+  // for the next page the user actually visits
+  const isRegionRefresh = req.get('X-Region-Refresh') === '1'
+  if (isRegionRefresh) {
+    req.flash = () => ({})
+  }
+
   const locals = {
     currentUrl: req.path,
     query: req.query,
     referrerChain: req.query.referrerChain,
-    isAppointmentWorkflow: false
+    isAppointmentWorkflow: false,
+    isRegionRefresh
   }
 
   // Assign all local variables at once

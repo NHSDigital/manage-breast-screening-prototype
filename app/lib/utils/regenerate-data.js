@@ -3,6 +3,7 @@
 const generateData = require('../generate-seed-data')
 const { join, resolve } = require('path')
 const dayjs = require('dayjs')
+const { resetSimulatedClock } = require('./status')
 const {
   DEFAULT_SEED_DATA_PROFILE,
   ensureSeedProfilesState,
@@ -38,6 +39,7 @@ async function regenerateData(req, options = {}) {
   // resets data for all sessions, not just this one.
   // (Required lazily to avoid loading the store before generation at boot.)
   require('../data-store').reload()
+  resetSimulatedClock()
 
   // Shared changes were made against the old data too, so clear them and
   // tell every browser listening for live updates

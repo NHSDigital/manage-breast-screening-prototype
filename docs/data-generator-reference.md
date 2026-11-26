@@ -621,9 +621,9 @@ Started appointments (in progress, completed and attended not screened) get `ses
 
 Each of today's screening clinics gets one paused appointment, in a slot that is already due. Its `sessionDetails` start from `buildSessionDetails` too, with `pausedAt` and `pausedBy` set: the same mammographer (never the default signed-in user) started and paused it, so the `authors` list holds both, and its status history records the check-in, start and pause.
 
-Cancelled appointments never get `sessionDetails`, as they were not started. They get a `cancellation` with a reason, the reschedule answer and `cancelledBy` (an administrative user), and a `cancelled` entry in their status history, after the booking and never after now. The clinic list reads the time with `getStatusTime` (through `getCompletedTime`).
+Cancelled appointments never get `sessionDetails`, as they were not started. They get a `cancellation` with a reason, the reschedule answer and `cancelledBy` (an administrative user), and a `cancelled` entry in their status history, after the booking and never after now. The clinic list uses the cancellation time from `getStatusTime` (through `getCompletedTime`) for sorting, but does not display it in the completed column.
 
-Appointments that were started (in progress, paused, completed and attended not screened) get a `screeningOrder`, numbered 1 to N per clinic in the order they started. Cancelled appointments in seed data never have one. In the running app, an appointment started and then rescheduled or cancelled keeps its number (see `wasAttended`).
+Attended appointments with a final outcome get a `completionOrder`, numbered 1 to N per clinic by their completion time. This includes attended not screened, and in the running app appointments cancelled or rescheduled after starting (see `wasAttended`). In-progress appointments and cancellations before starting are not numbered. If an outcome is undone, the remaining attended appointments are renumbered to close the gap. Runtime session timestamps use the same simulated clinic clock as status changes, so they line up with the seeded appointments.
 
 Medical information is generated for completed appointments (and again, similarly, for today's in-progress appointment):
 

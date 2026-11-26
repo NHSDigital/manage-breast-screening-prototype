@@ -232,7 +232,7 @@
 {% else %}
   {# Remaining and Checked in break the check-in time into its own sortable
      column; In progress, Complete and All break out the mammographer and
-     screening order; Complete drops the Actions column as every row is final #}
+     completion order; Complete drops the Actions column as every row is final #}
   {% set columns = status | getClinicTableColumns %}
   <table class="nhsuk-table nhsuk-table--compact nhsuk-table--striped nhsuk-table--sortable app-clinic-appointments-table{{ " app-clinic-appointments-table--with-checked-in" if columns.checkedIn }}{{ " app-clinic-appointments-table--with-screened-by" if columns.screenedBy }}{{ " app-clinic-appointments-table--with-started-at" if columns.startedAt }}{{ " app-clinic-appointments-table--with-completed" if columns.completed }}{{ " app-clinic-appointments-table--no-actions" if not columns.actions }}">
     <caption class="nhsuk-table__caption nhsuk-u-visually-hidden">Appointments. Column headers with links are sortable.</caption>

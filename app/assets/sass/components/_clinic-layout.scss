@@ -1,25 +1,38 @@
 // app/assets/sass/components/_clinic-layout.scss
-// Two-column layout with a sticky right-hand sidebar, used on the close clinic page
+// Sticky actions on the close clinic page
 
 @use "nhsuk-frontend/dist/nhsuk/core" as *;
 
-// Use flexbox so the sidebar column stretches to the row height for sticky positioning
-.app-clinic-layout__row {
-  @include nhsuk-media-query($from: tablet) {
-    display: flex;
+@media (min-height: 30em) {
+  html:has(.app-clinic-layout__sticky-footer:not(.app-clinic-layout__sticky-footer--in-flow)) {
+    scroll-padding-bottom: 50vh;
   }
 }
 
-.app-clinic-layout__main,
-.app-clinic-layout__sidebar {
-  @include nhsuk-media-query($from: tablet) {
-    float: none;
-  }
-}
-
-// The flex row stretches the sidebar column tall; keep this element its natural
-// height so it has room to travel and stick within the column
-.app-clinic-layout__sticky {
+.app-clinic-layout__sticky-footer {
   position: sticky;
-  top: nhsuk-spacing(4);
+  bottom: 0;
+  padding: nhsuk-spacing(4) nhsuk-spacing(3);
+  margin-top: nhsuk-spacing(5);
+  background: nhsuk-colour("white");
+  z-index: 10;
+}
+
+.app-clinic-layout__sticky-footer--in-flow {
+  position: static;
+}
+
+@media (max-height: 30em) {
+  .app-clinic-layout__sticky-footer {
+    position: static;
+  }
+}
+
+.app-clinic-layout__sticky-footer--stuck {
+  box-shadow: 0 (-$nhsuk-border-width) nhsuk-spacing(1) rgba(nhsuk-colour("black"), 0.1);
+}
+
+.app-clinic-layout__sticky-end {
+  height: $nhsuk-border-width;
+  margin-top: -$nhsuk-border-width;
 }

@@ -57,7 +57,7 @@
   }
 }
 
-// Keep the completion time above the screening order and mammographer name
+// Keep the completion time above the completion order and mammographer name
 .app-clinic-appointments-table__completed-time {
   display: block;
 }
@@ -235,6 +235,29 @@
 
   .app-clinic-appointments-table__actions-column {
     width: 30%;
+  }
+}
+
+// The completed close clinic table needs space for names and appointment times
+.app-clinic-appointments-table--flush.app-clinic-appointments-table--with-completed {
+  .app-clinic-appointments-table__time-column {
+    width: 13%;
+  }
+
+  .app-clinic-appointments-table__details-column {
+    width: 25%;
+  }
+
+  .app-clinic-appointments-table__status-column {
+    width: 22%;
+  }
+
+  .app-clinic-appointments-table__completed-column {
+    width: 21%;
+  }
+
+  .app-clinic-appointments-table__actions-column {
+    width: 19%;
   }
 }
 

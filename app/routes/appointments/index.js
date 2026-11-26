@@ -17,7 +17,7 @@ const APPOINTMENT_LIFECYCLE_FIELDS = [
   'status',
   'statusHistory',
   'sessionDetails',
-  'screeningOrder'
+  'completionOrder'
 ]
 
 // What a status change moves on the appointment's episode
@@ -77,7 +77,7 @@ module.exports = (router) => {
         data.appointment = structuredClone(originalAppointmentData.appointment)
       }
 
-      // Status, session details and screening order only change through the
+      // Status, session details and completion order only change through the
       // update helpers, never through forms, so the saved record is always
       // right about them. Keep the working copy in step: with shared data,
       // another browser may have checked in, started or paused this

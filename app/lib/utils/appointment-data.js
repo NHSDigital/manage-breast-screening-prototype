@@ -93,9 +93,11 @@ const updateAppointment = (data, appointmentId, updatedAppointment) => {
  * @param {object} data - Session data
  * @param {string} appointmentId - Appointment ID
  * @param {object} updates - Object containing updates to merge into the appointment
+ * @param {object} [options] - Update options
+ * @param {boolean} [options.useSavedAppointment=false] - Keep unsaved working-copy fields out of the saved record
  * @returns {object | null} Updated appointment or null if not found
  */
-const updateAppointmentData = (data, appointmentId, updates) => {
+const updateAppointmentData = (data, appointmentId, updates, options = {}) => {
   const appointmentIndex = data.appointments.findIndex(
     (appointment) => appointment.id === appointmentId
   )
@@ -103,7 +105,9 @@ const updateAppointmentData = (data, appointmentId, updates) => {
 
   // Use temp appointment if it exists and matches, otherwise use the array appointment
   const baseAppointment =
-    data.appointment && data.appointment.id === appointmentId
+    !options.useSavedAppointment &&
+    data.appointment &&
+    data.appointment.id === appointmentId
       ? data.appointment
       : data.appointments[appointmentIndex]
 
