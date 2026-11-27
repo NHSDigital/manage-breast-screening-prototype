@@ -1,0 +1,286 @@
+{# app/views/pacs-link-test/index.html #}
+
+{# Developer tool for trying PACS activation URLs against a real viewer.
+   Not part of any journey. Inputs persist through session data (the form
+   GETs to itself) and the links render server-side, so opening in the same
+   tab or a new tab works without JavaScript. Popup, fetch, iframe, timing
+   and the event log are added by pacs-link-test.js. The WebSocket route is
+   on the sibling page. #}
+
+{% extends 'layout-app.html' %}
+
+{% from '_components/copy-to-clipboard/macro.njk' import appCopyToClipboard %}
+{% import "_includes/pacs-link-test/shared.njk" as pacs with context %}
+
+{% set pageHeading = "PACS link test" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set hideBackLink = true %}
+
+{% block pageContent %}
+
+<h1 class="nhsuk-heading-l">
+  {{ pageHeading }}
+  <span class="nhsuk-caption-l">Developer tool, not part of the service</span>
+</h1>
+
+<p class="nhsuk-body-l">Build PACS activation URLs, open them in different ways and see what the browser and the viewer do.</p>
+
+{{ pacs.pageNavigation("urls") }}
+
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-one-half">
+
+    <form action="/pacs-link-test" method="get" id="pacs-test-form">
+
+      <h2 class="nhsuk-heading-m">Viewer</h2>
+
+      {{ input({
+        id: "pacs-base-url",
+        name: "pacsTest[baseUrl]",
+        label: {
+          text: "Base URL"
+        },
+        hint: {
+          text: "The viewer's activation endpoint, without a query string"
+        },
+        value: pacs.baseUrl
+      }) }}
+
+      {{ radios({
+        idPrefix: "identify-by",
+        name: "pacsTest[identifyBy]",
+        classes: "nhsuk-radios--inline",
+        fieldset: {
+          legend: {
+            text: "Identify the study by",
+            classes: "nhsuk-fieldset__legend--s"
+          }
+        },
+        value: pacs.identifyBy,
+        items: [
+          {
+            value: "Accession number",
+            text: "Accession number"
+          },
+          {
+            value: "NHS number",
+            text: "NHS number"
+          },
+          {
+            value: "Both",
+            text: "Both"
+          }
+        ]
+      }) }}
+
+      {{ textarea({
+        id: "extra-params",
+        name: "pacsTest[extraParams]",
+        label: {
+          text: "Extra query parameters"
+        },
+        hint: {
+          text: "One key=value per line, for example close_on_exit=true"
+        },
+        rows: 3,
+        value: pacs.test.extraParams
+      }) }}
+
+      {{ input({
+        id: "shs-token",
+        name: "pacsTest[shsToken]",
+        label: {
+          text: "shs token (optional)"
+        },
+        hint: {
+          text: "An encrypted token replaces the whole query string"
+        },
+        value: pacs.test.shsToken
+      }) }}
+
+      {{ pacs.participantFields() }}
+
+      {{ button({
+        text: "Update links",
+        classes: "nhsuk-button--secondary"
+      }) }}
+
+    </form>
+
+  </div>
+
+  <div class="nhsuk-grid-column-one-half">
+
+    <h2 class="nhsuk-heading-m">Links</h2>
+
+    {% if pacs.filledParticipants | length == 0 %}
+      <p>Fill in at least one participant and update the links.</p>
+    {% endif %}
+
+    {# Timing applies to whichever open button is clicked next. It is a
+       JavaScript concern, so it stays hidden without it. #}
+    <div hidden data-pacs-timing>
+      {{ radios({
+        idPrefix: "timing",
+        name: "timing",
+        classes: "nhsuk-radios--small",
+        fieldset: {
+          legend: {
+            text: "When you click an open button",
+            classes: "nhsuk-fieldset__legend--s"
+          }
+        },
+        value: "Immediately",
+        items: [
+          {
+            value: "Immediately",
+            text: "Open immediately"
+          },
+          {
+            value: "After 5 seconds",
+            text: "Open after 5 seconds",
+            hint: {
+              text: "Time to move focus elsewhere first"
+            }
+          },
+          {
+            value: "Cycle",
+            text: "Open every participant in turn, 5 seconds apart, the same way",
+            hint: {
+              text: "Shows whether a viewer that already has focus picks up the next study"
+            }
+          }
+        ]
+      }) }}
+    </div>
+
+    <ol class="nhsuk-list" id="pacs-links">
+      {% for participant in pacs.filledParticipants %}
+        <li class="nhsuk-u-margin-bottom-6" data-participant-index="{{ participant.index }}" data-url="{{ participant.url }}" data-label="{{ participant.label }}">
+          <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">
+            {{ participant.label }}
+            {{ appCopyToClipboard({
+              text: participant.url,
+              type: "icon",
+              label: "URL"
+            }) }}
+          </h3>
+          <p class="nhsuk-body-s nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-3 app-break-all">
+            <code>{{ participant.url }}</code>
+          </p>
+          <div class="nhsuk-button-group nhsuk-u-margin-bottom-0">
+            <a href="{{ participant.url }}" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-open="Same tab">Same tab</a>
+            <a href="{{ participant.url }}" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" target="_blank" rel="noopener" data-pacs-open="New tab">New tab</a>
+            <button type="button" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-open="Popup" hidden>Popup</button>
+            <button type="button" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-open="Fetch" hidden>Fetch</button>
+            <button type="button" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-open="Hidden iframe" hidden>Hidden iframe</button>
+          </div>
+        </li>
+      {% endfor %}
+    </ol>
+
+    {% set stylesHtml %}
+      <ul class="nhsuk-list nhsuk-list--bullet nhsuk-body-s">
+        <li><strong>Same tab</strong>: a plain link, so this page is replaced. When delayed, location.assign instead.</li>
+        <li><strong>New tab</strong>: a link with target=_blank. When delayed, window.open instead, which browsers usually block without a click.</li>
+        <li><strong>Popup</strong>: window.open with a fixed size and a reused window name. May be blocked when delayed.</li>
+        <li><strong>Fetch</strong>: a background GET. Tries mode cors first, which shows the status and body if the viewer allows this origin, then falls back to no-cors, which only shows whether a response came back. Nothing opens in the browser.</li>
+        <li><strong>Hidden iframe</strong>: loads the URL in an invisible frame, so this page stays put. Its load event fires for error pages too.</li>
+      </ul>
+    {% endset %}
+
+    {{ details({
+      summaryText: "What each button does",
+      html: stylesHtml
+    }) }}
+
+    <div class="nhsuk-button-group" hidden data-pacs-controls>
+      {{ button({
+        text: "Cancel queued launches",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          "data-pacs-cancel": "true"
+        }
+      }) }}
+      {{ button({
+        text: "Close popup",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          "data-pacs-close-popup": "true"
+        }
+      }) }}
+    </div>
+
+    <p hidden data-pacs-countdown aria-live="polite"></p>
+
+    <h2 class="nhsuk-heading-m">Event log</h2>
+
+    <p class="nhsuk-body-s nhsuk-u-secondary-text-colour">Launches, fetch outcomes and this page's own focus and visibility changes, newest last. Needs JavaScript.</p>
+
+    <ol class="nhsuk-list nhsuk-body-s" id="pacs-event-log" aria-live="polite"></ol>
+
+    <div class="nhsuk-button-group" hidden data-pacs-log-controls>
+      {{ button({
+        text: "Clear log",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          "data-pacs-clear-log": "true"
+        }
+      }) }}
+    </div>
+
+  </div>
+</div>
+
+{% set parametersHtml %}
+  <p>Parameters the viewer accepts on the query string of the base URL, or inside an encrypted <code>shs</code> token.</p>
+  <dl class="nhsuk-summary-list">
+    <div class="nhsuk-summary-list__row">
+      <dt class="nhsuk-summary-list__key">accession_number</dt>
+      <dd class="nhsuk-summary-list__value">The study. Several joined with backslashes. A prefix plus * is a wildcard</dd>
+    </div>
+    <div class="nhsuk-summary-list__row">
+      <dt class="nhsuk-summary-list__key">patient_id, issuer_of_patient_id</dt>
+      <dd class="nhsuk-summary-list__value">Query filters. Also patient_first_name, patient_last_name, referring_physician_first_name and referring_physician_last_name. Wildcards allowed. Several matches show a list, one match loads</dd>
+    </div>
+    <div class="nhsuk-summary-list__row">
+      <dt class="nhsuk-summary-list__key">study_instance_uid, series_instance_uid</dt>
+      <dd class="nhsuk-summary-list__value">Load a specific study or series</dd>
+    </div>
+    <div class="nhsuk-summary-list__row">
+      <dt class="nhsuk-summary-list__key">user_name, password, password_ecrypted, cfg_user</dt>
+      <dd class="nhsuk-summary-list__value">Viewer login. Without a password the viewer prompts</dd>
+    </div>
+    <div class="nhsuk-summary-list__row">
+      <dt class="nhsuk-summary-list__key">server_name</dt>
+      <dd class="nhsuk-summary-list__value">Title of the archive to load from</dd>
+    </div>
+    <div class="nhsuk-summary-list__row">
+      <dt class="nhsuk-summary-list__key">close_on_exit, close_window</dt>
+      <dd class="nhsuk-summary-list__value">true closes the browser window once the viewer has started. Worth trying with the new tab and popup buttons</dd>
+    </div>
+    <div class="nhsuk-summary-list__row">
+      <dt class="nhsuk-summary-list__key">start_monitor, num_of_monitors</dt>
+      <dd class="nhsuk-summary-list__value">Which monitor the viewer opens on (0 is the left) and how many it uses</dd>
+    </div>
+    <div class="nhsuk-summary-list__row">
+      <dt class="nhsuk-summary-list__key">load_study_with_last_presentation, key_images, load_significant_series, prior_query, locate_patient, load_and_dictate</dt>
+      <dd class="nhsuk-summary-list__value">What and how to load</dd>
+    </div>
+    <div class="nhsuk-summary-list__row">
+      <dt class="nhsuk-summary-list__key">shs</dt>
+      <dd class="nhsuk-summary-list__value">AES-256 CBC encrypted form of the whole query, using a key shared with the viewer. Needs generating elsewhere and pasting in above</dd>
+    </div>
+  </dl>
+{% endset %}
+
+{{ details({
+  summaryText: "Activation URL parameters",
+  html: parametersHtml
+}) }}
+
+{% endblock %}
+
+{% block pageScripts %}
+  <script type="module" src="/assets/javascript/pacs-link-test.js"></script>
+{% endblock %}

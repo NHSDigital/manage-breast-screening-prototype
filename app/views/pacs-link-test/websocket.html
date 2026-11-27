@@ -1,0 +1,238 @@
+{# app/views/pacs-link-test/websocket.html #}
+
+{# Developer tool for driving a PACS viewer over its local WebSocket
+   interface: join the context, show and close studies, keep a heartbeat
+   going, and log everything the viewer sends back. Shares the participants
+   with the activation URLs page. Everything on the right needs JavaScript,
+   since a WebSocket cannot be opened without it. #}
+
+{% extends 'layout-app.html' %}
+
+{% import "_includes/pacs-link-test/shared.njk" as pacs with context %}
+
+{% set pageHeading = "PACS link test" %}
+{% set gridColumn = "nhsuk-grid-column-full" %}
+{% set hideBackLink = true %}
+
+{% block pageContent %}
+
+<h1 class="nhsuk-heading-l">
+  {{ pageHeading }}
+  <span class="nhsuk-caption-l">Developer tool, not part of the service</span>
+</h1>
+
+<p class="nhsuk-body-l">Drive a viewer that is already open through its WebSocket interface on the workstation, and see what it sends back.</p>
+
+{{ pacs.pageNavigation("websocket") }}
+
+<div class="nhsuk-grid-row">
+  <div class="nhsuk-grid-column-one-half">
+
+    <form action="/pacs-link-test/websocket" method="get" id="pacs-test-form">
+
+      <h2 class="nhsuk-heading-m">Connection</h2>
+
+      {{ input({
+        id: "websocket-url",
+        name: "pacsTest[websocketUrl]",
+        label: {
+          text: "WebSocket URL"
+        },
+        hint: {
+          text: "The viewer listens on the workstation, so usually localhost"
+        },
+        value: pacs.test.websocketUrl or "ws://localhost:8283"
+      }) }}
+
+      {{ input({
+        id: "application-name",
+        name: "pacsTest[applicationName]",
+        label: {
+          text: "Application name"
+        },
+        hint: {
+          text: "How this page introduces itself when joining the context"
+        },
+        classes: "nhsuk-input--width-20",
+        value: pacs.test.applicationName or "ManageBreastScreening"
+      }) }}
+
+      {{ input({
+        id: "issuer-of-patient-id",
+        name: "pacsTest[issuerOfPatientId]",
+        label: {
+          text: "Issuer of patient ID"
+        },
+        hint: {
+          text: "Required whenever a patient ID is sent"
+        },
+        classes: "nhsuk-input--width-10",
+        value: pacs.test.issuerOfPatientId or "NHS"
+      }) }}
+
+      {{ input({
+        id: "heartbeat-seconds",
+        name: "pacsTest[heartbeatSeconds]",
+        label: {
+          text: "Heartbeat interval in seconds"
+        },
+        hint: {
+          text: "The viewer drops us after 2 minutes without one"
+        },
+        classes: "nhsuk-input--width-4",
+        inputmode: "numeric",
+        value: pacs.test.heartbeatSeconds or "30"
+      }) }}
+
+      {{ checkboxes({
+        idPrefix: "load-anonymised",
+        name: "pacsTest[loadAnonymised]",
+        values: [pacs.test.loadAnonymised],
+        items: [
+          {
+            value: "true",
+            text: "Ask for studies to be shown anonymised"
+          }
+        ]
+      }) }}
+
+      {{ pacs.participantFields() }}
+
+      {{ button({
+        text: "Update",
+        classes: "nhsuk-button--secondary"
+      }) }}
+
+    </form>
+
+  </div>
+
+  <div class="nhsuk-grid-column-one-half">
+
+    <h2 class="nhsuk-heading-m">Viewer</h2>
+
+    <div
+      id="pacs-websocket"
+      data-url="{{ pacs.test.websocketUrl or 'ws://localhost:8283' }}"
+      data-application="{{ pacs.test.applicationName or 'ManageBreastScreening' }}"
+      data-issuer="{{ pacs.test.issuerOfPatientId or 'NHS' }}"
+      data-heartbeat-seconds="{{ pacs.test.heartbeatSeconds or 30 }}"
+      data-anonymised="{{ 'true' if pacs.test.loadAnonymised == 'true' else 'false' }}"
+    >
+      <p data-pacs-status class="nhsuk-u-font-weight-bold">Needs JavaScript</p>
+
+      <div class="nhsuk-button-group" hidden data-pacs-connection>
+        {{ button({
+          text: "Connect and join",
+          attributes: {
+            "data-pacs-command": "connect"
+          }
+        }) }}
+        {{ button({
+          text: "Heartbeat now",
+          classes: "nhsuk-button--secondary",
+          attributes: {
+            "data-pacs-command": "heartbeat"
+          }
+        }) }}
+        {{ button({
+          text: "Leave and disconnect",
+          classes: "nhsuk-button--secondary",
+          attributes: {
+            "data-pacs-command": "disconnect"
+          }
+        }) }}
+      </div>
+
+      <h2 class="nhsuk-heading-m">Studies</h2>
+
+      {% if pacs.filledParticipants | length == 0 %}
+        <p>Fill in at least one participant and update.</p>
+      {% endif %}
+
+      <ol class="nhsuk-list" id="pacs-studies">
+        {% for participant in pacs.filledParticipants %}
+          <li class="nhsuk-u-margin-bottom-6" data-label="{{ participant.label }}" data-accession-number="{{ participant.accessionNumber }}" data-patient-id="{{ participant.nhsNumber }}">
+            <h3 class="nhsuk-heading-s nhsuk-u-margin-bottom-2">{{ participant.label }}</h3>
+            <p class="nhsuk-body-s nhsuk-u-secondary-text-colour nhsuk-u-margin-bottom-3">
+              Accession {{ participant.accessionNumber or "none" }}, patient ID {{ participant.nhsNumber or "none" }}
+            </p>
+            <div class="nhsuk-button-group nhsuk-u-margin-bottom-0" hidden data-pacs-study-buttons>
+              <button type="button" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-command="ShowStudy">Show</button>
+              <button type="button" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-command="ShowStudyWithPID">Show with patient ID</button>
+              <button type="button" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-command="ShowStudyWithLastPresentation">Show with last presentation</button>
+              <button type="button" class="nhsuk-button nhsuk-button--secondary nhsuk-u-margin-bottom-2" data-pacs-command="CloseStudy">Close</button>
+            </div>
+          </li>
+        {% endfor %}
+      </ol>
+
+      <div class="nhsuk-button-group" hidden data-pacs-cycle>
+        {{ button({
+          text: "Show each in turn, 5 seconds apart",
+          classes: "nhsuk-button--secondary",
+          attributes: {
+            "data-pacs-command": "cycle"
+          }
+        }) }}
+        {{ button({
+          text: "Cancel",
+          classes: "nhsuk-button--secondary",
+          attributes: {
+            "data-pacs-command": "cancel"
+          }
+        }) }}
+      </div>
+
+      {% set commandsHtml %}
+        <ul class="nhsuk-list nhsuk-list--bullet nhsuk-body-s">
+          <li><strong>Connect and join</strong>: opens the socket and sends JoinContext. The reply carries a GUID that every later message must quote.</li>
+          <li><strong>Show</strong>: ShowStudy by accession number. <strong>Show with patient ID</strong> adds the patient ID and its issuer. <strong>Show with last presentation</strong> asks for the viewer's last hanging protocol or presentation state.</li>
+          <li><strong>Close</strong>: CloseStudy. Each show creates a viewer session and the viewer allows four, so close before showing the next. The cycle button does this for you.</li>
+          <li><strong>Heartbeat</strong>: sent automatically at the interval on the left, and on demand. The viewer rejects one whose timestamp is more than 10 seconds old.</li>
+          <li><strong>Leave and disconnect</strong>: LeaveContext, then closes the socket.</li>
+          <li>Anything the viewer sends on its own (a study opened from its worklist, switching to idle, logout) is logged too.</li>
+        </ul>
+      {% endset %}
+
+      {{ details({
+        summaryText: "What each button does",
+        html: commandsHtml
+      }) }}
+    </div>
+
+    <h2 class="nhsuk-heading-m">Event log</h2>
+
+    <p class="nhsuk-body-s nhsuk-u-secondary-text-colour">Every message sent and received, with outcome codes decoded, newest last.</p>
+
+    <ol class="nhsuk-list nhsuk-body-s" id="pacs-event-log" aria-live="polite"></ol>
+
+    <div class="nhsuk-button-group" hidden data-pacs-log-controls>
+      {{ button({
+        text: "Clear log",
+        classes: "nhsuk-button--secondary",
+        attributes: {
+          "data-pacs-clear-log": "true"
+        }
+      }) }}
+    </div>
+
+  </div>
+</div>
+
+{% set localTestingHtml %}
+  <p>There is a mock viewer for trying this page without a real one. It accepts JoinContext, replies to show, close and heartbeat messages, and pushes a study of its own a few seconds after a client joins.</p>
+  <pre class="nhsuk-u-font-size-16"><code>node scripts/mock-pacs-websocket.js</code></pre>
+  <p>It listens on port 8283, the same as a real viewer. Set the WebSocket URL above to <code>ws://localhost:8283</code>.</p>
+{% endset %}
+
+{{ details({
+  summaryText: "Testing without a viewer",
+  html: localTestingHtml
+}) }}
+
+{% endblock %}
+
+{% block pageScripts %}
+  <script type="module" src="/assets/javascript/pacs-websocket-test.js"></script>
+{% endblock %}
