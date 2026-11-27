@@ -1,9 +1,9 @@
 const path = require('node:path')
 const { pathToFileURL } = require('node:url')
 
-const nunjucks = require('nunjucks')
 const NHSPrototypeKit = require('nhsuk-prototype-kit')
 const { searchPaths: kitSearchPaths } = require('nhsuk-prototype-kit/config')
+const nhsukNunjucks = require('nhsuk-frontend/lib/nunjucks/environment.js')
 
 // Local dependencies
 const config = require('./app/config')
@@ -61,7 +61,8 @@ async function init() {
     await ignoreRealImagesPack()
   }
 
-  // Our own Nunjucks environment, set up as the kit sets up its default one,
+  // Our own Nunjucks environment, set up as the kit sets up its default one
+  // (NHS.UK frontend's configure adds its component and macro search paths),
   // so we control the template cache. The kit's default always sets noCache,
   // which recompiles every template on every request - most of a page's
   // render time. Development needs that, because nodemon does not restart on
@@ -71,11 +72,12 @@ async function init() {
   const cacheTemplates =
     process.env.NODE_ENV === 'production' ||
     process.env.CACHE_TEMPLATES === 'true'
-  const nunjucksEnv = nunjucks.configure([...viewsPath, ...kitSearchPaths], {
-    noCache: !cacheTemplates,
-    lstripBlocks: true,
-    trimBlocks: true
-  })
+  const nunjucksEnv = nhsukNunjucks.configure(
+    [...viewsPath, ...kitSearchPaths],
+    {
+      noCache: !cacheTemplates
+    }
+  )
 
   const prototype = await NHSPrototypeKit.init({
     serviceName: config.serviceName,
